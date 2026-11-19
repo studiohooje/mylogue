@@ -28,7 +28,7 @@ const guest=await get(`users/${user}/records/missing`);
 assert.equal(own,403,`미승인 본인 읽기 결과: ${own}`);
 assert.equal(cross,403,`타인 읽기 결과: ${cross}`);
 assert.equal(guest,403,`비로그인 읽기 결과: ${guest}`);
-const admin='x65cKbgpsQVk6oj7JIDnLVFDYtN2';
+const admin='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
 const profilePath=`users/${user}`;
 const profile={uid:stringValue(user),email:stringValue(`${user}@example.com`),status:stringValue('pending')};
 const applied=await commit(user,profilePath,profile,['createdAt','updatedAt','consentAt']);

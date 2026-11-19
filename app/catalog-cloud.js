@@ -2,7 +2,7 @@ import {firebaseConfig} from './firebase-config.js';
 import {cloudState} from './cloud-sync.js';
 
 export const CATALOG_KINDS=Object.freeze(['foods','exercises','machineModels','gymLocations','gymMachines']);
-const ADMIN_UID='x65cKbgpsQVk6oj7JIDnLVFDYtN2';
+const ADMIN_UID='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
 const REQUEST_STATUSES=Object.freeze(['pending','in_review','approved','rejected','needs_info']);
 const REQUEST_TYPES=Object.freeze(['food','exercise','machine']);
 const cleanText=(value,max=160)=>String(value??'').trim().slice(0,max);

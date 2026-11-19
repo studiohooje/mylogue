@@ -5,7 +5,7 @@ import {initializeTestEnvironment, assertFails, assertSucceeds} from '@firebase/
 import {collection,doc,getDoc,getDocs,setDoc,updateDoc,serverTimestamp,runTransaction} from 'firebase/firestore';
 
 const projectId='mylogue-approval-rules-test';
-const adminUid='x65cKbgpsQVk6oj7JIDnLVFDYtN2';
+const adminUid='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
 const memberUid='approved-member';
 const pendingUid='pending-member';
 const otherUid='other-member';

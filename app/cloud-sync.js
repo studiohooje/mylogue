@@ -4,7 +4,7 @@ import {cloudRecords,planSync,recordsToDB,validRecordKey} from './cloud-model.js
 import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
-const ADMIN_UID='x65cKbgpsQVk6oj7JIDnLVFDYtN2';
+const ADMIN_UID='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
 export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[]};
 const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
 export async function refreshApproval(){
