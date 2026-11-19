@@ -11,3 +11,5 @@ app/android/app/build/
 app/android/build/
 app/android/.gradle/
 /*.zip
+.tmp-qa/
+publish-msg.txt

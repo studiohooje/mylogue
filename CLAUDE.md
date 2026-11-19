@@ -12,6 +12,8 @@
 
 ## 1. 작업 시작 시 읽는 순서
 
+0. **처음 Claude Code로 넘어온 세션이면** `docs/CLAUDE_CODE_HANDOFF_2026-11-19.md`부터 읽고 그 1절(지금 할 일)을 이어서 한다.
+
 1. `PROJECT_DIRECTION_AND_DECISIONS.md` — 확정 결정과 제안의 경계(가장 중요)
 2. `README.md`, `CHANGELOG.md`, 최신 `releases/<버전>.md` — 실제 배포 상태
 3. `docs/CLAUDE_INTAKE_REVIEW_2026-11-19.md` — Claude 인수 검토(발견한 문제·미해결 질문)
