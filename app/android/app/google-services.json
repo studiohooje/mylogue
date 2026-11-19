@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1047640538089-ogca6ip0qgf8j7ambfhcns5jldkao36m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "pro.hooje.mylogue",
+            "certificate_hash": "aac127f8d4d450c60c1f899818de13df7939a8bc"
+          }
+        },
+        {
           "client_id": "1047640538089-ei683p4o940navlmg23egg85vs0phtiv.apps.googleusercontent.com",
           "client_type": 3
         }
