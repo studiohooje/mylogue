@@ -1,7 +1,7 @@
 import {draftId,firestoreValue,fromDocument,normalizeText,validateDraft} from './contract.mjs';
 
-const API_KEY='AIzaSyDHU0ToablfRH_VzIetwl6d89MqDsba0UU';
-const PROJECT='mylogue-5ce38';
+const API_KEY='AIzaSyDauKo9Xcf5h_zieerJCsBb7zuQYkZTQ_8';
+const PROJECT='mylogue-1eedb';
 const base=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const documentName=(uid,path)=>`projects/${PROJECT}/databases/(default)/documents/users/${encodeURIComponent(uid)}/${path}`;
 

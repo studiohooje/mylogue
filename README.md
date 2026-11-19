@@ -6,7 +6,7 @@
 
 - 이름·앱 ID(`pro.hooje.mylogue`)·저장 키를 새로 정했다. 화면·기능은 마웨로그 2.1.1과 같다.
 - 이전 앱의 백업 파일과 JSON 기록 파일을 그대로 가져올 수 있다.
-- 저장소 `studiohooje/mylogue`, 웹 주소 https://studiohooje.github.io/mylogue/ (첫 업로드 후 열림), Firebase `mylogue-5ce38`. 관리자 UID 교체·규칙 게시 전까지 승인·서버 동기화는 동작하지 않는다.
+- 저장소 `studiohooje/mylogue`, 웹 주소 https://studiohooje.github.io/mylogue/ (첫 업로드 후 열림), Firebase `mylogue-1eedb`(studiohooje 계정). 관리자 UID 교체·규칙 게시 전까지 승인·서버 동기화는 동작하지 않는다.
 - 배포 기록: [작업로그](docs/worklog/3.0.0.md) · [패치노트](docs/patch-notes/3.0.0.md)
 
 ## 문서 지도
