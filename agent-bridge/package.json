@@ -1,0 +1,13 @@
+{
+  "name": "mylogue-agent-bridge",
+  "version": "2.0.1-beta",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node mcp.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

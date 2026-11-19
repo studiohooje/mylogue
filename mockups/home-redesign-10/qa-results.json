@@ -1,0 +1,473 @@
+{
+  "checks": [
+    {
+      "width": 390,
+      "i": 1,
+      "title": "01. Midnight Performance",
+      "theme": "app theme-1",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 2,
+      "title": "02. Porcelain Studio",
+      "theme": "app theme-2",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 3,
+      "title": "03. Cobalt Current",
+      "theme": "app theme-3",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 4,
+      "title": "04. Sage Ledger",
+      "theme": "app theme-4",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 5,
+      "title": "05. Copper Club",
+      "theme": "app theme-5",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 6,
+      "title": "06. Nordic Signal",
+      "theme": "app theme-6",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 7,
+      "title": "07. Coral Pulse",
+      "theme": "app theme-7",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 8,
+      "title": "08. Graphite Lab",
+      "theme": "app theme-8",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 9,
+      "title": "09. Aster Editorial",
+      "theme": "app theme-9",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 390,
+      "i": 10,
+      "title": "10. Aurora Motion",
+      "theme": "app theme-10",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 1,
+      "title": "01. Midnight Performance",
+      "theme": "app theme-1",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 2,
+      "title": "02. Porcelain Studio",
+      "theme": "app theme-2",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 3,
+      "title": "03. Cobalt Current",
+      "theme": "app theme-3",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 4,
+      "title": "04. Sage Ledger",
+      "theme": "app theme-4",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 5,
+      "title": "05. Copper Club",
+      "theme": "app theme-5",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 6,
+      "title": "06. Nordic Signal",
+      "theme": "app theme-6",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 7,
+      "title": "07. Coral Pulse",
+      "theme": "app theme-7",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 8,
+      "title": "08. Graphite Lab",
+      "theme": "app theme-8",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 9,
+      "title": "09. Aster Editorial",
+      "theme": "app theme-9",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 768,
+      "i": 10,
+      "title": "10. Aurora Motion",
+      "theme": "app theme-10",
+      "scrollWidth": 753,
+      "innerWidth": 768,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 1,
+      "title": "01. Midnight Performance",
+      "theme": "app theme-1",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 2,
+      "title": "02. Porcelain Studio",
+      "theme": "app theme-2",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 3,
+      "title": "03. Cobalt Current",
+      "theme": "app theme-3",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 4,
+      "title": "04. Sage Ledger",
+      "theme": "app theme-4",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 5,
+      "title": "05. Copper Club",
+      "theme": "app theme-5",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 6,
+      "title": "06. Nordic Signal",
+      "theme": "app theme-6",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 7,
+      "title": "07. Coral Pulse",
+      "theme": "app theme-7",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 8,
+      "title": "08. Graphite Lab",
+      "theme": "app theme-8",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 9,
+      "title": "09. Aster Editorial",
+      "theme": "app theme-9",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    },
+    {
+      "width": 1440,
+      "i": 10,
+      "title": "10. Aurora Motion",
+      "theme": "app theme-10",
+      "scrollWidth": 1425,
+      "innerWidth": 1440,
+      "cardCount": 3,
+      "statCount": 3,
+      "loaded": true,
+      "errors": 1
+    }
+  ],
+  "dialog": {
+    "open": true,
+    "theme": "action-dialog theme-4",
+    "options": 3
+  },
+  "phone": {
+    "active": true,
+    "visible": true,
+    "src": "./index.html?v=2&embed=1",
+    "width": 390
+  },
+  "errors": [],
+  "offenders": [
+    {
+      "tag": "BUTTON",
+      "cls": "choice",
+      "right": 834
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-copy",
+      "right": 822
+    },
+    {
+      "tag": "STRONG",
+      "cls": "",
+      "right": 822
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "choice",
+      "right": 951
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-no",
+      "right": 872
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-copy",
+      "right": 939
+    },
+    {
+      "tag": "STRONG",
+      "cls": "",
+      "right": 939
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "choice",
+      "right": 1078
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-no",
+      "right": 989
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-copy",
+      "right": 1066
+    },
+    {
+      "tag": "STRONG",
+      "cls": "",
+      "right": 1066
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "choice",
+      "right": 1211
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-no",
+      "right": 1116
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-copy",
+      "right": 1199
+    },
+    {
+      "tag": "STRONG",
+      "cls": "",
+      "right": 1199
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "choice",
+      "right": 1344
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-no",
+      "right": 1249
+    },
+    {
+      "tag": "SPAN",
+      "cls": "choice-copy",
+      "right": 1332
+    },
+    {
+      "tag": "STRONG",
+      "cls": "",
+      "right": 1332
+    }
+  ]
+}

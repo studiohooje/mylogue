@@ -1,0 +1,580 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "i": 1,
+      "theme": "app theme-10 variant-5 motion-1",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "pageGlideIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "modalHaloIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 2,
+      "theme": "app theme-10 variant-5 motion-2",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "fadeIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "fadeIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 3,
+      "theme": "app theme-10 variant-5 motion-3",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "depthIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "depthIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 4,
+      "theme": "app theme-10 variant-5 motion-4",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "traceIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "traceIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 5,
+      "theme": "app theme-10 variant-5 motion-5",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "staggerIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "staggerIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 6,
+      "theme": "app theme-10 variant-5 motion-6",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "springIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "springIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 7,
+      "theme": "app theme-10 variant-5 motion-7",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "precisionIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "precisionIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 8,
+      "theme": "app theme-10 variant-5 motion-8",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "revealIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "revealIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 9,
+      "theme": "app theme-10 variant-5 motion-9",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "focusIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "focusIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 390,
+      "i": 10,
+      "theme": "app theme-10 variant-5 motion-10",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "continuityIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "continuityIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 1,
+      "theme": "app theme-10 variant-5 motion-1",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "pageGlideIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "modalHaloIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 2,
+      "theme": "app theme-10 variant-5 motion-2",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "fadeIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "fadeIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 3,
+      "theme": "app theme-10 variant-5 motion-3",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "depthIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "depthIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 4,
+      "theme": "app theme-10 variant-5 motion-4",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "traceIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "traceIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 5,
+      "theme": "app theme-10 variant-5 motion-5",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "staggerIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "staggerIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 6,
+      "theme": "app theme-10 variant-5 motion-6",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "springIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "springIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 7,
+      "theme": "app theme-10 variant-5 motion-7",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "precisionIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "precisionIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 8,
+      "theme": "app theme-10 variant-5 motion-8",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "revealIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "revealIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 9,
+      "theme": "app theme-10 variant-5 motion-9",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "focusIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "focusIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 768,
+      "i": 10,
+      "theme": "app theme-10 variant-5 motion-10",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "continuityIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "continuityIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 1,
+      "theme": "app theme-10 variant-5 motion-1",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "pageGlideIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "modalHaloIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 2,
+      "theme": "app theme-10 variant-5 motion-2",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "fadeIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "fadeIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 3,
+      "theme": "app theme-10 variant-5 motion-3",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "depthIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "depthIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 4,
+      "theme": "app theme-10 variant-5 motion-4",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "traceIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "traceIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 5,
+      "theme": "app theme-10 variant-5 motion-5",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "staggerIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "staggerIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 6,
+      "theme": "app theme-10 variant-5 motion-6",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "springIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "springIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 7,
+      "theme": "app theme-10 variant-5 motion-7",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "precisionIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "precisionIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 8,
+      "theme": "app theme-10 variant-5 motion-8",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "revealIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "revealIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 9,
+      "theme": "app theme-10 variant-5 motion-9",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "focusIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "focusIn"
+      },
+      "dismiss": true
+    },
+    {
+      "width": 1440,
+      "i": 10,
+      "theme": "app theme-10 variant-5 motion-10",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "events": 3,
+      "page": {
+        "open": true,
+        "animation": "continuityIn"
+      },
+      "back": true,
+      "popup": {
+        "open": true,
+        "animation": "continuityIn"
+      },
+      "dismiss": true
+    }
+  ],
+  "phone": {
+    "active": true,
+    "width": 390
+  },
+  "reduced": true,
+  "errors": []
+}

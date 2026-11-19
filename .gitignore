@@ -1,0 +1,13 @@
+.browser-test-profile/
+.gradle-cache/
+jdk21/
+jdk21.zip
+artifacts/
+app/qa/
+*.log
+node_modules/
+app/dist/
+app/android/app/build/
+app/android/build/
+app/android/.gradle/
+/*.zip

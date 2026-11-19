@@ -1,0 +1,31 @@
+import fs from 'node:fs/promises';import path from 'node:path';import {fileURLToPath} from 'node:url';import {packageApk} from './package-apk.mjs';
+const root=path.dirname(fileURLToPath(import.meta.url)),out=path.join(root,'dist');await fs.rm(out,{recursive:true,force:true});await fs.mkdir(path.join(out,'vendor','core'),{recursive:true});await fs.mkdir(path.join(out,'vendor','lang'),{recursive:true});
+for(const f of ['native-auth.js','storage-scope.js','firebase-config.js','cloud-model.js','cloud-sync.js','cloud-ui.js','catalog-cloud.js','food-provider.js','food-catalog.js','index.html','app.css','quick-entry.css','aurora-theme.css','aurora-motion.css','brand-icons.js','app.js','timeline-view.js','food-view.js','quick-entry.js','domain.js','store.js','inbody.js','inbody-photo.js','insights.js','training.js','ai-adapter.js','ai-drafts.js','ai-inbox.js','backup.js','session.js','meal-batch.js','model-features.js','exercise-ui.js','atlas-art.js','profile-forms.js','manifest.webmanifest','icon.svg','sw.js'])await fs.copyFile(path.join(root,f),path.join(out,f));
+for(const f of ['icon-192.png','icon-512.png','apple-touch-icon.png'])await fs.copyFile(path.join(root,f),path.join(out,f));
+for(const f of ['catalog.js','nutrition.js','nutrition-goals.js','workout-times.js','reports.js','ui-helpers.js'])if(await fs.stat(path.join(root,f)).catch(()=>null))await fs.copyFile(path.join(root,f),path.join(out,f));
+for(const f of ['tesseract.min.js','worker.min.js'])await fs.copyFile(path.join(root,'node_modules','tesseract.js','dist',f),path.join(out,'vendor',f));
+const core=path.join(root,'node_modules','tesseract.js-core');for(const f of await fs.readdir(core))if(/^tesseract-core.*\.(wasm|js)$/.test(f))await fs.copyFile(path.join(core,f),path.join(out,'vendor','core',f));
+for(const lang of ['kor','eng'])await fs.copyFile(path.join(root,'node_modules','@tesseract.js-data',lang,'4.0.0',`${lang}.traineddata.gz`),path.join(out,'vendor','lang',`${lang}.traineddata.gz`));
+
+
+
+
+
+await fs.mkdir(path.join(out,'vendor','firebase'),{recursive:true});
+for(const f of ['firebase-app.js','firebase-auth.js','firebase-firestore.js','firebase-storage.js','NOTICE.txt','LICENSE.txt'])await fs.copyFile(path.join(root,'vendor','firebase',f),path.join(out,'vendor','firebase',f));
+
+console.log(`배포용 웹 앱 생성: ${out}`);
+await fs.cp(path.join(root,'vendor','capacitor'),path.join(out,'vendor','capacitor'),{recursive:true});
+const version=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8')).version;
+const apkName=`Mylogue-Beta-${version}-debug.apk`;
+const apk=path.join(root,'..',apkName);
+if(await fs.stat(apk).catch(()=>null)){
+ await fs.mkdir(path.join(out,'downloads'),{recursive:true});
+ await fs.copyFile(apk,path.join(out,'downloads',apkName));
+ const zipName=`Mylogue-Beta-${version}-debug.zip`;
+ const zip=path.join(root,'..',zipName);
+ await packageApk(apk,zip);
+ await fs.copyFile(zip,path.join(out,'downloads',zipName));
+}
+
+await fs.cp(path.join(root,'fonts'),path.join(out,'fonts'),{recursive:true});

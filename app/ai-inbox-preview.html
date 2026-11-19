@@ -1,0 +1,7 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="app.css"><title>MWL AI 검토함 화면 점검</title></head><body><div class="shell"><header class="header"><div class="brand"><img src="icon.svg" alt=""><div><h1>마이로그</h1><div class="sub">Mylogue Beta 2.0.1</div></div></div></header><main id="preview"></main></div><script type="module">
+import {renderAIInbox} from './ai-inbox.js';
+import {emptyDB} from './domain.js';
+const now={toDate:()=>new Date('2026-11-17T10:30:00+09:00')};
+const meal={id:'ai-preview-meal',type:'meal',status:'pending',createdAt:now,originalUtterance:'오늘 오전 10시 식사①. 사진 속 현미밥과 닭가슴살을 대략 기록해줘.',evidence:{source:'AI 대화 사진',note:'중량은 접시 기준 추정'},uncertainty:{estimated:true},parsedData:{items:[{date:'2026-11-17',slot:'식사①',loggedAt:'2026-11-17T10:00:00+09:00',name:'현미밥',servingQty:200,servingUnit:'g',calories:300,carbs:64,protein:5,fat:2,aiEstimate:{estimated:true,caloriesMin:240,caloriesMax:360,basis:'사진 속 그릇 크기'}},{date:'2026-11-17',slot:'식사①',loggedAt:'2026-11-17T10:00:00+09:00',name:'닭가슴살',servingQty:120,servingUnit:'g',calories:198,carbs:0,protein:37,fat:4,aiEstimate:{estimated:true,caloriesMin:150,caloriesMax:250,basis:'사진 속 조각 크기'}}]}};
+document.getElementById('preview').innerHTML=renderAIInbox([meal],emptyDB());
+</script></body></html>

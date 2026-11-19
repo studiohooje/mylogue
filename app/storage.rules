@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && request.auth.uid == 'x65cKbgpsQVk6oj7JIDnLVFDYtN2'; }
+
+    match /catalogRequests/{uid}/{requestId}/photo {
+      allow read: if signedIn() && (request.auth.uid == uid || admin());
+      // Spark has no usable Firebase Storage bucket. Enable only after Blaze
+      // migration, account-approval checks, and photo consent are verified.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if admin();
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "348245522814",
+    "project_id": "mylogue-5ce38",
+    "storage_bucket": "mylogue-5ce38.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348245522814:android:aab4c0a6138c03070adb2f",
+        "android_client_info": {
+          "package_name": "pro.hooje.mylogue"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "348245522814-rjh61nseblvc06aqjcc5n5o3vlmrlqbb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "pro.hooje.mylogue",
+            "certificate_hash": "aac127f8d4d450c60c1f899818de13df7939a8bc"
+          }
+        },
+        {
+          "client_id": "348245522814-qt717a4ukheq2b7d5c5ng66tnghi2epv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCX31ONU0SoTq5kiuTkykiI_umhhrbgFII"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "348245522814-qt717a4ukheq2b7d5c5ng66tnghi2epv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

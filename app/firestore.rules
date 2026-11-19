@@ -1,0 +1,173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    function admin() { return signedIn() && request.auth.uid == 'x65cKbgpsQVk6oj7JIDnLVFDYtN2'; }
+    function approved() {
+      return admin() || (signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved');
+    }
+    match /users/{uid} {
+      allow get: if owner(uid) || admin();
+      allow list: if admin();
+      allow create: if owner(uid) && !admin()
+        && request.resource.data.keys().hasOnly(['uid','email','status','consentAt','createdAt','updatedAt'])
+        && request.resource.data.keys().hasAll(['uid','email','status','consentAt','createdAt','updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'pending'
+        && request.resource.data.consentAt == request.time
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedAt','reviewerUid','updatedAt'])
+        && request.resource.data.status in ['pending','approved','rejected']
+        && request.resource.data.reviewerUid == request.auth.uid
+        && request.resource.data.reviewedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /users/{uid}/records/{recordId} {
+      allow read: if owner(uid) && approved();
+      allow create: if owner(uid) && approved() && validRecord() && request.resource.data.revision == 1;
+      allow update: if owner(uid) && approved() && validRecord()
+        && request.resource.data.revision == resource.data.revision + 1;
+      // Deletions use versioned null payloads, never remove tombstones.
+      allow delete: if false;
+      function validRecord() {
+        return request.resource.data.keys().hasOnly(['revision','payload','updatedAt'])
+          && request.resource.data.revision is int
+          && (request.resource.data.payload == null || (request.resource.data.payload is string && request.resource.data.payload.size() < 800000))
+          && request.resource.data.updatedAt == request.time;
+      }
+    }
+    match /users/{uid}/aiDrafts/{draftId} {
+      function draftShape() {
+        return request.resource.data.keys().hasOnly([
+          'id','requestId','type','status','schemaVersion','sourceModel',
+          'originalUtterance','parsedData','uncertainty','evidence',
+          'createdAt','updatedAt','finalRecordIds','reviewedAt','reviewedData'
+        ])
+          && request.resource.data.keys().hasAll([
+            'id','requestId','type','status','schemaVersion','sourceModel',
+            'originalUtterance','parsedData','uncertainty','evidence',
+            'createdAt','updatedAt'
+          ])
+          && request.resource.data.id == draftId
+          && request.resource.data.requestId == draftId
+          && request.resource.data.type in ['meal','workout','body','food','machine','exercise']
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.sourceModel is string
+          && request.resource.data.sourceModel.size() <= 100
+          && request.resource.data.originalUtterance is string
+          && request.resource.data.originalUtterance.size() <= 4000
+          && request.resource.data.parsedData is map
+          && request.resource.data.uncertainty is map
+          && request.resource.data.evidence is map
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
+      }
+      allow get, list: if owner(uid) && approved();
+      allow create: if owner(uid) && approved() && draftShape()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && !request.resource.data.keys().hasAny(['finalRecordIds','reviewedAt','reviewedData']);
+      allow update: if owner(uid) && approved() && draftShape()
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['pending','confirmed','rejected']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status','parsedData','uncertainty','evidence','updatedAt',
+          'finalRecordIds','reviewedAt','reviewedData'
+        ])
+        && request.resource.data.updatedAt == request.time
+        && (request.resource.data.status == 'pending'
+          || (request.resource.data.finalRecordIds is list
+            && request.resource.data.finalRecordIds.size() <= 100
+            && request.resource.data.reviewedAt == request.time
+            && request.resource.data.reviewedData is map));
+      allow delete: if false;
+    }
+    match /catalog/{kind}/items/{itemId} {
+      function catalogKind() {
+        return kind in ['foods','exercises','machineModels','gymLocations','gymMachines'];
+      }
+      function validCatalog() {
+        return catalogKind()
+          && request.resource.data.id == itemId
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 160
+          && request.resource.data.published == true
+          && request.resource.data.revision is int
+          && request.resource.data.updatedAt == request.time;
+      }
+      allow get, list: if approved() && catalogKind()
+        && (resource.data.published == true || admin());
+      allow create: if admin() && validCatalog()
+        && request.resource.data.revision == 1;
+      allow update: if admin() && validCatalog()
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+    match /catalogRequests/{requestId} {
+      function validNewRequest() {
+        return request.resource.data.keys().hasOnly([
+            'type','mode','name','manufacturer','model','gymName','targetIds','note',
+            'servingQty','servingUnit','calories','carbs','protein','fat',
+            'requesterUid','photoPath','wholePhotoDataUrl','nameplatePhotoDataUrl',
+            'status','adminNote','createdAt','updatedAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'type','mode','name','manufacturer','model','gymName','targetIds','note',
+            'servingQty','servingUnit','calories','carbs','protein','fat',
+            'requesterUid','photoPath','wholePhotoDataUrl','nameplatePhotoDataUrl',
+            'status','adminNote','createdAt','updatedAt'
+          ])
+          && request.resource.data.requesterUid == request.auth.uid
+          && request.resource.data.type in ['food','exercise','machine']
+          && request.resource.data.mode in ['photo','manual']
+          && request.resource.data.name is string && request.resource.data.name.size() <= 160
+          && request.resource.data.manufacturer is string && request.resource.data.manufacturer.size() <= 160
+          && request.resource.data.model is string && request.resource.data.model.size() <= 160
+          && request.resource.data.gymName is string && request.resource.data.gymName.size() <= 160
+          && request.resource.data.note is string && request.resource.data.note.size() <= 1000
+          && request.resource.data.servingUnit is string
+          && request.resource.data.servingUnit in ['', 'g', '개', '회']
+          && (request.resource.data.servingQty == null || (request.resource.data.servingQty is number && request.resource.data.servingQty > 0))
+          && (request.resource.data.calories == null || (request.resource.data.calories is number && request.resource.data.calories >= 0))
+          && (request.resource.data.carbs == null || (request.resource.data.carbs is number && request.resource.data.carbs >= 0))
+          && (request.resource.data.protein == null || (request.resource.data.protein is number && request.resource.data.protein >= 0))
+          && (request.resource.data.fat == null || (request.resource.data.fat is number && request.resource.data.fat >= 0))
+          && request.resource.data.targetIds is list && request.resource.data.targetIds.size() <= 24
+          && request.resource.data.photoPath is string
+          && request.resource.data.photoPath == ''
+          && request.resource.data.wholePhotoDataUrl is string
+          && request.resource.data.nameplatePhotoDataUrl is string
+          && request.resource.data.wholePhotoDataUrl.size() <= 180000
+          && request.resource.data.nameplatePhotoDataUrl.size() <= 180000
+          && (request.resource.data.mode == 'manual'
+            ? (request.resource.data.wholePhotoDataUrl == '' && request.resource.data.nameplatePhotoDataUrl == '')
+            : (request.resource.data.type == 'machine'
+              && request.resource.data.wholePhotoDataUrl.matches('^data:image/jpeg;base64,[A-Za-z0-9+/]+={0,2}$')
+              && request.resource.data.nameplatePhotoDataUrl.matches('^data:image/jpeg;base64,[A-Za-z0-9+/]+={0,2}$')))
+          && request.resource.data.status == 'pending'
+          && request.resource.data.adminNote == ''
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+      }
+      allow get, list: if approved()
+        && (resource.data.requesterUid == request.auth.uid || admin());
+      allow create: if approved() && validNewRequest();
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminNote','reviewerUid','updatedAt'])
+        && request.resource.data.status in ['in_review','approved','rejected','needs_info']
+        && request.resource.data.adminNote is string && request.resource.data.adminNote.size() <= 1000
+        && request.resource.data.reviewerUid == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+  }
+}

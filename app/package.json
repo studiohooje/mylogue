@@ -1,0 +1,28 @@
+{
+  "name": "mylogue",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "node server.mjs",
+    "build": "node build.mjs",
+    "build:icons": "node build-icons.mjs"
+  },
+  "dependencies": {
+    "@capacitor-firebase/authentication": "8.6.0",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/kor": "^1.0.0",
+    "sharp": "^0.35.5",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "@firebase/rules-unit-testing": "^5.0.2"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
+  }
+}

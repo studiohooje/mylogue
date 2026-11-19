@@ -1,0 +1,160 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "i": 1,
+      "theme": "app theme-10 variant-1",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 390,
+      "i": 2,
+      "theme": "app theme-10 variant-2",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 390,
+      "i": 3,
+      "theme": "app theme-10 variant-3",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 390,
+      "i": 4,
+      "theme": "app theme-10 variant-4",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 390,
+      "i": 5,
+      "theme": "app theme-10 variant-5",
+      "scroll": 390,
+      "order": true,
+      "buttonHeight": 47,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 768,
+      "i": 1,
+      "theme": "app theme-10 variant-1",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 768,
+      "i": 2,
+      "theme": "app theme-10 variant-2",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 768,
+      "i": 3,
+      "theme": "app theme-10 variant-3",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 768,
+      "i": 4,
+      "theme": "app theme-10 variant-4",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 768,
+      "i": 5,
+      "theme": "app theme-10 variant-5",
+      "scroll": 753,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 1440,
+      "i": 1,
+      "theme": "app theme-10 variant-1",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 1440,
+      "i": 2,
+      "theme": "app theme-10 variant-2",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 1440,
+      "i": 3,
+      "theme": "app theme-10 variant-3",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 1440,
+      "i": 4,
+      "theme": "app theme-10 variant-4",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    },
+    {
+      "width": 1440,
+      "i": 5,
+      "theme": "app theme-10 variant-5",
+      "scroll": 1425,
+      "order": true,
+      "buttonHeight": 54,
+      "symbols": 9,
+      "events": 3
+    }
+  ],
+  "phone": {
+    "active": true,
+    "src": "./index.html?v=5&embed=1",
+    "width": 390
+  },
+  "errors": []
+}
