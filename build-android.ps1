@@ -15,6 +15,10 @@ $env:JAVA_HOME = $jdk
 $env:ANDROID_HOME = $sdk
 $env:GRADLE_USER_HOME = Join-Path $project '.gradle-cache'
 
+# 네이티브 명령(npm·gradle)의 stderr 경고를 PowerShell 5.1이 오류로 보고 중단하지 않도록,
+# 여기부터는 각 단계의 $LASTEXITCODE로만 성공 여부를 판단한다.
+$ErrorActionPreference = 'Continue'
+
 Push-Location $app
 try {
     npm test
