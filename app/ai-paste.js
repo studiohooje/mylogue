@@ -143,16 +143,25 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
 </div>`;
 }
 
-// 3.16.0 AI에게 내 목록 알려 주기: AI는 마이로그 저장소를 볼 수 없으니, 내 음식(값 포함)·자주 하는 운동·머신 이름을 글로 복사해 대화에 한 번 붙여넣는다.
-export function aiContextText(db={}, candidates=[]){
- const foods = candidates.filter(f => f.personal || (!f.catalog && f.source!=='대표값')).slice(0, 60);
- const per = f => [f.calories!=null?`${Math.round(f.calories)}kcal`:'', f.carbs!=null?`탄${Math.round(f.carbs)}`:'', f.protein!=null?`단${Math.round(f.protein)}`:'', f.fat!=null?`지${Math.round(f.fat)}`:''].filter(Boolean).join(' ');
+// 3.16.1 AI에게 내 목록 알려 주기: AI는 마이로그 저장소를 볼 수 없으니, 한 번이라도 기록한 음식(가장 최근 양·값)·직접 등록한 음식·
+// 한 번이라도 한 운동(가장 많이 쓴 머신)을 글로 만들어 대화에 한 번 붙여넣게 한다. 많이 쓴 것부터, 음식 300개·운동 150개까지.
+export function aiContextText(db={}){
+ const key = x => `${String(x.name||'').trim().toLocaleLowerCase('ko')}|${String(x.servingUnit||'').toLocaleLowerCase('ko')}`;
+ const foods = new Map();
+ const add = (x, count, at) => { const k = key(x); if(!String(x.name||'').trim()) return; const cur = foods.get(k); if(!cur) foods.set(k, {x, count, at}); else { cur.count += count; if(at>=cur.at){ cur.x = x; cur.at = at; } } };
+ for(const m of db.meals||[]) add(m, 1, `${m.date||''}${m.loggedAt||''}${m.updatedAt||''}`);
+ for(const f of db.foods||[]) if(!f.catalog && f.source!=='대표값') add(f, 0, '');
+ const num = v => v==null || v==='' || !Number.isFinite(Number(v)) ? null : Math.round(Number(v));
+ const per = f => [num(f.calories)!=null?`${num(f.calories)}kcal`:'', num(f.carbs)!=null?`탄${num(f.carbs)}`:'', num(f.protein)!=null?`단${num(f.protein)}`:'', num(f.fat)!=null?`지${num(f.fat)}`:''].filter(Boolean).join(' ');
+ const qty = f => `${Number(f.servingQty)||1}${f.servingUnit||'회'}`;
+ const foodRows = [...foods.values()].sort((a, b) => b.count - a.count || String(b.at).localeCompare(String(a.at))).slice(0, 300);
  const ex = new Map();
- for(const w of [...(db.workouts||[])].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 40)) for(const e of w.exercises||[]){ const k = e.name; if(k && !ex.has(k)) ex.set(k, e.machineId||''); }
+ for(const w of db.workouts||[]) for(const e of w.exercises||[]){ const n = String(e.name||'').trim(); if(!n) continue; const cur = ex.get(n) || {n, count:0, machines:new Map()}; cur.count++; if(e.machineId) cur.machines.set(e.machineId, (cur.machines.get(e.machineId)||0) + 1); ex.set(n, cur); }
  const machineName = id => GENERIC_MACHINES.find(m => m.id===id)?.name || BUILTIN_BRANDS.find(m => m.id===id)?.name || (db.machines||[]).find(m => m.id===id)?.name || '';
- return `마이로그에 이미 있는 내 목록이야. 같은 음식·운동이면 아래 이름과 값을 그대로 써 줘.
-[내 음식] (이름 · 기준량 · 값)
-${foods.length ? foods.map(f => `- ${f.name} · ${f.servingQty||1}${f.servingUnit||'회'} · ${per(f)}`).join('\n') : '- (아직 없음)'}
-[자주 하는 운동] (이름 · 머신)
-${ex.size ? [...ex].slice(0, 40).map(([n, m]) => `- ${n}${m && machineName(m) ? ` · ${machineName(m)}` : ''}`).join('\n') : '- (아직 없음)'}`;
+ const exRows = [...ex.values()].sort((a, b) => b.count - a.count).slice(0, 150).map(e => { const top = [...e.machines].sort((a, b) => b[1] - a[1])[0]; const mn = top ? machineName(top[0]) : ''; return `- ${e.n}${mn ? ` · ${mn}` : ''}`; });
+ return `마이로그에 이미 있는 내 목록이야. 같은 음식·운동이면 아래 이름·단위·값을 그대로 써 줘(양이 다르면 같은 비율로 바꿔서).
+[내 음식] (이름 · 먹은 양 · 그 양의 값)
+${foodRows.length ? foodRows.map(({x}) => `- ${x.name} · ${qty(x)}${per(x) ? ` · ${per(x)}` : ''}`).join(String.fromCharCode(10)) : '- (아직 없음)'}
+[내 운동] (이름 · 주로 쓴 머신)
+${exRows.length ? exRows.join(String.fromCharCode(10)) : '- (아직 없음)'}`;
 }

@@ -77,7 +77,11 @@ test('AI로 확정한 음식은 오래돼도 내 값으로 하나만 남고, 내
  assert.equal(list.length, 1);
  assert.equal(list[0].calories, 900);
  assert.equal(list[0].personal, true);
- const text = aiContextText({workouts:[{date:'2026-11-20', exercises:[{name:'레그 프레스', machineId:'gm:leg-press-45'}]}]}, quickFoodCandidates(db));
+ const text = aiContextText({...db, foods:[{name:'내 쉐이크', servingQty:1, servingUnit:'잔', calories:180}], workouts:[{date:'2026-11-20', exercises:[{name:'레그 프레스', machineId:'gm:leg-press-45'}]}]});
+ assert.match(text, /음식29 · 1회 · 100kcal/, '오래된 기록·한 번만 먹은 것도 들어간다');
+ assert.match(text, /내 쉐이크 · 1잔 · 180kcal/);
+ assert.equal((text.match(/제육덮밥/g)||[]).length, 1, '같은 음식은 한 줄');
  assert.match(text, /제육덮밥 · 1그릇 · 900kcal/);
+ assert.doesNotThrow(() => aiContextText({}));
  assert.match(text, /레그 프레스 · 45° 레그 프레스/);
 });
