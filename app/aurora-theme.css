@@ -333,3 +333,69 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .gw-preset .gw-care{line-height:1.5}
 .onb-chip small{font-weight:400;color:#a9bbce;font-size:12px}
 @media(max-width:420px){.gw-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.gw-ratio{margin-left:0;width:100%}}
+/* 3.10.0 헤더 마이로그 → 홈 (넓은 터치 영역) */
+.brand-home{flex:1 1 auto;cursor:pointer;border-radius:16px;padding:6px 10px 6px 4px;margin:-6px 0 -6px -4px;min-height:48px;-webkit-tap-highlight-color:transparent}
+.brand-home:hover{background:rgba(140,228,224,.06)}
+.brand-home:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
+.brand-home *{pointer-events:none}
+/* 3.10.0 카드에서 바로 수정 */
+.tl-right{display:inline-flex;align-items:center;gap:8px}
+.tl-edit{min-height:36px;padding:0 6px;font-size:13px;color:#8ce4e0}
+.qe{display:flex;flex-direction:column;gap:12px}
+.qe-meta{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px}.qe-meta.two{grid-template-columns:1fr 1fr}
+.qe-meta input,.qe-meta select{font-size:16px}
+.qe-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.qe-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:10px 12px;border-radius:14px;background:#1b2741;border:1px solid #33506d}
+.qe-row.removed{opacity:.6;border-style:dashed}
+.qe-name{display:flex;flex-direction:column;gap:2px;min-width:0}
+.qe-name b{font-size:15px;word-break:keep-all}.qe-name small{font-size:12px;color:#a9bbce}
+.qe-step{display:flex;align-items:center;gap:4px}
+.qe-step input{width:64px;text-align:center;font-size:16px;padding:6px 4px;min-height:40px}
+.qe-unit{font-size:13px;color:#a9bbce;min-width:14px}
+.qe-btn{width:40px;height:40px;border-radius:12px;border:1px solid #33506d;background:#16223a;color:#edf4f8;font-size:20px;line-height:1;cursor:pointer}
+.qe-row-actions{grid-column:1/-1;display:flex;gap:12px;justify-content:flex-end}
+.qe-row-actions .text-button,.qe-del{font-size:13px;min-height:36px}
+.qe-del{color:#f2b49b}
+.qe-total{margin:0;font-size:14px;color:#d6e2ec}.qe-total b{color:#8ce4e0}
+.qe-actions{flex-wrap:wrap}
+.qe-ex{padding:12px;border-radius:14px;background:#1b2741;border:1px solid #33506d;display:flex;flex-direction:column;gap:8px}
+.qe-ex.removed{flex-direction:row;justify-content:space-between;align-items:center;opacity:.6;border-style:dashed}
+.qe-ex-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.qe-ex-head b{font-size:16px}
+.qe-sets{display:flex;flex-direction:column;gap:6px}
+.qe-set{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr) 44px 36px;gap:6px;align-items:center}
+.qe-set-head{font-size:12px;color:#7f93ab;text-align:center}.qe-set-head span:first-child{text-align:left}
+.qe-n{font-size:13px;font-weight:700;color:#a9bbce;text-align:center}
+.qe-in{display:flex;align-items:center;gap:4px;min-width:0}
+.qe-in input{width:100%;min-width:0;font-size:16px;text-align:center;padding:6px 4px;min-height:40px}
+.qe-in small{font-size:12px;color:#a9bbce}
+.qe-check{display:grid;place-items:center;min-height:40px}.qe-check input{width:22px;height:22px;accent-color:#8ce4e0}
+.qe-x{width:36px;height:36px;border-radius:10px;border:1px solid #33506d;background:transparent;color:#f2b49b;font-size:18px;cursor:pointer}
+.qe-add{align-self:flex-start;min-height:36px;font-size:14px}
+.qe-cardio{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:420px){.qe-meta{grid-template-columns:1fr 1fr}.qe-meta label:first-child{grid-column:1/-1}}
+/* 3.10.0 내 프로필 */
+.avatar-letter{color:#10223a!important;font-weight:800}
+.pf{display:flex;flex-direction:column;gap:12px}
+.pf-preview{display:flex;align-items:center;gap:14px;padding:12px;border-radius:16px;background:#1b2741}
+.pf-preview b{display:block;font-size:18px}.pf-preview small{font-size:13px;color:#a9bbce;word-break:break-all}
+.pf-avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;display:grid;place-items:center;font-size:26px;flex:none}
+.pf-label{margin:4px 0 0;font-size:14px;font-weight:600;color:#c9d6e6}
+.pf-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pf-opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:14px;border:1px solid #33506d;background:#16223a;color:#edf4f8;font:inherit;cursor:pointer}
+.pf-opt.on{border-color:#8ce4e0;background:#1d3a48}.pf-opt:disabled{opacity:.45;cursor:not-allowed}
+.pf-opt small{font-size:13px;color:#c9d6e6}
+.pf-mini{width:44px;height:44px;border-radius:50%;object-fit:cover;display:grid;place-items:center;font-size:18px;background:#2f4568;color:#edf4f8}
+.pf-plus{font-size:22px}
+.pf-colors{display:flex;gap:10px;flex-wrap:wrap}
+.pf-color{width:40px;height:40px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.pf-color.on{border-color:#edf4f8;box-shadow:0 0 0 2px #101625 inset}
+.pf-upload{align-self:flex-start;cursor:pointer}
+/* 3.10.0 프로필 창: 기록 방식 포함 */
+.pf input{font-size:16px}
+.pf-prefs{display:flex;flex-direction:column;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid #33506d}
+.pf-prefs .pref-card{margin:0;padding:0;background:none;border:none;box-shadow:none}
+.pf-wide{width:100%}
+.pf-more{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:56px;margin-top:6px}
+.pf-more small{font-size:12px;font-weight:400;color:#a9bbce}
+@media(max-width:420px){.qe-meta.two{grid-template-columns:1fr}.qe-meta.two label{grid-column:auto}}
+.qe-actions .button{flex:1 1 auto}

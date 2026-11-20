@@ -21,6 +21,8 @@ import {EXERCISE_CATALOG,searchExercises,PROGRAM_TEMPLATES,createRoutineFromProg
 import {FOOD_CATALOG} from './food-catalog.js';
 import {scaleNutrition,recentFoods,upsertFoodPreset} from './nutrition.js';
 import {goalSettingsHTML,saveGoalSettings} from './nutrition-goals.js';
+import {quickMealState,quickMealHTML as qmHTML,readQuickMeal,applyQuickMeal,stepFor,quickWorkoutState,quickWorkoutHTML as qwHTML,readQuickWorkout,applyQuickWorkout} from './quick-edit.js';
+import {profileOf,avatarHTML,newProfileEdit,profileEditHTML,applyProfile,shrinkPhoto} from './profile.js';
 import {newGoalWizard,goalWizardHTML,applyGoalWizard,calorieOptions,presetOrder,WIZ_STEPS,estimate as estimateEnergy} from './nutrition-plan.js';
 import {setGap} from './workout-times.js';
 import {dietTrend,exerciseTrend,partSummary,fatigueProxy,weeklyReport,monthlyReport,comparePeriods} from './reports.js';
@@ -48,7 +50,7 @@ let bodyEditId=null,selection={tab:'recent',part:'전체',equipment:'전체'},ba
 let draftWarning='',savedDraft=null,backupBusy=false,renderedModal=null;
 let quickMeal=null,quickWorkout=null,composingSearch=false;
 let onb=null,afterWorkout=null,scrollToPrefs=false;
-let guidePlan=null,guideRun=null,guideCues=null,guideTicker=null,goalWiz=null;
+let guidePlan=null,guideRun=null,guideCues=null,guideTicker=null,goalWiz=null,qm=null,qw=null,pfEdit=null;
 let gymSearch={},gymMap=null,gymMapView=null,gymMapEl=null,gymMapTimer=null,gymMapSeq=0;
 let sharedCatalog={foods:[],exercises:[],machineModels:[],gymLocations:[],gymMachines:[],error:''};
 let adminState={open:false,snoozed:new Set(),done:[],autoShown:false},adminJust={},adminRefreshedAt=0,onbChecked=false,aiPair=null,aiBridge={checked:false,checking:false,status:null,port:BRIDGE_PORT};
@@ -161,6 +163,38 @@ function goalWizClick(t){
  if(t.id==='gw-close'||t.id==='gw-skip'){const skipped=t.id==='gw-skip';goalWiz=null;modal=null;render();if(skipped)toast('설정 › 일일 식단 목표에서 언제든 정할 수 있어요.');return true}
  return false;
 }
+function quickEditClick(t){
+ if(t.id==='profile-open'){pfEdit=newProfileEdit(db,cloudState.user);modal='profile-edit';render();return true}
+ if(pfEdit&&modal==='profile-edit'){
+  const keepName=()=>{const v=document.getElementById('pf-name');if(v)pfEdit.nickname=v.value};
+  if(t.dataset.pfType){keepName();pfEdit.type=t.dataset.pfType;render();if(pfEdit.type==='photo'&&!pfEdit.photo)document.getElementById('pf-photo')?.click();return true}
+  if(t.dataset.pfColor){keepName();pfEdit.color=t.dataset.pfColor;render();return true}
+  if(t.id==='pf-save'){keepName();db=save(applyProfile(db,pfEdit));pfEdit=null;modal=null;render();toast('프로필을 바꿨어요.');return true}
+ }
+ if(t.dataset.qm!==undefined){qm=quickMealState(db,t.dataset.qmDate||selectedDate,t.dataset.qm);if(!qm){toast('식사를 찾지 못했어요.');return true}modal='quick-meal-edit';render();return true}
+ if(t.dataset.qw!==undefined){qw=quickWorkoutState(db.workouts.find(x=>x.id===t.dataset.qw));if(!qw){toast('운동을 찾지 못했어요.');return true}modal='quick-work-edit';render();return true}
+ const sheet=document.querySelector('.sheet');
+ if(qm&&modal==='quick-meal-edit'){
+  if(t.dataset.qmStep!==undefined){readQuickMeal(qm,sheet);const r=qm.rows[Number(t.dataset.qmStep)],st=stepFor(r.unit);r.qty=Math.max(st,Math.round((Number(r.qty)+Number(t.dataset.d)*st)*100)/100);render();return true}
+  if(t.dataset.qmRemove!==undefined){readQuickMeal(qm,sheet);qm.rows[Number(t.dataset.qmRemove)].removed=true;render();return true}
+  if(t.dataset.qmUndo!==undefined){readQuickMeal(qm,sheet);qm.rows[Number(t.dataset.qmUndo)].removed=false;render();return true}
+  if(t.id==='qm-save'){readQuickMeal(qm,sheet);db=save(applyQuickMeal(db,qm));selectedDate=qm.newDate;qm=null;modal=null;render();toast('식사를 고쳤어요.');return true}
+  if(t.id==='qm-add'){readQuickMeal(qm,sheet);batchDate=qm.newDate;batchSlot=qm.slot;batchTime=qm.time;batchRows=[];qm=null;modal='batch';render();toast('같은 날짜·끼니·시각으로 음식을 더해요.');return true}
+  if(t.id==='qm-delete-all'){if(!confirm('이 식사의 음식을 모두 지울까요? 되돌릴 수 없어요.'))return true;const ids=new Set(qm.rows.map(r=>r.id));db=save({...db,meals:db.meals.filter(m=>!ids.has(m.id))});qm=null;modal=null;render();toast('식사를 지웠어요.');return true}
+ }
+ if(qw&&modal==='quick-work-edit'){
+  if(t.dataset.qwSetadd!==undefined){readQuickWorkout(qw,sheet);const e=qw.ex[Number(t.dataset.qwSetadd)],last=[...e.sets].reverse().find(x=>!x.removed);e.sets.push({id:uid(),weight:last?.weight??null,unit:last?.unit||'kg',reps:last?.reps??null,completed:true,removed:false});render();return true}
+  if(t.dataset.qwSetremove!==undefined){readQuickWorkout(qw,sheet);const [i,j]=t.dataset.qwSetremove.split(':').map(Number);qw.ex[i].sets[j].removed=true;render();return true}
+  if(t.dataset.qwExremove!==undefined){readQuickWorkout(qw,sheet);qw.ex[Number(t.dataset.qwExremove)].removed=true;render();return true}
+  if(t.dataset.qwExundo!==undefined){readQuickWorkout(qw,sheet);qw.ex[Number(t.dataset.qwExundo)].removed=false;render();return true}
+  if(t.id==='qw-save'){readQuickWorkout(qw,sheet);db=save(applyQuickWorkout(db,qw));qw=null;modal=null;render();toast('운동을 고쳤어요.');return true}
+  if(t.id==='qw-delete'){if(!confirm('이 운동 기록을 지울까요? 되돌릴 수 없어요.'))return true;db=save({...db,workouts:db.workouts.filter(x=>x.id!==qw.id)});qw=null;modal=null;render();toast('운동 기록을 지웠어요.');return true}
+ }
+ return false;
+}
+root.addEventListener('change',async event=>{if(event.target.id!=='pf-photo'||!pfEdit)return;const file=event.target.files?.[0];if(!file)return;try{const v=document.getElementById('pf-name');if(v)pfEdit.nickname=v.value;pfEdit.photo=await shrinkPhoto(file);pfEdit.type='photo';render()}catch(e){toast(e.message)}});
+root.addEventListener('input',event=>{if(event.target.id==='pf-name'&&pfEdit)pfEdit.nickname=event.target.value});
+root.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.classList?.contains('brand-home')){event.preventDefault();event.target.click()}});
 function recordHint(){const pf=prefsOf(db);if(pf.hintShown||!pf.onboarded)return;if(db.body.length+db.meals.length+db.workouts.length<3)return;db=save(withPrefs(db,{hintShown:true}));setTimeout(()=>toast('기록 방식이 불편하면 설정 › 나의 기록 방식에서 바꿀 수 있어요.'),1800)}
 function prefsClick(t){
  if(t.id==='onb-start'||t.id==='onb-restart'){onb=newOnboarding(db);modal='onboarding';render();return true}
@@ -177,8 +211,8 @@ function prefsClick(t){
  if(t.dataset.simpleKcal){const f=document.getElementById('simple-meal-form');if(f)f.querySelector('[name=calories]').value=t.dataset.simpleKcal;return true}
  return false;
 }
-function accountChip(){const s=cloudState;if(!s.configured||(s.native&&!nativeAuthAvailable()))return '';if(!s.user)return `<button type="button" class="account-chip account-login" id="cloud-login" aria-label="Google 계정으로 로그인"><span class="account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><span class="account-text"><strong>로그인</strong><small>기록 동기화</small></span></button>`;const name=s.user.displayName||s.user.email||'내 계정',status={approved:['승인됨','ok'],pending:['승인 대기','wait'],not_applied:['신청 필요','wait'],rejected:['반려됨','bad']}[s.approval]||['확인 중','wait'],photo=s.user.photoURL?`<img class="account-avatar" src="${esc(s.user.photoURL)}" alt="" referrerpolicy="no-referrer">`:`<span class="account-avatar" aria-hidden="true">${esc(name.trim().slice(0,1).toUpperCase())}</span>`;return `<button type="button" class="account-chip" data-page="settings" aria-label="내 계정: ${esc(name)}, ${status[0]}">${photo}<span class="account-text"><strong>${esc(name)}</strong><small class="account-status ${status[1]}">${status[0]}</small></span></button>`}
-const header=()=>`<header class="header"><div class="brand"><img src="icon.svg" alt=""><div><h1>마이로그</h1><div class="sub">MYLOGUE · BETA ${APP_VERSION}</div></div></div><div class="header-account">${noticeOn()?bellHTML(adminItems().length):''}${installChip()}${accountChip()}</div></header>`;
+function accountChip(){const s=cloudState;if(!s.configured||(s.native&&!nativeAuthAvailable()))return '';if(!s.user)return `<button type="button" class="account-chip account-login" id="cloud-login" aria-label="Google 계정으로 로그인"><span class="account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><span class="account-text"><strong>로그인</strong><small>기록 동기화</small></span></button>`;const pr=profileOf(db,s.user),status={pending:['승인 대기','wait'],not_applied:['신청 필요','wait'],rejected:['반려됨','bad']}[s.approval]||(s.approval==='approved'?null:['확인 중','wait']);return `<button type="button" class="account-chip" id="profile-open" aria-label="내 프로필: ${esc(pr.name)}${status?', '+status[0]:''}">${avatarHTML(pr)}<span class="account-text"><strong>${esc(pr.name)}</strong>${status?`<small class="account-status ${status[1]}">${status[0]}</small>`:''}</span></button>`}
+const header=()=>`<header class="header"><div class="brand brand-home" data-page="home" role="link" tabindex="0" aria-label="마이로그 홈으로"><img src="icon.svg" alt=""><div><h1>마이로그</h1><div class="sub">MYLOGUE · BETA ${APP_VERSION}</div></div></div><div class="header-account">${noticeOn()?bellHTML(adminItems().length):''}${installChip()}${accountChip()}</div></header>`;
 const nav=()=>{const tr=prefsOf(db).tracks,need={body:'body',food:'meal',workout:'workout'};return `<nav class="nav"><div class="nav-inner">${[['home','홈'],['body','몸'],['food','식단'],['quick','추가'],['workout','운동'],['calendar','기록'],['settings','설정']].filter(([id])=>!need[id]||tr.includes(need[id])).map(([id,label])=>id==='quick'?`<button data-modal="quick" aria-label="빠른 기록"><b>${brandIcon('add','',true)}</b>${label}</button>`:`<button data-page="${id}" class="${page===id?'active':''}"><b>${brandIcon(id,'',page===id)}</b>${label}</button>`).join('')}</div></nav>`};
 function home(){const pf=prefsOf(db);return `${cloudState.user&&!pf.onboarded&&onbChecked&&modal!=='onboarding'?`<section class="section card onb-card"><h3>나에게 맞추기</h3><p class="hint">질문 몇 개로 기록 방식을 내게 맞게 정해요. 30초면 끝나요.</p><div class="actions"><button class="button" id="onb-start">맞추기 시작</button><button class="button secondary" id="onb-dismiss">괜찮아요</button></div></section>`:''}${renderHomeTimeline(db,today())}<section class="section card ai-entry-card"><h3>AI가 작성한 기록</h3><p class="hint">사진이나 말로 부탁한 기록은 검토함에서 확인한 뒤 저장하세요.</p><button class="button secondary" data-page="ai-inbox">AI 검토함 열기</button></section>`}
 function aiSettingsHTML(){
@@ -208,7 +242,7 @@ function workoutPage(){
  <section class="section"><div class="actions"><button class="button secondary" data-modal="routine">＋ 루틴 저장</button><button class="button secondary" data-page="analysis">▥ 운동 분석</button><button class="button secondary" data-modal="codex-import">숫자 파일</button></div></section>
  ${sessionControls()}${profilesHTML()}<section class="section card recommendation-card"><h3>오늘 상태와 운동 초안</h3>${recommendationHTML()}<button class="button secondary" data-modal="checkin">오늘 상태 입력</button></section><section class="section"><h3 class="section-title">시작용 구성 <small>자체 설계 · 중량은 직접 입력</small></h3><div class="chip-row">${PROGRAM_TEMPLATES.flatMap(p=>p.sessions.map((session,i)=>`<button class="chip" data-program="${p.id}:${i}">${p.title} · ${session.title}</button>`)).join('')}</div></section>
  <section class="section"><h3 class="section-title">저장된 루틴</h3><div class="card">${db.routines.length?db.routines.map(x=>`<div class="record"><div><strong>${esc(x.title)}</strong><small>${x.exercises.length}종목 · ${x.exercises.map(e=>esc(e.name)).join(', ')}</small></div><div class="record-actions"><button data-routine="${esc(x.id)}">시작</button><button data-routine-edit="${esc(x.id)}">수정</button><button data-routine-delete="${esc(x.id)}">삭제</button></div></div>`).join(''):'<div class="empty">반복하는 운동을 루틴으로 저장해 보세요.</div>'}</div></section>
- <section class="section"><h3 class="section-title">운동 일지</h3><div class="card">${list.length?list.map(w=>{const t=workoutTotals(w);return `<div class="record"><div><strong>${esc(w.date)} · ${esc(workoutTitle(w))}</strong><small>${t.exercises}종목 · ${t.sets}세트 · ${fmt(t.volume,0)} kg · 유산소 ${fmt(t.cardioMinutes,0)}분</small></div><div class="record-actions"><button data-reload="${esc(w.id)}">복사</button><button data-detail="${esc(w.id)}">보기</button><button data-work-edit="${esc(w.id)}">수정</button></div></div>`}).join(''):emptyArt('workout','첫 운동을 기록해 보세요.')}</div></section>`
+ <section class="section"><h3 class="section-title">운동 일지</h3><div class="card">${list.length?list.map(w=>{const t=workoutTotals(w);return `<div class="record"><div><strong>${esc(w.date)} · ${esc(workoutTitle(w))}</strong><small>${t.exercises}종목 · ${t.sets}세트 · ${fmt(t.volume,0)} kg · 유산소 ${fmt(t.cardioMinutes,0)}분</small></div><div class="record-actions"><button data-reload="${esc(w.id)}">복사</button><button data-detail="${esc(w.id)}">보기</button><button data-qw="${esc(w.id)}">수정</button></div></div>`}).join(''):emptyArt('workout','첫 운동을 기록해 보세요.')}</div></section>`
 }
 function analysisPage(){
  const week=weeklyReport(db),month=monthlyReport(db),big3=threeLiftTotal(db.workouts),parts=partSummary(db,30),load=fatigueProxy(db),names=[...new Set(db.workouts.flatMap(w=>w.exercises.filter(e=>e.kind!=='cardio').map(e=>e.name)))];
@@ -232,6 +266,9 @@ function modalHTML(){if(!modal)return '';const wrap=(title,content,kind='')=>`<d
  if(modal==='install')return wrap('마이로그 앱 설치',installModalBody());
  if(modal==='onboarding')return wrap(onb&&onb.step>=5?'나에게 맞춘 마이로그':'나에게 맞추기',onboardingHTML(onb||newOnboarding(db)));
  if(modal==='after-workout')return wrap('오늘 한 운동 · 한 번에 입력',afterWorkoutHTML(afterWorkout||emptyAfterWorkout(today()),allExercises().map(x=>x.name),db.settings.gyms||[]));
+ if(modal==='quick-meal-edit'&&qm)return wrap('식사 수정',qmHTML(qm));
+ if(modal==='quick-work-edit'&&qw)return wrap('운동 수정',qwHTML(qw));
+ if(modal==='profile-edit'&&pfEdit)return wrap('내 프로필',profileEditHTML(pfEdit,{prefsHTML:prefsSettingsHTML(db),email:cloudState.user?.email||'',statusText:cloudState.approval==='approved'?'':({pending:'승인 대기',not_applied:'신청 필요',rejected:'반려됨'}[cloudState.approval]||'')}));
  if(modal==='goal-wizard'&&goalWiz)return wrap('식단 목표 정하기',goalWizardHTML(goalWiz));
  if(modal==='gym-map')return wrap('지도에서 운동 장소 고르기',gymMapHTML(gymMap||{}),'gym-map-sheet');
  if(modal==='guide-plan')return wrap('운동 계획 · 안내 받기',planHTML(guidePlan||emptyPlan(today(),'',prefsOf(db).restSec),{names:allExercises().map(x=>x.name),gyms:db.settings.gyms||[],routines:db.routines||[],hasLast:db.workouts.length>0}));
@@ -322,6 +359,7 @@ root.addEventListener('click',async event=>{
   if(await installClick(target))return;
   if(prefsClick(target))return;
   if(goalWizClick(target))return;
+  if(quickEditClick(target))return;
   if(await adminClick(target))return;
   if(await aiBridgeClick(target))return;
   if(guideClick(target))return;
