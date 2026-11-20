@@ -119,3 +119,10 @@
 - 기기 범위: Android는 APK로 **일반 폰과 갤럭시 노트8 모두** 호환. iPhone은 당분간 **PWA만** 제공하고 네이티브 앱은 보류.
 - 사업계획서는 앞으로 Claude 슬라이드로 만들고 **PDF를 항상 함께** 만든다. 이전 PPT는 `docs/business-plan/legacy/`에 보존.
 - 문서 정리: 지난 보고서·감사·작업 기록은 `docs/archive/myweightlog/`, 조사 자료는 `docs/research/`, 운영 참고는 `docs/reference/`로 옮겼다.
+
+## 13. 2026-11-19 Firebase 프로젝트 소유 계정 교체 (3.0.2)
+
+- 대표님 결정: 마이로그 Firebase는 **Hooje Studio 계정(studiohooje@gmail.com)** 소유로 새로 만든다. → `mylogue-1eedb`(서울, Spark). 12절에서 만든 `mylogue-5ce38`(다른 Google 계정 소유)은 더 이상 쓰지 않는다. 변경 사유: 운영 계정을 Hooje Studio로 통일.
+- 관리자: Hooje Studio 계정(UID `bulbnZbmC4PgH8tUAOjfPPLE7pA3`). Firestore 규칙 게시 완료.
+- 대표님 선택: Android 패키지+서명 충돌을 풀기 위해 이전 프로젝트의 Android 앱과 Android OAuth 클라이언트를 삭제(30일 내 복구 가능). 서명 키는 기존 디버그 키 유지.
+- 남은 결정: 이전 프로젝트 `mylogue-5ce38` 전체 삭제 여부.
