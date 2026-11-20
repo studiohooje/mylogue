@@ -47,3 +47,30 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .install-note{margin:0;font-size:13px;line-height:1.6;color:#b8cede;word-break:keep-all}
 .install-note a{color:#8ce4e0}
 @media(max-width:380px){.install-chip{padding:0;width:44px}.install-chip span{display:none}}
+
+/* 3.2.0 하단 탭 아이콘: 활성 = 청록 솔리드, 비활성 = 프로스트 선 */
+.nav button{color:#c9d6e6}
+.nav button.active{color:#8ce4e0}
+.nav button[data-modal=quick]{color:#c9d6e6}
+.nav button[data-modal=quick] b{color:#101625}
+.nav button[data-modal=quick] b{background:linear-gradient(135deg,#91e5df,#b0d9ed)}
+
+/* 3.2.0 시간대별 히어로 배경: 아침 05–11 · 낮 11–17 · 저녁 17–21 · 밤 21–05 */
+.timeline-hero.hero-art{background-color:#101625;background-size:cover;background-position:right center;background-repeat:no-repeat}
+.timeline-hero.hero-art:after,.timeline-hero.hero-art .hero-glow{display:none}
+.hero-morning{background-image:linear-gradient(90deg,#16244299 0%,#16244266 45%,transparent 70%),url(art/hero-morning-mobile.webp)}
+.hero-day{background-image:url(art/hero-day-mobile.webp)}
+.hero-evening{background-image:url(art/hero-evening-mobile.webp)}
+.hero-night{background-image:url(art/hero-night-mobile.webp)}
+@media(min-width:651px){
+ .hero-morning{background-image:linear-gradient(90deg,#16244299 0%,#16244266 45%,transparent 70%),url(art/hero-morning-wide.webp)}
+ .hero-day{background-image:url(art/hero-day-wide.webp)}
+ .hero-evening{background-image:url(art/hero-evening-wide.webp)}
+ .hero-night{background-image:url(art/hero-night-wide.webp)}
+}
+.timeline-hero.hero-art h2,.timeline-hero.hero-art p{text-shadow:0 1px 12px #0b1226b3}
+
+/* 3.2.0 빈 화면 오브제 */
+.empty-art{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px 16px}
+.empty-art img{width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 8px 18px #05091480)}
+.empty-art p{margin:0;max-width:30ch;font-size:14px;line-height:1.6;color:#c9d6e6;word-break:keep-all}

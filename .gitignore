@@ -13,3 +13,6 @@ app/android/.gradle/
 /*.zip
 .tmp-qa/
 publish-msg.txt
+
+# GPT 원본 이미지(대용량). 앱에는 압축본 app/art/*.webp만 들어간다.
+GPT Source/**/*.png
