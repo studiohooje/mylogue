@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>완성되는 헤일로 목업 v3</title>
+<style>
+@font-face{font-family:SUIT;src:url('../../app/fonts/SUIT-Regular.ttf')}
+@font-face{font-family:SUIT;src:url('../../app/fonts/SUIT-SemiBold.ttf');font-weight:600}
+@font-face{font-family:SUIT;src:url('../../app/fonts/SUIT-Bold.ttf');font-weight:700}
+:root{--bg:#101625;--card:#1c2b46;--text:#edf4f8;--muted:#c9d6e6;--sub:#a6bbcb;--body:#f2b49b;--meal:#8ce4e0;--work:#b8aaf2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 SUIT,'Malgun Gothic',sans-serif;word-break:keep-all}
+main{max-width:1180px;margin:auto;padding:clamp(16px,4vw,48px)}
+.tag{color:var(--meal);font-weight:700;font-size:13px;letter-spacing:.08em}
+h1{font-size:clamp(28px,4.4vw,44px);letter-spacing:-.05em;line-height:1.15;margin:8px 0 10px}
+.lead{color:var(--muted);max-width:64ch;margin:0}
+.layout{display:grid;grid-template-columns:400px minmax(0,1fr);gap:32px;margin-top:28px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.phone{width:100%;max-width:390px;border:1px solid #40506e;border-radius:28px;padding:16px;margin:0 auto}
+.days,.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.days button,.opts button{min-height:40px;padding:0 13px;border-radius:999px;border:1px solid #5c7898;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.days button.on,.opts button.on{background:#8ce4e0;color:#101625;border-color:transparent}
+.opts button{min-height:34px;font-size:12px}
+.hero{position:relative;overflow:hidden;border:1px solid #7089a8;border-radius:22px;min-height:222px;padding:22px;background:#101625 url('../../app/art/hero-day-mobile.webp') right center/cover no-repeat}
+.hero>*{position:relative;z-index:1}
+.hero .date{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--meal);margin:0}
+.hero h2{font-size:26px;line-height:1.22;letter-spacing:-.04em;margin:12px 0 8px;text-shadow:0 1px 12px #0b1226b3}
+.hero h2 em{font-style:normal;color:var(--meal)}
+.hero .msg{font-size:13px;line-height:1.55;color:#dbe6f0;margin:0;text-shadow:0 1px 10px #0b1226}
+.hero.big .date{font-size:15px}.hero.big h2{font-size:33px}.hero.big .msg{font-size:17px}
+.hero svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.check{display:flex;align-items:center;gap:6px;margin:10px 4px 0;font-size:12px;color:var(--sub)}
+.check b{color:#8ce4e0}.check b.bad{color:#f0a2a6}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin:6px 4px 0}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.rows{margin-top:12px;border-top:1px solid #33506d}
+.row{display:grid;grid-template-columns:52px 14px 1fr auto;gap:6px;align-items:center;font-size:13px;padding:8px 2px;border-bottom:1px solid #26385a;color:var(--muted)}
+.row b{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600}
+.row i{width:8px;height:8px;border-radius:50%}
+.row small{font-size:12px;color:var(--sub)}
+.row small.off{color:#a6bbcb}
+.week{margin-top:16px;background:var(--card);border:1px solid #33506d;border-radius:18px;padding:16px}
+.week h3{margin:0;font-size:15px}.week p{margin:4px 0 0;font-size:12px;color:var(--sub)}
+.week svg{display:block;width:100%;height:auto;margin-top:8px}
+.explain{display:grid;gap:14px}
+.box{background:var(--card);border:1px solid #33506d;border-radius:18px;padding:18px 20px}
+.box h3{margin:0 0 8px;font-size:17px}
+.box ol,.box ul{margin:0;padding-left:20px;color:var(--muted);font-size:14px;display:grid;gap:6px}
+.box b{color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:13px;color:var(--muted)}td,th{text-align:left;padding:7px 6px;border-bottom:1px solid #33506d;vertical-align:top}th{color:var(--text);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<div class="tag">MYLOGUE · 목업 v3 (앱에 적용 전)</div>
+<h1>완성되는 헤일로 v3 — 고리 = 나의 깨어 있는 하루</h1>
+<p class="lead">궤적은 언제나 매끄러운 원호입니다. 양(열량·세트)은 모양에 쓰지 않고, <b>얼마나 고르게, 평소 리듬대로 기록했는지</b>만 빛과 완성도로 보여 줍니다. 세 종류를 다 기록하면 고리 아래 세 점이 켜지며 마이로그 아이콘 모양이 완성됩니다. <b>v3: 고리의 양 끝은 0시·24시가 아니라 나의 평소 첫 기록·마지막 기록 시각</b>이라, 잘 기록한 날은 끝에서 끝까지 꽉 찹니다.</p>
+
+<div class="layout">
+ <section>
+  <div class="phone">
+   <div class="days" id="days"></div>
+   <div class="opts"><button type="button" id="big">큰 글자 설정</button><button type="button" id="zone">안전 영역 보기</button></div>
+   <div class="hero" id="hero">
+    <p class="date">MYLOGUE · 11월 20일 목요일</p>
+    <h2>가장 쉬운 건강 관리의 시작, <em>기록.</em></h2>
+    <p class="msg" id="msg"></p>
+    <svg id="halo" aria-hidden="true"></svg>
+   </div>
+   <div class="check" id="check"></div>
+   <div class="legend"><span><i style="background:var(--body)"></i>몸</span><span><i style="background:var(--meal)"></i>식사</span><span><i style="background:var(--work)"></i>운동</span><span>○ 평소와 다른 시각</span></div>
+   <div class="rows" id="rows"></div>
+   <div class="week">
+    <h3>이번 주 나의 헤일로</h3>
+    <p>하루가 고리 한 겹. 안쪽이 월요일, 바깥이 오늘. 고르게 기록한 날일수록 밝게 이어집니다.</p>
+    <svg id="week" viewBox="0 0 320 178" aria-label="이번 주 기록 헤일로"></svg>
+   </div>
+  </div>
+ </section>
+
+ <section class="explain">
+  <div class="box">
+   <h3>기준: 먹은 양이 아니라 '기록 습관'</h3>
+   <table>
+    <tr><th>무엇을 보나</th><th>모양에서는</th></tr>
+    <tr><td>몸·식사·운동을 오늘 기록했나</td><td>고리 아래 세 점이 하나씩 켜짐. 셋 다 켜지면 <b>아이콘 완성</b></td></tr>
+    <tr><td>평소 리듬대로인가<br><small>(나의 지난 7일 평균 시각 ±1시간 30분)</small></td><td>리듬 안의 기록끼리는 <b>밝고 굵은 빛</b>으로 이어지고, 벗어난 기록은 <b>속이 빈 구슬</b>과 옅은 선</td></tr>
+    <tr><td>고리의 양 끝<br><small>(나의 평소 첫 기록 −1시간 ~ 마지막 기록 +1시간)</small></td><td>첫 기록을 하면 <b>왼쪽 끝까지</b>, 평소 마지막 기록 시각이 지나고 리듬대로 마무리했으면 <b>오른쪽 끝까지</b> 빛이 찹니다. 범위 밖 기록(새벽 운동·야식)은 가까운 끝에 붙어 '평소와 다른 시각'으로 표시</td></tr>
+    <tr><td>열량·세트 수</td><td>쓰지 않음. 판단하지 않는 앱이므로 숫자는 아래 타임라인에서만</td></tr>
+   </table>
+  </div>
+  <div class="box">
+   <h3>예쁘게 유지되는 이유</h3>
+   <ul>
+    <li>모든 선은 <b>같은 원 위</b>에 그려집니다. 데이터가 어떻든 뾰족하거나 찌그러질 수 없습니다.</li>
+    <li>기록이 적은 날은 못생겨지는 게 아니라 <b>덜 그려진</b> 상태 — 채우고 싶어지는 빈칸입니다.</li>
+    <li>날마다 다른 것은 <b>빛 구슬의 위치와 색이 섞이는 순서</b>뿐이라, 예쁘면서 같은 날이 없습니다.</li>
+   </ul>
+  </div>
+  <div class="box">
+   <h3>글자를 침범하지 않는 안전장치</h3>
+   <ol>
+    <li><b>글자 위치를 실제로 잽니다.</b> 날짜·제목·문구의 줄 하나하나 영역에 여백 12px을 더해 '그리면 안 되는 곳'으로 둡니다.</li>
+    <li><b>남은 공간 중 가장 큰 칸을 찾아</b> 그 안에 맞는 크기로만 그립니다(오른쪽 아래 우선).</li>
+    <li><b>칸이 너무 작으면</b>(큰 글자 설정 등) 카드 아래에 자리를 만들어 글자 밑으로 내려 그립니다.</li>
+    <li><b>매번 겹침을 계산</b>해 0이 아니면 그리지 않습니다. 앱에서는 이 검사를 다섯 가지 폭·큰 글자로 자동 시험합니다.</li>
+   </ol>
+   <p style="margin:10px 0 0;font-size:13px;color:var(--sub)">'큰 글자 설정'과 '안전 영역 보기'를 눌러 확인해 보세요. 예시 기록은 가상입니다.</p>
+  </div>
+ </section>
+</div>
+</main>
+
+<script>
+const C={body:'#f2b49b',meal:'#8ce4e0',work:'#b8aaf2'};
+const LABEL={body:'몸',meal:'식사',work:'운동'};
+// 나의 평소 리듬(지난 7일 평균 시각, 가상)
+const BASE={body:[7.5],meal:[8,12.5,19],work:[18.5]};
+// 고리 범위 = 지난 7일 첫 기록 평균 −1시간 ~ 마지막 기록 평균 +1시간 (기록이 없으면 6~24시)
+const ALL=Object.values(BASE).flat();const START=Math.min(...ALL)-1,END=Math.max(...ALL)+1;
+const DAYS={
+ '고르게 기록한 날':{now:21.3,rec:[[7.4,'body','체중 72.4 kg'],[8.1,'meal','아침'],[12.6,'meal','점심'],[18.2,'work','하체 16세트'],[19.4,'meal','저녁']]},
+ '덜 기록한 날':{now:21,rec:[[12.8,'meal','점심']]},
+ '리듬이 달랐던 날':{now:23.6,rec:[[10.4,'body','체중 72.9 kg'],[10.9,'meal','브런치'],[16.2,'meal','늦은 점심'],[23.1,'meal','야식']]},
+ '새벽 운동한 날':{now:21.5,rec:[[5.3,'work','새벽 러닝 30분'],[7.3,'body','체중 72.2 kg'],[8.2,'meal','아침'],[12.4,'meal','점심'],[19.1,'meal','저녁']]},
+ '아직 기록 없음':{now:8.2,rec:[]}
+};
+const inRhythm=r=>BASE[r[1]].some(t=>Math.abs(t-r[0])<=1.5);
+const hhmm=t=>String(Math.floor(t)).padStart(2,'0')+':'+String(Math.round((t%1)*60)).padStart(2,'0');
+const uOf=t=>Math.min(1,Math.max(0,(t-START)/(END-START)));
+const ang=t=>Math.PI+uOf(t)*Math.PI;
+const fmtH=t=>String(Math.floor(t)).padStart(2,'0')+':'+String(Math.round((t%1)*60)).padStart(2,'0');
+let current='고르게 기록한 날',big=false,showZone=false;
+
+function message(rec){
+ if(!rec.length)return '첫 기록을 남기면 고리에 첫 빛이 맺혀요.';
+ const kinds=new Set(rec.map(r=>r[1]));const off=rec.filter(r=>!inRhythm(r)).length;
+ if(kinds.size===3&&!off)return '세 가지 모두, 평소 리듬 그대로. 오늘의 헤일로 완성!';
+ if(kinds.size===3)return '세 가지 모두 기록했어요. 시각은 평소와 조금 달랐어요.';
+ const miss=['body','meal','work'].filter(k=>!kinds.has(k)).map(k=>LABEL[k]).join('·');
+ return `${miss} 기록을 더하면 헤일로가 완성돼요.`;
+}
+function textRects(hero){
+ const hb=hero.getBoundingClientRect();const out=[];
+ hero.querySelectorAll('.date,h2,.msg').forEach(el=>{const rg=document.createRange();rg.selectNodeContents(el);for(const r of rg.getClientRects())if(r.width>0)out.push({l:r.left-hb.left,t:r.top-hb.top,r:r.right-hb.left,b:r.bottom-hb.top})});
+ return out;
+}
+// 주어진 칸에 헤일로(반원 + 아래 세 점)를 맞출 때의 반지름
+const fitR=(w,h)=>Math.min((w-16)/2,(h-10)/1.62);
+function findZone(hero,rects){
+ const W=hero.clientWidth,H=hero.clientHeight,pad=14,m=12;
+ const ex=rects.map(r=>({l:r.l-m,t:r.t-m,r:r.r+m,b:r.b+m}));
+ let best=null;
+ for(let y=pad;y<=H-pad-30;y+=2){
+  let x0=pad;for(const r of ex)if(r.b>y&&r.t<H-pad)x0=Math.max(x0,r.r);
+  const w=W-pad-x0,h=H-pad-y;if(w<40)continue;const R=fitR(w,h);
+  if(!best||R>best.R)best={x:x0,y,w,h,R};
+ }
+ return best;
+}
+function draw(){
+ const day=DAYS[current],rec=day.rec,hero=document.getElementById('hero'),svg=document.getElementById('halo');
+ hero.classList.toggle('big',big);hero.style.paddingBottom='';
+ document.getElementById('msg').textContent=message(rec);
+ let rects=textRects(hero),zone=findZone(hero,rects),moved=false;
+ if(!zone||zone.R<30){ // 공간 부족: 카드 아래에 자리를 만들어 글자 밑으로
+  const need=Math.ceil(36*1.62+20);hero.style.paddingBottom=(22+need)+'px';rects=textRects(hero);zone=findZone(hero,rects);moved=true;
+ }
+ const W=hero.clientWidth,H=hero.clientHeight;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ const R=Math.min(zone.R,74),cx=zone.x+zone.w-R-8,baseY=zone.y+zone.h-0.62*R-6;
+ const P=(t,rr=R)=>[cx+rr*Math.cos(ang(t)),baseY+rr*Math.sin(ang(t))];
+ const arc=(t1,t2,rr=R)=>{const [x1,y1]=P(t1,rr),[x2,y2]=P(t2,rr);return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${rr} ${rr} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`};
+ const kinds=new Set(rec.map(r=>r[1]));const done=kinds.size===3;
+ let g=`<ellipse cx="${cx}" cy="${baseY-R*0.2}" rx="${R*1.45}" ry="${R*1.25}" fill="url(#veil)"/>`;
+ g+=`<path d="${arc(START,END)}" fill="none" stroke="#c9d6e6" stroke-opacity=".22" stroke-width="1.2" stroke-dasharray="1.5 4" stroke-linecap="round"/>`;
+ g+=`<path d="${arc(START,Math.min(day.now,END))}" fill="none" stroke="#c9d6e6" stroke-opacity=".28" stroke-width="1.4"/>`;
+ if(rec.length){const f=rec[0],okF=inRhythm(f);const [ex,ey]=P(START),[fx,fy]=P(f[0]);
+  if(uOf(f[0])>0){if(okF)g+=`<path d="${arc(START,f[0])}" fill="none" stroke="${C[f[1]]}" stroke-width="7" stroke-opacity=".25" filter="url(#blur)"/>`;g+=`<path d="${arc(START,f[0])}" fill="none" stroke="${C[f[1]]}" stroke-width="${okF?3:1.4}" stroke-opacity="${okF?1:.55}" stroke-linecap="round"/>`}
+  const l=rec[rec.length-1],okL=inRhythm(l);
+  if(day.now>=END&&uOf(l[0])<1){if(okL)g+=`<path d="${arc(l[0],END)}" fill="none" stroke="${C[l[1]]}" stroke-width="7" stroke-opacity=".25" filter="url(#blur)"/>`;g+=`<path d="${arc(l[0],END)}" fill="none" stroke="${C[l[1]]}" stroke-width="${okL?3:1.4}" stroke-opacity="${okL?1:.55}" stroke-linecap="round"/>`}}
+ {const [sx,sy]=P(START),[tx,ty]=P(END);g+=`<text x="${sx}" y="${sy+13}" fill="#c9d6e6" fill-opacity=".7" font-size="9" font-family="SUIT" text-anchor="middle">${fmtH(START)}</text><text x="${tx}" y="${ty+13}" fill="#c9d6e6" fill-opacity=".7" font-size="9" font-family="SUIT" text-anchor="middle">${fmtH(END)}</text>`}
+ for(let i=0;i<rec.length-1;i++){const a=rec[i],b=rec[i+1];const ok=inRhythm(a)&&inRhythm(b);const id='s'+i;
+  const [x1,y1]=P(a[0]),[x2,y2]=P(b[0]);
+  g+=`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${C[a[1]]}"/><stop offset="1" stop-color="${C[b[1]]}"/></linearGradient></defs>`;
+  if(ok)g+=`<path d="${arc(a[0],b[0])}" fill="none" stroke="url(#${id})" stroke-width="7" stroke-opacity=".25" filter="url(#blur)"/>`;
+  g+=`<path d="${arc(a[0],b[0])}" fill="none" stroke="url(#${id})" stroke-width="${ok?3:1.4}" stroke-opacity="${ok?1:.55}" stroke-linecap="round"/>`;}
+ rec.forEach(r=>{const [x,y]=P(r[0]);const ok=inRhythm(r);
+  g+=ok?`<circle cx="${x}" cy="${y}" r="9" fill="${C[r[1]]}" opacity=".22" filter="url(#blur)"/><circle cx="${x}" cy="${y}" r="4" fill="${C[r[1]]}" stroke="#101625" stroke-width="1.2"/>`
+       :`<circle cx="${x}" cy="${y}" r="3.6" fill="#101625" stroke="${C[r[1]]}" stroke-width="1.6"/>`});
+ const [nx,ny]=P(Math.min(day.now,END));g+=`<circle cx="${nx}" cy="${ny}" r="8" fill="url(#now)"/><circle cx="${nx}" cy="${ny}" r="2.2" fill="#fff"/>`;
+ // 아래 세 점(몸·식사·운동) — 아이콘의 세 기록점
+ const dy=baseY+0.36*R,gap=0.42*R;
+ ['body','meal','work'].forEach((k,i)=>{const x=cx+(i-1)*gap;const on=kinds.has(k);
+  if(done)g+=`<path d="M${x} ${baseY-R*0.02} V${dy-5}" stroke="${C[k]}" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>`;
+  g+=on?`<circle cx="${x}" cy="${dy}" r="7" fill="${C[k]}" opacity=".25" filter="url(#blur)"/><circle cx="${x}" cy="${dy}" r="3.6" fill="${C[k]}"/>`
+       :`<circle cx="${x}" cy="${dy}" r="3.2" fill="none" stroke="#c9d6e6" stroke-opacity=".45" stroke-width="1.3"/>`});
+ if(done)g+=`<path d="${arc(9,15,R*0.5)}" fill="none" stroke="#b8aaf2" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>`;
+ const zoneRect=showZone?`<rect x="${zone.x}" y="${zone.y}" width="${zone.w}" height="${zone.h}" fill="#8ce4e010" stroke="#8ce4e0" stroke-dasharray="4 3"/>`+rects.map(r=>`<rect x="${r.l-12}" y="${r.t-12}" width="${r.r-r.l+24}" height="${r.b-r.t+24}" fill="#f0a2a614" stroke="#f0a2a6" stroke-opacity=".6" stroke-dasharray="2 3"/>`).join(''):'';
+ svg.innerHTML=`<defs><filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter><radialGradient id="veil"><stop offset="0" stop-color="#0b1226" stop-opacity=".78"/><stop offset=".65" stop-color="#0b1226" stop-opacity=".45"/><stop offset="1" stop-color="#0b1226" stop-opacity="0"/></radialGradient><radialGradient id="now"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#8ce4e0" stop-opacity="0"/></radialGradient></defs>${zoneRect}${g.startsWith('<ellipse')?g.slice(0,g.indexOf('/>')+2):''}<g id="art">${g.startsWith('<ellipse')?g.slice(g.indexOf('/>')+2):g}</g>`;
+ // 겹침 검사: 그린 그림의 영역과 글자 줄 영역(여백 없이)이 겹치는 면적
+ const hb=hero.getBoundingClientRect(),ab=svg.querySelector('#art').getBoundingClientRect();
+ const A={l:ab.left-hb.left,t:ab.top-hb.top,r:ab.right-hb.left,b:ab.bottom-hb.top};
+ const overlap=textRects(hero).reduce((s,r)=>s+Math.max(0,Math.min(A.r,r.r)-Math.max(A.l,r.l))*Math.max(0,Math.min(A.b,r.b)-Math.max(A.t,r.t)),0);
+ document.getElementById('check').innerHTML=`글자와 겹침 <b class="${overlap?'bad':''}">${overlap?Math.round(overlap)+'px²':'없음 ✓'}</b> · 헤일로 반지름 ${Math.round(R)}px${moved?' · 공간이 좁아 글자 아래로 이동':''}`;
+ document.getElementById('rows').innerHTML=rec.length?rec.map(r=>`<div class="row"><b>${hhmm(r[0])}</b><i style="background:${C[r[1]]}"></i><span>${LABEL[r[1]]} · ${r[2]}</span><small class="${inRhythm(r)?'':'off'}">${inRhythm(r)?'평소 리듬':'○ 평소와 다름'}</small></div>`).join(''):'<div class="row" style="grid-template-columns:1fr"><span>오늘의 타임라인이 비어 있어요.</span></div>';
+ document.querySelectorAll('#days button').forEach(b=>b.classList.toggle('on',b.textContent===current));
+ document.getElementById('big').classList.toggle('on',big);document.getElementById('zone').classList.toggle('on',showZone);
+ window.__last={overlap,R,moved};
+}
+function week(){
+ const svg=document.getElementById('week'),cx=160,cy=150,names=['월','화','수','목','금','토','일'];
+ const d=Object.values(DAYS).map(x=>x.rec);
+ const sample=[d[0],d[2],d[3],d[1],d[0],d[3],d[0]];
+ let out='<defs><filter id="wb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter></defs>';
+ sample.forEach((rec,i)=>{const R=40+i*16,today=i===6;
+  const P=t=>[cx+R*Math.cos(ang(t)),cy+R*Math.sin(ang(t))];
+  out+=`<path d="M${cx-R} ${cy} A${R} ${R} 0 0 1 ${cx+R} ${cy}" fill="none" stroke="#c9d6e6" stroke-opacity=".14" stroke-width="1"/>`;
+  const seg=(t1,t2,col,ok)=>{const [x1,y1]=P(t1),[x2,y2]=P(t2);out+=`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${ok?(today?2.6:1.8):1}" stroke-opacity="${ok?(today?1:.75):.35}" stroke-linecap="round"/>`};
+  if(rec.length){seg(START,rec[0][0],C[rec[0][1]],inRhythm(rec[0]));const l=rec[rec.length-1];seg(l[0],END,C[l[1]],inRhythm(l))}
+  for(let k=0;k<rec.length-1;k++){const a=rec[k],b=rec[k+1],ok=inRhythm(a)&&inRhythm(b);const [x1,y1]=P(a[0]),[x2,y2]=P(b[0]);
+   out+=`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${C[b[1]]}" stroke-width="${ok?(today?2.6:1.8):1}" stroke-opacity="${ok?(today?1:.75):.35}" stroke-linecap="round"/>`}
+  rec.forEach(r=>{const [x,y]=P(r[0]);out+=inRhythm(r)?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${today?2.8:2}" fill="${C[r[1]]}"/>`:`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#1c2b46" stroke="${C[r[1]]}" stroke-width="1"/>`});
+  out+=`<text x="${cx-R}" y="${cy+14}" fill="${today?'#edf4f8':'#a6bbcb'}" font-size="9" font-family="SUIT" text-anchor="middle">${names[i]}</text>`;});
+ svg.innerHTML=out;
+}
+const days=document.getElementById('days');
+Object.keys(DAYS).forEach(n=>{const b=document.createElement('button');b.type='button';b.textContent=n;b.onclick=()=>{current=n;draw()};days.appendChild(b)});
+document.getElementById('big').onclick=()=>{big=!big;draw()};
+document.getElementById('zone').onclick=()=>{showZone=!showZone;draw()};
+addEventListener('resize',draw);
+document.fonts.ready.then(()=>{draw();week()});
+</script>
+</body>
+</html>
