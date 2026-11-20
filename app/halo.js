@@ -7,6 +7,8 @@
 // - 글자를 침범하지 않는다: 글자 줄 영역(+12px)을 피해 그릴 칸을 찾고, 그린 뒤 겹침이 있으면 지운다.
 // 계산은 모두 기기 안에서만 한다.
 
+import {prefsOf} from './prefs.js';
+
 export const HALO_COLORS = {body:'#f2b49b', meal:'#8ce4e0', workout:'#b8aaf2'};
 const KINDS = ['body','meal','workout'];
 const LABEL = {body:'몸', meal:'식사', workout:'운동'};
@@ -62,13 +64,18 @@ export function inRhythm(rec, rh){
  return times.some(t=>Math.abs(t-rec.t)<=RHYTHM_WINDOW);
 }
 
-export function haloMessage(recs, rh){
+// tracks: 사용자가 '기록할 것'으로 고른 종류(3.4.0). 고른 것만 채우면 완성.
+export function haloMessage(recs, rh, tracks=KINDS){
+ const want = KINDS.filter(k=>tracks.includes(k));
+ recs = recs.filter(r=>want.includes(r.kind));
  if(!recs.length) return '첫 기록을 남기면 고리에 첫 빛이 맺혀요.';
  const kinds = new Set(recs.map(r=>r.kind));
  const off = recs.filter(r=>!inRhythm(r, rh)).length;
- if(kinds.size===3 && !off) return rh.learning ? '세 가지 모두 기록했어요. 오늘의 헤일로 완성!' : '세 가지 모두, 평소 리듬 그대로. 오늘의 헤일로 완성!';
- if(kinds.size===3) return '세 가지 모두 기록했어요. 시각은 평소와 조금 달랐어요.';
- const miss = KINDS.filter(k=>!kinds.has(k)).map(k=>LABEL[k]).join('·');
+ const all = want.every(k=>kinds.has(k)), word = want.length===3?'세 가지 모두':want.length===2?'두 가지 모두':'오늘 기록';
+ const did = want.length===1 ? '오늘 기록을 남겼어요' : `${word} 기록했어요`;
+ if(all && !off) return rh.learning ? `${did}. 오늘의 헤일로 완성!` : `${want.length===1?'평소 리듬 그대로 기록했어요':word+', 평소 리듬 그대로'}. 오늘의 헤일로 완성!`;
+ if(all) return `${did}. 시각은 평소와 조금 달랐어요.`;
+ const miss = want.filter(k=>!kinds.has(k)).map(k=>LABEL[k]).join('·');
  return `${miss} 기록을 더하면 헤일로가 완성돼요.`;
 }
 
@@ -95,7 +102,9 @@ export function findZone(W, H, rects, pad=14, m=12){
 const f1 = v => v.toFixed(1);
 
 // 순수 함수: 칸(zone)과 기록으로 SVG 내용을 만든다.
-export function haloSVG({zone, recs, rh, now}){
+export function haloSVG({zone, recs, rh, now, tracks=KINDS}){
+ const want = KINDS.filter(k=>tracks.includes(k));
+ recs = recs.filter(r=>want.includes(r.kind));
  const R = Math.min(zone.R, 74);
  const cx = zone.x + zone.w - R - 8, baseY = zone.y + zone.h - 0.62*R - 6;
  const span = Math.max(1, rh.end-rh.start);
@@ -104,7 +113,7 @@ export function haloSVG({zone, recs, rh, now}){
  const arc = (t1, t2, rr=R) => { const [x1,y1]=P(t1,rr), [x2,y2]=P(t2,rr); return `M${f1(x1)} ${f1(y1)}A${f1(rr)} ${f1(rr)} 0 0 1 ${f1(x2)} ${f1(y2)}`; };
  const timed = recs.filter(r=>r.t!=null);
  const kinds = new Set(recs.map(r=>r.kind));
- const done = KINDS.every(k=>kinds.has(k));
+ const done = want.every(k=>kinds.has(k));
  const C = HALO_COLORS;
  const lit = (t1, t2, color, ok, id) => {
   if(u(t2)-u(t1) < 0.002) return '';
@@ -131,14 +140,14 @@ export function haloSVG({zone, recs, rh, now}){
  const [nx, ny] = P(Math.min(now, rh.end));
  g += `<circle cx="${f1(nx)}" cy="${f1(ny)}" r="8" fill="url(#halo-now)"/><circle cx="${f1(nx)}" cy="${f1(ny)}" r="2.2" fill="#fff"/>`;
  const dy = baseY + 0.36*R, gap = 0.42*R;
- KINDS.forEach((k,i)=>{
-  const x = cx + (i-1)*gap, on = kinds.has(k);
-  if(done) g += `<path d="M${f1(x)} ${f1(baseY-R*0.02)}V${f1(dy-5)}" stroke="${C[k]}" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>`;
+ want.forEach((k,i)=>{
+  const x = cx + (i-(want.length-1)/2)*gap, on = kinds.has(k);
+  if(done&&want.length===3) g += `<path d="M${f1(x)} ${f1(baseY-R*0.02)}V${f1(dy-5)}" stroke="${C[k]}" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>`;
   g += on
    ? `<circle cx="${f1(x)}" cy="${f1(dy)}" r="7" fill="${C[k]}" opacity=".25" filter="url(#halo-blur)"/><circle cx="${f1(x)}" cy="${f1(dy)}" r="3.6" fill="${C[k]}"/>`
    : `<circle cx="${f1(x)}" cy="${f1(dy)}" r="3.2" fill="none" stroke="#c9d6e6" stroke-opacity=".45" stroke-width="1.3"/>`;
  });
- if(done){ const mid=(rh.start+rh.end)/2, q=(rh.end-rh.start)*0.125; g += `<path d="${arc(mid-q, mid+q, R*0.5)}" fill="none" stroke="#b8aaf2" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>`; }
+ if(done&&want.length===3){ const mid=(rh.start+rh.end)/2, q=(rh.end-rh.start)*0.125; g += `<path d="${arc(mid-q, mid+q, R*0.5)}" fill="none" stroke="#b8aaf2" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>`; }
  const fmt = t => `${pad2(Math.floor(t))}:${pad2(Math.round((t%1)*60)%60)}`;
  const [sx,sy] = P(rh.start), [ex,ey] = P(rh.end);
  g += `<text x="${f1(sx)}" y="${f1(sy+13)}" fill="#c9d6e6" fill-opacity=".7" font-size="9" text-anchor="middle">${fmt(rh.start)}</text><text x="${f1(ex)}" y="${f1(ey+13)}" fill="#c9d6e6" fill-opacity=".7" font-size="9" text-anchor="middle">${fmt(rh.end===24?24:rh.end)}</text>`;
@@ -166,9 +175,10 @@ export function mountHalo(hero, db, date, now=new Date()){
   if(typeof ResizeObserver==='function') observer = new ResizeObserver(entries=>{ for(const e of entries){ const w=Math.round(e.contentRect.width); if(w!==lastWidth){ lastWidth=w; remountSoon(60); } } });
  }
  if(observer && observed!==hero){ observer.disconnect(); hero.querySelectorAll('.timeline-date,h2,.hero-msg').forEach(el=>observer.observe(el)); observed=hero; lastWidth=0; }
- const recs = dayRecords(db, date), rh = rhythmFor(db, date), nh = nowHour(date, now);
+ const recs = dayRecords(db, date), rh = rhythmFor(db, date), nh = nowHour(date, now), pf = prefsOf(db);
  hero.style.paddingBottom = '';
  svg.innerHTML = '';
+ if(!pf.halo){ hero.dataset.halo='off'; return {hidden:true, overlap:0}; }
  const measure = () => {
   const hb = hero.getBoundingClientRect(), s = hb.width/(hero.clientWidth||hb.width||1);
   const rects = [];
@@ -185,7 +195,7 @@ export function mountHalo(hero, db, date, now=new Date()){
  }
  if(!zone || zone.R<24){ hero.style.paddingBottom=''; hero.dataset.halo='hidden'; return {hidden:true, overlap:0}; }
  svg.setAttribute('viewBox', `0 0 ${hero.clientWidth} ${hero.clientHeight}`);
- const out = haloSVG({zone, recs, rh, now:nh});
+ const out = haloSVG({zone, recs, rh, now:nh, tracks:pf.tracks});
  svg.innerHTML = out.svg;
  // 안전장치: 그린 그림과 글자 줄이 조금이라도 겹치면 지운다.
  const {rects:after, s} = measure(), hb = hero.getBoundingClientRect(), ab = svg.querySelector('.halo-draw').getBoundingClientRect();
