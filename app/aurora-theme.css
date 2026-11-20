@@ -399,3 +399,20 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .pf-more small{font-size:12px;font-weight:400;color:#a9bbce}
 @media(max-width:420px){.qe-meta.two{grid-template-columns:1fr}.qe-meta.two label{grid-column:auto}}
 .qe-actions .button{flex:1 1 auto}
+/* 3.11.0 홈 요약 3칸: 같은 크기, 식단은 작은 막대, 운동은 작은 부위 그림 */
+button.home-stat{display:flex;flex-direction:column;align-items:stretch;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}
+button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
+.home-stat strong{margin-bottom:6px}
+.mini-bars{display:flex;flex-direction:column;gap:4px;margin:2px 0 6px}
+.mini-row{display:grid;grid-template-columns:12px minmax(0,1fr);align-items:center;gap:4px}
+.mini-row i{font-style:normal;font-size:10px;font-weight:700;color:var(--c);line-height:1}
+.mini-row.kcal{--c:var(--nutrient-kcal,#66d9ef)}.mini-row.carbs{--c:var(--nutrient-carbs,#ead96b)}.mini-row.protein{--c:var(--nutrient-protein,#77d7b0)}.mini-row.fat{--c:var(--nutrient-fat,#ff8396)}
+.mini-bar{position:relative;height:5px;border-radius:999px;background:#13203a;overflow:hidden}
+.mini-bar b{position:absolute;left:0;top:0;bottom:0;background:var(--c);border-radius:999px}
+.mini-bar s{position:absolute;top:0;bottom:0;background:#f2b49b}
+.mini-bar u{position:absolute;top:-1px;bottom:-1px;width:2px;margin-left:-1px;background:#edf4f8}
+.home-stat p b{font-weight:700}.home-stat p b.over{color:#f2b49b}.home-stat p b.under{color:#9cc8ed}.home-stat p b.met{color:#8ce4e0}
+.mini-atlas{display:flex;justify-content:center;gap:2px;margin:0 0 4px;height:62px}
+.mini-atlas svg{height:62px;width:auto;flex:none}
+.mini-atlas .anatomy-map path[stroke-dasharray]{display:none}
+@media(max-width:420px){.mini-atlas,.mini-atlas svg{height:54px}}

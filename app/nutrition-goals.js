@@ -43,3 +43,12 @@ export function macroGoalsHTML(day={},settings={},{meals=0}={}){
  }).join('');
  return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num(day.calories)}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${head}</div><div class="macro-rows">${rows}</div><p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
 }
+
+// 3.11.0 홈 3칸용 작은 식단 카드: 다른 칸과 같은 크기, 막대만 작게.
+export function macroMiniHTML(day={},settings={},{meals=0}={}){
+ const k=macroStatus(day.calories,settings.calorieGoal);
+ const line=k.state==='none'?`${meals}번의 식사`:k.state==='over'?`<b class="over">+${num(k.diff)} 초과</b>`:k.state==='under'?`<b class="under">${num(-k.diff)} 남음</b>`:'<b class="met">✓ 달성</b>';
+ const bars=MACRO_ROWS.map(([cls,label,key,gk,unit])=>{const a=Number(day[key])||0,g=Number(settings[gk])||0,s=macroStatus(a,g),fill=Math.min(a,g||a)/s.scale*100,over=s.state==='over'?(a-g)/s.scale*100:0,mark=g?g/s.scale*100:0,d=unit==='g'?0:0;
+  return `<div class="mini-row ${cls} ${s.state}" title="${label} ${num(a)}${unit} / ${g?num(g)+unit:'목표 없음'}${s.state==='over'?` · +${num(s.diff)}${unit} 초과`:s.state==='under'?` · ${num(-s.diff)}${unit} 부족`:''}"><i>${label[0]}</i><span class="mini-bar"><b style="width:${fill.toFixed(1)}%"></b>${over?`<s style="left:${mark.toFixed(1)}%;width:${over.toFixed(1)}%"></s>`:''}${g?`<u style="left:${mark.toFixed(1)}%"></u>`:''}</span></div>`}).join('');
+ return `<button type="button" class="home-stat home-stat-diet" data-page="food" aria-label="식단 ${num(day.calories)}kcal, 자세히 보기"><small>식단</small><strong>${num(day.calories)}<span>kcal</span></strong><div class="mini-bars" aria-hidden="true">${bars}</div><p>${line}</p></button>`;
+}
