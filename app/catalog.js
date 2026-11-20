@@ -72,7 +72,7 @@ const sourceUrls={
  '바벨 컬':'https://www.nasm.org/resource-center/exercise-library/barbell-bicep-curl'
 };
 const BASE=entries.map(x=>{
- const equipment=equipmentOverrides[x.name]||(/덤벨/.test(x.name)?'덤벨':/머신|프레스|풀다운|케이블|레그 컬|레그 익스텐션|스텝밀/.test(x.name)&&! /벤치|덤벨|오버헤드|클린/.test(x.name)?'머신':/푸시업|풀업|딥스|플랭크|크런치|버피/.test(x.name)?'맨몸':x.kind==='cardio'?'유산소':'프리웨이트');
+ const equipment=equipmentOverrides[x.name]||(/덤벨/.test(x.name)?'덤벨':/케이블|페이스 풀/.test(x.name)?'케이블':/머신|프레스|풀다운|케이블|레그 컬|레그 익스텐션|스텝밀/.test(x.name)&&! /벤치|덤벨|오버헤드|클린/.test(x.name)?'머신':/푸시업|풀업|딥스|플랭크|크런치|버피/.test(x.name)?'맨몸':x.kind==='cardio'?'유산소':'프리웨이트');
  const dumbbell=equipment==='덤벨',hands=oneHand.has(x.name)?1:dumbbell?2:0;
  return {...x,id:'exercise:'+x.name,aliases:aliases[x.name]||[],equipment,
   weightBasis:dumbbell?'per-hand':'total',handCount:hands,repBasis:x.name==='불가리안 스플릿 스쿼트'?'per-side':'total',defaultWeight:0,

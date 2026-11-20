@@ -4,13 +4,16 @@
 // 스택에 적힌 숫자는 도르래·캠 비율 때문에 실제 저항과 다를 수 있어, 다른 제조사 머신끼리 숫자 비교는 대략적이다.
 // 근거: research_notes/gym_machines/machines.md (Life Fitness·Cybex·Technogym·Matrix·Precor·Hammer Strength 사양, 2026-11-20 조사)
 import {EXERCISE_CATALOG} from './catalog.js';
+import {BRAND_MODELS} from './machine-brands.js';
 
 const M = (slug, name, exercise, load, sided='both', aliases=[], note='') => ({id:`gm:${slug}`, generic:true, name, exercise, load, sided, aliases, note});
-export const GENERIC_MACHINES = Object.freeze([
+export const GENERIC_MACHINES = ([
  // 하체
  M('leg-press-45','45° 레그 프레스 (원판식)','레그 프레스','plate','both',['인클라인 레그 프레스'],'썰매 자체 무게는 기계마다 달라요(대략 34~57kg). 끼운 원판 무게만 적으면 비교하기 쉬워요.'),
  M('leg-press-seated','시티드 레그 프레스 (스택식)','수평 레그 프레스','stack','both',['수평 레그 프레스 머신']),
  M('leg-press-iso','아이소래터럴 레그 프레스','레그 프레스','plate','iso',['해머 레그 프레스']),
+ M('leg-press-vertical','버티컬 레그 프레스','버티컬 레그 프레스','plate','both'),
+ M('power-squat','파워 스쿼트 머신 (레버식)','파워 스쿼트','plate','both',['레버 스쿼트','슈퍼 스쿼트']),
  M('hack-squat','핵 스쿼트 머신','핵 스쿼트','plate','both',[],'썰매 무게는 기계마다 달라요(대략 27~61kg). 원판 무게만 적기를 권해요.'),
  M('v-squat','브이·펜듈럼 스쿼트','브이 스쿼트','plate','both',['펜듈럼 스쿼트 머신'],'시작 저항은 기계마다 달라요(대략 21~50kg). 원판 무게만 적기를 권해요.'),
  M('belt-squat','벨트 스쿼트 머신','벨트 스쿼트','plate','both'),
@@ -20,16 +23,21 @@ export const GENERIC_MACHINES = Object.freeze([
  M('leg-curl-seated','시티드 레그 컬','시티드 레그 컬','stack','both'),
  M('leg-curl-lying','라잉 레그 컬','라잉 레그 컬','stack','both',['엎드려 레그 컬']),
  M('leg-curl-standing','스탠딩 레그 컬','스탠딩 레그 컬','stack','single'),
+ M('leg-curl-kneeling','니링 레그 컬 (무릎 꿇는 방식)','스탠딩 레그 컬','plate','single',['니링 레그 컬']),
  M('hip-abduction','힙 어브덕션 (아웃타이)','힙 어브덕션','stack','both'),
  M('hip-adduction','힙 어덕션 (이너타이)','힙 어덕션','stack','both'),
  M('hip-thrust','힙 쓰러스트 머신','힙 쓰러스트 머신','plate','both',['글루트 드라이브']),
  M('glute-kickback','글루트 킥백 머신','글루트 킥백 머신','stack','single'),
+ M('multi-hip','멀티 힙','멀티 힙','stack','single'),
+ M('reverse-hyper','리버스 하이퍼','리버스 하이퍼','plate','both'),
+ M('ghd','글루트 햄 디벨로퍼 (GHD)','글루트 햄 레이즈','body','both'),
  M('calf-standing','스탠딩 카프 레이즈 머신','스탠딩 카프 레이즈 머신','stack','both'),
  M('calf-seated','시티드 카프 레이즈 머신','시티드 카프 레이즈','plate','both'),
  M('donkey-calf','동키 카프 레이즈 머신','동키 카프 레이즈','plate','both'),
  // 가슴
  M('chest-press','체스트 프레스 (스택식)','체스트 프레스','stack','both'),
  M('chest-press-iso','아이소래터럴 체스트 프레스 (원판식)','아이소래터럴 체스트 프레스','plate','iso',['해머 체스트 프레스']),
+ M('chest-press-wide','와이드 체스트 프레스 (원판식)','아이소래터럴 체스트 프레스','plate','iso'),
  M('incline-press','인클라인 체스트 프레스','인클라인 체스트 프레스 머신','stack','both'),
  M('incline-press-iso','아이소래터럴 인클라인 프레스 (원판식)','인클라인 체스트 프레스 머신','plate','iso'),
  M('decline-press','디클라인 체스트 프레스','디클라인 체스트 프레스 머신','plate','iso'),
@@ -42,16 +50,19 @@ export const GENERIC_MACHINES = Object.freeze([
  M('seated-row','시티드 케이블 로우','시티드 케이블 로우','cable','both',['케이블 로우']),
  M('row-machine','시티드 로우 머신 (가슴 받침)','시티드 로우 머신','stack','both'),
  M('row-iso','아이소래터럴 로우 (원판식)','아이소래터럴 로우','plate','iso',['해머 로우']),
+ M('low-row','로우 로우 (원판식)','아이소래터럴 로우','plate','iso',['해머 로우 로우']),
  M('high-row','하이 로우 머신','하이 로우 머신','plate','iso'),
  M('t-bar-row','T바 로우 (가슴 받침)','체스트 서포티드 T바 로우','plate','both',[],'손잡이·레버 자체 무게(대략 18kg)는 빼고 원판만 적어요.'),
  M('pullup-assist','어시스트 풀업 머신','어시스트 풀업','body','both',[],'보조 무게가 클수록 쉬워요.'),
  M('back-extension','백 익스텐션 (로만체어)','백 익스텐션','body','both',['45도 백 익스텐션']),
+ M('lower-back','로어 백 (시티드 백 익스텐션)','시티드 백 익스텐션 머신','stack','both'),
  M('pullover','풀오버 머신','스트레이트 암 풀다운','stack','both'),
  // 어깨
  M('shoulder-press','숄더 프레스 (스택식)','숄더 프레스 머신','stack','both'),
  M('shoulder-press-iso','아이소래터럴 숄더 프레스 (원판식)','숄더 프레스 머신','plate','iso'),
  M('lateral-raise','레터럴 레이즈 머신','머신 레터럴 레이즈','stack','both'),
  M('rear-delt','리어 델트 (리버스 펙덱)','리버스 펙덱','stack','both'),
+ M('shrug','슈러그 머신','머신 슈러그','plate','both'),
  M('cable-station','케이블 스테이션 (단일)','케이블 레터럴 레이즈','cable','single'),
  // 팔
  M('preacher-curl','프리처 컬 머신','머신 프리처 컬','stack','both',['바이셉스 컬 머신']),
@@ -64,15 +75,62 @@ export const GENERIC_MACHINES = Object.freeze([
  M('captains-chair','캡틴스 체어 (니 레이즈)','캡틴스 체어 니 레이즈','body','both'),
 ]);
 
+// 머신별 근육 부하 [주동근, 보조근]. 근거: research_notes/gym_machines/machines.md 1절(ExRx·제조사 설명). 마이로그 15구역으로 단순화.
+// 케이블·스미스처럼 동작에 따라 달라지는 머신은 비워 두고 종목의 타깃을 쓴다.
+const T = {
+ 'leg-press-45':[['quads','glutes'],['hamstrings','adductors']], 'leg-press-seated':[['quads','glutes'],['hamstrings']], 'leg-press-iso':[['quads','glutes'],['hamstrings','adductors']], 'leg-press-vertical':[['quads','glutes'],['hamstrings']],
+ 'power-squat':[['quads','glutes'],['hamstrings','adductors']], 'hack-squat':[['quads'],['glutes','adductors']], 'v-squat':[['quads','glutes'],['adductors']], 'belt-squat':[['quads','glutes'],['adductors']],
+ 'leg-extension':[['quads'],[]], 'leg-extension-iso':[['quads'],[]], 'leg-curl-seated':[['hamstrings'],['calves']], 'leg-curl-lying':[['hamstrings'],['calves','glutes']], 'leg-curl-standing':[['hamstrings'],['calves']], 'leg-curl-kneeling':[['hamstrings'],['glutes','calves']],
+ 'hip-abduction':[['glutes'],[]], 'hip-adduction':[['adductors'],[]], 'hip-thrust':[['glutes'],['hamstrings','adductors']], 'glute-kickback':[['glutes'],['hamstrings']], 'multi-hip':[['glutes','adductors'],['abs']],
+ 'reverse-hyper':[['glutes','hamstrings'],['erectors']], 'ghd':[['hamstrings','glutes'],['erectors','calves']], 'calf-standing':[['calves'],[]], 'calf-seated':[['calves'],[]], 'donkey-calf':[['calves'],[]],
+ 'chest-press':[['chest'],['shoulders','triceps']], 'chest-press-iso':[['chest'],['shoulders','triceps']], 'chest-press-wide':[['chest'],['shoulders']], 'incline-press':[['chest','shoulders'],['triceps']], 'incline-press-iso':[['chest','shoulders'],['triceps']],
+ 'decline-press':[['chest'],['triceps','shoulders']], 'pec-deck':[['chest'],['shoulders']], 'dip-assist':[['triceps','chest'],['shoulders']],
+ 'lat-pulldown':[['back'],['biceps','shoulders']], 'lat-pulldown-iso':[['back'],['biceps']], 'seated-row':[['back'],['biceps','traps']], 'row-machine':[['back','traps'],['biceps','shoulders']], 'row-iso':[['back'],['biceps','traps']],
+ 'low-row':[['back'],['biceps']], 'high-row':[['back'],['biceps','shoulders']], 't-bar-row':[['back'],['biceps','erectors']], 'pullup-assist':[['back'],['biceps']], 'back-extension':[['erectors','glutes'],['hamstrings']],
+ 'lower-back':[['erectors'],['glutes']], 'pullover':[['back'],['chest','triceps']], 'shoulder-press':[['shoulders'],['triceps']], 'shoulder-press-iso':[['shoulders'],['triceps']], 'lateral-raise':[['shoulders'],['traps']],
+ 'rear-delt':[['shoulders'],['back','traps']], 'shrug':[['traps'],['forearms']], 'preacher-curl':[['biceps'],['forearms']], 'tricep-ext':[['triceps'],[]], 'seated-dip':[['triceps'],['chest']], 'cable-pushdown':[['triceps'],[]],
+ 'ab-crunch':[['abs'],['obliques']], 'torso-rotation':[['obliques'],['abs']], 'captains-chair':[['abs'],['obliques']],
+};
+for(const m of GENERIC_MACHINES){ const t = T[m.id.slice(3)]; if(t){ m.primaryMuscleIds = t[0]; m.secondaryMuscleIds = t[1]; } }
+GENERIC_MACHINES.forEach(Object.freeze); Object.freeze(GENERIC_MACHINES);
 const byId = new Map(GENERIC_MACHINES.map(m => [m.id, m]));
-export const genericMachine = id => byId.get(id) || null;
+// 제조사 모델은 연결된 머신 종류의 방식·좌우·근육을 물려받는다.
+export const BUILTIN_BRANDS = Object.freeze(BRAND_MODELS.filter(b => byId.has(b.baseId)).map(b => { const g = byId.get(b.baseId); return Object.freeze({...b, name:`${b.manufacturer} ${b.model}`, exercise:g.exercise, load:g.load, sided:g.sided, note:g.note, primaryMuscleIds:g.primaryMuscleIds, secondaryMuscleIds:g.secondaryMuscleIds}); }));
+const brandById = new Map(BUILTIN_BRANDS.map(b => [b.id, b]));
+export const brandsOf = genericId => BUILTIN_BRANDS.filter(b => b.baseId===genericId);
+// 같은 머신으로 하는 다른 종목들(3.14.1 전수 점검). 케이블 운동은 듀얼 케이블·단일 스테이션 둘 다 가능.
+const CABLE = ['cable-crossover','cable-station'];
+const ALSO = {
+ '레그 프레스':['leg-press-seated','leg-press-vertical'], '체스트 프레스':['chest-press-iso','chest-press-wide'], '싱글 레그 프레스':['leg-press-45','leg-press-seated','leg-press-iso'], '레그 프레스 카프 레이즈':['leg-press-45','leg-press-seated'],
+ '레그 컬':['leg-curl-seated','leg-curl-lying','leg-curl-standing','leg-curl-kneeling'], '카프 레이즈':['calf-standing','calf-seated','donkey-calf','smith'],
+ '랫풀다운':['lat-pulldown-iso'], '클로즈그립 랫풀다운':['lat-pulldown'], '언더그립 랫풀다운':['lat-pulldown'], '원암 케이블 랫풀다운':['lat-pulldown','cable-station'],
+ '원암 케이블 로우':['seated-row','cable-station'], '시티드 케이블 로우':['cable-station'],
+ '케이블 플라이':['cable-crossover'], '로우 투 하이 케이블 플라이':['cable-crossover'], '케이블 체스트 프레스':['cable-crossover'],
+ '케이블 크런치':CABLE, '케이블 킥백':CABLE, '케이블 힙 어브덕션':CABLE, '케이블 리어 델트 플라이':['cable-crossover','rear-delt'], '케이블 프론트 레이즈':CABLE,
+ '케이블 컬':CABLE, '로프 푸시다운':['cable-pushdown','cable-station'], '원암 케이블 푸시다운':['cable-pushdown','cable-station'], '케이블 푸시다운':['cable-station'],
+ '케이블 오버헤드 익스텐션':CABLE, '케이블 우드찹':CABLE, '팔로프 프레스':CABLE, '페이스 풀':CABLE, '케이블 레터럴 레이즈':['cable-crossover'],
+ '스미스 벤치프레스':['smith'], '스미스 인클라인 프레스':['smith'], '스미스 런지':['smith'], '스미스 숄더 프레스':['smith'],
+};
+const MACHINE_ONLY = new Set(['머신','케이블','스미스']);
+// 머신 없이는 할 수 없는 종목(레그 프레스, 케이블 운동, 스미스 운동 등)
+export const needsMachine = ex => !!ex && MACHINE_ONLY.has(ex.equipment);
+// 일반 머신·앱 기본 제조사 모델을 ID로 찾는다.
+export const genericMachine = id => byId.get(id) || brandById.get(id) || null;
 const exId = name => EXERCISE_CATALOG.find(x => x.name===name)?.id || '';
 // 종목에 맞는 일반 머신(종목 이름·같은 부위 머신 계열)
 export function genericMachinesFor(exerciseId){
  const ex = EXERCISE_CATALOG.find(x => x.id===exerciseId); if(!ex) return [];
- return GENERIC_MACHINES.filter(m => exId(m.exercise)===exerciseId || (ex.aliases||[]).includes(m.exercise));
+ const also = ALSO[ex.name] || [];
+ return GENERIC_MACHINES.filter(m => exId(m.exercise)===exerciseId || (ex.aliases||[]).includes(m.exercise) || also.includes(m.id.slice(3)));
 }
-export const machineExerciseId = m => m?.generic ? exId(m.exercise) : (m?.exerciseId||'');
+export const machineExerciseId = m => m?.generic || m?.builtin ? exId(m.exercise) : (m?.exerciseId||'');
+// 머신을 고르면 근육 부하를 앱이 정한다: 머신의 주동근이 종목의 주동근과 겹치면 머신 값, 다른 동작(예: 레그 프레스로 카프 레이즈)이면 종목 값.
+export function machineTargets(machine, exercise){
+ const m = machine?.baseId && !machine.primaryMuscleIds ? byId.get(machine.baseId) : machine;
+ const ep = exercise?.primaryMuscleIds || [];
+ if(m?.primaryMuscleIds?.length && (!ep.length || m.primaryMuscleIds.some(x => ep.includes(x)))) return {primaryMuscleIds:[...m.primaryMuscleIds], secondaryMuscleIds:m.secondaryMuscleIds.filter(x => !m.primaryMuscleIds.includes(x))};
+ return ep.length ? {primaryMuscleIds:[...ep], secondaryMuscleIds:[...(exercise.secondaryMuscleIds||[])]} : null;
+}
 
 // 무게 단계: 단위와 방식에 맞춰 ± 버튼으로 쓴다. 원판식은 양쪽에 한 장씩 끼우는 기준(×2)으로 보여 준다.
 export function weightSteps(load, unit){

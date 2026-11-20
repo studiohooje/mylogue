@@ -23,7 +23,7 @@ import {scaleNutrition,recentFoods,upsertFoodPreset} from './nutrition.js';
 import {goalSettingsHTML,saveGoalSettings} from './nutrition-goals.js';
 import {buildReport,reportHTML,drawShareCard} from './analysis-report.js';
 import {foodSuggestHTML,exerciseSuggestHTML} from './suggest-ui.js';
-import {otherUnit,brandModelId,gymMachineId,genericMachine} from './machines-catalog.js';
+import {otherUnit,brandModelId,gymMachineId,genericMachine,machineTargets} from './machines-catalog.js';
 import {quickMealState,quickMealHTML as qmHTML,readQuickMeal,applyQuickMeal,stepFor,quickWorkoutState,quickWorkoutHTML as qwHTML,readQuickWorkout,applyQuickWorkout} from './quick-edit.js';
 import {profileOf,avatarHTML,newProfileEdit,profileEditHTML,applyProfile,shrinkPhoto} from './profile.js';
 import {newGoalWizard,goalWizardHTML,applyGoalWizard,calorieOptions,presetOrder,WIZ_STEPS,estimate as estimateEnergy} from './nutrition-plan.js';
@@ -364,8 +364,9 @@ function quickClick(t){
   const s=quickWorkout;
   if(t.dataset.qPart){s.part=t.dataset.qPart;render();return true}
   if(t.dataset.qTitle){s.title=t.dataset.qTitle;render();return true}
-  if(t.dataset.sgEx){s.sgEx=s.sgEx===t.dataset.sgEx?null:t.dataset.sgEx;render();return true}
-  if(t.dataset.sgPick!==undefined){const item=allExercises().find(x=>(x.id||x.name)===t.dataset.sgPick);if(!item)return true;s.exerciseId=item.id||item.name;s.machineId=t.dataset.sgMachine||'';const last=quickPreviousSet(s.exerciseId,s.machineId);s.weight=last?.weight??0;s.reps=last?.reps??10;s.unit=last?.unit||db.machines.find(m=>m.id===s.machineId)?.unit||'kg';s.editing=false;s.sgEx=null;render();return true}
+  if(t.dataset.sgEx){s.sgEx=s.sgEx===t.dataset.sgEx?null:t.dataset.sgEx;s.sgBrand=null;render();return true}
+  if(t.dataset.sgBrand){s.sgBrand=s.sgBrand===t.dataset.sgBrand?null:t.dataset.sgBrand;render();return true}
+  if(t.dataset.sgPick!==undefined){const item=allExercises().find(x=>(x.id||x.name)===t.dataset.sgPick);if(!item)return true;s.exerciseId=item.id||item.name;s.machineId=t.dataset.sgMachine||'';const last=quickPreviousSet(s.exerciseId,s.machineId);s.weight=last?.weight??0;s.reps=last?.reps??10;s.unit=last?.unit||db.machines.find(m=>m.id===s.machineId)?.unit||genericMachine(s.machineId)?.unit||'kg';s.editing=false;s.sgEx=null;s.sgBrand=null;render();return true}
   if(t.dataset.qEx){const item=allExercises().find(x=>(x.id||x.name)===t.dataset.qEx);if(!item)return true;s.exerciseId=item.id||item.name;s.machineId=quickMachineFor(s.exerciseId,s.gymName)?.id||'';const last=quickPreviousSet(s.exerciseId,s.machineId);s.weight=last?.weight??0;s.reps=last?.reps??10;s.unit=last?.unit||db.machines.find(m=>m.id===s.machineId)?.unit||'kg';s.editing=false;render();return true}
   if(t.id==='q-new-workout'){quickWorkout=emptyQuickWorkout(today(),db.settings.gyms||[]);render();return true}
   if(t.id==='q-new-machine'){machineIndex=null;machineEdit={exerciseId:s.exerciseId,location:s.gymName};machinePhoto='';profileReturn='quick-workout';modal='machine';render();return true}
@@ -584,7 +585,7 @@ async function enhancedClick(t){
  return false;
 }
 function enhancedChange(t){
- if(t.dataset.ex==='machineId'){const ex=workDraft[Number(t.closest('[data-ei]').dataset.ei)];ex.machineId=t.value||null;const machine=db.machines.find(m=>m.id===ex.machineId);if(genericMachine(ex.machineId)?.sided==='iso'){ex.weightBasis='per-hand';ex.handCount=2}for(const set of ex.sets)if(Number(set.weight)===0)set.unit=machine?.unit||'kg';render();return true}
+ if(t.dataset.ex==='machineId'){const ex=workDraft[Number(t.closest('[data-ei]').dataset.ei)];ex.machineId=t.value||null;const machine=db.machines.find(m=>m.id===ex.machineId)||genericMachine(ex.machineId);{const def=allExercises().find(x=>x.id===ex.exerciseId),mt=machineTargets(machine,def||ex);if(mt){ex.primaryMuscleIds=mt.primaryMuscleIds;ex.secondaryMuscleIds=mt.secondaryMuscleIds}}if(genericMachine(ex.machineId)?.sided==='iso'){ex.weightBasis='per-hand';ex.handCount=2}for(const set of ex.sets)if(Number(set.weight)===0)set.unit=machine?.unit||'kg';render();return true}
  if(t.dataset.set==='unit'){const set=workDraft[Number(t.closest('[data-ei]').dataset.ei)].sets[Number(t.closest('[data-si]').dataset.si)];Object.assign(set,convertSetUnit(set,t.value));render();return true}
  if(t.dataset.set==='completed'){const set=workDraft[Number(t.closest('[data-ei]').dataset.ei)].sets[Number(t.closest('[data-si]').dataset.si)];set.completed=t.checked;if(t.checked&&!set.completedAt){set.completedAt=new Date().toLocaleString('sv-SE').replace(' ','T').slice(0,16);const field=t.closest('[data-si]').querySelector('[data-set="completedAt"]');if(field)field.value=set.completedAt}if(!t.checked)set.completedAt='';return true}
  if(t.dataset.ex==='name'){const ex=workDraft[Number(t.closest('[data-ei]').dataset.ei)],match=allExercises().find(x=>x.name===t.value);ex.exerciseId=match?.id||null;ex.primaryMuscleIds=match?.primaryMuscleIds||[];ex.secondaryMuscleIds=match?.secondaryMuscleIds||[];ex.weightBasis=match?.weightBasis||'total';ex.handCount=match?.handCount||0;ex.repBasis=match?.repBasis||'total'}

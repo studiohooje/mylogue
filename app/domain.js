@@ -69,7 +69,7 @@ export function cleanMachine(raw){
  const name=String(raw.name||raw.model||'이름 없는 머신').trim();
  const unit=raw.unit||'kg';if(!['kg','lb'].includes(unit))throw Error('머신 단위를 확인해 주세요.');
  const photoDataUrl=String(raw.photoDataUrl||'');if(photoDataUrl&&(photoDataUrl.length>2*1024*1024||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(photoDataUrl)))throw Error('머신 사진은 2 MB 이하의 PNG·JPEG·WebP로 선택해 주세요.');
- return {id:raw.id||uid(),name,aliases:cleanIds(raw.aliases).map(x=>x.trim()).filter(x=>x&&x!==name),photoDataUrl,exerciseId:String(raw.exerciseId||''),manufacturer:String(raw.manufacturer||'모름').trim(),model:String(raw.model||'모름').trim(),location:String(raw.location||'').trim(),resistance:String(raw.resistance||'모름').trim(),unit};
+ return {id:raw.id||uid(),name,aliases:cleanIds(raw.aliases).map(x=>x.trim()).filter(x=>x&&x!==name),photoDataUrl,exerciseId:String(raw.exerciseId||''),manufacturer:String(raw.manufacturer||'모름').trim(),model:String(raw.model||'모름').trim(),location:String(raw.location||'').trim(),resistance:String(raw.resistance||'모름').trim(),unit,baseId:/^gm:[a-z0-9-]{1,40}$/.test(String(raw.baseId||''))?String(raw.baseId):''};
 }
 // 3.12.0 타깃: 사용자가 정한 값 → 도감 → 이름 규칙 → 부위. 비어 있지 않게 채운다(유산소 제외).
 function exerciseTargets(raw,name,known){const p=cleanIds(raw.primaryMuscleIds),s=cleanIds(raw.secondaryMuscleIds);if(p.length)return {primaryMuscleIds:p,secondaryMuscleIds:s};if(known&&known.primaryMuscleIds?.length)return {primaryMuscleIds:cleanIds(known.primaryMuscleIds),secondaryMuscleIds:cleanIds(known.secondaryMuscleIds)};if(raw.kind==='cardio')return {primaryMuscleIds:[],secondaryMuscleIds:[]};const t=inferTargets(name,String(raw.part||''));return {primaryMuscleIds:t.primary,secondaryMuscleIds:t.secondary}}

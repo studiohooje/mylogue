@@ -87,6 +87,11 @@ export const MORE_EXERCISES = [
  ['동키 카프 레이즈','하체','머신',['calves'],[]],
  ['싱글 레그 레그 익스텐션','하체','머신',['quads'],[],{u:1}],
  ['고블릿 리버스 런지','하체','덤벨',['quads','glutes'],['abs'],{u:1}],
+ ['버티컬 레그 프레스','하체','머신',['quads','glutes'],['hamstrings']],
+ ['파워 스쿼트','하체','머신',['quads','glutes'],['hamstrings','adductors'],{aliases:['레버 스쿼트','슈퍼 스쿼트','스쿼트 프레스']}],
+ ['멀티 힙','하체','머신',['glutes','adductors'],['abs'],{u:1,aliases:['멀티힙']}],
+ ['리버스 하이퍼','하체','머신',['glutes','hamstrings'],['erectors'],{aliases:['리버스 하이퍼익스텐션']}],
+ ['글루트 햄 레이즈','하체','머신',['hamstrings','glutes'],['erectors','calves'],{aliases:['GHD','GHR','글루트햄레이즈']}],
  // 어깨
  ['아놀드 프레스','어깨','덤벨',['shoulders'],['triceps']],
  ['숄더 프레스 머신','어깨','머신',['shoulders'],['triceps'],{aliases:['머신 숄더 프레스','오버헤드 프레스 머신']}],
@@ -103,6 +108,7 @@ export const MORE_EXERCISES = [
  ['푸시 프레스','어깨','바벨',['shoulders','triceps'],['quads','glutes']],
  ['파이크 푸시업','어깨','맨몸',['shoulders','triceps'],['chest']],
  ['Y 레이즈','어깨','덤벨',['shoulders','traps'],[]],
+ ['머신 슈러그','어깨','머신',['traps'],['forearms'],{aliases:['슈러그 머신']}],
  // 팔
  ['EZ바 컬','팔','EZ바',['biceps'],['forearms'],{aliases:['이지바 컬']}],
  ['프리처 컬','팔','EZ바',['biceps'],[]],
@@ -124,6 +130,7 @@ export const MORE_EXERCISES = [
  ['다이아몬드 푸시업','팔','맨몸',['triceps','chest'],['shoulders']],
  ['JM 프레스','팔','바벨',['triceps'],['chest']],
  ['EZ바 스컬 크러셔','팔','EZ바',['triceps'],[]],
+ ['시티드 백 익스텐션 머신','등','머신',['erectors'],['glutes'],{aliases:['로어 백','로우어 백 머신','허리 머신']}],
  // 복근
  ['행잉 레그 레이즈','복근','맨몸',['abs'],['obliques','forearms']],
  ['캡틴스 체어 니 레이즈','복근','맨몸',['abs'],['obliques'],{aliases:['니 레이즈','레그 레이즈 머신']}],
