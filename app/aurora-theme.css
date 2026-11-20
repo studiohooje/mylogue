@@ -119,3 +119,35 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .after-del{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:10px;border:1px solid #33506d;background:#16223a;color:#c9d6e6;font-size:18px;cursor:pointer}
 @media(max-width:380px){.after-row{grid-template-columns:1fr 1fr}.pref-seg button{font-size:13px;padding:0 8px}}
 #simple-meal-form .chip-row{flex-wrap:wrap;overflow:visible}
+
+/* 3.5.0 계획 → 안내 운동 모드 */
+.guide-run{display:flex;flex-direction:column;gap:14px;text-align:center}
+.guide-head{display:flex;flex-direction:column;gap:4px}
+.guide-ex{margin:0;font-size:26px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:#edf4f8;word-break:keep-all}
+.guide-sub{margin:0;font-size:14px;color:#a6bbcb;font-variant-numeric:tabular-nums}
+.guide-target{display:flex;align-items:baseline;justify-content:center;gap:14px;padding:22px 12px;border-radius:20px;background:#1c2b46;border:1px solid #33506d}
+.guide-target strong{font-size:56px;line-height:1;font-variant-numeric:tabular-nums;color:#edf4f8}
+.guide-target small{font-size:18px;margin-left:4px;color:#a6bbcb;font-weight:600}
+.guide-target span{font-size:28px;color:#5d7386}
+.guide-done-btn{min-height:64px;font-size:20px;border-radius:18px}
+.guide-ring{width:min(240px,64vw);aspect-ratio:1;margin:4px auto;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(#8ce4e0 calc(var(--p,0)*360deg),#22345a 0)}
+.guide-ring::after{content:'';position:absolute;inset:14px;border-radius:50%;background:#142538}
+.guide-ring>div{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.guide-ring strong{font-size:56px;line-height:1;font-variant-numeric:tabular-nums;color:#edf4f8}
+.guide-ring span{font-size:14px;color:#a6bbcb}
+.guide-next{margin:0;font-size:15px;color:#c9d6e6;word-break:keep-all}
+.guide-btns{display:flex;gap:10px}.guide-btns .button{flex:1;min-height:52px;font-size:16px}
+.guide-edit{text-align:left;border:1px solid #33506d;border-radius:14px;padding:10px 14px;background:#16223a}
+.guide-edit summary{cursor:pointer;font-size:14px;color:#c9d6e6;min-height:32px;display:flex;align-items:center}
+.guide-edit input{font-size:16px;width:100%;min-width:0}
+.guide-edit .button{margin-top:10px;width:100%}
+.guide-log{display:flex;flex-direction:column;gap:6px;text-align:left}
+.guide-log div{display:grid;grid-template-columns:1fr auto 24px;gap:8px;align-items:center;padding:8px 12px;border-radius:12px;background:#16223a;font-size:14px;color:#c9d6e6}
+.guide-log b{font-variant-numeric:tabular-nums;color:#edf4f8}.guide-log i{font-style:normal;color:#8ce4e0;text-align:right}
+.guide-foot{display:flex;justify-content:space-between;gap:12px}
+.guide-foot .text-button{min-height:44px}
+.guide-done{padding:24px 0}
+.guide-fill{flex-wrap:wrap}
+.guide-row{grid-template-columns:1fr 1fr .8fr 1fr 1fr}
+.guide-resume{border-color:#4f8e8c}
+@media(max-width:380px){.guide-row{grid-template-columns:1fr 1fr}.guide-target strong,.guide-ring strong{font-size:48px}}

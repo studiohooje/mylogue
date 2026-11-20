@@ -1,6 +1,6 @@
 {
   "name": "mylogue",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "@capacitor-firebase/authentication": "8.6.0",
     "@capacitor/android": "^8.6.0",
     "@capacitor/core": "^8.6.0",
+    "@capacitor/local-notifications": "8.3.1",
     "@tesseract.js-data/eng": "^1.0.0",
     "@tesseract.js-data/kor": "^1.0.0",
     "sharp": "^0.35.5",

@@ -28,9 +28,9 @@ test('맞춤: 식단 안 함을 고르면 식단이 기록 목록에서 빠지�
  assert.ok(prefsOf(db).tracks.includes('meal'));
 });
 
-test('맞춤: 아직 준비 중인 방식은 가장 가까운 방식으로 동작한다', () => {
+test('맞춤: 계획→안내는 그대로, 아직 준비 중인 사진 먼저는 정확히로 동작한다', () => {
  const db = withPrefs(db0, {workoutMode:'guide', mealMode:'photo'});
- assert.equal(effectiveWorkoutMode(prefsOf(db)), 'set');
+ assert.equal(effectiveWorkoutMode(prefsOf(db)), 'guide');
  assert.equal(effectiveMealMode(prefsOf(db)), 'exact');
 });
 
