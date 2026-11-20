@@ -125,4 +125,11 @@
 - 대표님 결정: 마이로그 Firebase는 **Hooje Studio 계정(studiohooje@gmail.com)** 소유로 새로 만든다. → `mylogue-1eedb`(서울, Spark). 12절에서 만든 `mylogue-5ce38`(다른 Google 계정 소유)은 더 이상 쓰지 않는다. 변경 사유: 운영 계정을 Hooje Studio로 통일.
 - 관리자: Hooje Studio 계정(UID `bulbnZbmC4PgH8tUAOjfPPLE7pA3`). Firestore 규칙 게시 완료.
 - 대표님 선택: Android 패키지+서명 충돌을 풀기 위해 이전 프로젝트의 Android 앱과 Android OAuth 클라이언트를 삭제(30일 내 복구 가능). 서명 키는 기존 디버그 키 유지.
-- 남은 결정: 이전 프로젝트 `mylogue-5ce38` 전체 삭제 여부.
+- ~~남은 결정: 이전 프로젝트 `mylogue-5ce38` 전체 삭제 여부.~~ → 2026-11-20 대표님 지시로 삭제(14절).
+
+## 14. 2026-11-20 설치 경로·배포 규칙 (3.1.0)
+
+- 이전 Firebase `mylogue-5ce38` 프로젝트 삭제(대표님 지시). 30일 안 복원 가능.
+- 웹 '앱 설치' 버튼: **Android = APK 직접 설치**, **iPhone·iPad = Safari '홈 화면에 추가'(PWA) 안내 팝업**, PC = 두 방법 안내. 크롬의 자동 웹앱 설치 배너는 막는다. 앱 안·홈 화면 앱에서는 버튼 숨김.
+- **매 업데이트마다 같은 버전 APK를 반드시 다시 빌드해 함께 게시**(대표님 지시). 절차는 CLAUDE.md 6절.
+- 대화·질문은 한국어로(대표님 지시).

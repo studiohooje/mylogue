@@ -54,12 +54,14 @@ Android 디버그 APK: 루트의 `build-android.ps1`(JDK `jdk21/`, SDK `%LOCALAP
 
 ## 5. 버전 올릴 때 함께 바꿔야 하는 곳 (하나라도 빠지면 캐시·업데이트 사고)
 
-`app/package.json` version · `app/index.html`의 `?v=` 4곳 · `app/sw.js`의 `CACHE` 이름과 `FILES` 목록 · `app/build.mjs` 복사 목록(새 파일 추가 시) · `app/android/app/build.gradle` versionCode(+1)/versionName · 앱 화면의 버전 표기 · README/CHANGELOG/releases.
+`app/package.json` version · `app/install.js`의 `APP_VERSION`(앱 화면 버전 표기와 설치 버튼 APK 이름) · `app/index.html`의 `?v=` 4곳 · `app/sw.js`의 `CACHE` 이름과 `FILES` 목록 · `app/build.mjs` 복사 목록(새 파일 추가 시) · `app/android/app/build.gradle` versionCode(+1)/versionName · 앱 화면의 버전 표기 · README/CHANGELOG/releases.
 버전 규칙: `메이저.기능.수정`. 목업에는 버전을 올리지 않는다.
 
 ## 6. 배포 절차
 
 원본 `app/` 수정·시험 → `public-release/`에 복사 → 그곳에서 시험·빌드 → commit/push(`git -c safe.directory=... -C public-release`) → GitHub Actions(`pages.yml`: 테스트·Firestore 에뮬레이터·빌드·Pages) 성공 확인 → 공개 URL HTTP 200·버전 확인. Android는 APK와 **같은 APK를 담은 ZIP을 항상 함께** `Mylogue-Beta-<버전>-debug.apk/.zip`으로 게시하고 해시를 기록한다.
+
+**대표님 지시(2026-11-20): 웹을 업데이트할 때마다 APK도 반드시 같은 버전으로 다시 빌드해 함께 게시한다.** 웹의 '앱 설치' 버튼이 `app/install.js`의 `APP_VERSION` 이름으로 APK를 내려받게 하므로, 버전을 올리면 `APP_VERSION`도 같이 바꾸고(시험 `tests/install.test.js`가 package.json과 같은지 확인) 루트의 이전 버전 APK는 지운 뒤 새 APK를 커밋한다. 순서: 버전 올림 → `build-android.ps1` → `Mylogue-Beta-<버전>-debug.apk`를 루트에 복사 → `npm run build`(ZIP 생성) → 커밋·푸시 → 다운로드 주소 200·해시 확인.
 
 ## 7. 패치마다 만드는 문서 (대표님 2026-11-19 지시)
 
