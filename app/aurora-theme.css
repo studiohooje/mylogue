@@ -505,3 +505,41 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .sg-row.sub{margin-left:16px;width:calc(100% - 16px);background:#111b30;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
 .sg-row.sub b{letter-spacing:0;overflow-wrap:anywhere}
 .sg-brand-toggle{align-self:center;min-height:48px}
+
+/* 3.16.0 AI로 입력: 홈 맨 위·추가 메뉴 맨 위의 눈에 띄는 버튼 */
+.ai-magic{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:14px;width:100%;min-height:76px;margin:0 0 12px;padding:14px 18px;border:1px solid transparent;border-radius:20px;color:#fff;text-align:left;font:inherit;cursor:pointer;
+ background:linear-gradient(#141c33,#141c33) padding-box,linear-gradient(120deg,#7aa7ff,#b48cff 40%,#5ee7d8 75%,#7aa7ff) border-box;background-size:100% 100%,300% 100%;animation:aiBorder 6s linear infinite;box-shadow:0 10px 30px -12px rgba(150,120,255,.55)}
+.ai-magic-glow{position:absolute;inset:-40%;z-index:-1;background:radial-gradient(circle at 20% 30%,rgba(180,140,255,.38),transparent 45%),radial-gradient(circle at 80% 70%,rgba(94,231,216,.28),transparent 45%);animation:aiGlow 7s ease-in-out infinite alternate;pointer-events:none}
+.ai-magic-icon{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;font-size:22px;background:linear-gradient(135deg,#7aa7ff,#b48cff 55%,#5ee7d8);color:#0d1326;box-shadow:0 0 18px rgba(180,140,255,.6);animation:aiTwinkle 2.8s ease-in-out infinite}
+.ai-magic-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.ai-magic-text b{font-size:18px;font-weight:700;letter-spacing:-.01em;background:linear-gradient(90deg,#fff,#d9ccff 60%,#bff6ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ai-magic-text small{font-size:13px;color:#b9c6e4;word-break:keep-all}
+.ai-magic-go{flex:none;font-size:20px;color:#d9ccff}
+.ai-magic:active{transform:scale(.985)}
+.gap>.ai-magic{min-height:64px;margin:0}
+@keyframes aiBorder{to{background-position:0 0,300% 0}}
+@keyframes aiGlow{from{transform:translate(-4%,-3%) rotate(0)}to{transform:translate(4%,3%) rotate(8deg)}}
+@keyframes aiTwinkle{0%,100%{box-shadow:0 0 12px rgba(180,140,255,.45)}50%{box-shadow:0 0 24px rgba(94,231,216,.75)}}
+@media (prefers-reduced-motion:reduce){.ai-magic,.ai-magic-glow,.ai-magic-icon{animation:none}}
+.home-quick .actions{margin-top:0}
+
+/* AI 입력 창 */
+.ai-in{display:flex;flex-direction:column;gap:14px}
+.ai-in-how{padding:14px 16px;border-radius:16px;background:#16223b;border:1px solid #2c3d63}
+.ai-in-how p{margin:0}
+.ai-in-how ol{margin:8px 0 8px 18px;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55;color:#dbe6f3;word-break:keep-all}
+.ai-in-how .hint{margin-top:6px}
+.ai-in-prompt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ai-in-prompt details{flex-basis:100%}
+.ai-in-prompt summary{cursor:pointer;font-size:13px;color:#a9bbce;min-height:32px;display:flex;align-items:center}
+.ai-in-prompt pre{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.5;max-height:260px;overflow:auto;padding:12px;border-radius:12px;background:#0e1527;color:#c9d6e6;user-select:text;-webkit-user-select:text}
+.ai-in-field textarea{width:100%;min-height:140px;font-size:16px;font-family:inherit;letter-spacing:0;line-height:1.45;resize:vertical;word-break:break-all}
+.ai-in-tools{display:flex;gap:10px;align-items:center}
+.ai-in-ok{margin:0;color:#8ce4b0;font-weight:600}
+.ai-in-err{margin:0;color:#ffb4a8;font-size:14px;word-break:keep-all}
+.ai-in-msg{margin:0;color:#ffd58c;font-size:14px}
+.ai-in-list{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.ai-in-list li{display:flex;gap:8px;align-items:center;font-size:14px;color:#dbe6f3;word-break:keep-all}
+.ai-in-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ai-in-actions .button{flex:1 1 160px}
+.ai-in-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:4px;border-radius:999px;background:#b48cff;color:#0d1326;font-size:12px;font-weight:700}

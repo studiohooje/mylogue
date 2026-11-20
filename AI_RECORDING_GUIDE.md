@@ -1,4 +1,19 @@
-# 마이로그 Beta 3.0.0 · AI 기록 지침
+# 마이로그 Beta 3.16.0 · AI 기록 지침
+
+> **3.16.0부터 휴대폰·무료 AI는 '붙여넣기 형식'(0절)을 쓴다.** 1절 이하의 로컬 MCP 연결은 PC(Codex·Claude Code 등)에서만 된다.
+
+## 0. 붙여넣기 형식 (모든 AI, 휴대폰 포함)
+
+- 앱의 'AI로 입력 → 지시문 복사'가 주는 지시문을 AI 대화에 한 번 넣는다. 원문은 `app/ai-paste.js`의 `AI_PROMPT`다.
+- AI는 기록을 **코드 블록 하나**에 `{"mylogue":1,"said":"원문","records":[...]}`로 답한다.
+- 기록 종류(`type`)
+  - `meal`: `date`, `time`, `slot`, `items[]`. 각 음식은 `name`, `qty`, `unit`, `kcal`, `carbs`, `protein`, `fat`. 추정이면 `estimate:{"kcal":[최소,최대],"basis":"근거"}`.
+  - `workout`: `date`, `time`, `title`, `gym`, `exercises[]`. 각 운동은 `name`, `machine`(사용자가 말한 이름), `sets[]`(`weight`, `unit` kg/lb, `reps`). `"sets":3`과 `weight`·`reps`로 같은 세트를 줄여 써도 된다. 유산소는 `minutes`, `km`.
+  - `body`: `date`, `weight`, `bodyFat`, `muscle`, `waist`, `bmi`, `bodyFatMass`, `visceralFat`, `bmr`, `score`.
+- 날짜·시각이 없으면 오늘·지금. 모르는 값은 `null`. 같은 음식은 같은 이름·단위·값으로 다시 쓴다.
+- 사용자가 '내 음식·운동 목록 복사'로 목록을 주면 그 이름과 값을 우선한다.
+- 앱은 붙여넣은 코드를 검토함 초안으로 바꾼다. 확정은 사람이 한다. 같은 내용은 한 번만 들어간다.
+
 
 이 문서를 Codex, Claude Code 또는 로컬 MCP 도구를 지원하는 AI의 작업 지침으로 제공하세요. 두 사용자는 각각 자기 AI와 **자기 마이로그 계정**을 연결합니다. AI 모델 API를 마이로그에 연결하는 절차가 아닙니다.
 

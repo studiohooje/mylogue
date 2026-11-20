@@ -1,7 +1,9 @@
 package pro.hooje.mylogue;
 
 import com.getcapacitor.BridgeActivity;
+import android.content.Intent;
 import android.os.Build;
+import org.json.JSONObject;
 import android.os.Bundle;
 import android.view.WindowInsetsController;
 
@@ -10,6 +12,27 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         useLightStatusBarIcons(false);
+        deliverShare(getIntent(), 1500);
+    }
+
+    // 3.16.0 다른 앱(ChatGPT 등)에서 '공유 → 마이로그'로 보낸 글을 AI 입력 창으로 넘긴다.
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        deliverShare(intent, 300);
+    }
+
+    private void deliverShare(Intent intent, long delayMs) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return;
+        String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (text == null || text.trim().isEmpty() || getBridge() == null || getBridge().getWebView() == null) return;
+        if (text.length() > 20000) text = text.substring(0, 20000);
+        String quoted = JSONObject.quote(text);
+        intent.removeExtra(Intent.EXTRA_TEXT);
+        getBridge().getWebView().postDelayed(() -> getBridge().getWebView().evaluateJavascript(
+            "(function(t){try{localStorage.setItem('mylogue.pendingShare',t)}catch(e){}" +
+            "window.dispatchEvent(new CustomEvent('mylogue-share',{detail:t}));})(" + quoted + ")", null), delayMs);
     }
 
     @Override
