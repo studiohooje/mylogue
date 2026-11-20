@@ -2,7 +2,7 @@ import {firebaseConfig} from './firebase-config.js';
 import {cloudState} from './cloud-sync.js';
 
 export const CATALOG_KINDS=Object.freeze(['foods','exercises','machineModels','gymLocations','gymMachines']);
-const ADMIN_UID='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
+import {isAdminUser} from './admin.js';
 const REQUEST_STATUSES=Object.freeze(['pending','in_review','approved','rejected','needs_info']);
 const REQUEST_TYPES=Object.freeze(['food','exercise','machine']);
 const cleanText=(value,max=160)=>String(value??'').trim().slice(0,max);
@@ -69,7 +69,7 @@ async function context(){
  return {...modules,app,user,firestore:modules.db.getFirestore(app)};
 }
 
-export function isCatalogAdmin(user){return (user?.uid||'')===ADMIN_UID}
+export function isCatalogAdmin(user){return isAdminUser(user)}
 
 export async function loadSharedCatalog(){
  const result=Object.fromEntries(CATALOG_KINDS.map(kind=>[kind,[]]));

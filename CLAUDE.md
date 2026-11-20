@@ -32,7 +32,7 @@
 | `app/timeline-view.js` | 홈(히어로 → 빠른 기록 → 오늘 한눈에 → 타임라인) |
 | `app/domain.js` | 데이터 정제·검증 계약(`cleanBody/cleanMeal/cleanWorkout`). 기록 형식 변경은 여기부터 |
 | `app/store.js`·`storage-scope.js` | localStorage 키 `mylogue.v1`(+`.user.<uid>`), 사진 IndexedDB `mylogue.photos` |
-| `app/cloud-*.js`, `firestore.rules` | Firebase(Spark) Google 로그인·관리자 승인·동기화. `mylogue-1eedb`(Google 계정 studiohooje@gmail.com, 서울 리전, Spark — 2026-11-19 대표님 지시로 재생성, 이전 `mylogue-5ce38`는 미사용) |
+| `app/cloud-*.js`, `firestore.rules` | Firebase(Spark) Google 로그인·관리자 승인·동기화. `mylogue-1eedb`(Google 계정 studiohooje@gmail.com, 서울 리전, Spark — 2026-11-19 대표님 지시로 재생성, 이전 `mylogue-5ce38`는 미사용). **관리자 목록은 `app/admin.js`와 `firestore.rules`·`storage.rules`의 `admin()`을 함께 바꾸고 규칙을 배포**(3.7.0: 기존 UID + mooncurvv@gmail.com) |
 | `app/ai-drafts.js`·`ai-inbox.js` | AI 초안 검토함 |
 | CSS | `app.css`(기본) → `quick-entry.css` → `aurora-theme.css`(덮어쓰기) → `aurora-motion.css`. **세 층이 서로 덮어써서 정렬 불량의 주원인** |
 | `app/android/` | Capacitor 8 Android. `applicationId pro.hooje.mylogue`, minSdk 24, target 36 |

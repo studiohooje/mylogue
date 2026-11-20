@@ -4,13 +4,13 @@ import {cloudRecords,planSync,recordsToDB,validRecordKey} from './cloud-model.js
 import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
-const ADMIN_UID='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
+import {isAdminUser} from './admin.js';
 export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[]};
 const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
 export async function refreshApproval(){
   const user=auth?.currentUser;
   if(!user){cloudState.approval='guest';return 'guest'}
-  if(user.uid===ADMIN_UID){cloudState.approval='approved';cloudState.approvalError='';return 'approved'}
+  if(isAdminUser(user)){cloudState.approval='approved';cloudState.approvalError='';return 'approved'}
   try{
     const snapshot=await fsSDK.getDocFromServer(profileRef(user.uid));
     cloudState.approval=snapshot.exists()?snapshot.data().status:'not_applied';
@@ -21,7 +21,7 @@ export async function refreshApproval(){
 export async function applyForAccess(consent){
   const user=auth?.currentUser;
   if(!user)throw Error('Google로 먼저 로그인해 주세요.');
-  if(user.uid===ADMIN_UID)return 'approved';
+  if(isAdminUser(user))return 'approved';
   if(consent!==true)throw Error('건강 기록의 서버 저장 안내를 확인하고 동의해 주세요.');
   await fsSDK.runTransaction(firestore,async tx=>{
     const ref=profileRef(user.uid),before=await tx.get(ref);
@@ -31,15 +31,15 @@ export async function applyForAccess(consent){
   return refreshApproval();
 }
 export async function listApplicants(){
-  if(auth?.currentUser?.uid!==ADMIN_UID)throw Error('관리자만 신청 목록을 볼 수 있습니다.');
+  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 신청 목록을 볼 수 있습니다.');
   const snapshot=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users'));
   cloudState.applicants=snapshot.docs.map(doc=>({uid:doc.id,...doc.data()}));
   return cloudState.applicants;
 }
 export async function reviewApplicant(uid,status){
-  if(auth?.currentUser?.uid!==ADMIN_UID)throw Error('관리자만 가입을 승인할 수 있습니다.');
+  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 가입을 승인할 수 있습니다.');
   if(!uid||!['pending','approved','rejected'].includes(status))throw Error('신청 상태를 확인해 주세요.');
-  await fsSDK.updateDoc(profileRef(uid),{status,reviewerUid:ADMIN_UID,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
+  await fsSDK.updateDoc(profileRef(uid),{status,reviewerUid:auth.currentUser.uid,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
   return listApplicants();
 }
 export async function initializeCloud() {

@@ -101,3 +101,19 @@ test('approval gates server health records and shared catalogs', {skip:!host}, a
     assert.equal((await getDoc(profile(pending,pendingUid))).data().status,'rejected');
   }finally{await env.cleanup()}
 });
+
+test('email admin (verified Google email) can list and review; unverified or other emails cannot', {skip:!host}, async()=>{
+  const rules=await readFile(new URL('../firestore.rules',import.meta.url),'utf8');
+  const [emulatorHost,portText]=host.split(':');
+  const env=await initializeTestEnvironment({projectId:projectId+'-email',firestore:{host:emulatorHost,port:Number(portText),rules}});
+  try{
+    const emailAdmin=env.authenticatedContext('mooncurvv-uid',{email:'mooncurvv@gmail.com',email_verified:true}).firestore();
+    const unverified=env.authenticatedContext('fake-uid',{email:'mooncurvv@gmail.com',email_verified:false}).firestore();
+    const pending=env.authenticatedContext('p2',{email:'p2@example.test'}).firestore();
+    await assertSucceeds(setDoc(doc(pending,'users','p2'),{uid:'p2',email:'p2@example.test',status:'pending',consentAt:serverTimestamp(),createdAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+    await assertSucceeds(getDocs(collection(emailAdmin,'users')));
+    await assertFails(getDocs(collection(unverified,'users')));
+    await assertFails(updateDoc(doc(unverified,'users','p2'),{status:'approved',reviewerUid:'fake-uid',reviewedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+    await assertSucceeds(updateDoc(doc(emailAdmin,'users','p2'),{status:'approved',reviewerUid:'mooncurvv-uid',reviewedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+  }finally{await env.cleanup()}
+});

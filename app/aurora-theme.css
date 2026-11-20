@@ -182,3 +182,126 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .gym-map-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .gym-map-actions .button{min-height:44px}
 .gym-map-actions .hint{flex:1;min-width:180px;margin:0}
+/* 3.7.0 평소 하는 운동 칩 */
+.onb-chips,.pref-chips{display:flex;flex-wrap:wrap;gap:8px}
+.onb-chip,.pref-chips button{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid #33506d;background:#16223a;color:#c9d6e6;font:inherit;font-size:14px;font-weight:600;cursor:pointer;word-break:keep-all}
+.onb-chip.on,.pref-chips button.on{background:#1d3a48;border-color:#8ce4e0;color:#edf4f8}
+.onb-chip:focus-visible,.pref-chips button:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
+/* 3.7.0 관리자 알림 */
+.header-account{gap:8px;align-items:center}
+.admin-bell{position:relative;flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #5c7898;background:#1c2b46;color:#edf4f8;display:grid;place-items:center;cursor:pointer}
+.admin-bell:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
+.admin-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#f2b49b;color:#17283c;font-size:12px;font-weight:700;line-height:20px;text-align:center;box-shadow:0 0 0 2px #101625}
+.admin-panel{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 72px);right:max(12px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 24px));max-height:min(70vh,560px);overflow:auto;padding:14px;border-radius:20px;background:#17223a;border:1px solid #5c7898;box-shadow:0 18px 50px #02060fcc;display:flex;flex-direction:column;gap:10px}
+.admin-panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.admin-panel-head b{font-size:16px}.admin-panel-head b span{color:#f2b49b;margin-left:4px}
+.admin-panel-head .text-button{min-height:44px;font-size:13px}
+.admin-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.admin-item{padding:12px;border-radius:14px;background:#1f2d4a;border:1px solid #33506d;display:flex;flex-direction:column;gap:10px}
+.admin-item-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.admin-item-text b{font-size:15px;word-break:break-all}
+.admin-item-text small{font-size:13px;color:#a9bbce}
+.admin-item-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.admin-item-actions .button{min-height:40px;padding:0 16px;font-size:14px}
+.admin-item-actions .text-button{min-height:40px;font-size:13px}
+.admin-done{padding:10px 12px;border-radius:12px;font-size:14px;font-weight:600}
+.admin-done.approved{background:rgba(140,228,224,.16);color:#8ce4e0}
+.admin-done.rejected{background:rgba(242,180,155,.16);color:#f2b49b}
+.admin-empty{margin:0;font-size:14px;color:#a9bbce}
+@media(max-width:420px){.admin-panel{top:calc(env(safe-area-inset-top,0px) + 64px)}}
+/* 3.7.0 승인 상태 배지 */
+.status-badge{display:inline-flex;align-items:center;gap:2px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;vertical-align:middle;white-space:nowrap}
+.status-badge.ok{background:rgba(140,228,224,.18);color:#8ce4e0}
+.status-badge.wait{background:rgba(243,194,122,.18);color:#f3c27a}
+.status-badge.no{background:rgba(242,180,155,.18);color:#f2b49b}
+.status-badge.info{background:#2a3555;color:#a9bbce}
+.applicant-row.st-pending{border-left:3px solid #f3c27a}
+.applicant-row.just-done{animation:just-done 2.4s ease-out;border-color:#8ce4e0}
+.applicant-row .just-msg{color:#8ce4e0;font-weight:600}
+.req-status{display:block;margin-top:4px}
+@keyframes just-done{0%{background:rgba(140,228,224,.28)}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){.applicant-row.just-done{animation:none}}
+/* 3.7.0 AI 연결 상태 */
+.ai-pair-card.connected{border-color:#4f8e8c}
+.ai-connected{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:rgba(140,228,224,.12);border:1px solid rgba(140,228,224,.4);margin:10px 0}
+.ai-connected b{font-size:16px;color:#8ce4e0}
+.ai-connected span{font-size:14px;color:#edf4f8}
+.ai-connected small{font-size:13px;color:#a9bbce}
+.ai-repair summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:14px;color:#c9d6e6}
+/* 3.8.0 홈 오늘 식단: 목표 대비 칼로리·탄단지 */
+.home-stat-grid.with-diet{grid-template-columns:repeat(2,minmax(0,1fr))}
+.home-diet{grid-column:1/-1;display:flex;flex-direction:column;gap:12px}
+.home-diet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.home-diet-head strong{margin:8px 0 0}
+.home-diet-head strong span{display:inline!important;margin:0 0 0 6px!important;font-size:14px!important;color:#a9bbce!important}
+.macro-chip{display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+.macro-chip.under{background:rgba(156,200,237,.16);color:#9cc8ed}
+.macro-chip.over{background:rgba(242,180,155,.2);color:#f2b49b}
+.macro-chip.met{background:rgba(140,228,224,.18);color:#8ce4e0}
+.macro-rows{display:flex;flex-direction:column;gap:9px}
+.macro-row{display:grid;grid-template-columns:74px minmax(0,1fr) auto 76px;align-items:center;gap:10px;font-size:14px}
+.macro-label{display:flex;align-items:center;gap:6px;color:#d6e2ec;font-weight:600;white-space:nowrap}
+.macro-label i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.macro-row.kcal{--c:var(--nutrient-kcal,#66d9ef)}.macro-row.carbs{--c:var(--nutrient-carbs,#ead96b)}.macro-row.protein{--c:var(--nutrient-protein,#77d7b0)}.macro-row.fat{--c:var(--nutrient-fat,#ff8396)}
+.macro-bar{position:relative;height:10px;border-radius:999px;background:#13203a;overflow:hidden}
+.macro-bar b{position:absolute;left:0;top:0;bottom:0;background:var(--c);border-radius:999px 0 0 999px}
+.macro-row.met .macro-bar b,.macro-row.under .macro-bar b{border-radius:999px}
+.macro-bar s{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(-45deg,#f2b49b 0 4px,#d9876a 4px 8px)}
+.macro-bar u{position:absolute;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:#edf4f8;border-radius:2px}
+.macro-val{font-variant-numeric:tabular-nums;font-weight:700;color:#edf4f8;white-space:nowrap;text-align:right}
+.macro-val small{font-weight:400;color:#a9bbce;font-size:12px;margin-left:1px}
+.macro-note{font-style:normal;font-size:12px;font-weight:700;text-align:right;white-space:nowrap}
+.macro-note.under{color:#9cc8ed}.macro-note.over{color:#f2b49b}.macro-note.met{color:#8ce4e0}.macro-note:not(.under):not(.over):not(.met){color:#7f93ab;font-weight:400}
+.home-diet p{margin:0;font-size:12px}
+.home-diet p .text-button{font-size:12px;min-height:0;padding:0}
+@media(max-width:420px){.macro-row{grid-template-columns:62px minmax(0,1fr) auto;gap:8px;font-size:13px}.macro-note{grid-column:2/-1;text-align:left;margin-top:-4px}}
+/* 3.8.0 알림 종류별 색: AI 검토=보라, 가입 승인=호박, 등록 요청=하늘 */
+.admin-item{border-left-width:4px}
+.admin-item.k-ai{border-color:#6f5fb8;border-left-color:#b8aaf2;background:linear-gradient(90deg,rgba(184,170,242,.12),#1f2d4a 55%)}
+.admin-item.k-user{border-color:#7a6440;border-left-color:#f3c27a;background:linear-gradient(90deg,rgba(243,194,122,.12),#1f2d4a 55%)}
+.admin-item.k-request{border-color:#46637f;border-left-color:#9cc8ed;background:linear-gradient(90deg,rgba(156,200,237,.12),#1f2d4a 55%)}
+.admin-kind{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-bottom:4px}
+.k-ai .admin-kind{background:rgba(184,170,242,.2);color:#b8aaf2}
+.k-user .admin-kind{background:rgba(243,194,122,.2);color:#f3c27a}
+.k-request .admin-kind{background:rgba(156,200,237,.2);color:#9cc8ed}
+.k-ai .admin-approve{background:#b8aaf2;color:#17183a}
+/* 3.8.0 AI 검토함: 한 줄 요약 + 펼쳐서 수정, 일괄 처리 */
+.button.small{min-height:40px;padding:0 14px;font-size:14px}
+.ai-inbox-head{align-items:center}
+.ai-inbox-head p{font-size:13px;margin-top:2px}
+.ai-bulk{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 8px;padding:8px 10px;border-radius:14px;background:#17223a;border:1px solid #33506d}
+.ai-bulk-all{display:flex;align-items:center;gap:6px;min-height:40px;font-size:14px;font-weight:600;cursor:pointer}
+.ai-bulk input[type=checkbox],.ai-pick{width:20px;height:20px;accent-color:#b8aaf2;flex:none;cursor:pointer}
+.ai-pick-count{flex:1;font-size:13px;color:#a9bbce;min-width:70px}
+.ai-draft-list{gap:8px!important;margin:8px 0 20px!important}
+.ai-draft.compact{display:block;padding:0!important;gap:0!important;border-radius:14px;border:1px solid #33506d;background:#1b2741;overflow:hidden}
+.ai-draft.compact.picked{border-color:#b8aaf2;box-shadow:0 0 0 1px #b8aaf2 inset}
+.ai-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 12px}
+.ai-row .ai-pick{margin-top:3px}
+.ai-row-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ai-row-top{display:flex;align-items:center;gap:6px;min-width:0}
+.ai-row-top b{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-row-top time{margin-left:auto;font-size:12px;color:#7f93ab;white-space:nowrap;padding-left:6px}
+.ai-tag{flex:none;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(184,170,242,.18);color:#b8aaf2}
+.ai-row-sum{margin:0;font-size:13px;color:#d6e2ec;line-height:1.45;word-break:keep-all}
+.ai-row-q{margin:0;font-size:12px;color:#8ea3bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-row .ai-duplicate{margin:4px 0 0;font-size:12px;padding:4px 8px;border-radius:8px}
+.ai-row-actions{display:flex;flex-direction:column;align-items:stretch;gap:2px}
+.ai-row-actions .text-button{min-height:32px;font-size:13px;color:#a9bbce}
+.ai-edit{border-top:1px solid #2b4362}
+.ai-edit>summary{cursor:pointer;padding:8px 12px;font-size:13px;color:#a9bbce;min-height:36px;display:flex;align-items:center}
+.ai-edit[open]>summary{color:#b8aaf2}
+.ai-edit .ai-review-form{padding:4px 12px 12px;display:grid;gap:10px}
+.ai-edit .form-grid{gap:8px}
+.ai-edit .ai-item{padding:10px;margin:0}
+.ai-edit .field{gap:4px;font-size:13px}
+.ai-done-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.ai-done-list li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#18233b;font-size:13px;min-width:0}
+.ai-done-list b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ai-done-list em{font-style:normal;font-weight:700;font-size:12px}.ai-done-list em.ok{color:#8ce4e0}.ai-done-list em.no{color:#f2b49b}
+.ai-done-list time{color:#7f93ab;font-size:12px;white-space:nowrap}
+.ai-steps{margin:8px 0;padding-left:20px;font-size:14px;color:#d6e2ec;display:grid;gap:4px}
+.ai-advanced{margin-top:12px}
+.ai-advanced summary{cursor:pointer;font-size:13px;color:#a9bbce;min-height:40px;display:flex;align-items:center}
+.ai-advanced input{font-size:16px;max-width:140px}
+@media(max-width:420px){.ai-row{grid-template-columns:auto minmax(0,1fr);}.ai-row-actions{grid-column:2;flex-direction:row;align-items:center}.ai-row-actions .button{flex:none}}

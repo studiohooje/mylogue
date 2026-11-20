@@ -1,6 +1,8 @@
 import {cloudState} from './cloud-sync.js';
 import {scopedKey,storageAccount} from './storage-scope.js';
 import {nativeAuthAvailable} from './native-auth.js';
+import {isAdminUser} from './admin.js';
+import {statusBadge} from './admin-panel.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const preview=v=>v===null?'삭제된 기록':v.length>900?v.slice(0,900)+'… (전체 원본은 아래에서 저장)':v;
 export function cloudSettingsHTML() {
@@ -17,8 +19,15 @@ export function cloudSettingsHTML() {
   }
   return heading+`<p><strong>${esc(s.user.email||s.user.displayName||'내 계정')}</strong></p><p class="hint">UID: ${esc(storageAccount())}</p><p>이 계정의 기록 공간입니다. ‘지금 동기화’를 누르면 몸·식단·운동·설정의 숫자와 텍스트를 Firebase에 보내고 다른 기기의 변경을 가져옵니다.</p><p class="hint">사진과 작성 중 운동 초안은 전송하지 않습니다. 기록 변경과 삭제는 자동 동기화를 시도합니다. 마지막 완료: ${last?esc(new Date(last).toLocaleString('ko-KR')):'없음'}</p><div class="actions"><button class="button" id="cloud-sync">지금 동기화</button><button class="button secondary" id="cloud-import-guest">게스트 기록 복사</button><button class="button secondary" id="cloud-logout">로그아웃 · 게스트로</button></div><p class="hint">서버 접근 오류가 이어지면 관리자에게 UID와 오류 내용을 알려 주세요.</p>${s.conflicts.length?`<div class="alert"><h4>같은 기록을 두 기기에서 수정했습니다</h4><p>아직 어떤 변경도 전송하지 않았습니다. 각 기록에서 유지할 내용을 선택해 주세요. 전체 양쪽 원본을 먼저 저장할 수 있습니다.</p><button id="cloud-conflicts-export" class="button secondary">충돌 원본 저장</button>${s.conflicts.map((c,i)=>`<details><summary>${esc(c.key)}</summary><p>이 기기</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(preview(c.local))}</pre><p>서버</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(preview(c.remote))}</pre><label class="field">유지할 내용<select data-cloud-conflict="${i}"><option value="">선택해 주세요</option><option value="local">이 기기 내용 유지</option><option value="remote">서버 내용 유지</option></select></label></details>`).join('')}<button class="button" id="cloud-resolve">선택한 내용으로 동기화</button></div>`:''}<button class="text-button" id="cloud-archive-export">마지막 동기화 직전 원본 저장</button></section>`;
 }
-export function accountAdminHTML(){
-  if(cloudState.user?.uid!=='bulbnZbmC4PgH8tUAOjfPPLE7pA3')return '';
-  const rows=cloudState.applicants.map(a=>`<div class="record"><div><strong>${esc(a.email||a.uid)}</strong><small>${esc(a.status||'상태 없음')} · UID ${esc(a.uid)}</small><small>신청 ${a.createdAt?.toDate?esc(a.createdAt.toDate().toLocaleString('ko-KR')):'시간 확인 중'}</small></div><div class="actions"><button type="button" class="button secondary" id="cloud-review-approved-${esc(a.uid)}">승인</button><button type="button" class="button secondary" id="cloud-review-pending-${esc(a.uid)}">대기</button><button type="button" class="button secondary" id="cloud-review-rejected-${esc(a.uid)}">반려</button></div></div>`).join('');
-  return `<section class="section card"><h3>기록 이용 신청 관리</h3><p class="hint">승인된 계정만 서버 기록과 공용 도감에 접근합니다. 기존 Firebase Auth 계정은 승인 전에 생성될 수 있습니다.</p><button class="button secondary" id="cloud-applicants-refresh">신청 목록 새로고침</button>${rows||'<p class="hint">신청 목록이 없습니다.</p>'}</section>`;
+export function accountAdminHTML(just={}){
+  if(!isAdminUser(cloudState.user))return '';
+  const order={pending:0,rejected:1,approved:2};
+  const list=[...cloudState.applicants].sort((a,b)=>(order[a.status]??3)-(order[b.status]??3));
+  const waiting=list.filter(a=>a.status==='pending').length;
+  const btn=(a,st,label,primary=false)=>`<button type="button" class="button ${primary?'':'secondary'}" id="cloud-review-${st}-${esc(a.uid)}">${label}</button>`;
+  const rows=list.map(a=>{const isJust=just.uid===a.uid;const actions=a.status==='pending'?btn(a,'approved','승인',true)+btn(a,'rejected','반려'):a.status==='approved'?btn(a,'pending','승인 취소')+btn(a,'rejected','반려'):btn(a,'approved','승인',true)+btn(a,'pending','대기로 되돌리기');
+   const msg=isJust?`<small class="just-msg">${a.status==='approved'?'방금 승인했어요. 이제 이 계정은 기록 동기화와 공용 도감을 쓸 수 있어요.':a.status==='rejected'?'방금 반려했어요. 이 계정은 서버 기록을 쓸 수 없어요.':'승인 대기로 되돌렸어요.'}</small>`:'';
+   return `<div class="record applicant-row st-${esc(a.status||'none')}${isJust?' just-done':''}"><div><strong>${esc(a.email||a.uid)}</strong> ${statusBadge(a.status)}${msg}<small>UID ${esc(a.uid)} · 신청 ${a.createdAt?.toDate?esc(a.createdAt.toDate().toLocaleString('ko-KR')):'시간 확인 중'}</small></div><div class="actions">${actions}</div></div>`}).join('');
+  return `<section class="section card" id="account-admin"><h3>기록 이용 신청 관리 ${waiting?`<span class="status-badge wait">대기 ${waiting}건</span>`:''}</h3><p class="hint">승인된 계정만 서버 기록과 공용 도감에 접근합니다. 승인 대기 계정이 맨 위에 보여요.</p><button class="button secondary" id="cloud-applicants-refresh">신청 목록 새로고침</button>${rows||'<p class="hint">신청 목록이 없습니다.</p>'}</section>`;
 }
+

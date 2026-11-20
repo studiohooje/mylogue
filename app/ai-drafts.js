@@ -33,18 +33,26 @@ async function context(){
   if(cloudState.approval!=='approved')throw Error('계정 이용 승인 후 AI 검토함을 사용할 수 있습니다.');
   return {...sdk,user,db:sdk.fs.getFirestore(app)};
 }
-export async function pairLocalAgent(port,code){
-  const n=Number(port),secret=String(code??'').trim();
-  if(!Number.isInteger(n)||n<1024||n>65535||!/^\d{8}$/.test(secret))throw Error('연결 도구에 표시된 포트와 8자리 코드를 입력해 주세요.');
+export const BRIDGE_PORT=43127;
+const bridgeURL=(port,path)=>{const n=Number(port||BRIDGE_PORT);if(!Number.isInteger(n)||n<1024||n>65535)throw Error('포트는 1024~65535 사이 숫자예요.');return `http://127.0.0.1:${n}${path}`};
+export async function bridgeStatus(port=BRIDGE_PORT,{timeout=1500}={}){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),timeout);
+  try{const r=await fetch(bridgeURL(port,'/status'),{credentials:'omit',referrerPolicy:'no-referrer',signal:ctl.signal,cache:'no-store'});const b=await r.json().catch(()=>({}));return r.ok&&b.running?b:null}catch{return null}finally{clearTimeout(t)}
+}
+// 3.8.0: 코드 없이 버튼 한 번. 같은 PC의 도구에 로그인 토큰과 갱신 토큰을 넘겨 이 PC에서 계속 연결되게 한다.
+export async function pairLocalAgent(port=BRIDGE_PORT,{remember=true}={}){
   const ctx=await context(),idToken=await ctx.auth.getIdToken(ctx.user,true);
-  const response=await fetch(`http://127.0.0.1:${n}/pair`,{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({code:secret,uid:ctx.user.uid,idToken}),
-    credentials:'omit',referrerPolicy:'no-referrer'
-  });
+  let response;
+  try{response=await fetch(bridgeURL(port,'/pair'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:ctx.user.uid,email:ctx.user.email||'',idToken,refreshToken:remember?ctx.user.refreshToken:'',remember}),credentials:'omit',referrerPolicy:'no-referrer'})}
+  catch{throw Error('이 PC에서 AI 도구가 켜져 있지 않아요. AI 앱(Codex·Claude 등)을 열어 마이로그 도구를 켠 뒤 다시 눌러 주세요.')}
   const result=await response.json().catch(()=>({}));
-  if(!response.ok||result.ok!==true)throw Error(result.error||'로컬 AI 도구 연결에 실패했습니다. 포트·코드와 도구 실행 상태를 확인해 주세요.');
+  if(!response.ok||result.ok!==true)throw Error(result.error||'AI 도구 연결에 실패했어요. 도구가 켜져 있는지 확인해 주세요.');
   return result;
+}
+export async function unpairLocalAgent(port=BRIDGE_PORT){
+  const r=await fetch(bridgeURL(port,'/unpair'),{method:'POST',credentials:'omit',referrerPolicy:'no-referrer'}).catch(()=>null);
+  if(!r?.ok)throw Error('AI 도구에 닿지 않았어요. 도구가 켜져 있을 때 다시 해제해 주세요.');
+  return true;
 }
 export async function listAIDrafts(){
   const ctx=await context();

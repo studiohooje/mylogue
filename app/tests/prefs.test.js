@@ -13,9 +13,9 @@ test('맞춤: 처음에는 무난한 기본값(세 가지 기록, 세트마다, 
 
 test('맞춤: 문답 결과가 설정에 저장되고, 집을 고르면 홈트 장소가 생긴다', () => {
  const s = newOnboarding(db0);
- s.step = 2; onboardingPick(s, 'after');
- s.step = 3; onboardingPick(s, 'simple');
- s.step = 4; onboardingPick(s, 'home');
+ s.step = 3; onboardingPick(s, 'after');
+ s.step = 4; onboardingPick(s, 'simple');
+ s.step = 5; onboardingPick(s, 'home');
  const db = finishOnboarding(db0, s.answers), p = prefsOf(db);
  assert.equal(p.onboarded, true); assert.equal(p.workoutMode, 'after'); assert.equal(p.mealMode, 'simple');
  assert.ok(db.settings.gyms.includes('집'));
@@ -59,4 +59,26 @@ test('헤일로: 고른 종류만 채우면 완성된다(운동만 기록하는 
  assert.doesNotMatch(haloMessage([{kind:'workout', t:18}], rh, ['workout','meal']), /헤일로 완성!/);
  const zone = {x:180, y:120, w:160, h:100, R:44};
  assert.equal(haloSVG({zone, recs:[{kind:'workout', t:18}], rh, now:21, tracks:['workout']}).done, true);
+});
+
+test('맞춤: 평소 하는 운동은 복수 선택, 비워도 되고, 결과·설정에 보인다', async () => {
+ const {QUESTIONS, SPORTS, onboardingHTML, prefsSettingsHTML} = await import('../prefs.js');
+ const i = QUESTIONS.findIndex(q=>q.key==='sports');
+ assert.equal(i, 1);
+ const st = newOnboarding(db0); st.step = i;
+ assert.match(onboardingHTML(st), /onb-chip/);
+ onboardingPick(st, 'pilates'); onboardingPick(st, 'run');
+ assert.deepEqual(st.answers.sports, ['pilates','run']);
+ onboardingPick(st, 'pilates'); onboardingPick(st, 'run');
+ assert.deepEqual(st.answers.sports, [], '모두 빼도 됨');
+ onboardingPick(st, 'ballet');
+ const db = finishOnboarding(db0, st.answers);
+ assert.deepEqual(prefsOf(db).sports, ['ballet']);
+ assert.equal(SPORTS.length, 15);
+ st.step = QUESTIONS.length;
+ assert.match(onboardingHTML(st), /평소 하는 운동/);
+ assert.match(prefsSettingsHTML(db), /data-pref="sports" data-pref-value="ballet" aria-pressed="true"/);
+ let r = applyPrefClick(db, {dataset:{pref:'sports', prefValue:'ballet'}});
+ assert.deepEqual(prefsOf(r.db).sports, []);
+ assert.deepEqual(prefsOf({settings:{preferences:{sports:['bogus','yoga','yoga']}}}).sports, ['yoga']);
 });

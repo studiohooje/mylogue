@@ -21,12 +21,20 @@ export async function verifyUserToken(token,uid,{fetcher=fetch}={}){
  return {uid,expiresAt:new Date(Number(claims.exp)*1000).toISOString()};
 }
 
+export async function exchangeRefreshToken(refreshToken,{fetcher=fetch}={}){
+ if(typeof refreshToken!=='string'||refreshToken.length<20)throw Error('저장된 연결 정보가 올바르지 않습니다. 앱에서 다시 연결해 주세요.');
+ const response=await fetcher(`https://securetoken.googleapis.com/v1/token?key=${API_KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken}).toString()});
+ const body=await responseJSON(response);
+ return {uid:body.user_id,idToken:body.id_token,refreshToken:body.refresh_token||refreshToken,expiresAt:new Date(Date.now()+Number(body.expires_in||3600)*1000).toISOString()};
+}
 export class FirestoreBridge{
- constructor({fetcher=fetch}={}){this.fetcher=fetcher;this.session=null}
+ constructor({fetcher=fetch,onRefresh=null}={}){this.fetcher=fetcher;this.session=null;this.onRefresh=onRefresh}
  setSession(session){this.session=session}
  clearSession(){this.session=null}
- requireSession(){if(!this.session)throw Error('마이로그 앱에서 AI 연결을 먼저 완료해 주세요.');if(Date.parse(this.session.expiresAt)<Date.now()+10000){this.clearSession();throw Error('AI 연결 시간이 만료됐습니다. 앱에서 다시 연결해 주세요.')}return this.session}
- async request(url,options={}){const session=this.requireSession();const response=await this.fetcher(url,{...options,headers:{Authorization:`Bearer ${session.idToken}`,...options.headers}});if(response.status===401){this.clearSession();throw Error('AI 연결 시간이 만료됐습니다. 앱에서 다시 연결해 주세요.')}return responseJSON(response)}
+ // 갱신 토큰이 있으면(이 PC에 저장된 연결) 만료와 상관없이 세션을 유지하고, 요청 직전에 새 토큰을 받는다.
+ requireSession(){if(!this.session)throw Error('마이로그 앱 설정에서 ‘이 PC의 AI 도구와 연결’을 먼저 눌러 주세요.');if(!this.session.refreshToken&&Date.parse(this.session.expiresAt)<Date.now()+10000){this.clearSession();throw Error('AI 연결 시간이 만료됐습니다. 앱에서 다시 연결해 주세요.')}return this.session}
+ async fresh(force=false){const s=this.requireSession();if(!s.refreshToken)return s;if(!force&&s.idToken&&Date.parse(s.expiresAt)>Date.now()+5*60000)return s;const next=await exchangeRefreshToken(s.refreshToken,{fetcher:this.fetcher});if(next.uid!==s.uid)throw Error('저장된 연결의 계정이 일치하지 않습니다. 앱에서 다시 연결해 주세요.');this.session={...s,...next};if(next.refreshToken!==s.refreshToken)this.onRefresh?.(this.session);return this.session}
+ async request(url,options={}){let session=await this.fresh();const go=()=>this.fetcher(url,{...options,headers:{Authorization:`Bearer ${session.idToken}`,...options.headers}});let response=await go();if(response.status===401&&session.refreshToken){session=await this.fresh(true);response=await go()}if(response.status===401){this.clearSession();throw Error('AI 연결 시간이 만료됐습니다. 앱에서 다시 연결해 주세요.')}return responseJSON(response)}
  async listCollection(path,{pageSize=300,max=1500}={}){
   const out=[];let token='';
   do{

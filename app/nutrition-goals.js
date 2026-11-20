@@ -21,3 +21,25 @@ export function saveGoalSettings(settings={},data={}){
  }
  return out;
 }
+
+// 3.8.0 홈 '오늘 식단' 카드: 칼로리·탄단지를 목표선과 함께. 넘친 만큼은 다른 색, 모자란 만큼은 숫자로.
+const num=(v,d=0)=>Number(v||0).toLocaleString('ko-KR',{maximumFractionDigits:d});
+export const MACRO_ROWS=[['kcal','칼로리','calories','calorieGoal','kcal'],['carbs','탄수화물','carbs','carbsGoal','g'],['protein','단백질','protein','proteinGoal','g'],['fat','지방','fat','fatGoal','g']];
+export function macroStatus(actual,goal){
+ const a=Math.max(0,Number(actual)||0),g=Math.max(0,Number(goal)||0);
+ if(!g)return {state:'none',diff:0,scale:Math.max(a,1)};
+ const diff=a-g,tol=g*0.05;
+ return {state:Math.abs(diff)<=tol?'met':diff>0?'over':'under',diff,scale:Math.max(g*1.25,a)};
+}
+export function macroGoalsHTML(day={},settings={},{meals=0}={}){
+ const hasGoal=MACRO_ROWS.some(([, , ,gk])=>Number(settings[gk])>0);
+ const kcal=macroStatus(day.calories,settings.calorieGoal);
+ const head=kcal.state==='none'?'':kcal.state==='over'?`<span class="macro-chip over">+${num(kcal.diff)} kcal 초과</span>`:kcal.state==='under'?`<span class="macro-chip under">${num(-kcal.diff)} kcal 남음</span>`:'<span class="macro-chip met">✓ 목표 달성</span>';
+ const rows=MACRO_ROWS.map(([cls,label,key,gk,unit])=>{
+  const a=Number(day[key])||0,g=Number(settings[gk])||0,s=macroStatus(a,g),d=unit==='g'?1:0;
+  const fill=Math.min(a,g||a)/s.scale*100,over=s.state==='over'?(a-g)/s.scale*100:0,mark=g?g/s.scale*100:0;
+  const note=s.state==='none'?'<em class="macro-note">목표 없음</em>':s.state==='over'?`<em class="macro-note over">+${num(s.diff,d)}${unit} 초과</em>`:s.state==='under'?`<em class="macro-note under">${num(-s.diff,d)}${unit} 부족</em>`:'<em class="macro-note met">달성</em>';
+  return `<div class="macro-row ${cls} ${s.state}"><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit} / 목표 ${g?num(g,d)+unit:'없음'}"><b style="width:${fill.toFixed(1)}%"></b>${over?`<s style="left:${mark.toFixed(1)}%;width:${over.toFixed(1)}%"></s>`:''}${g?`<u style="left:${mark.toFixed(1)}%"></u>`:''}</span><span class="macro-val">${num(a,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}</div>`;
+ }).join('');
+ return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num(day.calories)}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${head}</div><div class="macro-rows">${rows}</div><p>${meals}번의 식사${hasGoal?'':' · <button class="text-button" data-page="settings">목표를 정하면 부족·초과를 보여 줘요</button>'}</p></div>`;
+}

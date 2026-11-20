@@ -37,6 +37,17 @@ const wiredRoots=new WeakSet();
 export function wireAIReview(root){
  if(!root||wiredRoots.has(root))return;
  wiredRoots.add(root);
+ root.addEventListener('change',event=>{
+  const t=event.target;if(!t?.matches?.('#ai-pick-all,[data-ai-pick]'))return;
+  const picks=[...root.querySelectorAll('[data-ai-pick]')];
+  if(t.id==='ai-pick-all')picks.forEach(x=>{x.checked=t.checked});
+  const n=picks.filter(x=>x.checked).length,all=root.querySelector('#ai-pick-all');
+  if(all){all.checked=n>0&&n===picks.length;all.indeterminate=n>0&&n<picks.length}
+  const c=root.querySelector('#ai-pick-count');if(c)c.textContent=n?`${n}건 선택`:`${picks.length}건 대기`;
+  for(const id of ['ai-bulk-confirm','ai-bulk-reject']){const b=root.querySelector('#'+id);if(b)b.disabled=!n}
+  t.closest('.ai-draft')?.classList.toggle('picked',!!t.checked&&t.id!=='ai-pick-all');
+  if(t.id==='ai-pick-all')picks.forEach(x=>x.closest('.ai-draft')?.classList.toggle('picked',x.checked));
+ });
  root.addEventListener('click',event=>{
   const add=event.target.closest?.('[data-ai-set-add]');
   if(add){const ex=add.closest('[data-ai-exercise]'),i=Number(ex?.dataset.aiExercise),j=Number(ex?.dataset.aiNextSet);if(!ex||!Number.isInteger(i)||!Number.isInteger(j))return;const rows=ex.querySelector('.ai-sets');if(rows.children.length>=30){globalThis.alert?.('한 종목은 최대 30세트까지 검토할 수 있습니다.');return}const last=rows.lastElementChild;const weight=last?.querySelector('[name$="-weight"]')?.value??'',reps=last?.querySelector('[name$="-reps"]')?.value??'',unit=last?.querySelector('[name$="-unit"]')?.value??'kg';rows.insertAdjacentHTML('beforeend',setRow(i,j,{weight,reps,unit}));ex.dataset.aiNextSet=String(j+1);rows.lastElementChild?.querySelector('input')?.focus();return}
@@ -58,9 +69,24 @@ function duplicateWarning(draft,db){
   const names=same.slice(0,3).map(x=>x.name||x.title||`${x.weight??'—'} kg`).join(', ');
   return `<p class="ai-duplicate">같은 날짜의 기존 기록 ${same.length}건: ${h(names)}. 중복 여부를 확인해 주세요.</p>`;
 }
+const shortStamp=v=>{const d=v?.toDate?.();return d?`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`:''};
+export function draftTitle(d){const p=d.parsedData||{};return d.type==='meal'?`${p.items?.[0]?.slot||'식사'} · 음식 ${p.items?.length||0}개`:d.type==='workout'?p.title||'운동 초안':d.type==='body'?`${p.date||''} 측정`:p.name||'신규 항목'}
+export function draftSummary(d){
+ const p=d.parsedData||{},n=v=>v==null||v===''?null:Math.round(Number(v)*10)/10;
+ if(d.type==='meal'){const items=p.items||[],kcal=items.reduce((s,x)=>s+(Number(x.calories)||0),0),g=k=>Math.round(items.reduce((s,x)=>s+(Number(x[k])||0),0));return `${items.slice(0,3).map(x=>x.name).join(', ')}${items.length>3?` 외 ${items.length-3}개`:''} · ${Math.round(kcal)}kcal · 탄${g('carbs')} 단${g('protein')} 지${g('fat')}`}
+ if(d.type==='workout'){const ex=p.exercises||[],sets=ex.reduce((s,e)=>s+(e.sets||[]).length,0);return `${p.date||''} · ${ex.length}종목 ${sets}세트${ex.length?` · ${ex.slice(0,2).map(e=>e.name).join(', ')}${ex.length>2?' …':''}`:''}`}
+ if(d.type==='body')return [p.weight!=null&&`체중 ${n(p.weight)}kg`,p.bodyFatPct!=null&&`체지방 ${n(p.bodyFatPct)}%`,p.skeletalMuscle!=null&&`골격근 ${n(p.skeletalMuscle)}kg`].filter(Boolean).join(' · ')||'측정값 확인 필요';
+ if(d.type==='food')return `${n(p.servingQty)??''}${p.servingUnit||''} 기준 · ${n(p.calories)??'—'}kcal`;
+ if(d.type==='machine')return [p.manufacturer,p.model,p.location].filter(Boolean).join(' · ');
+ return [p.part,p.equipment].filter(Boolean).join(' · ');
+}
 export function renderAIInbox(drafts,db,{error='',loading=false}={}){
   const pending=drafts.filter(d=>d.status==='pending');
-  return `<div class="page-head"><div><span class="eyebrow">AI REVIEW</span><h2>AI 기록 검토함</h2><p>AI가 작성한 초안을 확인하고 확정하면 내 기록에 저장됩니다.</p></div><button class="button secondary" id="ai-inbox-refresh">새로고침</button></div>${error?`<div class="alert">${h(error)}</div>`:''}${loading?'<div class="card empty">초안을 불러오는 중입니다.</div>':!pending.length?emptyArt('ai','검토할 AI 초안이 없습니다. 연결된 AI에게 기록을 부탁해 보세요.','card'):`<div class="ai-draft-list">${pending.map(d=>`<article class="card ai-draft"><div class="ai-draft-head"><div><span class="eyebrow">${h(label[d.type]||d.type)}</span><h3>${h(d.type==='meal'?`${d.parsedData?.items?.[0]?.slot||'식사'} · ${d.parsedData?.items?.length||0}개 음식`:d.type==='workout'?d.parsedData?.title||'운동 초안':d.type==='body'?`${d.parsedData?.date||''} 측정`:d.parsedData?.name||'신규 항목')}</h3></div><time>${h(stamp(d.createdAt))}</time></div>${d.originalUtterance?`<blockquote>${h(d.originalUtterance)}</blockquote>`:''}${duplicateWarning(d,db)}${evidenceSummary(d.evidence)?`<p class="hint">근거: ${evidenceSummary(d.evidence)}</p>`:''}<form class="ai-review-form" data-ai-draft="${h(d.id)}">${d.type==='meal'?mealEditor(d):d.type==='workout'?workoutEditor(d,db):d.type==='body'?bodyEditor(d):catalogEditor(d)}<div class="actions"><button class="button" type="submit">확인한 기록 확정</button><button class="button secondary" type="button" data-ai-reject="${h(d.id)}">초안 버리기</button></div></form></article>`).join('')}</div>`}<section class="section"><h3 class="section-title">최근 처리</h3><div class="card">${drafts.filter(d=>d.status!=='pending').slice(0,8).map(d=>`<div class="record"><strong>${h(label[d.type]||d.type)} · ${h(d.status==='confirmed'?'확정':'버림')}</strong><small>${h(stamp(d.updatedAt))}</small></div>`).join('')||'<p class="hint">처리한 초안이 없습니다.</p>'}</div></section>`;
+  const head=`<div class="page-head ai-inbox-head"><div><h2>AI 기록 검토함</h2><p>AI가 쓴 초안을 확인하고 확정하면 내 기록에 저장돼요.</p></div><button class="button secondary small" id="ai-inbox-refresh">새로고침</button></div>`;
+  const bulk=pending.length?`<div class="ai-bulk" role="group" aria-label="여러 초안 한 번에 처리"><label class="ai-bulk-all"><input type="checkbox" id="ai-pick-all"> 전체 선택</label><span class="ai-pick-count" id="ai-pick-count">${pending.length}건 대기</span><button type="button" class="button small" id="ai-bulk-confirm" disabled>선택 확정</button><button type="button" class="button secondary small" id="ai-bulk-reject" disabled>선택 버리기</button></div>`:'';
+  const list=pending.map(d=>`<article class="ai-draft compact t-${h(d.type)}"><div class="ai-row"><input type="checkbox" class="ai-pick" data-ai-pick="${h(d.id)}" aria-label="${h(draftTitle(d))} 선택"><div class="ai-row-main"><div class="ai-row-top"><span class="ai-tag">${h(label[d.type]||d.type)}</span><b>${h(draftTitle(d))}</b><time>${h(shortStamp(d.createdAt))}</time></div><p class="ai-row-sum">${h(draftSummary(d))}</p>${d.originalUtterance?`<p class="ai-row-q" title="${h(d.originalUtterance)}">“${h(d.originalUtterance)}”</p>`:''}${duplicateWarning(d,db)}</div><div class="ai-row-actions"><button type="button" class="button small" data-ai-quick="${h(d.id)}">확정</button><button type="button" class="text-button" data-ai-reject="${h(d.id)}">버리기</button></div></div><details class="ai-edit"><summary>내용 확인·수정</summary>${evidenceSummary(d.evidence)?`<p class="hint">근거: ${evidenceSummary(d.evidence)}</p>`:''}<form class="ai-review-form" data-ai-draft="${h(d.id)}">${d.type==='meal'?mealEditor(d):d.type==='workout'?workoutEditor(d,db):d.type==='body'?bodyEditor(d):catalogEditor(d)}<div class="actions"><button class="button" type="submit">고친 내용으로 확정</button><button class="button secondary" type="button" data-ai-reject="${h(d.id)}">초안 버리기</button></div></form></details></article>`).join('');
+  const done=drafts.filter(d=>d.status!=='pending').slice(0,8);
+  return `${head}${error?`<div class="alert">${h(error)}</div>`:''}${loading?'<div class="card empty">초안을 불러오는 중이에요.</div>':!pending.length?emptyArt('ai','검토할 AI 초안이 없어요. 연결된 AI에게 기록을 부탁해 보세요.','card'):`${bulk}<div class="ai-draft-list">${list}</div>`}<section class="section ai-done"><h3 class="section-title">최근 처리</h3>${done.length?`<ul class="ai-done-list">${done.map(d=>`<li><span class="ai-tag">${h(label[d.type]||d.type)}</span><b>${h(draftTitle(d))}</b><em class="${d.status==='confirmed'?'ok':'no'}">${d.status==='confirmed'?'확정':'버림'}</em><time>${h(shortStamp(d.updatedAt))}</time></li>`).join('')}</ul>`:'<p class="hint">처리한 초안이 없어요.</p>'}</section>`;
 }
 const dateTimeISO=value=>{const raw=String(value||'');if(!raw)return '';const d=new Date(raw);if(Number.isNaN(d.getTime()))throw Error('기록 시각을 확인해 주세요.');return d.toISOString()};
 function readEstimate(f,prefix,item){

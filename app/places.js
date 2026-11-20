@@ -35,7 +35,7 @@ export function cleanGymPlaces(settings){
 }
 
 export function addGymPlace(db, place){
- const p = cleanPlace(place); if(!p) throw Error('헬스장 이름을 입력해 주세요.');
+ const p = cleanPlace(place); if(!p) throw Error('장소 이름을 입력해 주세요.');
  const gyms = [...new Set([...(db.settings.gyms||[]), p.name])];
  const gymPlaces = {...(db.settings.gymPlaces||{})};
  if(p.address || p.lat!==null) gymPlaces[p.name] = p; else delete gymPlaces[p.name];
@@ -71,7 +71,17 @@ export function loadKakao({timeout=10000}={}){
  return sdk;
 }
 
-export const isFitness = d => /스포츠시설|헬스|피트니스|요가|필라테스|크로스핏|체육관|운동/.test(String(d?.category_name||''));
+export const isFitness = d => /스포츠시설|헬스|피트니스|요가|필라테스|크로스핏|체육관|운동|클라이밍|복싱|수영|발레|댄스|격투|주짓수|스피닝|무술/.test(String(d?.category_name||''));
+
+// 평소 하는 운동 → 지도 근처 검색어(최대 4개, 무료 사용량을 아끼려고 제한)
+const SPORT_WORDS = {pilates:'필라테스', yoga:'요가', crossfit:'크로스핏', hyrox:'크로스핏', climb:'클라이밍', combat:'복싱', swim:'수영장', ballet:'발레', cycle:'스피닝'};
+export function nearbyWords(sports=[]){
+ const words = [];
+ if(!sports.length || sports.some(s=>['weight','home','cardio','run','hike','ball'].includes(s))) words.push('헬스');
+ for(const s of sports){ const w = SPORT_WORDS[s]; if(w && !words.includes(w)) words.push(w); }
+ if(!words.length) words.push('헬스');
+ return words.slice(0, 4);
+}
 
 function keyword(kakao, q, opt={}, keep=()=>true){
  return new Promise((ok, no) => {
@@ -85,14 +95,22 @@ function keyword(kakao, q, opt={}, keep=()=>true){
 }
 
 export async function searchPlaces(q){
- const query = cut(q, 60); if(!query) throw Error('헬스장 이름이나 동네를 입력해 주세요.');
+ const query = cut(q, 60); if(!query) throw Error('장소 이름이나 동네를 입력해 주세요.');
  const kakao = await loadKakao();
  return keyword(kakao, query, {size:15});
 }
 
-export async function nearbyGyms(lat, lng){
- const kakao = await loadKakao();
- return keyword(kakao, '헬스', {location:new kakao.maps.LatLng(lat, lng), radius:800, sort:kakao.maps.services.SortBy.DISTANCE, size:15}, isFitness);
+export async function nearbyGyms(lat, lng, sports=[]){
+ const kakao = await loadKakao(), S = kakao.maps.services.Status;
+ const one = q => new Promise((ok, no) => new kakao.maps.services.Places().keywordSearch(q, (data, status) => status===S.OK ? ok(data) : status===S.ZERO_RESULT ? ok([]) : no(Error('장소 검색에 실패했어요. 잠시 뒤 다시 해 주세요.')), {location:new kakao.maps.LatLng(lat, lng), radius:800, sort:kakao.maps.services.SortBy.DISTANCE, size:15}));
+ return mergeNearby(await Promise.all(nearbyWords(sports).map(one)));
+}
+
+// 여러 검색어 결과를 합쳐 중복을 빼고 가까운 순으로 20곳
+export function mergeNearby(lists){
+ const seen = new Map();
+ for(const d of lists.flat()){ if(!isFitness(d) || seen.has(d.id)) continue; seen.set(d.id, d); }
+ return [...seen.values()].sort((a, b) => Number(a.distance||1e9) - Number(b.distance||1e9)).slice(0, 20).map(placeFromKakao).filter(Boolean);
 }
 
 export async function addressAt(lat, lng){
@@ -113,28 +131,28 @@ export function gymSettingsHTML(db, search={}){
  const status = search.status==='loading' ? '<p class="hint" role="status">찾는 중…</p>'
   : search.status==='error' ? `<p class="hint warn" role="status">${h(search.message)} 아래 ‘이름만 직접 입력’으로도 추가할 수 있어요.</p>`
   : search.status==='done' && !search.results?.length ? '<p class="hint" role="status">찾은 곳이 없어요. 지점 이름이나 동네를 함께 넣어 보세요.</p>' : '';
- return `<section class="section card gym-settings" id="my-gyms"><h3>내 헬스장</h3><p class="hint">헬스장을 고르면 그 지점에서 등록한 머신을 운동 입력 때 먼저 보여 줘요.</p>
-<form id="gym-search-form" class="gym-search" role="search"><input name="q" type="search" value="${h(search.q)}" placeholder="예: 스포애니 역삼역점" aria-label="헬스장 이름으로 찾기" autocomplete="off" enterkeyhint="search"><button class="button">찾기</button></form>
+ return `<section class="section card gym-settings" id="my-gyms"><h3>내 운동 장소</h3><p class="hint">헬스장·필라테스 스튜디오처럼 운동하는 곳을 등록해요. 헬스장을 고르면 그곳에서 등록한 머신을 운동 입력 때 먼저 보여 줘요.</p>
+<form id="gym-search-form" class="gym-search" role="search"><input name="q" type="search" value="${h(search.q)}" placeholder="예: 스포애니 역삼역점" aria-label="운동 장소 이름으로 찾기" autocomplete="off" enterkeyhint="search"><button class="button">찾기</button></form>
 ${status}${placeListHTML(search.results, 'gym-pick')}${search.results?.length?'<p class="place-credit">장소 정보: 카카오</p>':''}
 <div class="gym-tools"><button type="button" class="button secondary" id="gym-map-open">지도에서 고르기</button></div>
-<details class="gym-manual"><summary>이름만 직접 입력</summary><form id="gym-form" class="actions"><input name="name" required maxlength="60" placeholder="예: 우리 아파트 헬스장" aria-label="헬스장 이름"><button class="button">추가</button></form></details>
-${gyms.length?`<div class="gym-list">${gyms.map((name, i) => { const p = places[name]; return `<div class="record gym-row"><span class="gym-name"><strong>${h(name)}</strong>${p?.address?`<small>${h(p.address)}</small>`:'<small>위치 정보 없음</small>'}</span><button class="text-button" data-gym-delete="${i}" aria-label="${h(name)} 목록에서 삭제">삭제</button></div>`; }).join('')}</div>`:'<p class="hint">아직 등록한 헬스장이 없어요.</p>'}
+<details class="gym-manual"><summary>이름만 직접 입력</summary><form id="gym-form" class="actions"><input name="name" required maxlength="60" placeholder="예: 우리 아파트 헬스장" aria-label="운동 장소 이름"><button class="button">추가</button></form></details>
+${gyms.length?`<div class="gym-list">${gyms.map((name, i) => { const p = places[name]; return `<div class="record gym-row"><span class="gym-name"><strong>${h(name)}</strong>${p?.address?`<small>${h(p.address)}</small>`:'<small>위치 정보 없음</small>'}</span><button class="text-button" data-gym-delete="${i}" aria-label="${h(name)} 목록에서 삭제">삭제</button></div>`; }).join('')}</div>`:'<p class="hint">아직 등록한 운동 장소가 없어요.</p>'}
 </section>`;
 }
 
 export function gymMapHTML(state={}){
- return `<div class="gym-map-flow"><p class="hint">지도를 움직여 헬스장을 가운데에 두세요. 근처 헬스장이 아래에 나와요.</p>
-<div class="gym-map-wrap"><div id="gym-map" class="gym-map" aria-label="헬스장 고르기 지도"></div><span class="gym-map-pin" aria-hidden="true"><svg viewBox="0 0 24 32" width="28" height="38"><path d="M12 1C6 1 1.5 5.5 1.5 11.3 1.5 19 12 31 12 31s10.5-12 10.5-19.7C22.5 5.5 18 1 12 1z" fill="var(--accent,#0f8f86)" stroke="#fff" stroke-width="2"/><circle cx="12" cy="11.5" r="4" fill="#fff"/></svg></span>${state.status==='error'?`<div class="gym-map-error">${h(state.message)}</div>`:''}</div>
+ return `<div class="gym-map-flow"><p class="hint">지도를 움직여 운동하는 곳을 가운데에 두세요. 근처 운동 장소가 아래에 나와요.</p>
+<div class="gym-map-wrap"><div id="gym-map" class="gym-map" aria-label="운동 장소 고르기 지도"></div><span class="gym-map-pin" aria-hidden="true"><svg viewBox="0 0 24 32" width="28" height="38"><path d="M12 1C6 1 1.5 5.5 1.5 11.3 1.5 19 12 31 12 31s10.5-12 10.5-19.7C22.5 5.5 18 1 12 1z" fill="var(--accent,#0f8f86)" stroke="#fff" stroke-width="2"/><circle cx="12" cy="11.5" r="4" fill="#fff"/></svg></span>${state.status==='error'?`<div class="gym-map-error">${h(state.message)}</div>`:''}</div>
 <div class="gym-map-actions"><button type="button" class="button secondary" id="gym-map-locate">내 위치로</button><span class="hint">위치는 지도를 옮길 때 한 번만 쓰고 저장하지 않아요.</span></div>
 <div id="gym-map-results" aria-live="polite">${mapResultsHTML(state)}</div>
-<details class="gym-manual"><summary>목록에 없으면 가운데 지점에 이름 붙이기</summary><form id="gym-map-form" class="actions"><input name="name" required maxlength="60" placeholder="예: 회사 헬스장" aria-label="헬스장 이름"><button class="button">이 위치로 추가</button></form></details></div>`;
+<details class="gym-manual"><summary>목록에 없으면 가운데 지점에 이름 붙이기</summary><form id="gym-map-form" class="actions"><input name="name" required maxlength="60" placeholder="예: 회사 헬스장" aria-label="운동 장소 이름"><button class="button">이 위치로 추가</button></form></details></div>`;
 }
 
 export function mapResultsHTML(state={}){
- if(state.status==='loading') return '<p class="hint">근처 헬스장을 찾는 중…</p>';
+ if(state.status==='loading') return '<p class="hint">근처 운동 장소를 찾는 중…</p>';
  if(state.status==='error') return '';
- if(state.status==='zoom') return '<p class="hint">지도를 조금 더 확대하면 근처 헬스장이 나와요.</p>';
+ if(state.status==='zoom') return '<p class="hint">지도를 조금 더 확대하면 근처 운동 장소가 나와요.</p>';
  if(state.status==='search-error') return `<p class="hint warn">${h(state.message)}</p>`;
- if(!state.results?.length) return state.status==='done' ? '<p class="hint">이 근처에서 찾은 헬스장이 없어요. 지도를 옮기거나 아래에서 이름을 붙여 주세요.</p>' : '';
+ if(!state.results?.length) return state.status==='done' ? '<p class="hint">이 근처에서 찾은 운동 장소가 없어요. 지도를 옮기거나 아래에서 이름을 붙여 주세요.</p>' : '';
  return placeListHTML(state.results, 'gym-mappick') + '<p class="place-credit">장소 정보: 카카오</p>';
 }

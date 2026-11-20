@@ -76,3 +76,13 @@ test('장소: 지도 근처 목록은 운동시설 분류만 남긴다', () => {
  assert.equal(isFitness({category_name:'과학,기술 > 연구소'}), false);
  assert.equal(isFitness({category_name:'스포츠,레저 > 요가,필라테스'}), true);
 });
+
+test('장소: 평소 하는 운동에 맞춰 근처 검색어를 고르고 결과를 합친다', async () => {
+ const {nearbyWords, mergeNearby} = await import('../places.js');
+ assert.deepEqual(nearbyWords([]), ['헬스']);
+ assert.deepEqual(nearbyWords(['pilates']), ['필라테스']);
+ assert.deepEqual(nearbyWords(['weight','pilates','yoga','climb','swim']), ['헬스','필라테스','요가','클라이밍']);
+ const a = {...kakaoDoc, id:'1', distance:'300'}, b = {...kakaoDoc, id:'2', place_name:'바름 필라테스', category_name:'스포츠,레저 > 요가,필라테스', distance:'120'}, lab = {...kakaoDoc, id:'3', category_name:'과학 > 연구소', distance:'10'};
+ const out = mergeNearby([[a, lab], [b, a]]);
+ assert.deepEqual(out.map(x=>x.providerId), ['2','1']);
+});

@@ -10,15 +10,18 @@ export const PREF_DEFAULTS = Object.freeze({
  workoutMode:'set',                // set | after | guide(3.5.0 계획→안내)
  mealMode:'exact',                 // exact | simple | photo(예정, 지금은 exact) | off
  place:'gym',                      // gym | home | multi
+ sports:[],                        // 3.7.0 평소 하는 운동(복수, 비워도 됨). 지금은 수요 파악·지도 근처 검색에만 씀
  halo:true,                        // 홈 헤일로 표시
  restSec:90,                       // 기본 휴식 시간(초)
  cue:'voice',                      // 안내 방식: voice(소리+음성) | sound | vibrate | silent
  keepAwake:true,                   // 계획→안내 중 화면 켜 두기
+ aiLinked:false,                   // 3.8.0 AI 도구를 연결한 적 있음 → 종 알림 표시(계정에 동기화)
  onboarded:false,                  // 시작 문답을 마쳤거나 건너뛰었는지
  hintShown:false                   // 첫 주 '바꾸는 방법' 말풍선을 보여 줬는지
 });
 
-const ALLOWED = {tracks:['workout','meal','body'], level:['new','mid','pro'], workoutMode:['set','after','guide'], mealMode:['exact','simple','photo','off'], place:['gym','home','multi'], cue:['voice','sound','vibrate','silent']};
+export const SPORTS = [['weight','웨이트(헬스)'],['run','야외 러닝'],['cardio','러닝머신·실내 유산소'],['cycle','사이클·스피닝'],['swim','수영'],['pilates','필라테스'],['yoga','요가'],['ballet','발레·바레'],['crossfit','크로스핏'],['hyrox','하이록스'],['hike','등산·트레킹'],['climb','클라이밍'],['home','맨몸·홈트'],['combat','복싱·격투기'],['ball','구기(축구·테니스·골프 등)']];
+const ALLOWED = {sports:SPORTS.map(x=>x[0]), tracks:['workout','meal','body'], level:['new','mid','pro'], workoutMode:['set','after','guide'], mealMode:['exact','simple','photo','off'], place:['gym','home','multi'], cue:['voice','sound','vibrate','silent']};
 
 export function prefsOf(db){
  const raw = (db && db.settings && db.settings.preferences) || {};
@@ -27,6 +30,7 @@ export function prefsOf(db){
  if(!p.tracks.length) p.tracks = [...PREF_DEFAULTS.tracks];
  for(const k of ['level','workoutMode','mealMode','place','cue']) if(!ALLOWED[k].includes(p[k])) p[k] = PREF_DEFAULTS[k];
  p.keepAwake = p.keepAwake !== false;
+ p.sports = Array.isArray(raw.sports) ? [...new Set(raw.sports.filter(x=>ALLOWED.sports.includes(x)))] : [];
  if(p.mealMode==='off' && p.tracks.includes('meal')) p.tracks = p.tracks.filter(x=>x!=='meal');
  if(!p.tracks.includes('meal')) p.mealMode = 'off';
  p.restSec = Math.min(300, Math.max(15, Number(p.restSec)||PREF_DEFAULTS.restSec));
@@ -49,13 +53,14 @@ export function withPrefs(db, patch){
 export const QUESTIONS = [
  {key:'tracks', multi:true, q:'무엇을 기록하고 싶나요?', s:'여러 개 골라도 돼요. 고른 것만 채우면 오늘의 헤일로가 완성돼요.', o:[
   ['workout','운','운동','세트 · 무게 · 머신'], ['meal','식','식단','끼니 · 음식 · 열량'], ['body','몸','몸','체중 · 체성분 · 눈바디']]},
+ {key:'sports', multi:true, optional:true, chips:true, q:'평소에 어떤 운동을 해요?', s:'여러 개 골라도 되고, 건너뛰어도 돼요. 지금은 웨이트 기록을 중심으로 지원해요. 고른 운동은 다음에 무엇부터 만들지 정하는 데 쓰고, 지도에서 운동 장소를 찾을 때도 써요.', o:SPORTS.map(([v,t])=>[v,'',t,''])},
  {key:'level', q:'운동은 얼마나 해 봤어요?', s:'운동 설명을 얼마나 보여 줄지 정해요.', o:[
   ['new','1','이제 시작해요','운동마다 쓰는 근육을 함께 보여 줘요'], ['mid','2','1년 안 됐어요','필요할 때 설명을 펼쳐 봐요'], ['pro','3','꾸준히 해 왔어요','설명은 접고 기록에 집중해요']]},
  {key:'workoutMode', q:'운동할 때 기록은 어떻게 할래요?', s:'언제든 바꿀 수 있어요.', o:[
   ['set','A','세트마다 바로 기록','한 세트 끝날 때마다 무게·횟수를 남겨요'], ['after','B','다 끝나고 한 번에','“45kg × 10회 × 3세트”처럼 몰아서 입력'], ['guide','C','미리 계획하고 안내 따라가기','세트·휴식을 정해 두면 소리로 알려 줘요. 폰은 거의 안 봐도 돼요']]},
  {key:'mealMode', q:'식단은 어떻게 남길래요?', s:'', o:[
   ['exact','정','음식과 양까지 정확히','음식 검색 · g 단위 · 영양 성분'], ['simple','간','끼니만 간단히','“점심 · 약 700kcal”처럼 빠르게'], ['photo','사','사진 먼저, 정리는 나중에','곧 제공돼요 · 그전까지는 정확히로 기록해요'], ['off','×','식단은 안 할래요','식단 탭을 숨겨요']]},
- {key:'place', q:'주로 어디서 운동해요?', s:'헬스장은 설정의 ‘내 헬스장’에서 이름이나 지도로 찾아 추가해요.', o:[
+ {key:'place', q:'주로 어디서 운동해요?', s:'운동 장소는 설정의 ‘내 운동 장소’에서 이름이나 지도로 찾아 추가해요.', o:[
   ['gym','헬','헬스장','헬스장 머신 위주로 보여 줘요'], ['home','집','집에서','홈트 장소를 미리 만들어 둘게요'], ['multi','여','여러 곳','장소를 여러 개 등록해요']]}
 ];
 
@@ -66,7 +71,8 @@ const LABELS = {
  mealMode:{exact:'음식과 양까지 정확히', simple:'끼니만 간단히', photo:'사진 먼저(곧 제공)', off:'식단 기록 안 함'},
  place:{gym:'헬스장', home:'집', multi:'여러 곳'}
 };
-export const prefLabel = (key, value) => key==='tracks' ? value.map(v=>LABELS.tracks[v]).join(' · ') : (LABELS[key]||{})[value] || '';
+export const sportsLabel = list => (list||[]).length ? list.map(v=>(SPORTS.find(x=>x[0]===v)||[])[1]).filter(Boolean).join(' · ') : '고르지 않음';
+export const prefLabel = (key, value) => key==='tracks' ? value.map(v=>LABELS.tracks[v]).join(' · ') : key==='sports' ? sportsLabel(value) : (LABELS[key]||{})[value] || '';
 
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -75,24 +81,24 @@ export function onboardingHTML(state){
  const {step, answers} = state;
  if(step >= QUESTIONS.length){
   const p = {...PREF_DEFAULTS, ...answers};
-  const rows = [['기록할 것', prefLabel('tracks', p.tracks)], ['운동 기록', prefLabel('workoutMode', p.workoutMode)], ['운동 설명', p.level==='new'?'사용 근육 함께 보기':p.level==='pro'?'접어 두기':'필요할 때 펼치기'], ['식단 입력', prefLabel('mealMode', p.mealMode)], ['운동 장소', prefLabel('place', p.place)]];
+  const rows = [['기록할 것', prefLabel('tracks', p.tracks)], ['운동 기록', prefLabel('workoutMode', p.workoutMode)], ['운동 설명', p.level==='new'?'사용 근육 함께 보기':p.level==='pro'?'접어 두기':'필요할 때 펼치기'], ['식단 입력', prefLabel('mealMode', p.mealMode)], ['운동 장소', prefLabel('place', p.place)], ['평소 하는 운동', sportsLabel(p.sports)]];
   return `<div class="onb"><p class="onb-q">이렇게 시작할게요</p><p class="onb-s">답에 맞춰 기본값을 정했어요. 언제든 바꿀 수 있어요.</p><div class="onb-sum">${rows.map(([k,v])=>`<div class="onb-row"><span>${k}</span><b>${h(v)}</b></div>`).join('')}</div>${changeGuideHTML()}<div class="onb-btns"><button type="button" class="button" id="onb-finish">시작하기</button></div></div>`;
  }
  const Q = QUESTIONS[step], cur = answers[Q.key];
  const on = v => Q.multi ? (cur||[]).includes(v) : cur===v;
- return `<div class="onb"><div class="onb-top"><div class="onb-dots" aria-label="${step+1} / ${QUESTIONS.length}">${QUESTIONS.map((_,i)=>`<i class="${i<=step?'on':''}"></i>`).join('')}</div><button type="button" class="text-button" id="onb-skip">건너뛰기</button></div><p class="onb-q">${Q.q}</p>${Q.s?`<p class="onb-s">${Q.s}</p>`:''}<div class="onb-opts" role="${Q.multi?'group':'radiogroup'}">${Q.o.map(([v,ic,t,d])=>`<button type="button" class="onb-opt ${on(v)?'on':''}" data-onb-pick="${v}" aria-pressed="${on(v)}"><span class="onb-ic" aria-hidden="true">${ic}</span><span><b>${t}</b><small>${d}</small></span></button>`).join('')}</div><div class="onb-btns">${step?'<button type="button" class="button secondary" id="onb-prev">이전</button>':''}<button type="button" class="button" id="onb-next">${step===QUESTIONS.length-1?'완료':'다음'}</button></div></div>`;
+ return `<div class="onb"><div class="onb-top"><div class="onb-dots" aria-label="${step+1} / ${QUESTIONS.length}">${QUESTIONS.map((_,i)=>`<i class="${i<=step?'on':''}"></i>`).join('')}</div><button type="button" class="text-button" id="onb-skip">건너뛰기</button></div><p class="onb-q">${Q.q}</p>${Q.s?`<p class="onb-s">${Q.s}</p>`:''}${Q.chips?`<div class="onb-chips" role="group">${Q.o.map(([v,,t])=>`<button type="button" class="onb-chip ${on(v)?'on':''}" data-onb-pick="${v}" aria-pressed="${on(v)}">${t}</button>`).join('')}</div>`:`<div class="onb-opts" role="${Q.multi?'group':'radiogroup'}">${Q.o.map(([v,ic,t,d])=>`<button type="button" class="onb-opt ${on(v)?'on':''}" data-onb-pick="${v}" aria-pressed="${on(v)}"><span class="onb-ic" aria-hidden="true">${ic}</span><span><b>${t}</b><small>${d}</small></span></button>`).join('')}</div>`}<div class="onb-btns">${step?'<button type="button" class="button secondary" id="onb-prev">이전</button>':''}<button type="button" class="button" id="onb-next">${step===QUESTIONS.length-1?'완료':'다음'}</button></div></div>`;
 }
 
 export function onboardingPick(state, value){
  const Q = QUESTIONS[state.step];
- if(Q.multi){ const cur = state.answers[Q.key]||[]; let next = cur.includes(value) ? cur.filter(x=>x!==value) : [...cur, value]; if(!next.length) next = cur; state.answers[Q.key] = next; }
+ if(Q.multi){ const cur = state.answers[Q.key]||[]; let next = cur.includes(value) ? cur.filter(x=>x!==value) : [...cur, value]; if(!next.length && !Q.optional) next = cur; state.answers[Q.key] = next; }
  else state.answers[Q.key] = value;
  if(Q.key==='mealMode' && value==='off') state.answers.tracks = (state.answers.tracks||PREF_DEFAULTS.tracks).filter(x=>x!=='meal');
 }
 
 export const newOnboarding = db => {
  const p = prefsOf(db);
- return {step:0, answers:{tracks:[...p.tracks], level:p.level, workoutMode:p.workoutMode, mealMode:p.mealMode==='off'&&p.tracks.includes('meal')?'exact':p.mealMode, place:p.place}};
+ return {step:0, answers:{tracks:[...p.tracks], level:p.level, workoutMode:p.workoutMode, mealMode:p.mealMode==='off'&&p.tracks.includes('meal')?'exact':p.mealMode, place:p.place, sports:[...p.sports]}};
 };
 
 export function finishOnboarding(db, answers){
@@ -116,6 +122,7 @@ export function prefsSettingsHTML(db){
  const seg = (key, opts) => `<div class="pref-seg" role="radiogroup">${opts.map(v=>`<button type="button" class="${(key==='tracks'?p.tracks.includes(v):p[key]===v)?'on':''}" data-pref="${key}" data-pref-value="${v}" aria-pressed="${key==='tracks'?p.tracks.includes(v):p[key]===v}">${h(key==='tracks'?LABELS.tracks[v]:shortLabel(key,v))}</button>`).join('')}</div>`;
  return `<section class="section card pref-card" id="my-record-style"><h3>나의 기록 방식</h3><p class="hint">바꾼 즉시 적용돼요. 지난 기록은 그대로예요.</p>
  <div class="pref-item"><div><b>기록할 것</b><small>고른 것만 하단 탭에 보이고, 헤일로도 이것만 채우면 완성돼요</small></div>${seg('tracks',['workout','meal','body'])}</div>
+ <div class="pref-item pref-sports"><div><b>평소 하는 운동</b><small>지금은 웨이트·맨몸 운동을 세트로 기록해요. 고른 운동은 지도 근처 검색에 쓰고, 다음에 무엇부터 만들지 정하는 데 참고해요</small></div><div class="pref-chips">${SPORTS.map(([v,t])=>`<button type="button" class="${p.sports.includes(v)?'on':''}" data-pref="sports" data-pref-value="${v}" aria-pressed="${p.sports.includes(v)}">${h(t)}</button>`).join('')}</div></div>
  <div class="pref-item"><div><b>운동 기록 방식</b><small>세트마다 바로 / 다 끝나고 한 번에 / 미리 계획하고 소리 안내</small></div>${seg('workoutMode',['set','after','guide'])}</div>
  <div class="pref-item"><div><b>식단 입력 방식</b><small>${p.mealMode==='photo'?'‘사진 먼저’는 곧 제공돼요. 그전까지는 정확히로 기록해요':'정확히 = 음식 검색 · 간단히 = 끼니와 대략 열량'}</small></div>${seg('mealMode',['exact','simple','photo','off'])}</div>
  <div class="pref-item"><div><b>운동 설명</b><small>운동을 고를 때 쓰는 근육 그림을 바로 보여 줄지</small></div>${seg('level',['new','mid','pro'])}</div>
@@ -130,6 +137,7 @@ const shortLabel = (key, v) => ({cue:{voice:'소리+음성',sound:'소리만',vi
 export function applyPrefClick(db, target){
  const key = target.dataset.pref, v = target.dataset.prefValue;
  if(key==='tracks'){ const p = prefsOf(db); let next = p.tracks.includes(v) ? p.tracks.filter(x=>x!==v) : [...p.tracks, v]; if(!next.length) return {db, message:'하나 이상은 기록해야 해요.'}; return {db:withPrefs(db,{tracks:next}), message:`기록할 것: ${prefLabel('tracks', next)}`}; }
+ if(key==='sports'){ const p = prefsOf(db); const next = p.sports.includes(v) ? p.sports.filter(x=>x!==v) : [...p.sports, v]; return {db:withPrefs(db,{sports:next}), message:`평소 하는 운동: ${sportsLabel(next)}`}; }
  if(key==='restSec') return {db:withPrefs(db,{restSec:Number(v)}), message:`기본 휴식 ${Number(v)}초`};
  if(key==='halo') return {db:withPrefs(db,{halo:v==='on'}), message:v==='on'?'헤일로를 보여 줘요':'헤일로를 숨겼어요'};
  if(key==='keepAwake') return {db:withPrefs(db,{keepAwake:v==='on'}), message:v==='on'?'안내 중 화면을 켜 둬요':'화면은 기기 설정대로 꺼져요'};
