@@ -421,3 +421,35 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .chip-row.q-steps .chip{min-width:56px;justify-content:center}
 .q-conv{display:block;margin-top:4px;font-size:13px;color:#9cc8ed;font-variant-numeric:tabular-nums}
 .quick-set-inputs{align-items:start}
+/* 3.13.0 운동 분석 A 주간 리포트형 */
+.ar{display:flex;flex-direction:column;gap:12px;margin-top:8px;--ar-fill:rgba(140,228,224,.18)}
+.ar-card{background:linear-gradient(160deg,#1d2a44,#1a253e);border:1px solid #33506d;border-radius:19px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.ar-card p{margin:0;font-size:14px;line-height:1.55;color:#d6e2ec}
+.ar-hi{border-color:#4f8e8c;background:linear-gradient(160deg,rgba(140,228,224,.16),#1a253e 60%)}
+.ar-eyebrow{font-size:12px!important;letter-spacing:.08em;color:#8ce4e0!important;font-weight:700}
+.ar-h{margin:0;font-size:24px;line-height:1.3}
+.ar-big{font-size:20px!important;font-weight:700;color:#edf4f8!important}
+.ar-huge{font-size:48px!important;font-weight:700;color:#8ce4e0!important;line-height:1.1;font-variant-numeric:tabular-nums}
+.ar .up{color:#8ce4e0}.ar .down{color:#f2b49b}
+.ar-warn{color:#f3c27a!important}
+.ar-hint{font-size:13px!important;color:#a9bbce!important}
+.ar-note{font-size:12px!important;color:#7f93ab!important}
+.ar-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ar-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.ar-head b{font-size:17px}.ar-head small{font-size:12px;color:#8ea3bb;text-align:right}
+.ar-body{display:flex;justify-content:center;gap:6px;height:190px}.ar-body svg{height:190px;width:auto}.ar-body path[stroke-dasharray]{display:none}
+.ar-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:12px!important}.ar-legend .d{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}.ar-legend .r{background:#67b7ff}.ar-legend .y{background:#315e91}.ar-legend .g{background:#19212a;border:1px solid #9eaac0}
+.ar-prs{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.ar-pr{background:#16223a;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:2px}.ar-pr span{font-size:20px}.ar-pr b{font-size:14px;word-break:keep-all}.ar-pr small{font-size:12px;color:#a9bbce}
+.ar-line{width:100%;height:auto;display:block}
+.ar-pick{max-width:260px}.ar-pick select{font-size:16px}
+.ar-sb{display:grid;grid-template-columns:40px minmax(0,1fr) 54px;gap:8px;align-items:center;font-size:13px}
+.ar-sbar{position:relative;height:10px;border-radius:10px;background:#13203a;overflow:hidden}.ar-sbar .band{position:absolute;top:0;bottom:0;background:#2a3a58}.ar-sbar b{position:absolute;left:0;top:2px;bottom:2px;border-radius:10px;background:#8ce4e0}.ar-sbar b.low{background:#9cc8ed}.ar-sbar b.high{background:#f2b49b}
+.ar-sb em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;color:#d6e2ec}.ar-sb em.low{color:#9cc8ed}.ar-sb em.high{color:#f2b49b}
+.ar-heat{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(7,auto);grid-auto-flow:column;gap:4px}
+.ar-heat i{aspect-ratio:1;border-radius:4px;background:#16223a}.ar-heat i.h1{background:#2b5a63}.ar-heat i.h2{background:#4f9a99}.ar-heat i.h3{background:#8ce4e0}.ar-heat i.f{background:transparent;border:1px dashed #22314d}
+.ar-share{text-align:center;align-items:center;border-color:#6f5fb8;background:linear-gradient(160deg,rgba(184,170,242,.18),#1a253e 70%)}
+.ar-more{margin-top:16px}.ar-more>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;padding:0 4px;font-size:15px;color:#c9d6e6}
+.ar-more[open]>summary{color:#8ce4e0}
+@media(min-width:900px){.ar{display:grid;grid-template-columns:1fr 1fr;align-items:start}.ar>.ar-hi{grid-column:1/-1}}
+/* 3.13.0 식단 화면: 큰 목표 막대 카드 */
+.nutrition-summary-v2 .home-stat.home-diet{padding:18px}
