@@ -305,3 +305,31 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .ai-advanced summary{cursor:pointer;font-size:13px;color:#a9bbce;min-height:40px;display:flex;align-items:center}
 .ai-advanced input{font-size:16px;max-width:140px}
 @media(max-width:420px){.ai-row{grid-template-columns:auto minmax(0,1fr);}.ai-row-actions{grid-column:2;flex-direction:row;align-items:center}.ai-row-actions .button{flex:none}}
+/* 3.9.0 식단 목표 문답 */
+.gw-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border-radius:16px;background:linear-gradient(150deg,rgba(140,228,224,.12),#1c2b46 60%);border:1px solid #4f8e8c;margin:8px 0 12px}
+.gw-entry div{display:flex;flex-direction:column;gap:2px;flex:1;min-width:200px}
+.gw-entry b{font-size:16px}.gw-entry small{font-size:13px;color:#a9bbce}
+.gw-basic{display:flex;flex-direction:column;gap:12px}
+.gw-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.gw-fields input{font-size:16px}
+.gw-tag{font-style:normal;font-size:12px;font-weight:600;color:#a9bbce;margin-left:6px}
+.gw-rec{font-style:normal;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#8ce4e0;color:#10223a;margin-left:6px;vertical-align:middle}
+.gw-care{font-size:13px;color:#f3c27a}
+.gw-note{margin:6px 0 0}
+.gw-custom{margin-top:10px}
+.gw-custom summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:14px;color:#c9d6e6}
+.gw-presets{display:flex;flex-direction:column;gap:10px}
+.gw-preset{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;padding:14px;border-radius:16px;border:1px solid #33506d;background:#1c2b46;color:#edf4f8;font:inherit;cursor:pointer}
+.gw-preset.on{border-color:#8ce4e0;background:#1d3a48;box-shadow:0 0 0 1px #8ce4e0 inset}
+.gw-preset:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
+.gw-preset-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.gw-preset-top b{font-size:16px}
+.gw-ratio{margin-left:auto;font-size:13px;font-weight:700;color:#c9d6e6;font-variant-numeric:tabular-nums}
+.gw-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:#13203a}
+.gw-bar i.c{background:var(--nutrient-carbs,#ead96b)}.gw-bar i.p{background:var(--nutrient-protein,#77d7b0)}.gw-bar i.f{background:var(--nutrient-fat,#ff8396)}
+.gw-grams{font-size:13px;font-weight:600;color:#edf4f8}.gw-grams small{font-weight:400;color:#a9bbce}
+.gw-desc{font-size:13px;color:#c9d6e6;line-height:1.5}
+.gw-good{font-size:13px;color:#8ce4e0;line-height:1.5}
+.gw-preset .gw-care{line-height:1.5}
+.onb-chip small{font-weight:400;color:#a9bbce;font-size:12px}
+@media(max-width:420px){.gw-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.gw-ratio{margin-left:0;width:100%}}

@@ -21,6 +21,7 @@ import {EXERCISE_CATALOG,searchExercises,PROGRAM_TEMPLATES,createRoutineFromProg
 import {FOOD_CATALOG} from './food-catalog.js';
 import {scaleNutrition,recentFoods,upsertFoodPreset} from './nutrition.js';
 import {goalSettingsHTML,saveGoalSettings} from './nutrition-goals.js';
+import {newGoalWizard,goalWizardHTML,applyGoalWizard,calorieOptions,presetOrder,WIZ_STEPS,estimate as estimateEnergy} from './nutrition-plan.js';
 import {setGap} from './workout-times.js';
 import {dietTrend,exerciseTrend,partSummary,fatigueProxy,weeklyReport,monthlyReport,comparePeriods} from './reports.js';
 import {mealFormHTML,mealPreview,workoutFormHTML,saveProgressPhoto,listProgressPhotos,deleteProgressPhoto} from './ui-helpers.js';
@@ -47,7 +48,7 @@ let bodyEditId=null,selection={tab:'recent',part:'전체',equipment:'전체'},ba
 let draftWarning='',savedDraft=null,backupBusy=false,renderedModal=null;
 let quickMeal=null,quickWorkout=null,composingSearch=false;
 let onb=null,afterWorkout=null,scrollToPrefs=false;
-let guidePlan=null,guideRun=null,guideCues=null,guideTicker=null;
+let guidePlan=null,guideRun=null,guideCues=null,guideTicker=null,goalWiz=null;
 let gymSearch={},gymMap=null,gymMapView=null,gymMapEl=null,gymMapTimer=null,gymMapSeq=0;
 let sharedCatalog={foods:[],exercises:[],machineModels:[],gymLocations:[],gymMachines:[],error:''};
 let adminState={open:false,snoozed:new Set(),done:[],autoShown:false},adminJust={},adminRefreshedAt=0,onbChecked=false,aiPair=null,aiBridge={checked:false,checking:false,status:null,port:BRIDGE_PORT};
@@ -139,6 +140,27 @@ async function adminClick(t){
 try{const saved=JSON.parse(localStorage.getItem(scopedKey('mylogue.ai-pair'))||'null');if(saved&&saved.expiresAt>Date.now())aiPair=saved}catch{}
 if(typeof document!=='undefined'&&typeof document.addEventListener==='function')document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&noticeOn()&&Date.now()-adminRefreshedAt>60000){adminRefreshedAt=Date.now();if(isCatalogAdmin(cloudState.user)){refreshApplicants().catch(console.error);refreshCatalog().catch(console.error)}if(aiLinkedNow())refreshAIDrafts().catch(console.error)}});
 async function aiConfirmMany(list){let ok=0;const failed=[];for(const d of list){try{await resolveAIDraft(d,{action:'confirm',reviewedData:d.parsedData});ok++}catch(e){failed.push(d)}}if(ok){try{const synced=await synchronize(db,saveLocal);if(synced.db)db=synced.db}catch(error){console.error(error)}}await refreshAIDrafts();toast(failed.length?`${ok}건 확정 · ${failed.length}건은 내용 확인이 필요해요(‘내용 확인·수정’을 열어 주세요).`:`${ok}건 확정했어요. 내 기록에 저장됐어요.`)}
+function gwReadBasic(){const f=document.getElementById('gw-basic');if(!f||!goalWiz)return;const d=new FormData(f);for(const k of ['age','heightCm','weightKg']){const v=String(d.get(k)||'').trim();goalWiz.profile[k]=v===''?null:Number(v)}}
+function gwEnter(){const st=goalWiz,step=WIZ_STEPS[st.step];if(step==='calories'&&!st.kcal){const o=calorieOptions(st.profile);st.kcal=(o.find(x=>x.rec)||o.find(x=>!x.below)||o[0])?.kcal||null}if(step==='macros'&&!st.preset&&!st.custom.on)st.preset=presetOrder(st.profile).rec}
+function goalWizClick(t){
+ if(t.id==='gw-open'){goalWiz=newGoalWizard(db);modal='goal-wizard';render();return true}
+ if(!goalWiz)return false;const st=goalWiz,step=WIZ_STEPS[st.step];
+ if(t.dataset.gwSex){gwReadBasic();st.profile.sex=t.dataset.gwSex;render();return true}
+ if(t.dataset.gwActivity){st.profile.activity=t.dataset.gwActivity;st.kcal=null;render();return true}
+ if(t.dataset.gwGoal){st.profile.goal=t.dataset.gwGoal;st.kcal=null;st.preset=null;render();return true}
+ if(t.dataset.gwDiet){const v=t.dataset.gwDiet,ds=st.profile.diets||[];st.profile.diets=v==='none'?[]:ds.includes(v)?ds.filter(x=>x!==v):[...ds,v];st.kcal=null;st.preset=null;render();return true}
+ if(t.dataset.gwKcal){st.kcal=Number(t.dataset.gwKcal);st.custom.kcalOn=false;render();return true}
+ if(t.dataset.gwPreset){st.preset=t.dataset.gwPreset;st.custom.on=false;render();return true}
+ if(t.id==='gw-custom-use'){const c=Number(document.getElementById('gw-c')?.value),p=Number(document.getElementById('gw-p')?.value),f=Number(document.getElementById('gw-f')?.value);if(![c,p,f].every(x=>Number.isFinite(x)&&x>=0)||Math.abs(c+p+f-100)>0.01){toast('세 비율의 합을 100%로 맞춰 주세요.');return true}st.custom={...st.custom,on:true,c,p,f};render();toast(`탄 ${c} : 단 ${p} : 지 ${f}로 정했어요.`);return true}
+ if(t.id==='gw-prev'){if(step==='basic')gwReadBasic();st.step=Math.max(0,st.step-1);render();return true}
+ if(t.id==='gw-next'){
+  if(step==='basic'){gwReadBasic();if(!estimateEnergy(st.profile)){toast('나이(14~100), 키(120~230cm), 체중(30~300kg)을 확인해 주세요.');return true}}
+  if(step==='calories'){const det=document.querySelector('.gw-custom'),v=Number(document.getElementById('gw-kcal-custom')?.value);if(det?.open&&v){if(v<800||v>6000){toast('목표 칼로리는 800~6,000kcal 사이로 넣어 주세요.');return true}st.kcal=Math.round(v);st.custom.kcalOn=true;st.custom.kcal=v}if(!st.kcal){toast('목표 칼로리를 골라 주세요.');return true}}
+  st.step++;gwEnter();render();document.querySelector('.sheet')?.scrollTo?.(0,0);return true}
+ if(t.id==='gw-save'){db=save(applyGoalWizard(db,st));st.result=db.settings;st.step=WIZ_STEPS.length-1;render();toast('식단 목표를 저장했어요.');return true}
+ if(t.id==='gw-close'||t.id==='gw-skip'){const skipped=t.id==='gw-skip';goalWiz=null;modal=null;render();if(skipped)toast('설정 › 일일 식단 목표에서 언제든 정할 수 있어요.');return true}
+ return false;
+}
 function recordHint(){const pf=prefsOf(db);if(pf.hintShown||!pf.onboarded)return;if(db.body.length+db.meals.length+db.workouts.length<3)return;db=save(withPrefs(db,{hintShown:true}));setTimeout(()=>toast('기록 방식이 불편하면 설정 › 나의 기록 방식에서 바꿀 수 있어요.'),1800)}
 function prefsClick(t){
  if(t.id==='onb-start'||t.id==='onb-restart'){onb=newOnboarding(db);modal='onboarding';render();return true}
@@ -147,7 +169,7 @@ function prefsClick(t){
  if(t.id==='onb-next'&&onb){onb.step++;render();return true}
  if(t.id==='onb-prev'&&onb){onb.step=Math.max(0,onb.step-1);render();return true}
  if(t.id==='onb-skip'&&onb){onb.step=QUESTIONS.length;render();return true}
- if(t.id==='onb-finish'&&onb){db=save(finishOnboarding(db,onb.answers));onb=null;modal=null;page='home';render();toast('나에게 맞춘 설정으로 시작해요.');return true}
+ if(t.id==='onb-finish'&&onb){db=save(finishOnboarding(db,onb.answers));onb=null;modal=null;page='home';if(prefsOf(db).tracks.includes('meal')&&!db.settings.nutritionProfile){goalWiz=newGoalWizard(db);modal='goal-wizard';render();toast('이어서 식단 목표를 정해 볼게요. 건너뛰어도 돼요.');return true}render();toast('나에게 맞춘 설정으로 시작해요.');return true}
  if(t.dataset.pref){const r=applyPrefClick(db,t);if(r.db!==db)db=save(r.db);render();if(r.message)toast(r.message);return true}
  if(t.dataset.prefJump){page='settings';modal=null;scrollToPrefs=true;render();return true}
  if(t.id==='after-add'||t.id==='after-last'||t.dataset.afterDel!=null){const form=document.getElementById('after-workout-form');afterWorkout=form?readAfterWorkoutForm(form):(afterWorkout||emptyAfterWorkout(today()));if(t.id==='after-add')afterWorkout.rows.push({name:'',weight:'',reps:'',sets:3,unit:'kg'});if(t.id==='after-last'){if(!db.workouts.length){toast('불러올 지난 운동이 없어요.');return true}const last=afterWorkoutFromLast(db,afterWorkout.date,afterWorkout.gymName);afterWorkout={...afterWorkout,rows:last.rows}}if(t.dataset.afterDel!=null){afterWorkout.rows.splice(Number(t.dataset.afterDel),1);if(!afterWorkout.rows.length)afterWorkout.rows.push({name:'',weight:'',reps:'',sets:3,unit:'kg'})}render();return true}
@@ -210,6 +232,7 @@ function modalHTML(){if(!modal)return '';const wrap=(title,content,kind='')=>`<d
  if(modal==='install')return wrap('마이로그 앱 설치',installModalBody());
  if(modal==='onboarding')return wrap(onb&&onb.step>=5?'나에게 맞춘 마이로그':'나에게 맞추기',onboardingHTML(onb||newOnboarding(db)));
  if(modal==='after-workout')return wrap('오늘 한 운동 · 한 번에 입력',afterWorkoutHTML(afterWorkout||emptyAfterWorkout(today()),allExercises().map(x=>x.name),db.settings.gyms||[]));
+ if(modal==='goal-wizard'&&goalWiz)return wrap('식단 목표 정하기',goalWizardHTML(goalWiz));
  if(modal==='gym-map')return wrap('지도에서 운동 장소 고르기',gymMapHTML(gymMap||{}),'gym-map-sheet');
  if(modal==='guide-plan')return wrap('운동 계획 · 안내 받기',planHTML(guidePlan||emptyPlan(today(),'',prefsOf(db).restSec),{names:allExercises().map(x=>x.name),gyms:db.settings.gyms||[],routines:db.routines||[],hasLast:db.workouts.length>0}));
  if(modal==='guide-run'&&guideRun)return wrap('운동 안내',runHTML(guideRun),'guide-sheet');
@@ -298,6 +321,7 @@ root.addEventListener('click',async event=>{
   if(target.id==='close'||target.id==='backdrop'){persistDraft();modal=['machine','custom-exercise'].includes(modal)?profileReturn:null;render();return}
   if(await installClick(target))return;
   if(prefsClick(target))return;
+  if(goalWizClick(target))return;
   if(await adminClick(target))return;
   if(await aiBridgeClick(target))return;
   if(guideClick(target))return;
