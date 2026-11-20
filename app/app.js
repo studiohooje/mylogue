@@ -33,7 +33,7 @@ import {mealFormHTML,mealPreview,workoutFormHTML,saveProgressPhoto,listProgressP
 import {parseCodexRecord} from './ai-adapter.js';
 import {listAIDrafts,pairLocalAgent,unpairLocalAgent,bridgeStatus,BRIDGE_PORT,resolveAIDraft,addPastedDrafts,askAIServer} from './ai-drafts.js';
 import {aiWorkerUrl} from './ai-config.js';
-import {aiInputHTML,aiPreviewHTML,parsePaste,AI_PROMPT,aiContextText} from './ai-paste.js';
+import {aiInputHTML,aiPreviewHTML,parsePaste,fullPrompt,aiContextText} from './ai-paste.js';
 import {renderAIInbox,readAIReview,wireAIReview} from './ai-inbox.js';
 import {createBackup,validateBackup,restoreBackup,recoverInterruptedRestore} from './backup.js';
 import {readSession,writeSession,clearSession,rawSession} from './session.js';
@@ -329,7 +329,7 @@ function modalHTML(){if(!modal)return '';const wrap=(title,content,kind='')=>`<d
  if(modal==='catalog-request')return wrap('공용 도감 등록 요청',catalogRequestHTML());
  if(modal==='catalog-photo')return wrap('머신 전체·명판 사진',`<div class="gap"><p class="hint">요청자가 보낸 압축 사진입니다. 제조사와 모델이 분명한지 확인한 뒤 요청 상태를 정하세요.</p><figure><figcaption>머신 전체</figcaption><img class="preview" src="${esc(catalogPhotoView?.whole||'')}" alt="머신 전체 사진"></figure><figure><figcaption>제조사·모델 명판</figcaption><img class="preview" src="${esc(catalogPhotoView?.nameplate||'')}" alt="머신 명판 사진"></figure></div>`);
  if(modal==='catalog-admin-food')return wrap('공용 음식 도감',catalogAdminFoodHTML());
-  if(modal==='ai-input')return wrap('AI로 입력',aiInputHTML(aiInput,{pending:aiDrafts.filter(d=>d.status==='pending').length,ready:aiReady(),server:!!aiWorkerUrl()}),'ai-input-sheet');if(modal==='quick-meal')return wrap('음식 빠른 검색',quickMealHTML(foodChoices(),quickMeal,{meals:db.meals,pop:popularity}),'quick-palette');
+  if(modal==='ai-input')return wrap('AI로 입력',aiInputHTML({...aiInput,fullPrompt:fullPrompt(db)},{pending:aiDrafts.filter(d=>d.status==='pending').length,ready:aiReady(),server:!!aiWorkerUrl()}),'ai-input-sheet');if(modal==='quick-meal')return wrap('음식 빠른 검색',quickMealHTML(foodChoices(),quickMeal,{meals:db.meals,pop:popularity}),'quick-palette');
  if(modal==='quick-workout')return wrap('운동 빠른 검색',quickWorkoutHTML(db,quickWorkout,allExercises(),sharedCatalog,popularity),'quick-palette');
   if(modal==='batch')return wrap('식사 상세 입력',batchHTML(batchRows,batchDate,batchSlot,foodChoices().foods,db.recipes||[],{time:batchTime,gramOptions:db.settings.gramOptions||{}}));
  if(modal==='checkin')return wrap('오늘 상태',checkinHTML());
@@ -408,8 +408,7 @@ root.addEventListener('click',async event=>{
   if(target.dataset.aiQuick){const draft=aiDrafts.find(x=>x.id===target.dataset.aiQuick);if(!draft)return;target.disabled=true;await aiConfirmMany([draft]);return}
   if(target.id==='ai-bulk-confirm'||target.id==='ai-bulk-reject'){const ids=[...document.querySelectorAll('[data-ai-pick]:checked')].map(x=>x.dataset.aiPick),list=aiDrafts.filter(d=>ids.includes(d.id));if(!list.length)return;if(target.id==='ai-bulk-confirm'){if(!confirm(`선택한 초안 ${list.length}건을 내용 그대로 확정할까요?`))return;target.disabled=true;await aiConfirmMany(list)}else{if(!confirm(`선택한 초안 ${list.length}건을 버릴까요? 되돌릴 수 없어요.`))return;target.disabled=true;let ok=0;for(const d of list){try{await resolveAIDraft(d,{action:'reject'});ok++}catch(e){console.error(e)}}await refreshAIDrafts();toast(`${ok}건 버렸어요.${ok<list.length?` ${list.length-ok}건은 실패했어요.`:''}`)}return}
   if(target.dataset.aiReject){const draft=aiDrafts.find(x=>x.id===target.dataset.aiReject);if(!draft)return;if(!confirm('이 AI 초안을 버릴까요?'))return;await resolveAIDraft(draft,{action:'reject'});await refreshAIDrafts();toast('초안을 버렸습니다.');return}
-  if(target.id==='ai-copy-prompt'){navigator.clipboard?.writeText(AI_PROMPT).then(()=>toast('지시문을 복사했어요. 쓰는 AI 대화창에 붙여넣어 주세요.')).catch(()=>toast('복사하지 못했어요. 아래 “지시문 내용 보기”를 길게 눌러 복사해 주세요.'));return}
-  if(target.id==='ai-copy-mine'){navigator.clipboard?.writeText(aiContextText(db)).then(()=>toast('내 목록을 복사했어요. AI 대화창에 붙여넣어 주세요.')).catch(()=>toast('복사하지 못했어요.'));return}
+  if(target.id==='ai-copy-prompt'){navigator.clipboard?.writeText(fullPrompt(db)).then(()=>toast('지시문과 내 최근 기록 목록을 복사했어요. 쓰는 AI 대화창에 붙여넣어 주세요.')).catch(()=>toast('복사하지 못했어요. 아래 “지시문 내용 보기”를 길게 눌러 복사해 주세요.'));return}
   if(target.id==='ai-paste-clip'){navigator.clipboard?.readText?.().then(text=>{aiInput.text=text||'';aiInput.msg='';render()}).catch(()=>toast('클립보드를 읽지 못했어요. 칸을 길게 눌러 붙여넣어 주세요.'));return}
   if(target.id==='ai-photo-clear'){aiInput.photos=[];render();return}
   if(target.id==='ai-ask'){if(aiInput.asking)return;const say=String(aiInput.say||'').trim();if(!say&&!(aiInput.photos||[]).length){toast('먹은 것·운동·체중을 적거나 사진을 넣어 주세요.');return}aiInput.asking=true;aiInput.msg='';render();const d=new Date();askAIServer(aiWorkerUrl(),{text:say,images:(aiInput.photos||[]).map(data=>({media_type:'image/jpeg',data})),context:aiContextText(db),today:today(),now:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}).then(r=>{aiInput={...aiInput,text:r.text,left:r.left,asking:false,msg:r.text.trim()?'':'AI가 기록할 내용을 찾지 못했어요.'};render()}).catch(error=>{aiInput.asking=false;aiInput.msg=error.message||'AI 정리에 실패했어요.';render()});return}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parsePaste, extractCode, matchMachine, aiContextText, aiInputHTML, AI_PROMPT} from '../ai-paste.js';
+import {parsePaste, extractCode, matchMachine, aiContextText, aiInputHTML, AI_PROMPT, fullPrompt} from '../ai-paste.js';
 import {findExercise} from '../catalog.js';
 import {quickFoodCandidates} from '../quick-entry.js';
 
@@ -64,7 +64,6 @@ test('지시문은 무료·휴대폰 AI에서도 쓰도록 형식과 중복 방�
  const html = aiInputHTML({}, {pending:2, ready:true});
  assert.match(html, /무료 버전·휴대폰 앱 모두 괜찮아요/);
  assert.match(html, /id="ai-copy-prompt"/);
- assert.match(html, /id="ai-copy-mine"/);
  assert.match(html, /data-page="ai-inbox"/);
  assert.match(aiInputHTML({}, {ready:false}), /승인된 계정/);
 });
@@ -84,4 +83,19 @@ test('AI로 확정한 음식은 오래돼도 내 값으로 하나만 남고, 내
  assert.match(text, /제육덮밥 · 1그릇 · 900kcal/);
  assert.doesNotThrow(() => aiContextText({}));
  assert.match(text, /레그 프레스 · 45° 레그 프레스/);
+});
+
+test('지시문 복사 한 번에 지시문 + 기록한 날 기준 최근 30일 목록', () => {
+ const day = n => `2026-${String(Math.floor(n/28)+1).padStart(2,'0')}-${String(n%28+1).padStart(2,'0')}`;
+ // 5개월 동안 띄엄띄엄 60일 기록 → 기록일 최근 30일(30~59)만
+ const meals = [...Array(60).keys()].map(n => ({id:'m'+n, date:day(n*2), name:'음식'+n, servingQty:1, servingUnit:'회', calories:100}));
+ const workouts = [{date:day(0), exercises:[{name:'옛날 운동'}]}, ...[...Array(30).keys()].map(n => ({date:day(100+n), exercises:[{name:'레그 프레스', machineId:'gm:leg-press-45'}]}))];
+ const t = fullPrompt({meals, workouts, foods:[{name:'내 쉐이크', servingQty:1, servingUnit:'잔', calories:180}]});
+ assert.ok(t.startsWith(AI_PROMPT));
+ assert.match(t, /\[내 기록 목록\].*최근 30일/);
+ assert.ok(t.includes('음식59') && t.includes('음식30') && !t.includes('음식29 '));
+ assert.match(t, /내 쉐이크/, '직접 등록한 음식은 늘 포함');
+ assert.match(t, /레그 프레스 · 45° 레그 프레스/);
+ assert.doesNotMatch(t, /옛날 운동/);
+ assert.doesNotMatch(aiInputHTML({}, {}), /ai-copy-mine/);
 });

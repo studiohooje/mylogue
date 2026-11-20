@@ -131,8 +131,8 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
   <li><b>지시문 복사</b>를 눌러, 평소 쓰는 AI(ChatGPT·Gemini·Claude 등, 무료 버전·휴대폰 앱 모두 괜찮아요) 대화창에 한 번 붙여넣어요.</li>
   <li>그 대화에서 평소 말투로 말하세요. 예: “점심에 제육덮밥 먹고 콜라 한 캔”, “하체 했어. 레그프레스 100키로 12개 3세트”, “아침 체중 72.4”</li>
   <li>AI가 <b>마이로그 코드</b>를 줘요. 코드 블록의 복사 버튼으로 복사해 아래 칸에 붙여넣으면 끝이에요.</li>
- </ol><p class="hint">다음부터는 같은 대화에서 말만 하면 돼요. 붙여넣은 기록은 AI 검토함에서 확인한 뒤 확정돼요.</p><p class="hint">AI는 마이로그에 뭐가 등록돼 있는지 볼 수 없어요. <b>내 음식·운동 목록 복사</b>로 내 목록을 대화에 한 번 붙여 주면, AI가 같은 이름과 값을 다시 써서 중복이 줄어요. 같은 이름·단위의 음식은 마이로그가 늘 하나로 묶어요.</p></div>
- <div class="ai-in-prompt"><button type="button" class="button secondary" id="ai-copy-prompt">지시문 복사</button><button type="button" class="button secondary" id="ai-copy-mine">내 음식·운동 목록 복사</button><details><summary>지시문 내용 보기</summary><pre>${h(AI_PROMPT)}</pre></details></div>
+ </ol><p class="hint">다음부터는 같은 대화에서 말만 하면 돼요. 붙여넣은 기록은 AI 검토함에서 확인한 뒤 확정돼요.</p><p class="hint">지시문에는 <b>최근 기록한 음식·운동 목록</b>(기록한 날 기준 30일)이 함께 들어가요. AI가 같은 이름과 값을 다시 써서 중복이 줄어요. 가끔 새 대화에서 지시문을 다시 붙여 주면 목록이 최신으로 바뀌어요.</p></div>
+ <div class="ai-in-prompt"><button type="button" class="button secondary" id="ai-copy-prompt">지시문 복사</button><details><summary>지시문 내용 보기</summary><pre>${h(state.fullPrompt||AI_PROMPT)}</pre></details></div>
  <label class="field ai-in-field">AI가 준 코드 붙여넣기<textarea id="ai-code" rows="6" placeholder="여기에 AI 답을 붙여넣어요 (설명 글이 같이 붙어도 괜찮아요)" spellcheck="false" autocomplete="off">${h(state.text||'')}</textarea></label>
  <div class="ai-in-tools"><button type="button" class="button secondary small" id="ai-paste-clip">클립보드에서 붙여넣기</button>${state.text?'<button type="button" class="text-button" id="ai-code-clear">지우기</button>':''}</div>
  ${server?'</details>':''}
@@ -145,23 +145,32 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
 
 // 3.16.1 AI에게 내 목록 알려 주기: AI는 마이로그 저장소를 볼 수 없으니, 한 번이라도 기록한 음식(가장 최근 양·값)·직접 등록한 음식·
 // 한 번이라도 한 운동(가장 많이 쓴 머신)을 글로 만들어 대화에 한 번 붙여넣게 한다. 많이 쓴 것부터, 음식 300개·운동 150개까지.
-export function aiContextText(db={}){
+// 기록한 날 기준 최근 N일(달력 날짜가 아니라 기록이 있는 날을 센다). 음식은 식사 기록일, 운동은 운동 기록일로 따로 센다.
+export const CONTEXT_RECORD_DAYS = 30;
+const recentDays = (rows, n) => new Set([...new Set(rows.map(r => String(r.date||'')).filter(Boolean))].sort().reverse().slice(0, n));
+export function aiContextText(db={}, {days = CONTEXT_RECORD_DAYS} = {}){
+ const mealDays = recentDays(db.meals||[], days), workDays = recentDays(db.workouts||[], days);
  const key = x => `${String(x.name||'').trim().toLocaleLowerCase('ko')}|${String(x.servingUnit||'').toLocaleLowerCase('ko')}`;
  const foods = new Map();
  const add = (x, count, at) => { const k = key(x); if(!String(x.name||'').trim()) return; const cur = foods.get(k); if(!cur) foods.set(k, {x, count, at}); else { cur.count += count; if(at>=cur.at){ cur.x = x; cur.at = at; } } };
- for(const m of db.meals||[]) add(m, 1, `${m.date||''}${m.loggedAt||''}${m.updatedAt||''}`);
+ for(const m of (db.meals||[]).filter(m => mealDays.has(String(m.date||'')))) add(m, 1, `${m.date||''}${m.loggedAt||''}${m.updatedAt||''}`);
  for(const f of db.foods||[]) if(!f.catalog && f.source!=='대표값') add(f, 0, '');
  const num = v => v==null || v==='' || !Number.isFinite(Number(v)) ? null : Math.round(Number(v));
  const per = f => [num(f.calories)!=null?`${num(f.calories)}kcal`:'', num(f.carbs)!=null?`탄${num(f.carbs)}`:'', num(f.protein)!=null?`단${num(f.protein)}`:'', num(f.fat)!=null?`지${num(f.fat)}`:''].filter(Boolean).join(' ');
  const qty = f => `${Number(f.servingQty)||1}${f.servingUnit||'회'}`;
  const foodRows = [...foods.values()].sort((a, b) => b.count - a.count || String(b.at).localeCompare(String(a.at))).slice(0, 300);
  const ex = new Map();
- for(const w of db.workouts||[]) for(const e of w.exercises||[]){ const n = String(e.name||'').trim(); if(!n) continue; const cur = ex.get(n) || {n, count:0, machines:new Map()}; cur.count++; if(e.machineId) cur.machines.set(e.machineId, (cur.machines.get(e.machineId)||0) + 1); ex.set(n, cur); }
+ for(const w of (db.workouts||[]).filter(w => workDays.has(String(w.date||'')))) for(const e of w.exercises||[]){ const n = String(e.name||'').trim(); if(!n) continue; const cur = ex.get(n) || {n, count:0, machines:new Map()}; cur.count++; if(e.machineId) cur.machines.set(e.machineId, (cur.machines.get(e.machineId)||0) + 1); ex.set(n, cur); }
  const machineName = id => GENERIC_MACHINES.find(m => m.id===id)?.name || BUILTIN_BRANDS.find(m => m.id===id)?.name || (db.machines||[]).find(m => m.id===id)?.name || '';
  const exRows = [...ex.values()].sort((a, b) => b.count - a.count).slice(0, 150).map(e => { const top = [...e.machines].sort((a, b) => b[1] - a[1])[0]; const mn = top ? machineName(top[0]) : ''; return `- ${e.n}${mn ? ` · ${mn}` : ''}`; });
- return `마이로그에 이미 있는 내 목록이야. 같은 음식·운동이면 아래 이름·단위·값을 그대로 써 줘(양이 다르면 같은 비율로 바꿔서).
+ return `[내 기록 목록] 마이로그에 이미 있는 내 음식·운동이야(기록한 날 기준 최근 ${days}일과 직접 등록한 음식). 같은 음식·운동이면 아래 이름·단위·값을 그대로 써 줘(양이 다르면 같은 비율로 바꿔서). 목록에 없는 건 새로 적어도 돼.
 [내 음식] (이름 · 먹은 양 · 그 양의 값)
 ${foodRows.length ? foodRows.map(({x}) => `- ${x.name} · ${qty(x)}${per(x) ? ` · ${per(x)}` : ''}`).join(String.fromCharCode(10)) : '- (아직 없음)'}
 [내 운동] (이름 · 주로 쓴 머신)
 ${exRows.length ? exRows.join(String.fromCharCode(10)) : '- (아직 없음)'}`;
 }
+
+// '지시문 복사' 한 번으로 지시문과 내 목록을 함께 복사한다(지시문만 붙여넣어도 AI가 내 목록을 알게).
+export const fullPrompt = db => `${AI_PROMPT}
+
+${aiContextText(db)}`;
