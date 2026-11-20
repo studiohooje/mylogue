@@ -5,32 +5,8 @@ import {cleanMeal, cleanWorkout, cleanBody} from './domain.js';
 import {findExercise} from './catalog.js';
 import {GENERIC_MACHINES, BUILTIN_BRANDS} from './machines-catalog.js';
 
-export const AI_PROMPT = `너는 내 건강 기록 앱 '마이로그'의 기록 도우미야. 이 대화에서 내가 먹은 것, 운동한 것, 체중·인바디를 말하면 아래 형식의 '마이로그 코드'를 코드 블록 하나로 답해 줘. 코드 블록 밖에는 한두 줄 요약만 써.
-
-규칙
-- 날짜를 말하지 않으면 오늘, 시각을 말하지 않으면 지금 시각으로 해. 날짜는 YYYY-MM-DD, 시각은 HH:MM.
-- 음식은 하나씩 나눠 적어(밥과 반찬을 한 줄로 뭉치지 마). 양(qty)과 단위(unit)를 꼭 넣어.
-- 칼로리(kcal)·탄수화물(carbs)·단백질(protein)·지방(fat)은 g 기준 숫자. 내가 말한 숫자나 제품 표기가 있으면 그걸 쓰고, 없으면 일반적인 1인분 기준으로 추정하고 "estimate"에 범위와 근거를 적어.
-- 모르는 값은 지어내지 말고 null.
-- 이 대화에서 전에 적은 음식이 다시 나오면 전에 쓴 이름·단위·값을 그대로 다시 써(같은 음식이 여러 이름으로 늘어나지 않게). 내가 값을 고쳐 달라고 하면 고친 값을 써.
-- 운동은 세트마다 무게(weight)·단위(unit: kg 또는 lb)·횟수(reps). "3세트 10회 60kg"처럼 말하면 같은 세트 3개로 풀어 적어. 맨몸이면 weight는 0.
-- 머신을 말하면 "machine"에 내가 말한 이름 그대로 적어(예: "45도 레그프레스", "해머 로우").
-- 유산소는 "minutes"(분)·"km".
-- 하나의 답에 여러 기록(식사+운동+체중)을 함께 넣어도 돼.
-
-형식
-\`\`\`json
-{"mylogue":1,"said":"내가 한 말 원문","records":[
- {"type":"meal","date":"2026-11-21","time":"12:30","slot":"점심","items":[
-  {"name":"제육덮밥","qty":1,"unit":"그릇","kcal":850,"carbs":105,"protein":35,"fat":28,"estimate":{"kcal":[700,1000],"basis":"식당 1인분 기준 추정"}}
- ]},
- {"type":"workout","date":"2026-11-21","time":"19:00","title":"하체","exercises":[
-  {"name":"레그 프레스","machine":"45도 레그프레스","sets":[{"weight":100,"unit":"kg","reps":12}]},
-  {"name":"러닝머신","minutes":20,"km":3}
- ]},
- {"type":"body","date":"2026-11-21","weight":72.4,"bodyFat":18.5,"muscle":33.2}
-]}
-\`\`\``;
+import {AI_PROMPT} from './ai-prompt.js';
+export {AI_PROMPT};
 
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const nowHM = () => { const d = new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
@@ -142,8 +118,15 @@ export function aiPreviewHTML(text){
  try{ const d = parsePaste(text); return `<p class="ai-in-ok">✓ ${d.length}개 기록을 찾았어요</p><ul class="ai-in-list">${d.map(x => `<li><span class="ai-tag">${KIND[x.type]}</span>${h(x.summary)}</li>`).join('')}</ul>`; }
  catch(error){ return `<p class="ai-in-err">${h(error.message)}</p>`; }
 }
-export function aiInputHTML(state={}, {pending=0, ready=true}={}){
- return `<div class="ai-in">
+export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
+ const photos = state.photos||[];
+ const say = server ? `<section class="ai-say" aria-label="말로 입력">
+  <label class="field ai-say-field">말하듯 적어 주세요<textarea id="ai-say" rows="3" placeholder="예: 점심에 제육덮밥 먹고 콜라 한 캔 / 하체 했어, 레그프레스 100키로 12개 3세트 / 아침 체중 72.4">${h(state.say||'')}</textarea></label>
+  <div class="ai-say-tools"><label class="button secondary small ai-photo-btn">사진 넣기<input id="ai-photo" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label>${photos.length?`<span class="ai-photo-count">사진 ${photos.length}장</span><button type="button" class="text-button" id="ai-photo-clear">사진 빼기</button>`:''}</div>
+  <button type="button" class="button ai-ask" id="ai-ask" ${ready&&!state.asking?'':'disabled'}>${state.asking?'AI가 정리하는 중…':'✦ AI에게 정리 맡기'}</button>
+  ${state.left!=null?`<p class="hint">오늘 AI 정리 ${state.left}번 남았어요.</p>`:''}
+ </section>` : '';
+ return `<div class="ai-in">${say}${server?`<details class="ai-in-alt" ${state.altOpen?'open':''}><summary>다른 AI(ChatGPT 등)의 답 붙여넣기</summary>`:''}
  <div class="ai-in-how"><p><b>이렇게 쓰세요</b></p><ol>
   <li><b>지시문 복사</b>를 눌러, 평소 쓰는 AI(ChatGPT·Gemini·Claude 등, 무료 버전·휴대폰 앱 모두 괜찮아요) 대화창에 한 번 붙여넣어요.</li>
   <li>그 대화에서 평소 말투로 말하세요. 예: “점심에 제육덮밥 먹고 콜라 한 캔”, “하체 했어. 레그프레스 100키로 12개 3세트”, “아침 체중 72.4”</li>
@@ -152,6 +135,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true}={}){
  <div class="ai-in-prompt"><button type="button" class="button secondary" id="ai-copy-prompt">지시문 복사</button><button type="button" class="button secondary" id="ai-copy-mine">내 음식·운동 목록 복사</button><details><summary>지시문 내용 보기</summary><pre>${h(AI_PROMPT)}</pre></details></div>
  <label class="field ai-in-field">AI가 준 코드 붙여넣기<textarea id="ai-code" rows="6" placeholder="여기에 AI 답을 붙여넣어요 (설명 글이 같이 붙어도 괜찮아요)" spellcheck="false" autocomplete="off">${h(state.text||'')}</textarea></label>
  <div class="ai-in-tools"><button type="button" class="button secondary small" id="ai-paste-clip">클립보드에서 붙여넣기</button>${state.text?'<button type="button" class="text-button" id="ai-code-clear">지우기</button>':''}</div>
+ ${server?'</details>':''}
  <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}</div>
  ${state.msg?`<p class="ai-in-msg">${h(state.msg)}</p>`:''}
  ${ready?'':'<p class="ai-in-err">AI 입력은 로그인하고 이용 승인된 계정에서 쓸 수 있어요.</p>'}

@@ -543,3 +543,17 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .ai-in-actions{display:flex;flex-wrap:wrap;gap:8px}
 .ai-in-actions .button{flex:1 1 160px}
 .ai-in-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:4px;border-radius:999px;background:#b48cff;color:#0d1326;font-size:12px;font-weight:700}
+
+/* 3.17.0 앱 안 '말로 입력' */
+.ai-say{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:18px;border:1px solid transparent;background:linear-gradient(#16223b,#16223b) padding-box,linear-gradient(120deg,#7aa7ff,#b48cff 50%,#5ee7d8) border-box}
+.ai-say-field textarea{width:100%;min-height:96px;font-size:16px;font-family:inherit;line-height:1.5;resize:vertical}
+.ai-say-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ai-photo-btn{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:44px}
+.ai-photo-count{font-size:14px;color:#c9d6e6}
+.ai-ask{min-height:52px;font-size:16px;font-weight:700;background:linear-gradient(120deg,#7aa7ff,#b48cff 55%,#5ee7d8);color:#0d1326;border:0}
+.ai-ask:disabled{opacity:.6}
+.ai-in-alt{border:1px solid #2c3d63;border-radius:16px;background:#111b30}
+.ai-in-alt>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;padding:0 16px;font-size:14px;color:#c9d6e6}
+.ai-in-alt[open]{padding:0 14px 14px}
+.ai-in-alt[open]>summary{padding:0 2px}
+.ai-in-alt>*+*{margin-top:12px}

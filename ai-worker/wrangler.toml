@@ -1,0 +1,17 @@
+# 마이로그 AI 서버 설정. 계정·비밀값은 여기 넣지 않는다(README의 배포 절차 참고).
+name = "mylogue-ai"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+FIREBASE_PROJECT_ID = "mylogue-1eedb"
+ALLOWED_ORIGINS = "https://studiohooje.github.io,https://localhost,http://localhost:4173"
+DAILY_LIMIT = "30"
+MODEL = "claude-opus-5-5"
+
+# 사용자별 하루 사용 횟수. `wrangler d1 create mylogue-ai`로 만든 뒤 나온 database_id를 아래에 넣는다.
+[[d1_databases]]
+binding = "DB"
+database_name = "mylogue-ai"
+database_id = "REPLACE_AFTER_d1_create"

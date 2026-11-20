@@ -127,3 +127,13 @@ export async function addPastedDrafts(drafts){
   }
   return {added,duplicate};
 }
+// 3.17.0 앱 안 '말로 입력': 로그인 표와 함께 AI 서버에 보내 마이로그 코드를 받는다(저장은 하지 않음 — 검토함 넣기는 사용자가).
+export async function askAIServer(url,{text='',images=[],context='',today='',now=''}={}){
+  if(!url)throw Error('AI 서버가 아직 연결되지 않았어요.');
+  const ctx=await context_();const token=await ctx.user.getIdToken();
+  let r;try{r=await fetch(`${url}/parse`,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify({text,images,context,today,now}),credentials:'omit',referrerPolicy:'no-referrer',cache:'no-store'})}catch{throw Error('AI 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.')}
+  const body=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(body.error||'AI 정리에 실패했어요.');
+  return {text:String(body.text||''),left:Number.isFinite(body.left)?body.left:null};
+}
+const context_=()=>context();
