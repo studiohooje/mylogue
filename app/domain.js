@@ -1,4 +1,5 @@
 import {EXERCISE_CATALOG} from './catalog.js';
+import {cleanGymPlaces} from './places.js';
 export const VERSION=1;
 export const uid=()=>globalThis.crypto?.randomUUID?.()??`id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 export const number=(v)=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null};
@@ -105,6 +106,7 @@ export function normalizeDB(raw){
  db.settings={...db.settings,...raw.settings};if(!Number.isFinite(Number(db.settings.barbellWeightKg))||Number(db.settings.barbellWeightKg)<0)db.settings.barbellWeightKg=20;
  db.settings.workoutTitles=Array.isArray(db.settings.workoutTitles)?[...new Set(db.settings.workoutTitles.map(x=>String(x).trim()).filter(Boolean))]:[];
  db.settings.gyms=Array.isArray(db.settings.gyms)?[...new Set(db.settings.gyms.map(x=>String(x).trim()).filter(Boolean))]:[];
+ {const gp=cleanGymPlaces(db.settings);if(Object.keys(gp).length)db.settings.gymPlaces=gp;else delete db.settings.gymPlaces;}
  return db;
 }
 export function importBody(raw){if(!['mylogue.body','myweightlog.body'].includes(raw?.type)||raw?.version!==1)throw Error('마이로그 인바디 파일이 아닙니다.');return cleanBody({...raw.measurement,source:'import'})}

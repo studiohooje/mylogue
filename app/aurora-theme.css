@@ -151,3 +151,34 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .guide-row{grid-template-columns:1fr 1fr .8fr 1fr 1fr}
 .guide-resume{border-color:#4f8e8c}
 @media(max-width:380px){.guide-row{grid-template-columns:1fr 1fr}.guide-target strong,.guide-ring strong{font-size:48px}}
+/* 3.6.0 헬스장 장소 찾기 */
+.gym-search{display:flex;gap:8px;margin-top:12px}
+.gym-search input{flex:1;min-width:0;font-size:16px}
+.gym-search .button{flex:none;min-height:44px}
+.place-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.place-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 14px;border-radius:14px;background:#16223a;border:1px solid #2b4362;color:#edf4f8;text-align:left;cursor:pointer}
+.place-item:hover,.place-item:focus-visible{border-color:#4f8e8c}
+.place-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.place-text b{font-size:16px;word-break:keep-all}
+.place-text small{font-size:13px;color:#a9b8cc;word-break:keep-all}
+.place-add{flex:none;font-size:14px;font-weight:700;color:#8ce4e0}
+.place-credit{margin:6px 0 0;font-size:12px;color:#8193ab;text-align:right}
+.hint.warn{color:#f3c27a}
+.gym-tools{margin-top:12px}
+.gym-tools .button{width:100%;min-height:44px}
+.gym-manual{margin-top:12px}
+.gym-manual summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:14px;color:#c9d6e6}
+.gym-manual form{margin-top:4px}
+.gym-manual input{flex:1;min-width:0;font-size:16px}
+.gym-list{margin-top:12px}
+.gym-row{align-items:center}
+.gym-name{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gym-name small{font-size:13px;color:#a9b8cc;word-break:keep-all}
+.gym-map-flow{display:flex;flex-direction:column;gap:12px}
+.gym-map-wrap{position:relative;height:min(46vh,420px);min-height:260px;border-radius:16px;overflow:hidden;background:#1c2b46;border:1px solid #33506d}
+.gym-map{position:absolute;inset:0}
+.gym-map-pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);pointer-events:none;z-index:5;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.gym-map-error{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:14px;color:#f3c27a;background:#16223a;z-index:6}
+.gym-map-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gym-map-actions .button{min-height:44px}
+.gym-map-actions .hint{flex:1;min-width:180px;margin:0}
