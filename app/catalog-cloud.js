@@ -150,3 +150,21 @@ export async function catalogRequestPhoto(path){
  if(!isCatalogAdmin(ctx.user)&&item.requesterUid!==ctx.user.uid)throw Error('내 사진 요청만 볼 수 있습니다.');
  return {whole:item.wholePhotoDataUrl||'',nameplate:item.nameplatePhotoDataUrl||''};
 }
+
+// 3.14.0 익명 인기 집계: 어떤 음식·운동·머신이 몇 번 선택됐는지 '횟수'만 모은다(사용자·기록 내용은 담지 않음).
+const POP_KINDS=['foods','exercises','machines'];
+export const popId=t=>String(t||'').toLocaleLowerCase('ko').replace(/[\s·()\-_.,]/g,'').replace(/\//g,'_').slice(0,120)||'_';
+export async function loadPopularity(){
+ const out={foods:{},exercises:{},machines:{}};const ctx=await context();
+ await Promise.all(POP_KINDS.map(async kind=>{const ref=ctx.db.collection(ctx.firestore,'popularity',kind,'items');const snap=await ctx.db.getDocsFromServer(ctx.db.query(ref,ctx.db.orderBy('count','desc'),ctx.db.limit(400)));for(const d of snap.docs)out[kind][d.id]=Number(d.data().count)||0}));
+ return out;
+}
+export async function bumpPopularity(entries=[]){
+ const ctx=await context();let n=0;
+ for(const {kind,id,name} of entries.slice(0,60)){
+  if(!POP_KINDS.includes(kind)||!id)continue;
+  const ref=ctx.db.doc(ctx.firestore,'popularity',kind,'items',id);
+  try{await ctx.db.runTransaction(ctx.firestore,async tx=>{const before=await tx.get(ref);if(before.exists())tx.update(ref,{count:ctx.db.increment(1),updatedAt:ctx.db.serverTimestamp()});else tx.set(ref,{name:String(name||id).slice(0,120),count:1,updatedAt:ctx.db.serverTimestamp()})});n++}catch(error){console.warn('인기 집계 실패',error?.message)}
+ }
+ return n;
+}

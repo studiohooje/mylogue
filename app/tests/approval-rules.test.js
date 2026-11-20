@@ -117,3 +117,24 @@ test('email admin (verified Google email) can list and review; unverified or oth
     await assertSucceeds(updateDoc(doc(emailAdmin,'users','p2'),{status:'approved',reviewerUid:'mooncurvv-uid',reviewedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
   }finally{await env.cleanup()}
 });
+
+test('popularity counts: approved users can only add 1 at a time, no personal fields, no delete', {skip:!host}, async()=>{
+  const rules=await readFile(new URL('../firestore.rules',import.meta.url),'utf8');
+  const [emulatorHost,portText]=host.split(':');
+  const env=await initializeTestEnvironment({projectId:projectId+'-pop',firestore:{host:emulatorHost,port:Number(portText),rules}});
+  try{
+    await env.withSecurityRulesDisabled(async ctx=>{await setDoc(doc(ctx.firestore(),'users','m1'),{uid:'m1',email:'m1@x',status:'approved'});await setDoc(doc(ctx.firestore(),'users','p1'),{uid:'p1',email:'p1@x',status:'pending'})});
+    const member=env.authenticatedContext('m1',{email:'m1@x'}).firestore();
+    const pending=env.authenticatedContext('p1',{email:'p1@x'}).firestore();
+    const ref=db=>doc(db,'popularity','foods','items','닭가슴살');
+    await assertFails(setDoc(ref(pending),{name:'닭가슴살',count:1,updatedAt:serverTimestamp()}));
+    await assertFails(setDoc(ref(member),{name:'닭가슴살',count:5,updatedAt:serverTimestamp()}));
+    await assertFails(setDoc(ref(member),{name:'닭가슴살',count:1,uid:'m1',updatedAt:serverTimestamp()}));
+    await assertSucceeds(setDoc(ref(member),{name:'닭가슴살',count:1,updatedAt:serverTimestamp()}));
+    await assertSucceeds(updateDoc(ref(member),{count:2,updatedAt:serverTimestamp()}));
+    await assertFails(updateDoc(ref(member),{count:10,updatedAt:serverTimestamp()}));
+    await assertSucceeds(getDoc(ref(member)));
+    await assertFails(getDoc(ref(pending)));
+    await assertFails(setDoc(doc(member,'popularity','secrets','items','x'),{name:'x',count:1,updatedAt:serverTimestamp()}));
+  }finally{await env.cleanup()}
+});

@@ -112,6 +112,23 @@ service cloud.firestore {
         && request.resource.data.revision == resource.data.revision + 1;
       allow delete: if false;
     }
+    // 3.14.0 익명 인기 집계: 이름·횟수·시각만. 한 번에 1씩만 늘릴 수 있고 지울 수 없다.
+    match /popularity/{kind}/items/{itemId} {
+      function popKind() { return kind in ['foods','exercises','machines']; }
+      allow get, list: if approved() && popKind();
+      allow create: if approved() && popKind()
+        && request.resource.data.keys().hasOnly(['name','count','updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.count == 1
+        && request.resource.data.updatedAt == request.time;
+      allow update: if approved() && popKind()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count','updatedAt'])
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
     match /catalogRequests/{requestId} {
       function validNewRequest() {
         return request.resource.data.keys().hasOnly([

@@ -1,0 +1,60 @@
+// 3.14.0 검색어 추천 화면: 검색창 바로 아래 가로 캡슐(최대 5개) → 대분류를 누르면 소분류 목록.
+import {matchScore, rankItems, normKey} from './suggest.js';
+import {FOOD_CATALOG} from './food-catalog.js';
+import {genericMachinesFor, brandMachinesAt} from './machines-catalog.js';
+
+const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = v => Number(v||0).toLocaleString('ko-KR', {maximumFractionDigits:0});
+export const popKey = t => String(t||'').toLocaleLowerCase('ko').replace(/[\s·()\-_.,]/g,'').replace(/\//g,'_').slice(0,120)||'_';
+export const foodKeyOf = x => `${String(x.name).toLocaleLowerCase('ko')}|${x.servingUnit||'g'}`;
+
+// ── 음식 ──
+const GROUPS = (() => { const m = new Map(); for(const f of FOOD_CATALOG){ const g = m.get(f.group) || {name:f.group, aliases:new Set([f.group])}; for(const a of f.aliases||[]) a.length<=6 && g.aliases.add(a); m.set(f.group, g); } return [...m.values()].map(g => ({name:g.name, aliases:[...g.aliases]})); })();
+export const foodGroupOf = item => item.group || GROUPS.find(g => normKey(item.name).includes(normKey(g.name)))?.name || '';
+export function mealCounts(meals=[]){ const c = new Map(); for(const m of meals){ const k = normKey(m.name); c.set(k, (c.get(k)||0) + 1); } return c; }
+
+export function foodSuggestions(query, foods, {meals=[], pop={}}={}){
+ const q = String(query||'').trim(); if(!q) return {chips:[]};
+ const mine = mealCounts(meals), g = pop.foods||{};
+ const groups = GROUPS.map(gr => { const members = foods.filter(f => foodGroupOf(f)===gr.name); return {kind:'group', name:gr.name, names:[gr.name, ...gr.aliases], m:members.reduce((s, f) => s + (mine.get(normKey(f.name))||0), 0), g:members.reduce((s, f) => s + (g[popKey(f.name)]||0), 0), size:members.length}; }).filter(x => x.size);
+ const rankedGroups = rankItems(q, groups, {names:x => x.names, mine:x => x.m, global:x => x.g});
+ const loose = foods.filter(f => !foodGroupOf(f));
+ const rankedItems = rankItems(q, loose, {names:x => [x.name, ...(x.aliases||[])], mine:x => mine.get(normKey(x.name))||0, global:x => g[popKey(x.name)]||0});
+ const chips = [...rankedGroups.map(r => ({kind:'group', label:r.x.name, key:r.x.name, mine:r.m})), ...rankedItems.map(r => ({kind:'item', label:r.x.name, key:foodKeyOf(r.x), mine:r.m}))].slice(0, 5);
+ return {chips};
+}
+// 대분류 안의 제품: 내가 많이 먹은 순 → 전체 사용자가 많이 먹은 순 → 대표값
+export function foodGroupItems(group, foods, {meals=[], pop={}}={}){
+ const mine = mealCounts(meals), g = pop.foods||{};
+ return foods.filter(f => foodGroupOf(f)===group).map(f => ({f, m:mine.get(normKey(f.name))||0, gl:g[popKey(f.name)]||0, base:f.source==='대표값'}))
+  .sort((a, b) => b.m - a.m || (b.gl>0) - (a.gl>0) || b.gl - a.gl || a.base - b.base || a.f.name.localeCompare(b.f.name, 'ko'));
+}
+export function foodSuggestHTML(state, foods, ctx){
+ const {chips} = foodSuggestions(state.query, foods, ctx);
+ const open = state.sgGroup ? foodGroupItems(state.sgGroup, foods, ctx) : [];
+ return `${chips.length?`<div class="sg-chips" role="listbox" aria-label="검색어 추천">${chips.map(c => c.kind==='group' ? `<button type="button" class="sg-chip group ${state.sgGroup===c.key?'on':''}" data-sg-food-group="${h(c.key)}" aria-expanded="${state.sgGroup===c.key}">${h(c.label)}<span aria-hidden="true">▾</span></button>` : `<button type="button" class="sg-chip" data-q-food="${h(c.key)}">${h(c.label)}</button>`).join('')}</div>`:''}${open.length?`<div class="sg-list" aria-label="${h(state.sgGroup)} 제품"><p class="sg-list-head">${h(state.sgGroup)} · 많이 먹은 순</p>${open.slice(0, 12).map(({f, m, gl, base}) => `<button type="button" class="sg-row${f.personal?' mine-value':''}" data-q-food="${h(foodKeyOf(f))}"><b>${h(f.name)}${f.personal?'<em class="mine-badge">내 값</em>':''}</b><small>${m?`내가 ${m}번`:gl?`많이 먹는 제품`:base?'대표값':'등록된 제품'}${f.calories!=null?` · ${fmt(f.calories)}kcal/${f.servingUnit==='g'?'100g':'1회'}`:''}</small></button>`).join('')}</div>`:''}`;
+}
+
+// ── 운동 ──
+export function exerciseCounts(workouts=[]){ const ex = new Map(), mc = new Map(); for(const w of workouts) for(const e of w.exercises||[]){ const n = (e.sets||[]).filter(s => s.completed!==false).length || (e.kind==='cardio'?1:0); if(!n) continue; const k = e.exerciseId || e.name; ex.set(k, (ex.get(k)||0) + 1); if(e.machineId) mc.set(e.machineId, (mc.get(e.machineId)||0) + 1); } return {ex, mc}; }
+export function exerciseSuggestions(query, catalog, {workouts=[], pop={}}={}){
+ const q = String(query||'').trim(); if(!q) return [];
+ const {ex} = exerciseCounts(workouts), g = pop.exercises||{};
+ return rankItems(q, catalog, {names:x => [x.name, ...(x.aliases||[])], mine:x => ex.get(x.id||x.name)||0, global:x => g[popKey(x.id||x.name)]||0, limit:5}).map(r => r.x);
+}
+// 종목 안의 머신: 일반 머신(각도별 포함) → 내가 많이 쓴 머신(제조사 포함) → 전체 사용자가 많이 쓴 머신
+export function machineChoices(exerciseId, {db={}, shared={}, gymName='', pop={}}={}){
+ const {mc} = exerciseCounts(db.workouts||[]), g = pop.machines||{};
+ const generic = genericMachinesFor(exerciseId).map(m => ({m, tag:'일반'}));
+ const mine = (db.machines||[]).filter(m => m.exerciseId===exerciseId && (!gymName || !m.location || m.location===gymName)).map(m => ({m, tag:'내 머신', n:mc.get(m.id)||0}));
+ const brands = brandMachinesAt(shared, gymName, exerciseId).map(m => ({m, tag:'제조사', n:mc.get(m.id)||0, gl:g[popKey(m.id)]||0}));
+ const used = [...mine, ...brands].filter(x => x.n>0).sort((a, b) => b.n - a.n);
+ const rest = [...mine, ...brands].filter(x => !x.n).sort((a, b) => (b.gl||0) - (a.gl||0));
+ return [...generic, ...used, ...rest];
+}
+export function exerciseSuggestHTML(state, catalog, ctx){
+ const chips = exerciseSuggestions(state.query, catalog, ctx);
+ const open = state.sgEx ? machineChoices(state.sgEx, ctx) : [];
+ const label = m => m.generic ? m.name : `${m.manufacturer||''} ${m.model||m.name||''}`.trim();
+ return `${chips.length?`<div class="sg-chips" role="listbox" aria-label="종목 추천">${chips.map(x => { const has = machineChoices(x.id||x.name, ctx).length; return `<button type="button" class="sg-chip ${has?'group':''} ${state.sgEx===(x.id||x.name)?'on':''}" ${has?`data-sg-ex="${h(x.id||x.name)}" aria-expanded="${state.sgEx===(x.id||x.name)}"`:`data-q-ex="${h(x.id||x.name)}"`}>${h(x.name)}${has?'<span aria-hidden="true">▾</span>':''}</button>`; }).join('')}</div>`:''}${open.length?`<div class="sg-list" aria-label="머신 고르기"><p class="sg-list-head">머신 고르기 · 일반 → 내가 많이 쓴 순</p>${open.slice(0, 12).map(({m, tag, n}) => `<button type="button" class="sg-row" data-sg-pick="${h(state.sgEx)}" data-sg-machine="${h(m.id)}"><b>${h(label(m))}</b><small>${h(tag)}${n?` · 내가 ${n}번`:''}</small></button>`).join('')}<button type="button" class="sg-row plain" data-sg-pick="${h(state.sgEx)}" data-sg-machine=""><b>머신 없이 · 프리웨이트</b><small>머신을 고르지 않고 기록</small></button></div>`:''}`;
+}
