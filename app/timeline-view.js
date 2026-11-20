@@ -35,7 +35,7 @@ export function todayMuscleLoads(workouts=[]){
  const m=new Map(),add=(id,v)=>m.set(id,(m.get(id)||0)+v);
  for(const w of workouts)for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const n=(e.sets||[]).filter(s=>s.completed!==false).length;if(!n)continue;const p=e.primaryMuscleIds?.length?e.primaryMuscleIds:(PART_MUSCLES[e.part]||[]);for(const id of p)add(id,n);for(const id of e.secondaryMuscleIds||[])if(!p.includes(id))add(id,n*0.5)}
  const max=Math.max(0,...m.values());
- return [...m.entries()].map(([muscleId,v])=>({muscleId,sets:v,score:max&&v>=max*0.6?6:3})).sort((a,b)=>b.sets-a.sets);
+ return [...m.entries()].map(([muscleId,v])=>({muscleId,sets:v,score:max&&v>=max*0.6?6:max&&v>=max*0.3?3:1})).sort((a,b)=>b.sets-a.sets);
 }
 function workoutStatHTML(workouts,sets){
  const loads=todayMuscleLoads(workouts),top=loads.filter(x=>x.score>=6).slice(0,3).map(x=>MUSCLE_LABELS[x.muscleId]).filter(Boolean);

@@ -6,7 +6,7 @@ test('approved technical atlas separates general target from actual record load'
  const target=muscleMapHTML(['chest'],['triceps'],{key:'test'});
  assert.match(target,/data-atlas-design="technical-03"/);assert.match(target,/가슴 주 타깃/);assert.match(target,/삼두 보조 타깃/);
  const load=muscleMapHTML([],[],{mode:'load',loads:[{muscleId:'chest',score:7,sets:12}],key:'load'});
- assert.match(load,/가슴 부담 큼/);assert.match(load,/삼두 자료 없음/);assert.doesNotMatch(load,/가슴 주 타깃/);
+ assert.match(load,/가슴 많이/);assert.match(load,/삼두 자료 없음/);assert.doesNotMatch(load,/가슴 주 타깃/);
  assert.match(anatomySvg(['chest'],[],{side:'front'}),/xmlns="http:\/\/www.w3.org\/2000\/svg"/);
 });
 test('completed days cannot turn missing nutrients or removed records into zero intake',()=>{
