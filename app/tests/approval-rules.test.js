@@ -138,3 +138,24 @@ test('popularity counts: approved users can only add 1 at a time, no personal fi
     await assertFails(setDoc(doc(member,'popularity','secrets','items','x'),{name:'x',count:1,updatedAt:serverTimestamp()}));
   }finally{await env.cleanup()}
 });
+
+test('AI 입력(붙여넣기): 승인된 본인만 같은 형식으로 검토함 초안을 만들고, 같은 ID 재생성은 막힌다', {skip:!host}, async()=>{
+  const {parsePaste}=await import('../ai-paste.js');
+  const rules=await readFile(new URL('../firestore.rules',import.meta.url),'utf8');
+  const [emulatorHost,portText]=host.split(':');
+  const env=await initializeTestEnvironment({projectId:projectId+'-paste',firestore:{host:emulatorHost,port:Number(portText),rules}});
+  try{
+    await env.withSecurityRulesDisabled(async ctx=>{await setDoc(doc(ctx.firestore(),'users','m1'),{uid:'m1',email:'m1@x',status:'approved'});await setDoc(doc(ctx.firestore(),'users','p1'),{uid:'p1',email:'p1@x',status:'pending'})});
+    const member=env.authenticatedContext('m1',{email:'m1@x'}).firestore();
+    const pending=env.authenticatedContext('p1',{email:'p1@x'}).firestore();
+    const drafts=parsePaste('{"mylogue":1,"said":"점심 제육덮밥, 하체, 체중 72.4","records":[{"type":"meal","date":"2026-11-21","time":"12:30","items":[{"name":"제육덮밥","qty":1,"unit":"그릇","kcal":850,"carbs":105,"protein":35,"fat":28,"estimate":{"kcal":[700,1000],"basis":"추정"}}]},{"type":"workout","date":"2026-11-21","exercises":[{"name":"레그 프레스","machine":"45도 레그프레스","sets":3,"weight":100,"reps":12}]},{"type":"body","date":"2026-11-21","weight":72.4}]}');
+    // ai-drafts.js addPastedDrafts와 같은 방식(트랜잭션: 없으면 만들기)
+    const add=async(db,uid,d,id)=>{const ref=doc(db,'users',uid,'aiDrafts',id);return runTransaction(db,async tx=>{const snap=await tx.get(ref);if(snap.exists())return false;tx.set(ref,{id,requestId:id,type:d.type,status:'pending',schemaVersion:1,sourceModel:d.sourceModel,originalUtterance:d.originalUtterance,parsedData:d.parsedData,uncertainty:d.uncertainty,evidence:d.evidence,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});return true})};
+    for(const [i,d] of drafts.entries())assert.equal(await assertSucceeds(add(member,'m1',d,`p-test${i}`)),true);
+    assert.equal(await add(member,'m1',drafts[0],'p-test0'),false);
+    await assertFails(add(pending,'p1',drafts[0],'p-x'));
+    await assertFails(add(member,'p1',drafts[0],'p-y'));
+    const list=await getDocs(collection(member,'users','m1','aiDrafts'));
+    assert.equal(list.size,3);
+  }finally{await env.cleanup()}
+});
