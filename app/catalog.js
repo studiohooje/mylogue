@@ -1,4 +1,5 @@
 // General exercise names only. No third-party media or proprietary programs.
+import {MORE_EXERCISES,MORE_CARDIO,NAME_RULES,SOURCES} from './exercise-data.js';
 const strength={
  '가슴':['벤치프레스','인클라인 벤치프레스','덤벨 벤치프레스','클로즈그립 벤치프레스','원암 덤벨 체스트프레스','체스트 프레스','케이블 플라이','푸시업','딥스'],
  '등':['데드리프트','랫풀다운','풀업','바벨 로우','시티드 케이블 로우','원암 덤벨 로우','페이스 풀'],
@@ -70,7 +71,7 @@ const sourceUrls={
  '클로즈그립 벤치프레스':'https://www.nasm.org/resource-center/exercise-library/close-grip-bench-press',
  '바벨 컬':'https://www.nasm.org/resource-center/exercise-library/barbell-bicep-curl'
 };
-export const EXERCISE_CATALOG=Object.freeze(entries.map(x=>{
+const BASE=entries.map(x=>{
  const equipment=equipmentOverrides[x.name]||(/덤벨/.test(x.name)?'덤벨':/머신|프레스|풀다운|케이블|레그 컬|레그 익스텐션|스텝밀/.test(x.name)&&! /벤치|덤벨|오버헤드|클린/.test(x.name)?'머신':/푸시업|풀업|딥스|플랭크|크런치|버피/.test(x.name)?'맨몸':x.kind==='cardio'?'유산소':'프리웨이트');
  const dumbbell=equipment==='덤벨',hands=oneHand.has(x.name)?1:dumbbell?2:0;
  return {...x,id:'exercise:'+x.name,aliases:aliases[x.name]||[],equipment,
@@ -78,7 +79,17 @@ export const EXERCISE_CATALOG=Object.freeze(entries.map(x=>{
   weightDisplay:dumbbell?(hands===1?'한 손 기준':'한 손 기준 · 양손 각각'):'총중량',
   primaryMuscleIds:muscleOverrides[x.name]?.[0]||primary[x.part]||[],secondaryMuscleIds:muscleOverrides[x.name]?.[1]||secondary[x.part]||[],
   anatomyMapVersion:2,sourceUrl:sourceUrls[x.name]||''};
-}));
+});
+// 3.12.0 확장 종목: 이름이 겹치면 기존 것을 그대로 둔다(기록 ID 유지).
+const taken=new Set(BASE.map(x=>x.name));
+const MORE=MORE_EXERCISES.filter(([name])=>!taken.has(name)).map(([name,part,equipment,p,s,o={}])=>{const dumbbell=equipment==='덤벨'||equipment==='케틀벨',hands=o.h1?1:dumbbell?2:0;return {name,part,kind:'strength',id:'exercise:'+name,aliases:o.aliases||[],equipment,weightBasis:dumbbell?'per-hand':'total',handCount:hands,repBasis:o.u?'per-side':'total',defaultWeight:0,weightDisplay:dumbbell?(hands===1?'한 손 기준':'한 손 기준 · 양손 각각'):'총중량',primaryMuscleIds:p,secondaryMuscleIds:s.filter(x=>!p.includes(x)),anatomyMapVersion:2,sourceUrl:SOURCES[0]}});
+const CARDIO=MORE_CARDIO.filter(n=>!taken.has(n)).map(name=>({name,part:'유산소',kind:'cardio',id:'exercise:'+name,aliases:[],equipment:'유산소',weightBasis:'total',handCount:0,repBasis:'total',defaultWeight:0,weightDisplay:'총중량',primaryMuscleIds:[],secondaryMuscleIds:[],anatomyMapVersion:2,sourceUrl:''}));
+export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO]);
+const norm=v=>String(v||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/]/g,'');
+// 이름(또는 별칭)으로 도감 종목을 찾는다. 띄어쓰기·괄호 차이는 무시.
+export function findExercise(name){const n=norm(name);if(!n)return null;return EXERCISE_CATALOG.find(x=>norm(x.name)===n||(x.aliases||[]).some(a=>norm(a)===n))||null}
+// 직접 만든 종목의 타깃 추정: 도감 일치 → 이름 규칙 → 부위 기본값. 사용자가 고르지 않아도 채운다.
+export function inferTargets(name,part=''){const hit=findExercise(name);if(hit&&hit.kind!=='cardio')return {primary:[...hit.primaryMuscleIds],secondary:[...hit.secondaryMuscleIds],source:'catalog'};const n=String(name||'');for(const [re,p,s] of NAME_RULES)if(re.test(n))return {primary:[...p],secondary:s.filter(x=>!p.includes(x)),source:'name'};const p=primary[part]||[];return {primary:[...p],secondary:(secondary[part]||[]).filter(x=>!p.includes(x)),source:p.length?'part':'none'}}
 export function searchExercises(query='',part=''){
  const q=String(query).trim().toLocaleLowerCase('ko');
  return EXERCISE_CATALOG.filter(x=>(!part||part==='전체'||x.part===part)&&(!q||[x.name,...x.aliases].some(name=>name.toLocaleLowerCase('ko').includes(q))));

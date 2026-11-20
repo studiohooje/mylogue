@@ -416,3 +416,8 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .mini-atlas svg{height:62px;width:auto;flex:none}
 .mini-atlas .anatomy-map path[stroke-dasharray]{display:none}
 @media(max-width:420px){.mini-atlas,.mini-atlas svg{height:54px}}
+/* 3.12.0 무게 단계·단위 변환 */
+.chip-row.q-steps{flex-wrap:wrap;overflow:visible}
+.chip-row.q-steps .chip{min-width:56px;justify-content:center}
+.q-conv{display:block;margin-top:4px;font-size:13px;color:#9cc8ed;font-variant-numeric:tabular-nums}
+.quick-set-inputs{align-items:start}

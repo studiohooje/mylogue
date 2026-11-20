@@ -1,4 +1,4 @@
-import {EXERCISE_CATALOG} from './catalog.js';
+import {EXERCISE_CATALOG,findExercise,inferTargets} from './catalog.js';
 import {cleanGymPlaces} from './places.js';
 export const VERSION=1;
 export const uid=()=>globalThis.crypto?.randomUUID?.()??`id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -39,11 +39,11 @@ export function cleanExercise(raw){
  if(kind==='strength'&&!sets.length)throw Error('세트를 하나 이상 입력해 주세요.');
  for(const s of sets){if(s.originalWeight===null||s.originalWeight<0||!['kg','lb'].includes(s.originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');if(!['kg','lb'].includes(s.targetUnit)||s.targetWeight!==null&&s.targetWeight<0||s.targetReps!==null&&(s.targetReps<0||!Number.isInteger(s.targetReps)))throw Error('목표 중량·반복·단위를 확인해 주세요.');if(!['kg','lb'].includes(s.unit))throw Error('중량 단위는 kg 또는 lb여야 합니다.');if(s.weight===null||s.reps===null||s.weight<0||s.reps<0||!Number.isInteger(s.reps))throw Error('중량과 반복 횟수를 확인해 주세요.');if(s.rpe!==null&&(s.rpe<0||s.rpe>10))throw Error('RPE는 0~10 사이여야 합니다.')}
  if(kind==='cardio'&&durationMin===null&&distanceKm===null)throw Error('유산소 시간 또는 거리를 입력해 주세요.');
- const known=EXERCISE_CATALOG.find(x=>x.id===raw.exerciseId)||EXERCISE_CATALOG.find(x=>x.name===name);
+ const known=EXERCISE_CATALOG.find(x=>x.id===raw.exerciseId)||EXERCISE_CATALOG.find(x=>x.name===name)||findExercise(name);
  const weightBasis=raw.weightBasis==='per-hand'?'per-hand':'total';
  const handCount=weightBasis==='per-hand'&&(raw.handCount===2||raw.loadCount===2)?2:weightBasis==='per-hand'?1:0;
  const repBasis=raw.repBasis==='per-side'?'per-side':'total';
- return {id:raw.id||uid(),name,exerciseId:String(raw.exerciseId||known?.id||'')||null,machineId:String(raw.machineId||'')||null,primaryMuscleIds:cleanIds(raw.primaryMuscleIds??known?.primaryMuscleIds),secondaryMuscleIds:cleanIds(raw.secondaryMuscleIds??known?.secondaryMuscleIds),anatomyMapVersion:1,part:String(raw.part||known?.part||'기타'),kind,weightBasis,handCount,repBasis,durationMin,distanceKm,supersetGroup:String(raw.supersetGroup||'').trim()||null,sets}
+ return {id:raw.id||uid(),name,exerciseId:String(raw.exerciseId||known?.id||'')||null,machineId:String(raw.machineId||'')||null,...exerciseTargets(raw,name,known),anatomyMapVersion:1,part:String(raw.part||known?.part||'기타'),kind,weightBasis,handCount,repBasis,durationMin,distanceKm,supersetGroup:String(raw.supersetGroup||'').trim()||null,sets}
 }
 function workoutLoggedAt(raw,date){const t=String(raw.loggedAtTime||'').trim();if(/^\d{2}:\d{2}$/.test(t)){const d=new Date(`${date}T${t}:00`);if(!Number.isNaN(d.getTime()))return d.toISOString()}const v=String(raw.loggedAt||'');if(v&&!Number.isNaN(new Date(v).getTime())){if(raw.loggedAtTime===undefined&&!v.startsWith(date)){const o=new Date(v),d=new Date(`${date}T${String(o.getHours()).padStart(2,'0')}:${String(o.getMinutes()).padStart(2,'0')}:00`);return d.toISOString()}return v}return ''}
 export function cleanWorkout(raw){const date=String(raw.date??'');if(!validDate(date))throw Error('운동 날짜를 확인해 주세요.');const exercises=(raw.exercises??[]).map(cleanExercise);if(!exercises.length)throw Error('운동 종목을 하나 이상 입력해 주세요.');const duration=number(raw.duration);if(duration!==null&&duration<0)throw Error('운동 시간은 음수가 될 수 없습니다.');const condition=number(raw.condition);if(condition!==null&&(condition<1||condition>5))throw Error('컨디션은 1~5 사이여야 합니다.');return {id:raw.id||uid(),sourceDraftId:String(raw.sourceDraftId||''),date,title:String(raw.title||'오늘의 운동').trim(),gymName:String(raw.gymName||'').trim(),duration,condition,exercises,note:String(raw.note??'').trim(),loggedAt:workoutLoggedAt(raw,date),createdAt:raw.createdAt||raw.updatedAt||new Date().toISOString(),updatedAt:raw.updatedAt||new Date().toISOString()}}
@@ -71,9 +71,11 @@ export function cleanMachine(raw){
  const photoDataUrl=String(raw.photoDataUrl||'');if(photoDataUrl&&(photoDataUrl.length>2*1024*1024||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(photoDataUrl)))throw Error('머신 사진은 2 MB 이하의 PNG·JPEG·WebP로 선택해 주세요.');
  return {id:raw.id||uid(),name,aliases:cleanIds(raw.aliases).map(x=>x.trim()).filter(x=>x&&x!==name),photoDataUrl,exerciseId:String(raw.exerciseId||''),manufacturer:String(raw.manufacturer||'모름').trim(),model:String(raw.model||'모름').trim(),location:String(raw.location||'').trim(),resistance:String(raw.resistance||'모름').trim(),unit};
 }
+// 3.12.0 타깃: 사용자가 정한 값 → 도감 → 이름 규칙 → 부위. 비어 있지 않게 채운다(유산소 제외).
+function exerciseTargets(raw,name,known){const p=cleanIds(raw.primaryMuscleIds),s=cleanIds(raw.secondaryMuscleIds);if(p.length)return {primaryMuscleIds:p,secondaryMuscleIds:s};if(known&&known.primaryMuscleIds?.length)return {primaryMuscleIds:cleanIds(known.primaryMuscleIds),secondaryMuscleIds:cleanIds(known.secondaryMuscleIds)};if(raw.kind==='cardio')return {primaryMuscleIds:[],secondaryMuscleIds:[]};const t=inferTargets(name,String(raw.part||''));return {primaryMuscleIds:t.primary,secondaryMuscleIds:t.secondary}}
 export function cleanCustomExercise(raw){
  const name=String(raw.name||'').trim();if(!name)throw Error('종목 이름을 입력해 주세요.');
- return {id:raw.id||uid(),name,part:String(raw.part||'기타'),kind:raw.kind==='cardio'?'cardio':'strength',equipment:String(raw.equipment||'기타'),aliases:cleanIds(raw.aliases),primaryMuscleIds:cleanIds(raw.primaryMuscleIds),secondaryMuscleIds:cleanIds(raw.secondaryMuscleIds),anatomyMapVersion:1};
+ return {id:raw.id||uid(),name,part:String(raw.part||'기타'),kind:raw.kind==='cardio'?'cardio':'strength',equipment:String(raw.equipment||'기타'),aliases:cleanIds(raw.aliases),...exerciseTargets(raw,name,null),targetSource:cleanIds(raw.primaryMuscleIds).length?'user':'auto',anatomyMapVersion:1};
 }
 export function cleanCheckin(raw){
  const out={};for(const k of ['sleep','energy','soreness']){const n=number(raw[k]);if(n!==null&&(n<1||n>5))throw Error('컨디션은 1~5 사이여야 합니다.');out[k]=n;}

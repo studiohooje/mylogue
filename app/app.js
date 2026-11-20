@@ -17,10 +17,11 @@ import {extractInbody} from './inbody.js';
 import {recognizeInBody270} from './inbody-photo.js';
 import {periodSummary,threeLiftTotal,simpleRecommendation} from './insights.js';
 import {latestEstimate,suggestSets,plateLoadPerSide} from './training.js';
-import {EXERCISE_CATALOG,searchExercises,PROGRAM_TEMPLATES,createRoutineFromProgram} from './catalog.js';
+import {EXERCISE_CATALOG,searchExercises,PROGRAM_TEMPLATES,createRoutineFromProgram,findExercise as findExerciseByName} from './catalog.js';
 import {FOOD_CATALOG} from './food-catalog.js';
 import {scaleNutrition,recentFoods,upsertFoodPreset} from './nutrition.js';
 import {goalSettingsHTML,saveGoalSettings} from './nutrition-goals.js';
+import {otherUnit,brandModelId,gymMachineId,genericMachine} from './machines-catalog.js';
 import {quickMealState,quickMealHTML as qmHTML,readQuickMeal,applyQuickMeal,stepFor,quickWorkoutState,quickWorkoutHTML as qwHTML,readQuickWorkout,applyQuickWorkout} from './quick-edit.js';
 import {profileOf,avatarHTML,newProfileEdit,profileEditHTML,applyProfile,shrinkPhoto} from './profile.js';
 import {newGoalWizard,goalWizardHTML,applyGoalWizard,calorieOptions,presetOrder,WIZ_STEPS,estimate as estimateEnergy} from './nutrition-plan.js';
@@ -134,7 +135,7 @@ async function adminClick(t){
  t.disabled=true;
  if(item.kind==='ai'){const d=aiDrafts.find(x=>x.id===item.id);if(d){if(approve)await aiConfirmMany([d]);else{await resolveAIDraft(d,{action:'reject'});await refreshAIDrafts()}}}
  else if(item.kind==='user'){await reviewApplicant(item.id,approve?'approved':'rejected');adminJust={uid:item.id,status:approve?'approved':'rejected'}}
- else{await reviewCatalogRequest(item.id,{status:approve?'approved':'rejected',note:''});await refreshCatalog()}
+ else{await reviewCatalogRequest(item.id,{status:approve?'approved':'rejected',note:''});if(approve)try{await publishMachineRequest(item.id)}catch(e){toast(`공용 머신 등록 실패: ${e.message}`)}await refreshCatalog()}
  adminState.done=[...adminState.done,{key,kind:item.kind,title:item.title,result:approve?'approved':'rejected'}];
  render();if(item.kind!=='ai')toast(approve?`${item.title} 승인 완료`:`${item.title} 반려 완료`);
  setTimeout(()=>{adminState.done=adminState.done.filter(d=>d.key!==key);if(!adminItems().some(x=>!adminState.snoozed.has(x.key))&&!adminState.done.length)adminState.open=false;render()},3500);
@@ -195,10 +196,12 @@ function quickEditClick(t){
 }
 root.addEventListener('change',async event=>{if(event.target.id!=='pf-photo'||!pfEdit)return;const file=event.target.files?.[0];if(!file)return;try{const v=document.getElementById('pf-name');if(v)pfEdit.nickname=v.value;pfEdit.photo=await shrinkPhoto(file);pfEdit.type='photo';render()}catch(e){toast(e.message)}});
 root.addEventListener('input',event=>{if(event.target.id==='pf-name'&&pfEdit)pfEdit.nickname=event.target.value});
+root.addEventListener('input',event=>{if(event.target.id!=='q-set-weight')return;const c=document.getElementById('q-set-conv');if(c)c.textContent=otherUnit(event.target.value,quickWorkout?.unit||'kg')});
 root.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.classList?.contains('brand-home')){event.preventDefault();event.target.click()}});
 // 3.11.0 팝업 바깥(어두운 배경)을 누르면 닫기. 작성 중인 내용이 있으면 먼저 묻는다.
 root.addEventListener('input',event=>{if(event.target.closest?.('.sheet')&&event.target.id!=='pf-photo'){sheetDirty=true;dirtyModal=modal}},true);
 root.addEventListener('click',event=>{if(event.target.id!=='backdrop'||!event.target.classList.contains('modal-backdrop'))return;event.stopPropagation();if(sheetDirty&&dirtyModal===modal&&!confirm('작성 중인 내용이 아직 저장되지 않았어요. 닫으면 지금 바꾼 내용이 사라져요. 닫을까요?'))return;sheetDirty=false;const x=document.getElementById('close');if(x)x.click();else{modal=null;render()}},true);
+async function publishMachineRequest(id){const r=catalogRequests.find(x=>x.id===id);if(!r||r.type!=='machine'||!r.manufacturer||!r.model)return false;const modelId=brandModelId(r.manufacturer,r.model),ex=findExerciseByName(r.name);await saveSharedCatalogItem('machineModels',{id:modelId,name:r.name||`${r.manufacturer} ${r.model}`,manufacturer:r.manufacturer,model:r.model,exerciseId:ex?.id||'',targetIds:r.targetIds||[]});if(r.gymName)await saveSharedCatalogItem('gymMachines',{id:gymMachineId(r.gymName,modelId),name:`${r.gymName} · ${r.manufacturer} ${r.model}`,gymName:r.gymName,modelId});return true}
 function recordHint(){const pf=prefsOf(db);if(pf.hintShown||!pf.onboarded)return;if(db.body.length+db.meals.length+db.workouts.length<3)return;db=save(withPrefs(db,{hintShown:true}));setTimeout(()=>toast('기록 방식이 불편하면 설정 › 나의 기록 방식에서 바꿀 수 있어요.'),1800)}
 function prefsClick(t){
  if(t.id==='onb-start'||t.id==='onb-restart'){onb=newOnboarding(db);modal='onboarding';render();return true}
@@ -285,7 +288,7 @@ function modalHTML(){if(!modal)return '';const wrap=(title,content,kind='')=>`<d
  if(modal==='catalog-photo')return wrap('머신 전체·명판 사진',`<div class="gap"><p class="hint">요청자가 보낸 압축 사진입니다. 제조사와 모델이 분명한지 확인한 뒤 요청 상태를 정하세요.</p><figure><figcaption>머신 전체</figcaption><img class="preview" src="${esc(catalogPhotoView?.whole||'')}" alt="머신 전체 사진"></figure><figure><figcaption>제조사·모델 명판</figcaption><img class="preview" src="${esc(catalogPhotoView?.nameplate||'')}" alt="머신 명판 사진"></figure></div>`);
  if(modal==='catalog-admin-food')return wrap('공용 음식 도감',catalogAdminFoodHTML());
   if(modal==='quick-meal')return wrap('음식 빠른 검색',quickMealHTML(foodChoices(),quickMeal),'quick-palette');
- if(modal==='quick-workout')return wrap('운동 빠른 검색',quickWorkoutHTML(db,quickWorkout,allExercises()),'quick-palette');
+ if(modal==='quick-workout')return wrap('운동 빠른 검색',quickWorkoutHTML(db,quickWorkout,allExercises(),sharedCatalog),'quick-palette');
   if(modal==='batch')return wrap('식사 상세 입력',batchHTML(batchRows,batchDate,batchSlot,foodChoices().foods,db.recipes||[],{time:batchTime,gramOptions:db.settings.gramOptions||{}}));
  if(modal==='checkin')return wrap('오늘 상태',checkinHTML());
  if(modal==='meal'){
@@ -337,14 +340,15 @@ function quickClick(t){
   if(t.dataset.qEditSet){const row=s.sets.find(x=>x.id===t.dataset.qEditSet);if(!row)return true;s.editing=true;s.editIndex=s.sets.indexOf(row);s.exerciseId=row.exerciseId;s.machineId=row.machineId;s.weight=row.weight;s.reps=row.reps;s.unit=row.unit;s.completedAt=row.completedAt;render();return true}
   if(t.id==='q-close-picker'){s.editing=false;s.editIndex=-1;render();return true}
   if(t.id==='q-first-set'||t.id==='q-next-set'){const last=[...s.sets].reverse().find(x=>x.exerciseId===s.exerciseId&&x.machineId===s.machineId);s.weight=last?.weight??s.weight;s.reps=last?.reps??s.reps;s.unit=last?.unit||s.unit;s.completedAt=quickTime();s.editing=true;s.editIndex=-1;render();return true}
-  if(t.dataset.qUnit){s.unit=t.dataset.qUnit;render();return true}
+  if(t.dataset.qUnit){const w=document.getElementById('q-set-weight');if(w)s.weight=w.value;s.unit=t.dataset.qUnit;render();return true}
+  if(t.dataset.qWstep){const w=document.getElementById('q-set-weight');if(w){w.value=String(Math.max(0,Math.round(((Number(w.value)||0)+Number(t.dataset.qWstep))*100)/100));s.weight=w.value;const c=document.getElementById('q-set-conv');if(c)c.textContent=otherUnit(w.value,s.unit)}return true}
   if(t.id==='q-repeat-set'||t.id==='q-save-set'){
    if(getStorageStatus().blocked)throw Error('기존 기록 보호를 위해 먼저 복구해 주세요.');const item=allExercises().find(x=>(x.id||x.name)===s.exerciseId);if(!item)throw Error('종목을 다시 선택해 주세요.');const last=[...s.sets].reverse().find(x=>x.exerciseId===s.exerciseId&&x.machineId===s.machineId);const direct=t.id==='q-repeat-set',weight=direct?last?.weight:Number(document.getElementById('q-set-weight')?.value),reps=direct?last?.reps:Number(document.getElementById('q-set-reps')?.value),unit=direct?last?.unit:s.unit,completedAt=direct?quickTime():document.getElementById('q-set-time')?.value;if(!Number.isFinite(weight)||weight<0||!Number.isInteger(reps)||reps<1||!['kg','lb'].includes(unit)||!completedAt)throw Error('중량·횟수·단위·시각을 확인해 주세요.');const row={id:s.editIndex>=0?s.sets[s.editIndex].id:uid(),exerciseId:s.exerciseId,machineId:s.machineId,exercise:structuredClone(item),weight,reps,unit,completedAt};if(s.editIndex>=0)s.sets[s.editIndex]=row;else s.sets.push(row);const workout=quickWorkoutRecord(s,db),titles=db.settings.workoutTitles||[],name=s.title.trim();db=save({...db,workouts:s.workoutId?db.workouts.map(w=>w.id===s.workoutId?workout:w):[...db.workouts,workout],settings:{...db.settings,workoutTitles:name?[...new Set([...titles,name])]:titles}});s.workoutId=workout.id;s.editing=false;s.editIndex=-1;startRestTimer(prefsOf(db).restSec);render();recordHint();toast('완료한 세트를 저장했습니다.');return true
   }
  }
  return false;
 }
-function quickInput(t){if(modal==='quick-meal'){if(t.id==='q-food-search'){quickMeal.query=t.value;if(composingSearch)return true;const pos=t.selectionStart;render();const input=document.getElementById('q-food-search');input?.focus();input?.setSelectionRange(pos,pos);return true}if(t.dataset.qMeta){quickMeal[t.dataset.qMeta]=t.value;return true}}if(modal==='quick-workout'){if(t.id==='q-ex-search'){quickWorkout.query=t.value;if(composingSearch)return true;const pos=t.selectionStart;render();const input=document.getElementById('q-ex-search');input?.focus();input?.setSelectionRange(pos,pos);return true}if(t.dataset.qWork){if(quickWorkout.sets.length&&['gymName','date'].includes(t.dataset.qWork)){render();throw Error('세트를 기록한 뒤에는 날짜와 헬스장을 바꿀 수 없습니다. 새 운동 기록을 시작해 주세요.')}quickWorkout[t.dataset.qWork]=t.value;if(t.dataset.qWork==='gymName'){const m=quickMachineFor(quickWorkout.exerciseId,t.value);quickWorkout.machineId=m?.id||'';render()}return true}if(t.id==='q-machine'){quickWorkout.machineId=t.value;const m=db.machines.find(x=>x.id===t.value);if(m)quickWorkout.unit=m.unit;render();return true}}return false}
+function quickInput(t){if(modal==='quick-meal'){if(t.id==='q-food-search'){quickMeal.query=t.value;if(composingSearch)return true;const pos=t.selectionStart;render();const input=document.getElementById('q-food-search');input?.focus();input?.setSelectionRange(pos,pos);return true}if(t.dataset.qMeta){quickMeal[t.dataset.qMeta]=t.value;return true}}if(modal==='quick-workout'){if(t.id==='q-ex-search'){quickWorkout.query=t.value;if(composingSearch)return true;const pos=t.selectionStart;render();const input=document.getElementById('q-ex-search');input?.focus();input?.setSelectionRange(pos,pos);return true}if(t.dataset.qWork){if(quickWorkout.sets.length&&['gymName','date'].includes(t.dataset.qWork)){render();throw Error('세트를 기록한 뒤에는 날짜와 헬스장을 바꿀 수 없습니다. 새 운동 기록을 시작해 주세요.')}quickWorkout[t.dataset.qWork]=t.value;if(t.dataset.qWork==='gymName'){const m=quickMachineFor(quickWorkout.exerciseId,t.value);quickWorkout.machineId=m?.id||'';render()}return true}if(t.id==='q-machine'){quickWorkout.machineId=t.value;const m=db.machines.find(x=>x.id===t.value);if(m?.unit)quickWorkout.unit=m.unit;render();return true}}return false}
 root.addEventListener('click',async event=>{
  const target=event.target.closest('button,[data-page],[data-metric],[data-filter-part]');if(!target)return;
  try{
@@ -506,7 +510,7 @@ function dietControls(){const state=dietState(db,selectedDate);return `<section 
 function checkinHTML(){const c=db.checkins?.[today()]||{};return `<form id="checkin-form" class="gap"><p class="hint">${today()} · 기록 기반 제안을 위한 자가 입력입니다. 비워두면 미확인으로 표시합니다.</p>${[['sleep','수면 만족도'],['energy','전신 에너지'],['soreness','근육통 정도']].map(([k,label])=>`<label class="field">${label} (1 낮음 · 5 높음)<select name="${k}"><option value="">미입력</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(c[k])===n?'selected':''}>${n}</option>`).join('')}</select></label>`).join('')}<label class="field">통증·부상 우려<select name="pain"><option value="">미확인</option><option value="false" ${c.pain===false?'selected':''}>없음</option><option value="true" ${c.pain===true?'selected':''}>있음</option></select></label><button class="button">오늘 상태 저장</button></form>`}
 function recommendationView(){const r=recommendWorkout(db,today());return {title:r.title||r.part||({hold:'오늘은 제안 보류',insufficient:'기록이 더 필요합니다',light:'부담을 낮출 날',limited:'정보가 부족한 참고 후보',ready:'오늘의 운동 후보'}[r.status])||'기록 기반 운동 초안',reason:r.reason||r.reasons?.join(' · ')||'최근 기록과 오늘 상태를 함께 확인하세요.',note:r.note||r.missing?.join(' · ')||'추정 정보입니다. 운동 부위와 강도는 직접 결정하세요.',raw:r}}
 function recommendationHTML(){const v=recommendationView();return `<h3>${esc(v.title)}</h3><p>${esc(v.reason)}</p><p class="hint">${esc(v.note)}</p>${(v.raw.suggestions||[]).map(x=>`<div class="record"><strong>${esc(x.name)}</strong><small>${esc(x.reason)}</small></div>`).join('')}<p class="hint">미확인: ${esc(v.raw.missing?.join(', ')||'없음')} · 오늘 상태는 자가 입력이며 실제 회복을 측정한 값이 아닙니다.</p><button class="button secondary" id="apply-recommendation">초안을 확인·수정</button>`}
-function prHTML(){const rows=exercisePRs(db);return `<section class="section card"><h3>종목·머신별 최고 기록</h3><p class="hint">완료 세트만 집계합니다. 단위는 kg로 환산하며 다른 머신의 표시 중량은 동일 실부하로 비교하지 않습니다.</p>${rows.map(x=>`<div class="record"><div><strong>${esc(x.name||x.exerciseName||'운동')}</strong><small>${esc((db.machines||[]).find(m=>m.id===x.machineId)?.model||'머신 미지정')}</small></div><span>최대 ${fmt(x.maxWeight??x.maxWeightKg)} kg<br>최대 ${fmt(x.maxReps)}회 · 세트 볼륨 ${fmt(x.maxSetVolume)} kg<br>추정 1RM ${fmt(x.best1RM??x.estimated1RM)} kg</span></div>`).join('')||'<p class="hint">완료된 기록이 없습니다.</p>'}</section>`}
+function prHTML(){const rows=exercisePRs(db);return `<section class="section card"><h3>종목·머신별 최고 기록</h3><p class="hint">완료 세트만 집계합니다. 단위는 kg로 환산하며 다른 머신의 표시 중량은 동일 실부하로 비교하지 않습니다.</p>${rows.map(x=>`<div class="record"><div><strong>${esc(x.name||x.exerciseName||'운동')}</strong><small>${esc((db.machines||[]).find(m=>m.id===x.machineId)?.model||genericMachine(x.machineId)?.name||'머신 미지정')}</small></div><span>최대 ${fmt(x.maxWeight??x.maxWeightKg)} kg<br>최대 ${fmt(x.maxReps)}회 · 세트 볼륨 ${fmt(x.maxSetVolume)} kg<br>추정 1RM ${fmt(x.best1RM??x.estimated1RM)} kg</span></div>`).join('')||'<p class="hint">완료된 기록이 없습니다.</p>'}</section>`}
 async function enhancedClick(t){
  if(t.dataset.atlasMode){analysisAtlasMode=t.dataset.atlasMode;render();return true}
  if(t.dataset.bodyEdit){bodyEditId=t.dataset.bodyEdit;modal='body';render();return true}
@@ -546,7 +550,7 @@ async function enhancedClick(t){
  return false;
 }
 function enhancedChange(t){
- if(t.dataset.ex==='machineId'){const ex=workDraft[Number(t.closest('[data-ei]').dataset.ei)];ex.machineId=t.value||null;const machine=db.machines.find(m=>m.id===ex.machineId);for(const set of ex.sets)if(Number(set.weight)===0)set.unit=machine?.unit||'kg';render();return true}
+ if(t.dataset.ex==='machineId'){const ex=workDraft[Number(t.closest('[data-ei]').dataset.ei)];ex.machineId=t.value||null;const machine=db.machines.find(m=>m.id===ex.machineId);if(genericMachine(ex.machineId)?.sided==='iso'){ex.weightBasis='per-hand';ex.handCount=2}for(const set of ex.sets)if(Number(set.weight)===0)set.unit=machine?.unit||'kg';render();return true}
  if(t.dataset.set==='unit'){const set=workDraft[Number(t.closest('[data-ei]').dataset.ei)].sets[Number(t.closest('[data-si]').dataset.si)];Object.assign(set,convertSetUnit(set,t.value));render();return true}
  if(t.dataset.set==='completed'){const set=workDraft[Number(t.closest('[data-ei]').dataset.ei)].sets[Number(t.closest('[data-si]').dataset.si)];set.completed=t.checked;if(t.checked&&!set.completedAt){set.completedAt=new Date().toLocaleString('sv-SE').replace(' ','T').slice(0,16);const field=t.closest('[data-si]').querySelector('[data-set="completedAt"]');if(field)field.value=set.completedAt}if(!t.checked)set.completedAt='';return true}
  if(t.dataset.ex==='name'){const ex=workDraft[Number(t.closest('[data-ei]').dataset.ei)],match=allExercises().find(x=>x.name===t.value);ex.exerciseId=match?.id||null;ex.primaryMuscleIds=match?.primaryMuscleIds||[];ex.secondaryMuscleIds=match?.secondaryMuscleIds||[];ex.weightBasis=match?.weightBasis||'total';ex.handCount=match?.handCount||0;ex.repBasis=match?.repBasis||'total'}
@@ -628,7 +632,7 @@ async function catalogClick(target){
  if(target.dataset.adminFood){catalogAdminFood=catalogFoods().find(x=>x.id===target.dataset.adminFood)||null;render();return true}
  if(target.id==='admin-food-new'){catalogAdminFood=null;render();return true}
  if(target.dataset.requestPhoto){catalogPhotoView=await catalogRequestPhoto(target.dataset.requestPhoto);modal='catalog-photo';render();return true}
- if(target.dataset.reviewRequest){if(!isCatalogAdmin(cloudState.user))throw Error('관리자 계정만 요청을 검토할 수 있습니다.');const id=target.dataset.reviewRequest,status=document.querySelector(`[data-review-state="${CSS.escape(id)}"]`)?.value,note=document.querySelector(`[data-review-note="${CSS.escape(id)}"]`)?.value||'';await reviewCatalogRequest(id,{status,note});await refreshCatalog();toast(status==='approved'?'승인 완료 · 요청 목록에 ‘승인됨’으로 표시돼요.':status==='rejected'?'반려 완료':'요청 상태를 바꿨어요.');return true}
+ if(target.dataset.reviewRequest){if(!isCatalogAdmin(cloudState.user))throw Error('관리자 계정만 요청을 검토할 수 있습니다.');const id=target.dataset.reviewRequest,status=document.querySelector(`[data-review-state="${CSS.escape(id)}"]`)?.value,note=document.querySelector(`[data-review-note="${CSS.escape(id)}"]`)?.value||'';await reviewCatalogRequest(id,{status,note});let published=false;if(status==='approved')try{published=await publishMachineRequest(id)}catch(e){toast(`승인했지만 공용 머신 등록은 실패했어요: ${e.message}`)}await refreshCatalog();if(published)toast('승인 완료 · 그 헬스장 머신 목록에 바로 나와요.');toast(status==='approved'?'승인 완료 · 요청 목록에 ‘승인됨’으로 표시돼요.':status==='rejected'?'반려 완료':'요청 상태를 바꿨어요.');return true}
  return false;
 }
 
