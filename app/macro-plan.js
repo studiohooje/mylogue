@@ -54,6 +54,56 @@ export function computeMacroPlan(plan, weight){
  return {g, kcal:kc, pct, total:Math.round(total), goal:kcal, diff, errors:err};
 }
 
+// 4.1.0 목표 대비 지금 몇 %인지, 얼마나 남았는지, 한 번에 맞추는 방법(대표님 요청)
+const r1p = v => Math.round(v*10)/10;
+export function planStatus(plan, weight){
+ const c = computeMacroPlan(plan, weight), goal = c.goal||0, rules = plan?.rules||{};
+ const mode = k => rules[k]?.mode||'rest';
+ const pctOf = k => goal ? c.kcal[k]/goal*100 : 0;
+ const fixed = MACROS.filter(([k]) => ['perKg','grams'].includes(mode(k)));
+ const ratio = MACROS.filter(([k]) => mode(k)==='ratio');
+ const rest = MACROS.filter(([k]) => mode(k)==='rest');
+ const fixedPct = fixed.reduce((a, [k]) => a + pctOf(k), 0);
+ const ratioSum = ratio.reduce((a, [k]) => a + (Number(rules[k].value)||0), 0);
+ const left = r1p(100 - fixedPct - ratioSum);
+ const fixes = [];
+ if(!rest.length && Math.abs(left) >= 0.5 && goal){
+  for(const [k, label] of ratio){ const v = r1p((Number(rules[k].value)||0) + left); if(v > 0) fixes.push({kind:'value', k, v, label:`${label}을 ${v}%로 맞추기`}); }
+  for(const [k, label] of (ratio.length ? ratio : fixed)) fixes.push({kind:'rest', k, label:`${label}을 나머지로(자동)`});
+  if(!ratio.length) fixes.push({kind:'kcal', v:Math.round(c.total), label:`목표 칼로리를 ${n0(c.total)} kcal로`});
+ }
+ return {c, goal, fixed, ratio, rest, fixedPct:r1p(fixedPct), ratioSum:r1p(ratioSum), left, pctOf, fixes};
+}
+export function planStatusHTML(st){
+ const {c, goal, fixed, ratio, rest, fixedPct, left, pctOf, fixes} = st;
+ const lines = [];
+ if(fixed.length) lines.push(`${fixed.map(([k, label]) => `${label} ${n0(c.g[k])}g`).join(' · ')}이 목표의 <b>${Math.round(fixedPct)}%</b>예요. 남은 <b>${Math.max(0, Math.round(100 - fixedPct))}%</b>(${n0(Math.max(0, goal*(100 - fixedPct)/100))} kcal)를 나머지 영양소가 나눠요.`);
+ if(rest.length){
+  if(left < -0.5) lines.push(`<span class="mp-bad">정해 둔 값만으로 목표를 <b>${Math.round(-left)}%</b> 넘어요. 값을 줄이거나 목표 칼로리를 올려 주세요.</span>`);
+  else lines.push(`${rest.map(([, l]) => l).join('·')}(나머지)가 남은 <b>${Math.round(rest.reduce((a, [k]) => a + pctOf(k), 0))}%</b>를 자동으로 채워요. <span class="mp-ok">✓ 합계가 목표와 맞아요</span>`);
+ } else if(ratio.length || fixed.length){
+  const sumTxt = ratio.length ? `${ratio.map(([k, l]) => `${l} ${Math.round(pctOf(k))}%`).join(' + ')} = <b>${Math.round(st.ratioSum)}%</b>` : '';
+  if(Math.abs(left) < 0.5) lines.push(`${sumTxt} <span class="mp-ok">✓ 합계가 목표와 딱 맞아요</span>`);
+  else lines.push(`${sumTxt}${sumTxt?' → ':''}<span class="mp-bad">${left>0 ? `<b>${Math.round(left)}%</b> 남아요` : `<b>${Math.round(-left)}%</b> 넘어요`}</span> · 아래 버튼으로 한 번에 맞출 수 있어요.`);
+ }
+ return `<div class="mp-status" aria-live="polite">${lines.map(l => `<p>${l}</p>`).join('')}${fixes.length?`<div class="mp-fixes">${fixes.map(f => `<button type="button" class="chip mp-fix" data-mp-fix="${f.kind}:${f.k||''}:${f.v??''}">${esc(f.label)}</button>`).join('')}</div>`:''}</div>`;
+}
+// 체중×g·고정 g로 바꿨는데 '나머지'가 없으면, 비율로 남은 것 하나를 자동으로 '나머지'로(탄수 → 지방 → 단백질 순)
+export function autoRest(plan, changed){
+ const rules = plan.rules||{}, has = MACROS.some(([k]) => (rules[k]?.mode||'rest')==='rest');
+ if(has || !['perKg','grams'].includes(rules[changed]?.mode)) return plan;
+ const pick = ['carbs','fat','protein'].find(k => k!==changed && rules[k]?.mode==='ratio');
+ if(pick) rules[pick] = {mode:'rest', value:1};
+ return plan;
+}
+export function applyFix(plan, code){
+ const [kind, k, v] = String(code).split(':');
+ if(kind==='value') plan.rules[k] = {mode:'ratio', value:Number(v)};
+ else if(kind==='rest') plan.rules[k] = {mode:'rest', value:1};
+ else if(kind==='kcal') plan.calorieGoal = Number(v);
+ return plan;
+}
+
 export const ruleLabel = (r, weight) => r?.mode==='ratio' ? '비율' : r?.mode==='perKg' ? `체중 × ${r1(r.value)}${weight?'':''}` : r?.mode==='grams' ? '고정' : '나머지';
 
 // 계획을 저장 형식으로
@@ -81,11 +131,11 @@ export function macroPlanCardHTML(settings={}, weight){
 
 // 수정 창
 export function macroPlanFormHTML(plan, weight){
- const c = computeMacroPlan(plan, weight);
- const row = ([k, label]) => { const r = plan.rules?.[k]||{mode:'rest', value:1}; const unit = r.mode==='ratio' ? '%' : r.mode==='perKg' ? 'g/kg' : r.mode==='grams' ? 'g' : '몫'; return `<div class="mp-row m-${k}"><div class="mp-row-head"><span class="dot"></span><b>${label}</b><span class="mp-result">${n0(c.g[k])}g · ${c.pct[k]}%</span></div><div class="seg mp-modes" role="group" aria-label="${label} 정하는 방식">${MODES.map(([m, ml]) => `<button type="button" class="${r.mode===m?'active':''}" data-mp-mode="${k}:${m}" aria-pressed="${r.mode===m}">${ml}</button>`).join('')}</div><label class="mp-val"><input type="number" inputmode="decimal" step="0.1" min="0" data-mp-value="${k}" value="${esc(r.value)}" aria-label="${label} 값"><span>${unit}</span></label>${r.mode==='perKg'?`<small class="hint">${weight?`최근 체중 ${r1(weight)}kg × ${r1(r.value)} = ${n0(c.g[k])}g`:'체중 기록이 필요해요'}</small>`:r.mode==='rest'?'<small class="hint">다른 영양소를 채우고 남은 칼로리를 가져가요(나머지가 둘이면 이 숫자 비율로 나눠요)</small>':''}</div>`; };
+ const c = computeMacroPlan(plan, weight), st = planStatus(plan, weight), gp = k => Math.round(st.pctOf(k));
+ const row = ([k, label]) => { const r = plan.rules?.[k]||{mode:'rest', value:1}; const unit = r.mode==='ratio' ? '%' : r.mode==='perKg' ? 'g/kg' : r.mode==='grams' ? 'g' : '몫'; return `<div class="mp-row m-${k}"><div class="mp-row-head"><span class="dot"></span><b>${label}</b><span class="mp-result">${n0(c.g[k])}g · ${gp(k)}%</span></div><div class="seg mp-modes" role="group" aria-label="${label} 정하는 방식">${MODES.map(([m, ml]) => `<button type="button" class="${r.mode===m?'active':''}" data-mp-mode="${k}:${m}" aria-pressed="${r.mode===m}">${ml}</button>`).join('')}</div>${r.mode==='rest'&&MACROS.filter(([x]) => (plan.rules?.[x]?.mode||'rest')==='rest').length<2?'':`<label class="mp-val"><input type="number" inputmode="decimal" step="0.1" min="0" data-mp-value="${k}" value="${esc(r.value)}" aria-label="${label} 값"><span>${unit}</span></label>`}${r.mode==='perKg'?`<small class="hint">${weight?`최근 체중 ${r1(weight)}kg × ${r1(r.value)} = ${n0(c.g[k])}g`:'체중 기록이 필요해요'}</small>`:r.mode==='rest'?`<small class="hint">자동: 남은 칼로리를 채워요 → 지금 ${gp(k)}%${MACROS.filter(([x]) => (plan.rules?.[x]?.mode||'rest')==='rest').length>1?' (나머지가 둘이면 이 숫자 비율로 나눠요)':''}</small>`:r.mode==='ratio'?`<small class="hint">목표 칼로리의 ${esc(r.value)}% = ${n0(c.g[k])}g</small>`:''}</div>`; };
  return `<form id="macro-plan-form" class="mp-form"><label class="field">목표 칼로리(kcal)<input type="number" inputmode="numeric" min="800" max="6000" step="10" data-mp-kcal value="${esc(plan.calorieGoal)}"></label>
  <div class="mp-presets"><small>빠른 선택</small>${PRESETS.map(p => `<button type="button" class="chip" data-mp-preset="${p.id}">${esc(p.label)}</button>`).join('')}</div>
  ${MACROS.map(row).join('')}
- <div class="mp-sum"><div class="mplan-bar" aria-hidden="true">${MACROS.map(([k]) => `<i class="m-${k}" style="width:${c.pct[k]}%"></i>`).join('')}</div><p>합계 <b>${n0(c.total)} kcal</b> · 목표 ${n0(c.goal)} kcal</p>${c.errors.map(e => `<p class="mp-err">${esc(e)}</p>`).join('')}</div>
+ <div class="mp-sum"><div class="mplan-bar" aria-hidden="true">${MACROS.map(([k]) => `<i class="m-${k}" style="width:${c.pct[k]}%"></i>`).join('')}</div><p>합계 <b>${n0(c.total)} kcal</b> · 목표 ${n0(c.goal)} kcal</p>${planStatusHTML(st)}${c.errors.filter(e => !/^탄단지 합계|^비율 합계|^정해 둔 영양소만으로/.test(e)).map(e => `<p class="mp-err">${esc(e)}</p>`).join('')}</div>
  <div class="actions"><button class="button" type="submit" ${c.errors.length?'disabled':''}>이 목표로 저장</button><button class="button secondary" type="button" id="gw-open">제안해 주세요</button></div></form>`;
 }

@@ -87,15 +87,17 @@ function draftRecords(draft,reviewedData){
   return finalized([{kind:'customExercises',record:cleanCustomExercise({...raw,id:`ai-${draft.id}`})}]);
 }
 export function validateDraftRecords(draft,reviewedData){return draftRecords(draft,reviewedData)}
-export async function resolveAIDraft(draft,{action,reviewedData=null}={}){
+export async function resolveAIDraft(draft,{action,reviewedData=null,allowDuplicate=false}={}){
   if(!DRAFT_ID.test(draft?.id)||!['confirm','reject'].includes(action))throw Error('AI 초안 처리 방식을 확인해 주세요.');
   const ctx=await context(),draftRef=ctx.fs.doc(ctx.db,'users',ctx.user.uid,'aiDrafts',draft.id);
   let finalRecordIds=[];
-  if(action==='confirm'){
-    const proposed=draftRecords(draft,reviewedData),identities=new Set(proposed.map(entry=>recordIdentity(entry.kind,entry.record)));
+  if(action==='confirm'&&!allowDuplicate){
+    const proposed=draftRecords(draft,reviewedData);
     const snapshot=await ctx.fs.getDocsFromServer(ctx.fs.collection(ctx.db,'users',ctx.user.uid,'records'));
-    for(const doc of snapshot.docs){const separator=doc.id.indexOf('~');if(separator<0)continue;const kind=doc.id.slice(0,separator),payload=doc.data().payload;if(typeof payload!=='string')continue;let existing;try{existing=JSON.parse(payload)}catch{continue}if(identities.has(recordIdentity(kind,existing)))throw Object.assign(Error(duplicateMessage(kind,existing)),{code:'duplicate'});}
+    const existing=[];for(const doc of snapshot.docs){const separator=doc.id.indexOf('~');if(separator<0)continue;const payload=doc.data().payload;if(typeof payload!=='string')continue;try{existing.push({kind:doc.id.slice(0,separator),record:JSON.parse(payload)})}catch{}}
+    const dup=findDuplicate(proposed,existing);if(dup)throw Object.assign(Error(duplicateMessage(dup.kind,dup.record)),{code:'duplicate'});
   }
+
   await ctx.fs.runTransaction(ctx.db,async tx=>{
     const snap=await tx.get(draftRef);
     if(!snap.exists())throw Error('초안을 찾을 수 없습니다.');
@@ -119,8 +121,17 @@ export async function resolveAIDraft(draft,{action,reviewedData=null}={}){
   }
   return finalRecordIds;
 }
+// 4.1.0 중복 판정(대표님: 하루에 같은 음식을 여러 번 먹는다). 식사는 초안의 음식이 '모두' 같은 날·같은 분에 이미 있을 때만 중복.
+// 시각이 다르거나 한 가지라도 다르면 새 기록으로 받는다. 운동·수치 등은 기록 하나 단위로 그대로.
+export function findDuplicate(proposed,existing){
+ const index=new Map();for(const e of existing){const k=recordIdentity(e.kind,e.record);if(!index.has(k))index.set(k,e)}
+ const meals=proposed.filter(p=>p.kind==='meals'),others=proposed.filter(p=>p.kind!=='meals');
+ for(const p of others){const hit=index.get(recordIdentity(p.kind,p.record));if(hit)return hit}
+ if(meals.length){const hits=meals.map(p=>index.get(recordIdentity(p.kind,p.record)));if(hits.every(Boolean))return hits[0]}
+ return null;
+}
 // 4.0.1 어떤 기존 기록과 겹치는지 알려 준다(이름·날짜·시각)
-export function duplicateMessage(kind,x={}){const at=x.loggedAt?new Date(x.loggedAt):null,hm=at&&!Number.isNaN(at.getTime())?` ${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`:'';const what=kind==='meals'?`‘${x.name||'음식'}${x.servingQty?` ${x.servingQty}${x.servingUnit||''}`:''}’`:kind==='workouts'?`‘${x.title||'운동'}’`:kind==='body'?'같은 측정값':`‘${x.name||'항목'}’`;return `이미 같은 기록이 있어서 확정하지 않았어요: ${String(x.date||'').slice(5).replace('-','/')}${hm} ${what}. 이미 확정한 내용이면 이 초안은 버리고, 바꾸려던 거면 기존 기록을 수정하거나 초안의 시각·양을 고쳐 주세요.`}
+export function duplicateMessage(kind,x={}){const at=x.loggedAt?new Date(x.loggedAt):null,hm=at&&!Number.isNaN(at.getTime())?` ${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`:'';const what=kind==='meals'?`‘${x.name||'음식'}${x.servingQty?` ${x.servingQty}${x.servingUnit||''}`:''}’`:kind==='workouts'?`‘${x.title||'운동'}’`:kind==='body'?'같은 측정값':`‘${x.name||'항목'}’`;return `같은 시각에 똑같은 기록이 이미 있어요: ${String(x.date||'').slice(5).replace('-','/')}${hm} ${what}. 이미 확정한 거면 이 초안은 버려 주세요.`}
 // 코치에게 보낼 '고친 내용' 한 줄 요약(종목·세트 수 변화)
 function editSummary(a={},b={}){const name=x=>(x.exercises||[]).map(e=>`${e.name} ${(e.sets||[]).length}세트`).join(', ');const A=name(a),B=name(b);return (A===B?'세트 무게·횟수를 고쳤어요':`${A} → ${B}`).slice(0,400)}
 function reviewFeedback(d={}){const f=d?.feedback||{};return {effort:Number(f.effort)||null,pain:Array.isArray(f.pain)?f.pain.slice(0,8).map(String):[],note:String(f.note||'').slice(0,300)}}

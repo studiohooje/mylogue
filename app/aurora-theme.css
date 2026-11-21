@@ -995,3 +995,9 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .cw-day{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.cw-day>b{flex:1 1 auto}.cw-day .cw-item{flex-basis:100%;order:3}.cw-none{font-size:13px;opacity:.5}.cw-add{order:2}
 .coach-settings .check-row,.member-coach .check-row,.plan-form .check-row,.coach-send .check-row{margin:0!important;padding:4px 0;min-height:44px}
 @media (max-width:420px){.sc-u{display:none}}
+/* 4.1.0 탄단지 목표 창 상태·맞추기 */
+.mp-status{display:grid;gap:6px;margin-top:8px;padding:12px 14px;border-radius:12px;background:#ffffff08;border:1px solid #ffffff14}
+.mp-status p{margin:0;font-size:14px;line-height:1.5;word-break:keep-all}
+.mp-ok{color:#9fe3bf;font-weight:600}.mp-bad{color:#ffb38a;font-weight:600}
+.mp-fixes{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.mp-fix{border-color:#8ce4e099!important;color:#bff3f0}

@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {planStatus,planStatusHTML,autoRest,applyFix,macroPlanFormHTML} from '../macro-plan.js';
+const plan=()=>({calorieGoal:2300,rules:{carbs:{mode:'ratio',value:40},protein:{mode:'perKg',value:2.1},fat:{mode:'ratio',value:25}}});
+test('체중×g 단백질: 몇 % 차지하고 몇 % 남는지, 맞추기 버튼',()=>{const st=planStatus(plan(),83.9);assert.equal(Math.round(st.fixedPct),31);assert.ok(st.left>3&&st.left<5,String(st.left));const h=planStatusHTML(st);assert.match(h,/단백질 176g이 목표의 <b>31%/);assert.match(h,/남아요/);assert.match(h,/탄수화물을 4\d(\.\d)?%로 맞추기/);assert.match(h,/나머지로\(자동\)/)});
+test('맞추기를 누르면 합계가 맞고 저장 가능',()=>{const p=plan();const st=planStatus(p,83.9);const fix=st.fixes.find(f=>f.kind==='value'&&f.k==='carbs');applyFix(p,`value:carbs:${fix.v}`);const s2=planStatus(p,83.9);assert.ok(Math.abs(s2.left)<0.5);assert.doesNotMatch(macroPlanFormHTML(p,83.9),/type="submit" disabled/)});
+test('체중×g로 바꾸면 나머지가 없을 때 탄수가 자동으로 나머지',()=>{const p={calorieGoal:2300,rules:{carbs:{mode:'ratio',value:40},protein:{mode:'perKg',value:2},fat:{mode:'ratio',value:30}}};autoRest(p,'protein');assert.equal(p.rules.carbs.mode,'rest');const h=macroPlanFormHTML(p,80);assert.match(h,/자동: 남은 칼로리를 채워요 → 지금 \d+%/);assert.match(h,/✓ 합계가 목표와 맞아요/)});
+test('비율만일 때 합이 100이 아니면 남음·넘음 안내',()=>{const st=planStatus({calorieGoal:2000,rules:{carbs:{mode:'ratio',value:50},protein:{mode:'ratio',value:30},fat:{mode:'ratio',value:30}}},70);assert.equal(Math.round(st.left),-10);assert.match(planStatusHTML(st),/<b>10%<\/b> 넘어요/)});
