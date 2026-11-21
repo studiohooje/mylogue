@@ -139,8 +139,8 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}</div>
  ${state.msg?`<p class="ai-in-msg">${h(state.msg)}</p>`:''}
  ${ready?'':'<p class="ai-in-err">AI 입력은 로그인하고 이용 승인된 계정에서 쓸 수 있어요.</p>'}
- <p class="hint ai-pc-link">PC에서 Codex·Claude Code 같은 AI 도구를 쓴다면 붙여넣기 없이 바로 검토함으로 보낼 수 있어요. <button type="button" class="text-button" data-page="settings" data-scroll-to="ai-connect">PC의 AI와 직접 연결 →</button></p>
  <div class="actions ai-in-actions"><button type="button" class="button" id="ai-send" ${ready&&!state.busy?'':'disabled'}>${state.busy?'넣는 중…':'검토함에 넣기'}</button><button type="button" class="button secondary" id="ai-go-inbox" data-page="ai-inbox">AI 검토함 열기${pending?` <span class="ai-in-count">${pending}</span>`:''}</button></div>
+ <aside class="ai-pc-card" aria-label="PC의 AI와 직접 연결"><div class="ai-pc-glow" aria-hidden="true"></div><span class="ai-pc-tag">✦ 더 간편한 방법</span><b>하지만 이렇게 하면 더 간편합니다</b><p>PC에서 Codex·Claude Code 같은 AI 도구를 쓴다면, 복사·붙여넣기 없이 말만 하면 기록이 바로 검토함에 들어와요. 한 번 연결해 두면 위 과정은 필요 없어요.</p><button type="button" class="button ai-pc-btn" data-page="settings" data-scroll-to="ai-connect">PC의 AI와 직접 연결하기 →</button></aside>
 </div>`;
 }
 

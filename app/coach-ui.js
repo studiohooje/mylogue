@@ -1,4 +1,4 @@
-// 3.18.2 AI 코치(프리미엄) 틀: 오늘 남은 식단 · 다음 운동 · 주간 코칭 · 체중 흐름.
+// 3.18.2 AI 인사이트(프리미엄) 틀: 오늘 남은 식단 · 다음 운동 · 주간 코칭 · 체중 흐름.
 // 대표님 결정: 나중에 AI 서버(ai-worker)와 구독이 준비되면 프리미엄 사용자만 쓴다.
 // 지금은 '예시 화면'을 보여 준다. 사용자의 실제 기록 숫자(목표·오늘 먹은 양·최근 쓴 부위·자주 하는 종목·체중)를
 // 예시 안에 넣어 '내 몸에 맞춰진다'는 느낌을 준다. 아래로 갈수록 흐려지고 '추후 공개 · 프리미엄' 막이 덮는다. 누를 수 있는 기능은 없다.
@@ -43,7 +43,7 @@ export function coachFacts(db={}, today){
 
 export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, today = '', name = '나'} = {}){
  const open = enabled && premium;
- if(open) return `<section class="section coach" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 코치</h3><span class="coach-badge">프리미엄</span></div><div class="actions"><button type="button" class="button" data-coach="meal">오늘 남은 식단 제안</button><button type="button" class="button secondary" data-coach="workout">다음 운동 제안</button></div><div id="coach-result" aria-live="polite"></div></section>`;
+ if(open) return `<section class="section coach" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">프리미엄</span></div><div class="actions"><button type="button" class="button" data-coach="meal">오늘 남은 식단 제안</button><button type="button" class="button secondary" data-coach="workout">다음 운동 제안</button></div><div id="coach-result" aria-live="polite"></div></section>`;
  const date = today || new Date().toISOString().slice(0, 10), f = coachFacts(db, date);
  const who = name && name!=='내 계정' && name!=='나' ? `${name}님` : '내', whoSub = who==='내' ? '내' : who;
  const dLabel = `${Number(date.slice(5,7))}월 ${Number(date.slice(8,10))}일 ${WD[new Date(`${date}T12:00:00`).getDay()]}요일`;
@@ -62,7 +62,7 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
  const trendTxt = f.trend!=null ? `7일 평균 ${f.trend>0?'+':''}${n1(f.trend)}kg` : '7일 평균 −0.4kg';
  const eta = f.target && f.nowW && f.trend && f.trend<0 ? (() => { const weeks = (f.nowW-f.target)/(-f.trend); if(!(weeks>0 && weeks<104)) return ''; const d = shift(date, Math.round(weeks*7)); return `지금 속도면 <b>${Number(d.slice(5,7))}월 ${Number(d.slice(8,10))}일</b>쯤 목표 ${n1(f.target)}kg에 닿아요`; })() : '지금 속도면 <b>12월 말</b>쯤 목표 체중에 닿아요';
  const bar = ([l, v, g, u]) => { const pct = g ? Math.round(v/g*100) : 0; return `<div class="cbar"><span>${l}</span><i><b style="width:${Math.min(100, pct)}%"></b></i><em>${pct}%</em></div>`; };
- return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 코치</h3><span class="coach-badge">프리미엄 · 추후 공개</span></div>
+ return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">프리미엄 · 추후 공개</span></div>
 <div class="coach-paper" aria-hidden="true">
 <div class="coach-report-head"><div><small>${esc(dLabel)} · 오늘의 맞춤 코칭</small><b>${esc(who)} 몸에 맞춘 리포트</b></div><span class="coach-example">예시 화면</span></div>
 <div class="coach-basis"><span>분석 근거</span><i>식사 ${f.meals14}끼</i><i>운동 ${f.works14}회</i><i>체중 ${f.weigh14}회</i><i>인바디 ${f.inbody}회</i><small>최근 14일</small></div>

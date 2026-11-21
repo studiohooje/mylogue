@@ -12,7 +12,8 @@ function evidenceLabel(item){
  const e=item.aiEvidence;if(!e)return '';
  const parts=[e.source,e.servingBasis,e.note].filter(Boolean).map(esc);
  let link='';try{const url=new URL(e.sourceUrl);if(url.protocol==='https:')link=` <a href="${esc(url.href)}" target="_blank" rel="noopener noreferrer">출처 열기</a>`}catch{}
- return parts.length||link?`<small class="nutrition-evidence">영양 근거: ${parts.join(' · ')||'링크'}${link}</small>`:'';
+ // 4.0.0 AI가 남긴 근거·정정 메모는 내부 기록이라 사용자 화면에 보이지 않는다(데이터에는 그대로 보관)
+ return '';
 }
 function calorieLabel(item){
  const e=item.aiEstimate;

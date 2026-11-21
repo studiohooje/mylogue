@@ -836,7 +836,7 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .app-version{text-align:center;margin:18px 0 0;opacity:.7}
 @media(max-width:650px){.brand .brand-mark{width:40px;height:40px}.brand .brand-mark img{width:30px!important;height:30px!important}.brand .brand-title{font-size:19px}.brand .brand-en{font-size:10px;letter-spacing:.14em}}
 /* 3.19.0 식단 목표 카드·탄단지 목표 정하기 창(탄수 노랑·단백질 초록·지방 분홍) */
-.mplan-card,.mp-form{--c-carbs:#f0d466;--c-protein:#6fd6a3;--c-fat:#ff7b93}
+.mplan-card,.mp-form,.sc-card{--c-carbs:#f0d466;--c-protein:#6fd6a3;--c-fat:#ff7b93}
 .mplan-card{margin-top:14px;padding:16px;border-radius:16px;background:#16223b;border:1px solid #2c3d63;display:flex;flex-direction:column;gap:12px}
 .mplan-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .mplan-head small{display:block;font-size:12px;color:#a9bbce}
@@ -871,3 +871,127 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .mp-sum{display:flex;flex-direction:column;gap:6px}
 .mp-sum p{margin:0;font-size:14px}
 .mp-err{color:#ffb4a8!important;font-size:13px!important}
+/* 4.0.0 많이 넘친 영양소(목표 ×1.25 초과): 그 막대만 늘어나고, 넘친 부분이 은은하게 숨 쉬듯 빛남 + 숫자 코랄 */
+.macro-row.far s,.mini-row.far s{animation:overBreath 4s ease-in-out infinite;box-shadow:0 0 0 0 #ff6b6b00}
+@keyframes overBreath{0%,100%{filter:brightness(1);box-shadow:0 0 0 0 #ff6b6b00}50%{filter:brightness(1.18);box-shadow:0 0 8px 1px #ff6b6b55}}
+.macro-row.far .macro-val,.macro-row.far .macro-note{color:#ff9a8a!important}
+.mini-row.far i{color:#ff9a8a}
+@media (prefers-reduced-motion:reduce){.macro-row.far s,.mini-row.far s{animation:none}}
+/* 4.0.0 날짜·시각 빠른 버튼 */
+.when-chips{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+.when-row{display:flex;flex-wrap:wrap;gap:6px}
+.when-chip{min-height:32px;padding:0 11px;border-radius:999px;border:1px solid #2f4268;background:#16223b;color:#c9d6e6;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums}
+.when-chip:hover{border-color:#8ce4e0}
+.when-chip.strong{border-color:#8ce4e0;color:#e9fbff}
+.when-chip.step{color:#a9bbce;font-weight:500}
+/* 4.0.0 운동 페이지 */
+.wp-places .section-title{display:flex;justify-content:space-between;align-items:center}
+.place-form{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin:8px 0}
+.place-form input,.place-form select{font-size:16px;min-height:44px}
+.place-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.place-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#ffffff10,#ffffff05);border:1px solid #ffffff1a}
+.place-kind{font-size:24px;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:#ffffff12}
+.place-text{flex:1;min-width:0;display:grid}.place-text b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.place-text small{opacity:.7;font-size:12px}
+.place-count{text-align:right;font-variant-numeric:tabular-nums}.place-count strong{font-size:26px;font-weight:700}.place-count small{font-size:12px;opacity:.7;margin-left:2px}
+.wp-week-list{display:grid;gap:6px}
+.wpw-row{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:#ffffff08}
+.wpw-row.today{outline:1px solid #8fb8ff88}.wpw-row.done{background:#7ad7a51a}.wpw-row i{opacity:.4;font-style:normal}.wpw-row em.plan{font-style:normal;color:#ffd27a}
+.plan-workout .plan-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.plan-actions{display:flex;gap:8px;align-items:center}
+.plan-ex{display:grid;gap:6px;margin-top:10px}.plan-sets{display:flex;flex-wrap:wrap;gap:6px}
+.set-pill{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #ffffff2a;background:#ffffff0a;color:inherit;font-variant-numeric:tabular-nums}
+.set-pill.on{background:#7ad7a5;color:#0b1a12;border-color:transparent;font-weight:700}
+.bal-list{display:grid;gap:8px}.bal-row{display:grid;grid-template-columns:56px 1fr 56px;gap:10px;align-items:center}
+.bal-row i{height:8px;border-radius:99px;background:#ffffff12;overflow:hidden}.bal-row i b{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8fb8ff,#b48cff)}
+.bal-row em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+/* 4.0.0 일정 달력 */
+.sc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.sc-wd{text-align:center;font-size:12px;color:var(--muted);padding:2px 0}
+.sc-cell{display:flex;flex-direction:column;align-items:stretch;gap:2px;min-height:72px;padding:4px 3px;border-radius:10px;border:1px solid #ffffff14;background:#ffffff06;color:inherit;text-align:left;overflow:hidden;font-variant-numeric:tabular-nums}
+.sc-cell.filled{background:#8fb8ff12}.sc-cell.today{border-color:#8fb8ffaa}.sc-cell.selected{outline:2px solid #b48cff;outline-offset:-1px}
+.sc-day{font-size:12px;font-weight:700;opacity:.85}
+.sc-cell i{font-style:normal;font-size:10.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.sc-cell i.sc-work{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sc-w{color:#bcd6ff}.sc-k{color:#e9e6ff}.sc-work{color:#9fe3bf}.sc-work.plan{color:#ffd27a}.sc-work.rest{color:#c9c3d9;opacity:.8}
+.sc-bar{display:flex;height:3px;border-radius:2px;overflow:hidden;background:#ffffff14}.sc-bar b{display:block;height:100%}
+.sc-bar .m-carbs,.sc-legend .m-carbs{background:var(--c-carbs)}.sc-bar .m-protein,.sc-legend .m-protein{background:var(--c-protein)}.sc-bar .m-fat,.sc-legend .m-fat{background:var(--c-fat)}
+.sc-legend{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 0;font-size:12px;color:var(--muted)}.sc-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.sc-month{align-items:center;justify-content:space-between}
+.plan-form{display:grid;gap:10px}.plan-form .chips{display:flex;flex-wrap:wrap;gap:6px}
+@media (min-width:650px){.sc-cell{min-height:86px;padding:6px}.sc-cell i{font-size:12px}.sc-day{font-size:13px}}
+/* 4.0.0 PC AI 직접 연결 프리미엄 카드(지시문 설명 다음, 맨 아래) */
+.ai-pc-card{position:relative;overflow:hidden;display:grid;gap:8px;margin-top:18px;padding:18px;border-radius:18px;border:1px solid #b48cff66;background:linear-gradient(135deg,#2a1f4a 0%,#1b2a4a 60%,#16324a 100%);box-shadow:0 8px 30px -12px #b48cff88}
+.ai-pc-glow{position:absolute;inset:-40% -20% auto auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,#b48cff55,transparent 70%);pointer-events:none}
+.ai-pc-tag{justify-self:start;font-size:12px;font-weight:700;letter-spacing:.02em;padding:3px 10px;border-radius:999px;background:linear-gradient(90deg,#8ce4e0,#b48cff);color:#120f24}
+.ai-pc-card b{font-size:18px}.ai-pc-card p{margin:0;font-size:14px;line-height:1.55;opacity:.88;word-break:keep-all}
+.ai-pc-btn{background:linear-gradient(90deg,#8ce4e0,#b48cff)!important;color:#120f24!important;font-weight:700;min-height:48px}
+/* 4.0.0 코치 모드 */
+.coach-toggle{display:inline-flex;padding:3px;border-radius:999px;background:#ffffff10;border:1px solid #ffffff1f;margin-right:6px}
+.coach-toggle button{min-height:32px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:inherit;font-size:13px;font-weight:600;opacity:.75}
+.coach-toggle button.active{background:linear-gradient(90deg,#8ce4e0,#b48cff);color:#120f24;opacity:1}
+.header.coach-mode{box-shadow:inset 0 -2px 0 #b48cff,0 6px 24px -12px #b48cffaa}
+.coach-nav{border-top:1px solid #b48cff55}
+.coach-head .eyebrow{color:#cdb6ff}
+.coach-client{display:grid;gap:6px;width:100%;text-align:left;color:inherit;margin-bottom:8px;cursor:pointer}
+.cc-main{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cc-main b{font-size:16px}
+.cc-tag{font-size:12px;padding:2px 8px;border-radius:999px;background:#ffffff12}
+.cc-sub{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;opacity:.8}.cc-pt.low{color:#ff9a8a;font-weight:700}
+.coach-form{display:grid;gap:10px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.coach-detail{display:grid;gap:14px}.cd-head{display:flex;justify-content:space-between;align-items:center}
+.cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cd-grid p{margin:2px 0 0}.coach-detail small{font-size:12px;opacity:.7}
+.cd-pt-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.cd-pt-row label{display:grid;font-size:12px;gap:2px}.cd-pt-row input{width:84px;font-size:16px;min-height:40px}.cd-pt-row input[type=date]{width:150px}
+.cd-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid #ffffff10}.cd-row>span:first-child{flex:1;min-width:0}.cd-row em{flex-basis:100%;font-style:normal;font-size:12px;opacity:.75}
+.scope-chip{display:inline-block;margin:4px 6px 0 0;padding:3px 10px;border-radius:999px;background:#ffffff0c;font-size:13px;opacity:.6}.scope-chip.on{opacity:1;background:#7ad7a522;color:#9fe3bf}
+.cd-shared{margin:6px 0 0;padding-left:18px}.consent{font-size:11px;padding:1px 6px;border-radius:6px;background:#7ad7a522;color:#9fe3bf;margin-left:4px}
+.invite-box{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px;border-radius:14px;background:#ffffff08;border:1px dashed #b48cff77}
+.invite-box .actions{grid-column:1/-1}.invite-code{display:block;font-size:26px;letter-spacing:.12em;font-variant-numeric:tabular-nums;margin-top:2px}
+.invite-qr svg{display:block;border-radius:8px}
+.cs-row{display:grid;grid-template-columns:minmax(0,1fr) 64px 56px 56px 32px;gap:6px;margin-bottom:6px}
+.cs-row.timed{grid-template-columns:minmax(0,1fr) 56px 78px minmax(0,1fr) 32px}
+.cs-row input,.cs-row select{min-width:0;font-size:16px;min-height:44px}
+.cs-groups{margin-top:8px;align-items:center}.cs-groups small{opacity:.7;margin-right:4px}
+.check-row{display:flex;gap:8px;align-items:center;min-height:40px}.check-row.disabled{opacity:.55}
+.coach-confirm .cf-row{padding:10px 0;border-bottom:1px solid #ffffff10}.warn{color:#ffb38a;font-weight:600}
+.coach-warn{border:1px solid #ffb38a88;background:#ffb38a14}.coach-warn.member{padding:12px;border-radius:12px;margin:10px 0}
+.cdash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.cdash-stat{padding:12px;border-radius:14px;background:#ffffff08;border:1px solid #ffffff14}.cdash-stat small{display:block;font-size:12px;opacity:.75}.cdash-stat b{font-size:24px;font-variant-numeric:tabular-nums}
+.cdash-stat.wait{border-color:#ffd27a77}.cdash-stat.bad{border-color:#ff9a8a88}
+.cdash-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.cdash-card{display:grid;gap:6px}
+.cdash-mini{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}.cdash-parts{font-size:13px;margin:0;opacity:.85}
+.coach-next{background:linear-gradient(135deg,#2a1f4a,#16324a);border:1px solid #b48cff55}
+.coach-week{display:grid;gap:8px}.cw-day{padding:10px;border-radius:12px;background:#ffffff06;border:1px solid #ffffff12}.cw-day.today{border-color:#8fb8ffaa}
+.cw-day>b small{opacity:.6;font-weight:400}.cw-item{display:grid;gap:2px;margin-top:6px;padding:8px 10px;border-radius:10px;background:#b48cff1a}.cw-item.canceled{opacity:.45;text-decoration:line-through}.cw-item.done{background:#7ad7a51a}
+.cw-act{display:flex;gap:10px}.cw-day i{opacity:.4;font-style:normal;margin-left:6px}.cw-add{margin-top:4px}
+@media (min-width:1000px){.coach-week{grid-template-columns:repeat(7,minmax(0,1fr))}}
+.chip-check{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:#ffffff0c;min-height:40px}
+.coach-tpl{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.coach-tpl small{display:block;font-size:12px;opacity:.75}
+.member-coach .mc-link{padding:12px;border-radius:12px;background:#ffffff08;margin-bottom:10px}.mc-head{display:flex;gap:8px;align-items:center}
+.mc-scope{display:grid;margin:8px 0}.mc-scope small{opacity:.7}.mc-join{display:grid;gap:8px}
+.coach-tag{background:linear-gradient(90deg,#8ce4e0,#b48cff)!important;color:#120f24!important}
+.coach-booked{display:grid;gap:2px;border:1px solid #b48cff66}.coach-booked small{opacity:.75}
+.text-button.danger{color:#ff9a8a}
+@media (max-width:380px){.cs-row{grid-template-columns:minmax(0,1fr) 56px 48px 48px 28px}.coach-toggle button{padding:0 9px}}
+
+.plan-workout+.plan-workout{margin-top:10px}
+.sc-legend .plan-dot{color:#ffd27a}
+
+/* 코치 토글: 헤더 아래 한 줄(좁은 화면), 넓은 화면은 오른쪽 */
+.header{flex-wrap:wrap}
+.header>.coach-toggle{order:5;margin:8px 0 0}
+@media (max-width:650px){.header>.coach-toggle{flex-basis:auto}}
+@media (min-width:651px){.header>.coach-toggle{order:0;margin:0 0 0 auto}.header>.coach-toggle+*{margin-left:0}}
+.coach-detail>*,.coach-detail .cd-row>*{min-width:0}
+.cd-pt-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.7fr);gap:8px;align-items:end}
+.cd-pt-row label{min-width:0}.cd-pt-row input,.cd-pt-row input[type=date]{width:100%;min-width:0}
+.cd-pt-row .button{grid-column:1/-1;justify-self:start}
+.invite-box{grid-template-columns:minmax(0,1fr) auto}
+.invite-qr svg{width:112px;height:112px}
+@media (max-width:380px){.invite-code{font-size:21px}.invite-qr svg{width:96px;height:96px}}
+.invite-code{white-space:nowrap;letter-spacing:.06em}
+@media (max-width:650px){.invite-code{font-size:22px}.cd-pt-row{grid-template-columns:1fr 1fr}.cd-pt-row label:nth-of-type(3){grid-column:1/-1}}
+.coach-send{display:grid;gap:12px}.coach-send .card{margin:0}
+.coach-send .chips,.plan-form .chips,.coach-form .chips{display:flex;flex-wrap:wrap;gap:8px}
+.cs-label{margin-bottom:2px}.cs-label span{font-size:12px;opacity:.65;padding-left:4px}
+.cw-day{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.cw-day>b{flex:1 1 auto}.cw-day .cw-item{flex-basis:100%;order:3}.cw-none{font-size:13px;opacity:.5}.cw-add{order:2}
+.coach-settings .check-row,.member-coach .check-row,.plan-form .check-row,.coach-send .check-row{margin:0!important;padding:4px 0;min-height:44px}
+@media (max-width:420px){.sc-u{display:none}}

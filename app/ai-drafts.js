@@ -1,5 +1,5 @@
 import {firebaseConfig} from './firebase-config.js';
-import {cleanBody,cleanMeal,cleanWorkout,cleanFoodPreset,cleanMachine,cleanCustomExercise} from './domain.js';
+import {cleanBody,cleanMeal,cleanWorkout,cleanFoodPreset,cleanMachine,cleanCustomExercise,isFuture} from './domain.js';
 import {stableJSON} from './cloud-model.js';
 import {cloudState} from './cloud-sync.js';
 
@@ -71,11 +71,11 @@ function draftRecords(draft,reviewedData){
     if(!Array.isArray(raw.items)||raw.items.length<1||raw.items.length>30)throw Error('식사 음식은 1~30개여야 합니다.');
     return finalized(raw.items.map((item,i)=>{
       const aiEstimate=item.aiEstimate||null;
-      const m=cleanMeal({...item,id:`ai-${draft.id}-${i}`,mealGroupId:`ai-${draft.id}`,source:aiEstimate?.estimated?'ai-estimated':'ai-reviewed',aiEvidence:evidenceFor(item,draft)});
+      const m=cleanMeal({...item,planned:isFuture(item.loggedAt),id:`ai-${draft.id}-${i}`,mealGroupId:`ai-${draft.id}`,source:aiEstimate?.estimated?'ai-estimated':'ai-reviewed',aiEvidence:evidenceFor(item,draft)});
       return {kind:'meals',record:m};
     }));
   }
-  if(draft.type==='workout')return finalized([{kind:'workouts',record:cleanWorkout({...raw,id:`ai-${draft.id}`,sourceDraftId:`ai-${draft.id}`})}]);
+  if(draft.type==='workout'){const times=[raw.loggedAt,...(raw.exercises||[]).flatMap(e=>[e.completedAt,...(e.sets||[]).map(s=>s.completedAt)])].filter(Boolean),at=raw.loggedAtTime&&raw.date?`${raw.date}T${raw.loggedAtTime}:00`:null;const planned=at?isFuture(at):times.length>0&&times.every(t=>isFuture(t));return finalized([{kind:'workouts',record:cleanWorkout({...raw,planned,id:`ai-${draft.id}`,sourceDraftId:`ai-${draft.id}`})}])}
   if(draft.type==='body')return finalized([{kind:'body',record:cleanBody({...raw,id:`ai-${draft.id}`,source:'ai-reviewed'})}]);
   if(draft.type==='food')return finalized([{kind:'foods',record:cleanFoodPreset({...raw,id:`ai-${draft.id}`,source:'ai-reviewed',aiEvidence:evidenceFor(raw,draft)})}]);
   if(draft.type==='machine'){
@@ -113,8 +113,15 @@ export async function resolveAIDraft(draft,{action,reviewedData=null}={}){
     finalRecordIds=records.map(({record})=>record.id);
     tx.update(draftRef,{status:'confirmed',reviewedData:reviewedData??current.parsedData,finalRecordIds,reviewedAt:ctx.fs.serverTimestamp(),updatedAt:ctx.fs.serverTimestamp()});
   });
+  if(draft.sourceModel==='trainer'&&draft.evidence?.trainerUid&&draft.evidence?.sessionId){
+    const edited=action==='confirm'&&reviewedData&&stableJSON(reviewedData)!==stableJSON(draft.parsedData);
+    try{const t=draft.evidence.trainerUid,sid=String(draft.evidence.sessionId);await ctx.fs.setDoc(ctx.fs.doc(ctx.db,'sessionAcks',`${t}_${sid}_${ctx.user.uid}`),{trainerUid:t,memberUid:ctx.user.uid,memberName:String(ctx.user.displayName||'').slice(0,60),sessionId:sid,draftId:draft.id,result:action==='reject'?'rejected':edited?'edited':'confirmed',edits:edited?editSummary(draft.parsedData,reviewedData):'',feedback:reviewFeedback(reviewedData),ptDeduct:draft.evidence.ptDeduct!==false,createdAt:ctx.fs.serverTimestamp()})}catch{}
+  }
   return finalRecordIds;
 }
+// 코치에게 보낼 '고친 내용' 한 줄 요약(종목·세트 수 변화)
+function editSummary(a={},b={}){const name=x=>(x.exercises||[]).map(e=>`${e.name} ${(e.sets||[]).length}세트`).join(', ');const A=name(a),B=name(b);return (A===B?'세트 무게·횟수를 고쳤어요':`${A} → ${B}`).slice(0,400)}
+function reviewFeedback(d={}){const f=d?.feedback||{};return {effort:Number(f.effort)||null,pain:Array.isArray(f.pain)?f.pain.slice(0,8).map(String):[],note:String(f.note||'').slice(0,300)}}
 // 3.16.0 AI 입력(붙여넣기)으로 만든 초안을 내 검토함에 넣는다. 같은 내용을 두 번 붙여넣어도 하나만 생긴다(내용 지문 = 문서 ID).
 export async function addPastedDrafts(drafts){
   const ctx=await context();let added=0,duplicate=0;
@@ -137,3 +144,6 @@ export async function askAIServer(url,{text='',images=[],context='',today='',now
   return {text:String(body.text||''),left:Number.isFinite(body.left)?body.left:null};
 }
 const context_=()=>context();
+// 4.0.0 코치 모드 모듈이 같은 Firebase 연결을 쓴다.
+export const firestoreContext=()=>context();
+export {fingerprint as contentFingerprint};

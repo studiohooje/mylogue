@@ -70,6 +70,17 @@ service cloud.firestore {
           && request.resource.data.updatedAt is timestamp;
       }
       allow get, list: if owner(uid) && approved();
+      // 4.0.0 코치 모드(지금은 마스터 계정만): 연동된 코치는 자기가 보낸 수업 초안만 확인하고, 운동 초안만 새로 만든다. 처리는 회원만.
+      allow get: if coachMaster() && !owner(uid) && (resource == null || resource.data.evidence.trainerUid == request.auth.uid);
+      allow create: if coachMaster() && !owner(uid) && draftShape()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.type == 'workout'
+        && request.resource.data.sourceModel == 'trainer'
+        && request.resource.data.evidence.trainerUid == request.auth.uid
+        && activeLink(request.auth.uid, uid)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && !request.resource.data.keys().hasAny(['finalRecordIds','reviewedAt','reviewedData']);
       allow create: if owner(uid) && approved() && draftShape()
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time
@@ -89,6 +100,74 @@ service cloud.firestore {
             && request.resource.data.reviewedAt == request.time
             && request.resource.data.reviewedData is map));
       allow delete: if false;
+    }
+    // ---- 4.0.0 코치 모드: 대표님 결정으로 지금은 마스터 계정끼리만 쓴다(나중에 강사 승인 roles.trainer로 넓힘) ----
+    function coachMaster() { return admin(); }
+    function linkPath(t, m) { return /databases/$(database)/documents/links/$(t + '_' + m); }
+    function activeLink(t, m) { return exists(linkPath(t, m)) && get(linkPath(t, m)).data.status == 'active'; }
+    match /invites/{code} {
+      allow get: if coachMaster();
+      allow create: if coachMaster()
+        && code.matches('^[A-Z2-9]{8}$')
+        && request.resource.data.keys().hasOnly(['code','trainerUid','trainerName','clientId','expiresAt','usedBy','createdAt'])
+        && request.resource.data.code == code
+        && request.resource.data.trainerUid == request.auth.uid
+        && request.resource.data.trainerName is string && request.resource.data.trainerName.size() <= 60
+        && request.resource.data.clientId is string && request.resource.data.clientId.size() <= 80
+        && request.resource.data.usedBy == ''
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt <= request.time + duration.value(8, 'd')
+        && request.resource.data.createdAt == request.time;
+      allow update: if coachMaster()
+        && resource.data.usedBy == ''
+        && resource.data.expiresAt > request.time
+        && resource.data.trainerUid != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedBy'])
+        && request.resource.data.usedBy == request.auth.uid;
+      allow delete: if coachMaster() && resource.data.trainerUid == request.auth.uid;
+    }
+    match /links/{linkId} {
+      function scopeOk(sc) { return sc is map && sc.keys().hasOnly(['sessions','workouts','diet','body']) && sc.sessions == true && sc.workouts is bool && sc.diet is bool && sc.body is bool; }
+      allow get: if coachMaster() && (resource == null || resource.data.trainerUid == request.auth.uid || resource.data.memberUid == request.auth.uid);
+      allow list: if coachMaster() && (resource.data.trainerUid == request.auth.uid || resource.data.memberUid == request.auth.uid);
+      // 회원이 초대 코드를 쓴 그 묶음 안에서 연동을 만든다.
+      allow create: if coachMaster()
+        && request.resource.data.keys().hasOnly(['trainerUid','memberUid','trainerName','memberName','clientId','inviteCode','status','scope','shared','pt','schedule','consentAt','warnedMemberAt','warnedTrainerAt','createdAt','updatedAt'])
+        && request.resource.data.memberUid == request.auth.uid
+        && request.resource.data.trainerUid != request.auth.uid
+        && linkId == request.resource.data.trainerUid + '_' + request.auth.uid
+        && request.resource.data.status == 'active'
+        && scopeOk(request.resource.data.scope)
+        && getAfter(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.trainerUid == request.resource.data.trainerUid
+        && getAfter(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.usedBy == request.auth.uid
+        && request.resource.data.consentAt == request.time
+        && request.resource.data.warnedMemberAt == request.time
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      // 회원: 공유 범위·공유 요약·끊기. 코치: 회차·예약·경고 확인·끊기. 끊긴 연동은 다시 살릴 수 없다(새로 초대).
+      allow update: if coachMaster() && resource.data.status == 'active'
+        && request.resource.data.status in ['active','ended']
+        && request.resource.data.updatedAt == request.time
+        && (
+          (resource.data.memberUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scope','shared','status','endedAt','endedBy','memberName','updatedAt'])
+            && scopeOk(request.resource.data.scope))
+          || (resource.data.trainerUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pt','schedule','trainerName','warnedTrainerAt','status','endedAt','endedBy','updatedAt']))
+        );
+      allow delete: if false;
+    }
+    match /sessionAcks/{ackId} {
+      allow get: if coachMaster() && (resource == null || resource.data.trainerUid == request.auth.uid || resource.data.memberUid == request.auth.uid);
+      allow list: if coachMaster() && (resource.data.trainerUid == request.auth.uid || resource.data.memberUid == request.auth.uid);
+      allow create: if coachMaster()
+        && request.resource.data.keys().hasOnly(['trainerUid','memberUid','memberName','sessionId','draftId','result','edits','feedback','ptDeduct','createdAt'])
+        && request.resource.data.memberUid == request.auth.uid
+        && ackId == request.resource.data.trainerUid + '_' + request.resource.data.sessionId + '_' + request.auth.uid
+        && request.resource.data.result in ['confirmed','edited','rejected']
+        && exists(linkPath(request.resource.data.trainerUid, request.auth.uid))
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
     }
     match /catalog/{kind}/items/{itemId} {
       function catalogKind() {

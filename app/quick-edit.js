@@ -1,7 +1,7 @@
 // 3.10.0 쉬운 수정: 기록 카드에서 바로 여는 짧은 수정 화면.
 // 식사 = 한 끼 전체(시각·끼니·날짜, 음식별 양 −/+, 음식 빼기). 양을 바꾸면 영양값은 같은 비율로 바뀐다.
 // 운동 = 종목별 세트(무게·횟수·완료)만 바로 고치고, 세트 추가·삭제. 머신·컨디션 등은 '자세히 수정'(기존 화면).
-import {cleanMeal, cleanWorkout} from './domain.js';
+import {cleanMeal, cleanWorkout, isFuture} from './domain.js';
 import {mealGroups} from './timeline-view.js';
 
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -40,7 +40,7 @@ export function applyQuickMeal(db, st){
  const ids = new Set(st.rows.map(r => r.id)), byId = new Map((db.meals||[]).map(m => [m.id, m]));
  if(!/^\d{2}:\d{2}$/.test(st.time)) throw Error('먹은 시각을 확인해 주세요.');
  const at = new Date(`${st.newDate}T${st.time}:00`); if(Number.isNaN(at.getTime())) throw Error('날짜를 확인해 주세요.');
- const kept = st.rows.filter(r => !r.removed).map(r => { const m = byId.get(r.id); if(!m) return null; const t = rowTotals(r); return cleanMeal({...m, date:st.newDate, slot:st.slot, loggedAt:at.toISOString(), servingQty:r.qty, ...t, updatedAt:new Date().toISOString()}); }).filter(Boolean);
+ const kept = st.rows.filter(r => !r.removed).map(r => { const m = byId.get(r.id); if(!m) return null; const t = rowTotals(r); return cleanMeal({...m, planned:m.planned===true||isFuture(at), date:st.newDate, slot:st.slot, loggedAt:at.toISOString(), servingQty:r.qty, ...t, updatedAt:new Date().toISOString()}); }).filter(Boolean);
  return {...db, meals:[...(db.meals||[]).filter(m => !ids.has(m.id)), ...kept]};
 }
 
@@ -74,6 +74,6 @@ export function applyQuickWorkout(db, st){
   if(!sets.length) throw Error(`${e.name}: 세트가 하나도 없으면 ‘종목 빼기’를 눌러 주세요.`);
   return {...orig, sets}; });
  if(!exercises.length) throw Error('남은 종목이 없어요. 운동을 지우려면 ‘이 운동 삭제’를 눌러 주세요.');
- const next = cleanWorkout({...w, date:st.date, title:st.title, exercises, ...(st.time?{loggedAtTime:st.time}:{}), duration:st.duration===''||st.duration==null?null:Number(st.duration), updatedAt:new Date().toISOString()});
+ const next = cleanWorkout({...w, planned:w.planned===true||(st.time?isFuture(`${st.date}T${st.time}:00`):false), date:st.date, title:st.title, exercises, ...(st.time?{loggedAtTime:st.time}:{}), duration:st.duration===''||st.duration==null?null:Number(st.duration), updatedAt:new Date().toISOString()});
  return {...db, workouts:db.workouts.map(x => x.id===w.id ? next : x)};
 }

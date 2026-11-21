@@ -51,17 +51,19 @@ export function barInner(a, g, p=0, m=1.25){
  const b = barParts(a, g, p, m);
  return `<b style="width:${pct(b.fill)}"></b>${b.over?`<s style="left:${pct(b.mark)};width:${pct(b.over)}"></s>`:''}${b.plan?`<em class="plan" style="left:${pct(b.planLeft)};width:${pct(b.plan)}"></em>`:''}${g?`<u style="left:${pct(b.mark)}"></u>`:''}`;
 }
+// 4.0.0 대표님 지시: 넘친 영양소 막대만 늘린다(다른 막대는 그대로)
+export const rowAxis = (total, g) => sharedScale([[total, g]]);
 const axisOf = (day, settings, extra) => sharedScale(MACRO_ROWS.map(([, , key, gk]) => [(Number(day[key])||0)+extra(key), Number(settings[gk])||0]));
 const axisNote = m => m>1.25 ? `<span class="axis-note" title="많이 넘친 항목이 있어 모든 막대의 끝을 목표의 ${m}배로 늘렸어요">막대 끝 = 목표×${m}</span>` : '';
 export function macroGoalsHTML(day={},settings={},{meals=0,planned=null,plannedCount=0,showPlanned=false}={}){
  const hasGoal=MACRO_ROWS.some(([, , ,gk])=>Number(settings[gk])>0);
  const extra=k=>showPlanned&&planned?Number(planned[k])||0:0;
- const kcal=macroStatus((Number(day.calories)||0)+extra('calories'),settings.calorieGoal),m=axisOf(day,settings,extra);
+ const kcal=macroStatus((Number(day.calories)||0)+extra('calories'),settings.calorieGoal);
  const head=kcal.state==='none'?'':kcal.state==='over'?`<span class="macro-chip over">+${num(kcal.diff)} kcal 초과</span>`:kcal.state==='under'?`<span class="macro-chip under">${num(-kcal.diff)} kcal 남음</span>`:'<span class="macro-chip met">✓ 목표 달성</span>';
  const rows=MACRO_ROWS.map(([cls,label,key,gk,unit])=>{
   const a=Number(day[key])||0,e=extra(key),g=Number(settings[gk])||0,s=macroStatus(a+e,g),d=unit==='g'?1:0;
   const note=s.state==='none'?'<em class="macro-note">목표 없음</em>':s.state==='over'?`<em class="macro-note over">+${num(s.diff,d)}${unit} 초과</em>`:s.state==='under'?`<em class="macro-note under">${num(-s.diff,d)}${unit} 부족</em>`:'<em class="macro-note met">달성</em>';
-  return `<div class="macro-row ${cls} ${s.state}"><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit}${e?` · 예정 포함 ${num(a+e,d)}${unit}`:''} / 목표 ${g?num(g,d)+unit:'없음'}">${barInner(a,g,e,m)}</span><span class="macro-val">${num(a+e,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}</div>`;
+  return `<div class="macro-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}"><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit}${e?` · 예정 포함 ${num(a+e,d)}${unit}`:''} / 목표 ${g?num(g,d)+unit:'없음'}">${barInner(a,g,e,rowAxis(a+e,g))}</span><span class="macro-val">${num(a+e,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}</div>`;
  }).join('');
  return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num((Number(day.calories)||0)+extra('calories'))}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${head}</div>${plannedToggle(plannedCount,showPlanned)}<div class="macro-rows">${rows}</div><p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
 }
@@ -74,8 +76,8 @@ export function plannedToggle(count, on){
 // 3.11.0 홈 3칸용 작은 식단 카드 → 3.18.0 '먹은 양 / 목표'를 숫자로, 막대는 2배 축.
 export function macroMiniHTML(day={},settings={},{planned=null,showPlanned=false}={}){
  const extra=k=>showPlanned&&planned?Number(planned[k])||0:0;
- const cal=(Number(day.calories)||0)+extra('calories'),goal=Number(settings.calorieGoal)||0,m=axisOf(day,settings,extra);
+ const cal=(Number(day.calories)||0)+extra('calories'),goal=Number(settings.calorieGoal)||0;
  const bars=MACRO_ROWS.map(([cls,label,key,gk,unit])=>{const a=Number(day[key])||0,e=extra(key),g=Number(settings[gk])||0,s=macroStatus(a+e,g);
-  return `<div class="mini-row ${cls} ${s.state}" title="${label} ${num(a+e)}${unit} / ${g?num(g)+unit:'목표 없음'}${s.state==='over'?` · +${num(s.diff)}${unit} 초과`:s.state==='under'?` · ${num(-s.diff)}${unit} 부족`:''}"><i>${label[0]}</i><span class="mini-bar">${barInner(a,g,e,m)}</span></div>`}).join('');
+  return `<div class="mini-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}" title="${label} ${num(a+e)}${unit} / ${g?num(g)+unit:'목표 없음'}${s.state==='over'?` · +${num(s.diff)}${unit} 초과`:s.state==='under'?` · ${num(-s.diff)}${unit} 부족`:''}"><i>${label[0]}</i><span class="mini-bar">${barInner(a,g,e,rowAxis(a+e,g))}</span></div>`}).join('');
  return `<button type="button" class="home-stat home-stat-diet" data-page="food" aria-label="식단 ${num(cal)}${goal?` / 목표 ${num(goal)}`:''}kcal, 자세히 보기"><span class="stat-head"><small>식단</small></span><strong>${num(cal)}${goal?`<span class="stat-goal">/ ${num(goal)}</span>`:'<span>kcal</span>'}</strong><div class="stat-vis mini-bars" aria-hidden="true">${bars}</div></button>`;
 }
