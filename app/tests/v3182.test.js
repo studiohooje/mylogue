@@ -23,8 +23,8 @@ test('홈: 기록 버튼은 수치·식사·운동 순, 운동 칸 오른쪽에 
  const html = renderHomeTimeline({meals:[], body:[], settings:{}, workouts:[cleanWorkout({date:y, exercises:[{name:'스쿼트', sets:[{weight:60, reps:8}]}]}), cleanWorkout({date:'2026-11-19', rest:true, exercises:[]})]}, D);
  const a = html.indexOf('수치 기록'), b = html.indexOf('식사 기록'), c = html.indexOf('운동 기록');
  assert.ok(a < b && b < c);
- assert.equal((html.match(/class="wd/g)||[]).length, 7);
- assert.match(html, /<span class="wd today"><b>토<\/b>/);
- assert.match(html, /<b>금<\/b><i class="done">/);
- assert.match(html, /<b>목<\/b><i class="rest">/);
+ assert.equal((html.match(/class="wl-row/g)||[]).length, 7);
+ assert.match(html, /wl-row today"><b>토<\/b><em><\/em>/, '오늘 기록 없음 → 빈칸');
+ assert.match(html, /title="금 · 웨이트\(하체\)"><b>금<\/b><em>웨이트\(하체\)<\/em>/);
+ assert.match(html, /wl-row rest"[^>]*><b>목<\/b><em><svg class="rest-ico"/);
 });

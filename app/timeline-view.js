@@ -1,4 +1,4 @@
-import {REST_ICON} from './quick-entry.js';
+import {REST_ICON,catOf} from './quick-entry.js';
 import {mealTotals,workoutTotals,actualDB} from './domain.js';
 import {heroSlot,emptyArt,brandIcon} from './brand-icons.js';
 import {dayRecords,rhythmFor,haloMessage} from './halo.js';
@@ -39,6 +39,13 @@ function weightStatHTML(db,date){
  const spark=weightSpark(db,date,30);
  return `<button type="button" class="home-stat home-stat-weight" data-page="body" aria-label="체중 ${rec?fmt(rec.weight,1)+'kg':'기록 없음'}, 자세히 보기"><span class="stat-head"><small>체중</small>${rec?`<em>${esc(daysAgo(rec.date,date))}${isInbody(rec)?' · 인바디':''}</em>`:''}</span><strong>${rec?`${fmt(rec.weight,1)}<span>kg</span>`:'—'}</strong><div class="stat-vis">${spark||'<span class="stat-empty" aria-hidden="true"></span>'}</div></button>`;
 }
+// 3.18.3 그날 운동 요약: 웨이트는 부위를 괄호로, 나머지는 대분류 이름. 예) 웨이트(하체·가슴) + 필라테스
+const CAT_LABEL={'러닝·유산소':'러닝·유산소','필라테스':'필라테스','요가':'요가','기타':'기타'};
+export function daySummary(workouts=[]){
+ const parts=[],cats=[];
+ for(const w of workouts)for(const e of w.exercises||[]){const c=catOf(e);if(c==='웨이트'){const p=e.part&&e.part!=='기타'?e.part:'';if(p&&!parts.includes(p))parts.push(p);if(!cats.includes('웨이트'))cats.push('웨이트')}else if(!cats.includes(c))cats.push(c)}
+ return cats.map(c=>c==='웨이트'?`웨이트${parts.length?`(${parts.join('·')})`:''}`:CAT_LABEL[c]||c).join(' + ');
+}
 // 3.11.0 홈 운동 칸: 오늘 많이 쓴 부위를 작은 앞·뒤 그림에 색으로.
 const PART_MUSCLES={'가슴':['chest'],'등':['back','traps'],'하체':['quads','glutes','hamstrings'],'어깨':['shoulders'],'팔':['biceps','triceps'],'복근':['abs','obliques'],'전신':['quads','glutes','back','shoulders']};
 export function todayMuscleLoads(workouts=[]){
@@ -52,9 +59,10 @@ function workoutStatHTML(workouts,sets,db={},date=''){
  // 어제까지 최근 3일 부하가 남은 부위: 파랑·초록으로 가볍게 깜빡임(글자 없이)
  const prev=[1,2,3].map(n=>{const d=new Date(`${date}T12:00:00`);d.setDate(d.getDate()-n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`});
  const recover=date?todayMuscleLoads((db.workouts||[]).filter(w=>prev.includes(w.date)&&!w.rest&&!w.planned)).filter(x=>x.score>=3).map(x=>x.muscleId):[];
- // 최근 7일 점: 운동한 날 채움, 휴식한 날 달, 오늘은 테두리(글자 없이 흐름만)
- const days=[6,5,4,3,2,1,0].map(n=>{const d=new Date(`${date||new Date().toISOString().slice(0,10)}T12:00:00`);d.setDate(d.getDate()-n);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,ws=(db.workouts||[]).filter(w=>w.date===k&&!w.planned);return {k,today:n===0,done:ws.some(w=>!w.rest),rest:!ws.some(w=>!w.rest)&&ws.some(w=>w.rest)}});
- const WD='일월화수목금토',week=`<span class="week-dots" aria-hidden="true">${days.map(x=>`<span class="wd${x.today?' today':''}"><b>${WD[new Date(`${x.k}T12:00:00`).getDay()]}</b><i class="${x.done?'done':x.rest?'rest':''}"></i></span>`).join('')}</span>`;
+ // 최근 7일: 요일은 고정, 그 오른쪽에 그날 한 운동 요약(웨이트(하체) + 필라테스), 휴식은 달, 없으면 빈칸
+ const base=date||new Date().toISOString().slice(0,10),ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ const days=[6,5,4,3,2,1,0].map(n=>{const d=new Date(`${base}T12:00:00`);d.setDate(d.getDate()-n);const k=ymd(d),ws=(db.workouts||[]).filter(w=>w.date===k&&!w.planned),real=ws.filter(w=>!w.rest);return {k,wd:'일월화수목금토'[d.getDay()],today:n===0,done:real.length>0,rest:!real.length&&ws.some(w=>w.rest),label:daySummary(real)}});
+ const week=`<span class="week-list">${days.map(x=>`<span class="wl-row${x.today?' today':''}${x.done?' done':x.rest?' rest':''}"${x.label?` title="${esc(`${x.wd} · ${x.label}`)}"`:x.rest?` title="${x.wd} · 의도적 휴식"`:''}><b>${x.wd}</b><em>${x.done?esc(x.label):x.rest?`${REST_ICON}<span class="sr">휴식</span>`:''}</em></span>`).join('')}</span>`;
  const fig=`<div class="mini-atlas${loads.length?'':' resting'}" aria-hidden="true">${anatomySvg([],[],{side:'front',mode:'load',loads,recover,key:'home-f'})}${anatomySvg([],[],{side:'back',mode:'load',loads,recover,key:'home-b'})}</div>`;
- return `<button type="button" class="home-stat home-stat-work" data-page="workout" aria-label="운동 ${sets}세트${top.length?`, 많이 쓴 부위 ${top.join(', ')}`:''}${rest?', 의도적 휴식':''}, 최근 7일 중 ${days.filter(x=>x.done).length}일 운동"><span class="stat-head"><small>운동</small>${rest?`<em>${REST_ICON}휴식</em>`:top.length?`<em>${esc(top.join('·'))}</em>`:''}</span><strong>${sets}<span>세트</span></strong><div class="stat-vis work-vis">${fig}${week}</div></button>`;
+ return `<button type="button" class="home-stat home-stat-work" data-page="workout" aria-label="운동 ${sets}세트${top.length?`, 많이 쓴 부위 ${top.join(', ')}`:''}${rest?', 의도적 휴식':''}, 최근 7일 중 ${days.filter(x=>x.done).length}일 운동"><span class="stat-head"><small>운동</small>${rest?`<em>${REST_ICON}휴식</em>`:top.length?`<em>${esc(top.join('·'))}</em>`:''}</span><strong>${sets}<span>세트</span></strong><div class="stat-vis work-vis"><span class="wv-half wv-fig">${fig}</span><span class="wv-half wv-week">${week}</span></div></button>`;
 }
