@@ -5,13 +5,14 @@ import {todayMuscleLoads} from '../timeline-view.js';
 import {cleanWorkout} from '../domain.js';
 import {quickWorkoutState, applyQuickWorkout, quickWorkoutHTML} from '../quick-edit.js';
 
-test('홈 식단 칸: 다른 칸과 같은 카드, 작은 막대 네 줄, 남음·초과 한 줄', () => {
+test('홈 식단 칸: 다른 칸과 같은 카드, 작은 막대 네 줄, 먹은 양 / 목표(3.18.0: 남음 문구 대신)', () => {
  const html = macroMiniHTML({calories:1748, carbs:182, protein:96, fat:82}, {calorieGoal:2200, carbsGoal:250, proteinGoal:150, fatGoal:70}, {meals:5});
  assert.match(html, /class="home-stat home-stat-diet" data-page="food"/);
  assert.equal((html.match(/class="mini-row /g)||[]).length, 4);
- assert.match(html, /452 남음/);
+ assert.match(html, /1,748<span class="stat-goal">\/ 2,200<\/span>/);
+ assert.doesNotMatch(html, /남음/);
  assert.match(html, /mini-row fat over/);
- assert.match(macroMiniHTML({calories:500}, {}, {meals:2}), /2번의 식사/);
+ assert.match(macroMiniHTML({calories:500}, {}, {meals:2}), /500<span>kcal<\/span>/);
 });
 
 test('홈 운동 칸: 오늘 많이 쓴 부위(타깃 없으면 부위로 대신)', () => {

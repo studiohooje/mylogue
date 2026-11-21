@@ -22,7 +22,7 @@ const best1RM = ex => Math.max(0, ...done(ex).map(s => estimate1RM(setWeightKg(s
 const exKey = e => e.exerciseId || e.name;
 
 export function buildReport(db, now=new Date(), {focus=''}={}){
- const today = ymd(now), ws = (db.workouts||[]).filter(w => w.date<=today);
+ const today = ymd(now), ws = (db.workouts||[]).filter(w => w.date<=today && !w.rest);
  const inRange = (from, to) => ws.filter(w => w.date>=ymd(from) && w.date<=ymd(to));
  const sum = list => list.reduce((s, w) => { const t = workoutTotals(w); s.sets += t.sets; s.volume += t.volume; return s; }, {sets:0, volume:0});
  // 이번 주(최근 7일)와 지난주
@@ -100,7 +100,7 @@ export function reportHTML(r, {exerciseOptions=[]}={}){
  const suv = Math.round(r.month.volume/2000);
  const card = `<section class="ar-card ar-share" id="ar-share-card"><p class="ar-eyebrow">${h(r.month.label)} 리포트 카드</p><p class="ar-big">이번 달 들어 올린 무게</p><p class="ar-huge">${tons(r.month.volume)}</p>${suv>=1?`<p>= 중형 SUV ${suv}대 🚙</p>`:''}<p class="ar-hint">새 기록 ${r.month.prs}개${r.month.topEx?` · 가장 많이 한 운동 ${h(r.month.topEx)}`:''}</p><button type="button" class="button secondary" id="ar-share">이미지로 저장</button></section>`;
  const d = r.diet;
- const diet = `<section class="ar-card"><div class="ar-head"><b>식단·몸과 함께 보기</b><small>최근 30일</small></div><p>${d.goal?`단백질 목표를 채운 날 <b>${d.proteinHit}/${d.mealDays||0}일</b>`:'단백질 목표를 정하면 채운 날을 세어 줘요'}${d.smmChange!==null?(d.smmChange===0?' · 골격근량 변화 없음':` · 골격근량 <b class="${d.smmChange>0?'up':'down'}">${d.smmChange>0?'+':''}${n0(d.smmChange,1)}kg</b>`):''}</p>${d.bodyPts.length>=2?lineSVG(d.bodyPts.map(b => b.skeletalMuscle), 320, 80):'<p class="ar-hint">인바디(골격근량)를 두 번 이상 기록하면 운동·식단과 함께 변화를 보여 줘요.</p>'}</section>`;
+ const diet = `<section class="ar-card"><div class="ar-head"><b>식단·수치와 함께 보기</b><small>최근 30일</small></div><p>${d.goal?`단백질 목표를 채운 날 <b>${d.proteinHit}/${d.mealDays||0}일</b>`:'단백질 목표를 정하면 채운 날을 세어 줘요'}${d.smmChange!==null?(d.smmChange===0?' · 골격근량 변화 없음':` · 골격근량 <b class="${d.smmChange>0?'up':'down'}">${d.smmChange>0?'+':''}${n0(d.smmChange,1)}kg</b>`):''}</p>${d.bodyPts.length>=2?lineSVG(d.bodyPts.map(b => b.skeletalMuscle), 320, 80):'<p class="ar-hint">인바디(골격근량)를 두 번 이상 기록하면 운동·식단과 함께 변화를 보여 줘요.</p>'}</section>`;
  return `<div class="ar">${story}${recover}${prs}${growth}${balance}${heat}${card}${diet}</div>`;
 }
 

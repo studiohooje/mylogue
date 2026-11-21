@@ -3,14 +3,16 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 export const MUSCLE_LABELS={chest:'가슴',back:'등',erectors:'척추기립근',adductors:'내전근',shoulders:'어깨',biceps:'이두',triceps:'삼두',abs:'복근',glutes:'둔근',quads:'앞 허벅지',hamstrings:'뒤 허벅지',calves:'종아리',obliques:'옆구리',traps:'승모근',forearms:'전완'};
 const musclePart={chest:'가슴',back:'등',erectors:'등',adductors:'하체',shoulders:'어깨',biceps:'팔',triceps:'팔',abs:'복근',glutes:'하체',quads:'하체',hamstrings:'하체',calves:'하체',obliques:'복근',traps:'등',forearms:'팔'};
 // Targets and record-derived load deliberately use separate palettes and legends.
-export function anatomySvg(primary=[],secondary=[],{side='front',interactive=false,key='map',mode='target',loads=[]}={}){
+// 3.18.0 recover: 어제까지 부하가 남은 부위(파랑·초록으로 가볍게 깜빡임, 글자 없이)
+export function anatomySvg(primary=[],secondary=[],{side='front',interactive=false,key='map',mode='target',loads=[],recover=[]}={}){
+ const rec=new Set(recover);
  const p=new Set(primary),s=new Set(secondary),prefix=`atlas-${String(key).replace(/[^a-zA-Z0-9_-]/g,'')}-${side}`;
  const byMuscle=new Map(loads.map(x=>[x.muscleId,x]));
  const level=id=>{const v=byMuscle.get(id)?.score||0;return v>=6?3:v>=3?2:v>0?1:0};
  const status=id=>mode==='load'?(['자료 없음','조금','보통','많이'][level(id)]):(p.has(id)?'주 타깃':s.has(id)?'보조 타깃':'비강조');
- const paint=id=>mode==='load'?(['#19212a','#f5c84b','#ff9a3c','#ef4b4b'][level(id)]):(p.has(id)?'#a84659':s.has(id)?`url(#${prefix}-hatch)`:'#19212a');
+ const paint=id=>mode==='load'?(!level(id)&&rec.has(id)?'#3fb6a8':['#19212a','#f5c84b','#ff9a3c','#ef4b4b'][level(id)]):(p.has(id)?'#a84659':s.has(id)?`url(#${prefix}-hatch)`:'#19212a');
  const head='M66 24Q66 7 80 7Q94 7 94 24L91 38Q80 49 69 38Z';
- const muscles=regions[side].map(([id,path])=>[false,true].map(mirror=>`<path class="muscle" d="${path}" ${mirror?'transform="translate(160 0) scale(-1 1)"':''} fill="${paint(id)}" stroke="${status(id)==='비강조'||status(id)==='자료 없음'?'#9eaac0':'#f1c4d3'}" stroke-width=".65" ${interactive?`role="button" tabindex="0" data-filter-part="${musclePart[id]}"`:''} aria-label="${MUSCLE_LABELS[id]} ${status(id)}"><title>${MUSCLE_LABELS[id]} · ${status(id)}${mode==='load'&&byMuscle.has(id)?` · 추정 지표 ${byMuscle.get(id).score}`:''}</title></path>`).join('')).join('');
+ const muscles=regions[side].map(([id,path])=>[false,true].map(mirror=>`<path class="muscle${mode==='load'&&!level(id)&&rec.has(id)?' recover':''}" d="${path}" ${mirror?'transform="translate(160 0) scale(-1 1)"':''} fill="${paint(id)}" stroke="${status(id)==='비강조'||status(id)==='자료 없음'?'#9eaac0':'#f1c4d3'}" stroke-width=".65" ${interactive?`role="button" tabindex="0" data-filter-part="${musclePart[id]}"`:''} aria-label="${MUSCLE_LABELS[id]} ${status(id)}"><title>${MUSCLE_LABELS[id]} · ${status(id)}${mode==='load'&&byMuscle.has(id)?` · 추정 지표 ${byMuscle.get(id).score}`:''}</title></path>`).join('')).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 342" class="anatomy-map technical-atlas" role="${interactive?'group':'img'}" aria-label="테크니컬 아틀라스 ${side==='front'?'앞면':'뒷면'} · ${mode==='load'?'최근 기록 기반 추정부하':'일반적인 근육 타깃'}"><defs><pattern id="${prefix}-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)"><rect width="4" height="4" fill="#644257"/><path d="M1 0V4" stroke="#dfadbd" stroke-width=".7"/></pattern></defs><path d="M80 0V341M36 60H124M48 147H112M48 233H112M48 310H112" stroke="#69819b" stroke-width=".45" stroke-dasharray="2 4" opacity=".45"/><ellipse cx="80" cy="334" rx="36" ry="4" fill="#000" opacity=".12"/><path d="${head}" fill="#121a24" stroke="#b1bdcd" stroke-width=".8"/><path d="${torso}" fill="#121a24" stroke="#b1bdcd" stroke-width=".9"/>${muscles}<g pointer-events="none">${fiberLines(side)}<path d="M71 45L68 55L58 59M89 45L92 55L102 59" fill="none" stroke="#a8b5c5" stroke-width=".7" opacity=".7"/></g></svg>`;
 }
 export function muscleMapHTML(primary=[],secondary=[],options={}){

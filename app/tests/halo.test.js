@@ -46,7 +46,7 @@ test('헤일로: 문구는 기록 습관을 말하고 판단하지 않는다', (
  const rh = rhythmFor(week, '2026-11-20');
  assert.match(haloMessage([], rh), /첫 기록/);
  assert.match(haloMessage(dayRecords(day('2026-11-20'),'2026-11-20'), rh), /완성/);
- assert.match(haloMessage([{kind:'meal', t:12.5}], rh), /몸·운동 기록을 더하면/);
+ assert.match(haloMessage([{kind:'meal', t:12.5}], rh), /수치·운동 기록을 더하면/);
  for(const m of [haloMessage([{kind:'meal',t:23}], rh), haloMessage([{kind:'body',t:7.5},{kind:'meal',t:23},{kind:'workout',t:5}], rh)]) assert.doesNotMatch(m, /과식|많이|나빠|실패/);
 });
 

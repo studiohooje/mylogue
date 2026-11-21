@@ -119,7 +119,7 @@ export async function resolveAIDraft(draft,{action,reviewedData=null}={}){
 export async function addPastedDrafts(drafts){
   const ctx=await context();let added=0,duplicate=0;
   for(const d of drafts){
-    if(!TYPES.has(d.type)||!['meal','workout','body'].includes(d.type))throw Error('AI 입력은 식사·운동·몸 기록만 넣을 수 있어요.');
+    if(!TYPES.has(d.type)||!['meal','workout','body'].includes(d.type))throw Error('AI 입력은 식사·운동·수치 기록만 넣을 수 있어요.');
     const id=`p-${fingerprint(`${ctx.user.uid}\0${d.type}\0${stableJSON(d.parsedData)}`)}`;
     const ref=ctx.fs.doc(ctx.db,'users',ctx.user.uid,'aiDrafts',id),now=ctx.fs.serverTimestamp();
     const made=await ctx.fs.runTransaction(ctx.db,async tx=>{const snap=await tx.get(ref);if(snap.exists())return false;tx.set(ref,{id,requestId:id,type:d.type,status:'pending',schemaVersion:1,sourceModel:String(d.sourceModel||'붙여넣기').slice(0,80),originalUtterance:String(d.originalUtterance||'').slice(0,4000),parsedData:d.parsedData,uncertainty:d.uncertainty||{},evidence:d.evidence||{},createdAt:now,updatedAt:now});return true});

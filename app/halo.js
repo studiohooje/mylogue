@@ -11,7 +11,7 @@ import {prefsOf} from './prefs.js';
 
 export const HALO_COLORS = {body:'#f2b49b', meal:'#8ce4e0', workout:'#b8aaf2'};
 const KINDS = ['body','meal','workout'];
-const LABEL = {body:'몸', meal:'식사', workout:'운동'};
+const LABEL = {body:'수치', meal:'식사', workout:'운동'};
 const RHYTHM_WINDOW = 1.5;
 const pad2 = n => String(n).padStart(2,'0');
 const localDate = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;

@@ -557,3 +557,134 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .ai-in-alt[open]{padding:0 14px 14px}
 .ai-in-alt[open]>summary{padding:0 2px}
 .ai-in-alt>*+*{margin-top:12px}
+
+/* 3.18.0 홈 기록 버튼: 아이콘 + 가운데 정렬, AI 버튼은 가운데 칸 너비로 위 가운데 */
+.home-quick .ai-magic{width:calc((100% - 20px) / 3);min-width:0;margin:0 auto 10px;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:6px;min-height:0;padding:12px 8px}
+.home-quick .ai-magic .ai-magic-icon{width:36px;height:36px;border-radius:12px;font-size:18px}
+.home-quick .ai-magic .ai-magic-text{align-items:center;flex:none;gap:1px}
+.home-quick .ai-magic .ai-magic-text b{font-size:15px}
+.home-quick .ai-magic .ai-magic-text small{font-size:12px;line-height:1.35}
+.home-quick .button.home-rec{flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:6px;min-height:64px;padding:10px 6px;font-size:13px}
+.home-quick .home-rec .rec-ico{width:22px;height:22px;color:#8ce4e0}
+.home-quick .home-rec .rec-label{font-weight:700;font-size:13px;line-height:1.2;word-break:keep-all}
+@media(max-width:650px){.home-quick .ai-magic{width:calc((100% - 14px) / 3);margin-bottom:7px}.home-quick .button.home-rec{font-size:12px}.home-quick .home-rec .rec-label{font-size:12px}}
+/* 추가 메뉴의 AI로 입력도 다른 버튼처럼 가운데 */
+.gap>.ai-magic{justify-content:center;text-align:center}
+.gap>.ai-magic .ai-magic-text{flex:none;align-items:center}
+/* 의도적 휴식 */
+.rest-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 14px;border-radius:16px;border:1px dashed #6f7fb3;background:#151f38;color:#e8eefa;font:inherit;text-align:left;cursor:pointer}
+.rest-btn span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rest-btn b{font-size:15px}
+.rest-btn small{font-size:12px;color:#a9b6d3;word-break:keep-all}
+.rest-ico{flex:none;width:22px;height:22px;color:#c9b8ff;vertical-align:-4px}
+.rest-note{margin:0;display:flex;gap:8px;align-items:center;font-size:14px;color:#c9d6e6}
+.rest-card h3{display:flex;align-items:center;gap:8px}
+.add-rec{display:flex;align-items:center;justify-content:center;gap:8px}
+.add-ico{width:20px;height:20px;color:#8ce4e0}
+
+/* 3.18.0 홈 '오늘 한눈에 보기' 세 칸 정렬: 머리(이름·보조) → 숫자 → 같은 높이의 그림 영역 */
+.home-overview .section-title{align-items:center}
+.home-stat{position:relative}
+.home-stat .stat-head{display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:18px}
+.home-stat .stat-head small{flex:none}
+.home-stat .stat-head em{font-style:normal;font-size:12px;color:#a9bbce;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:3px;min-width:0}
+.home-stat .stat-head .rest-ico{width:13px;height:13px;vertical-align:0}
+.home-stat strong{font-variant-numeric:tabular-nums}
+.home-stat strong .stat-goal{font-size:.55em;font-weight:500;color:#8796b3;margin-left:4px}
+.home-stat .stat-vis{margin-top:auto;height:72px;display:flex;align-items:center;justify-content:center;width:100%}
+.home-stat-work .mini-atlas,.home-stat-work .mini-atlas svg{height:72px}
+@media(min-width:600px){
+ .home-stat-work{min-height:0}
+ .home-stat-work .mini-atlas{position:static;height:72px;gap:4px}
+ .home-stat-work .mini-atlas svg{height:72px}
+ .home-stat-work>small,.home-stat-work>strong,.home-stat-work>p{max-width:none}
+}
+.home-stat-diet .stat-vis.mini-bars{flex-direction:column;align-items:stretch;justify-content:center;gap:6px}
+.weight-spark{width:100%;height:56px;overflow:visible}
+.weight-spark .spark-line{fill:none;stroke:#8ce4e0;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.weight-spark .spark-area{fill:#8ce4e0;opacity:.12}
+.weight-spark .spark-dot{stroke:#e9fbff;stroke-width:7;stroke-linecap:round}
+.stat-empty{display:block;width:70%;height:2px;border-radius:2px;background:repeating-linear-gradient(90deg,#3a4a6a 0 6px,transparent 6px 12px)}
+@media(max-width:650px){.home-stat .stat-vis{height:60px}.home-stat-work .mini-atlas,.home-stat-work .mini-atlas svg{height:60px}.weight-spark{height:46px}.home-stat .stat-head em{font-size:11px}}
+
+/* 회복 중인 부위: 글자 없이 파랑·초록으로 가볍게 깜빡임 */
+.anatomy-map .muscle.recover{animation:recoverPulse 2.6s ease-in-out infinite}
+@keyframes recoverPulse{0%,100%{fill:#2f8f9d;opacity:.55}50%{fill:#58d6a8;opacity:1}}
+.mini-atlas.resting svg{opacity:.85}
+@media (prefers-reduced-motion:reduce){.anatomy-map .muscle.recover{animation:none;fill:#3fb6a8}}
+
+/* 목표 초과 막대: 끝 = 목표 2배, 목표선 가운데, 넘친 부분 붉은 줄무늬, ×배수, 예정분 반투명 */
+.macro-bar,.mini-bar{overflow:visible}
+.macro-bar s,.mini-bar s{background:repeating-linear-gradient(-45deg,#ff6b6b 0 4px,#c9374a 4px 8px)!important;border-radius:0 999px 999px 0}
+.macro-bar em.plan,.mini-bar em.plan{position:absolute;top:0;bottom:0;background:var(--c);opacity:.35;border-radius:0 999px 999px 0;outline:1px dashed var(--c);outline-offset:-1px}
+.macro-bar i.mult,.mini-bar i.mult{position:absolute;right:-2px;top:50%;transform:translate(100%,-50%);font-style:normal;font-size:11px;font-weight:700;color:#ff8a8a;padding-left:4px;white-space:nowrap}
+
+/* 예정 포함 토글 */
+.plan-toggle{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #3a4c72;background:#16223b;color:#c9d6e6;font:inherit;font-size:12px;cursor:pointer}
+.plan-toggle small{color:#8796b3}
+.plan-switch{position:relative;width:26px;height:14px;border-radius:999px;background:#2b3a5a;flex:none}
+.plan-switch::after{content:"";position:absolute;left:2px;top:2px;width:10px;height:10px;border-radius:50%;background:#9aa9c6;transition:left .15s}
+.plan-toggle.on{border-color:#8ce4e0;color:#e8f7f6}
+.plan-toggle.on .plan-switch{background:#2c6f6c}
+.plan-toggle.on .plan-switch::after{left:14px;background:#8ce4e0}
+.axis-note{display:inline-block;margin:2px 0 6px;font-size:12px;color:#ff9b9b}
+.home-stat-diet .axis-badge{position:absolute;right:10px;bottom:8px;font-size:11px;font-weight:700;color:#ff9b9b}
+/* 3.18.0 예정 기록: 반투명 + 점선 테두리, '예정' 배지, '확정' 버튼 */
+.timeline-card.planned,.nutrition-meal:has(.plan-badge){opacity:.72;border-style:dashed!important}
+.plan-badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;color:#0d1326;background:#c9b8ff;vertical-align:2px}
+.tl-confirm{color:#c9b8ff!important;font-weight:700}
+.button.tl-confirm{background:#c9b8ff;color:#0d1326!important;border:0}
+.admin-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;margin:0 0 8px;border-radius:12px;background:#16223b;font-size:13px;color:#c9d6e6}
+.admin-bulk span{flex:1 1 auto}
+.admin-item.k-plan{border-left:3px solid #c9b8ff}
+/* 3.18.0 몸 화면: 기간·단위 버튼, 여러 줄 그래프, 커서 옆 값 */
+.body-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.body-big{font-size:29px;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.body-sub{margin:0;font-size:13px;color:#a9bbce}
+.seg{display:inline-flex;padding:3px;gap:3px;border-radius:999px;background:#121c33;border:1px solid #2c3d63}
+.seg button{min-height:34px;padding:0 13px;border:0;border-radius:999px;background:transparent;color:#a9bbce;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.seg button.active{background:linear-gradient(120deg,#2e5c74,#3a4f86);color:#fff;box-shadow:inset 0 0 0 1px #8ce4e066}
+.unit-seg{margin:4px 0 8px}
+.bc-wrap{position:relative}
+.bchart{width:100%;height:auto;display:block;touch-action:pan-y}
+.bchart .gridline{stroke:#2a3a5a;stroke-width:1}
+.bchart .bc-ylab,.bchart .bc-xlab{fill:#8796b3;font-size:10px;font-variant-numeric:tabular-nums}
+.bchart .bc-line{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.bchart .bc-line.dashed{stroke-dasharray:5 4;stroke-width:1.6;opacity:.85}
+.bchart .bc-guide{stroke:#c9d6e6;stroke-width:1;stroke-dasharray:3 3;opacity:.6}
+.bc-series.s-weight .bc-line{stroke:#8ce4e0}.bc-series.s-weight circle{fill:#8ce4e0}
+.bc-series.s-trend .bc-line{stroke:#e9fbff}
+.bc-series.s-muscle .bc-line{stroke:#7aa7ff}.bc-series.s-muscle circle{fill:#7aa7ff}
+.bc-series.s-fat .bc-line{stroke:#ffb27a}.bc-series.s-fat circle{fill:#ffb27a}
+.bc-series.s-fatpct .bc-line{stroke:#ffb27a}.bc-series.s-fatpct circle{fill:#ffb27a}
+.bc-series.s-waist .bc-line{stroke:#c9b8ff}.bc-series.s-waist circle{fill:#c9b8ff}
+.bc-legend{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 4px;font-size:12px;color:#c9d6e6}
+.bc-legend span{display:inline-flex;align-items:center;gap:5px}
+.bc-legend i{width:14px;height:3px;border-radius:2px;background:currentColor}
+.bc-legend .s-weight i{background:#8ce4e0}.bc-legend .s-trend i{background:repeating-linear-gradient(90deg,#e9fbff 0 4px,transparent 4px 7px)}.bc-legend .s-muscle i{background:#7aa7ff}.bc-legend .s-fat i,.bc-legend .s-fatpct i{background:#ffb27a}
+.bc-tip{position:fixed;z-index:80;display:flex;flex-direction:column;gap:2px;padding:7px 10px;border-radius:10px;background:#0d1326ee;border:1px solid #3a4c72;color:#e8eefa;font-size:12px;pointer-events:none;white-space:nowrap;box-shadow:0 8px 20px #0007}
+.bc-tip b{font-size:12px;color:#8ce4e0}
+.bc-tip strong{font-variant-numeric:tabular-nums}
+.measure-pick{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.measure-pick legend{font-size:14px;margin-bottom:6px;width:100%}
+.measure-opt{display:inline-flex}
+.measure-opt input{position:absolute;opacity:0;pointer-events:none}
+.measure-opt span{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid #3a4c72;background:#16223b;color:#c9d6e6;font-weight:600;cursor:pointer}
+.measure-opt input:checked+span{border-color:#8ce4e0;color:#fff;background:#1d3a48}
+.measure-opt input:focus-visible+span{outline:2px solid #8ce4e0;outline-offset:2px}
+.measure-pick small{width:100%}
+.ib-tag{font-weight:700;color:#c9b8ff}
+/* 3.18.0 웹(넓은 화면) 타임라인: 3칸으로 컴팩트하게, 시각을 또렷하게. 휴대폰은 그대로 */
+@media(min-width:1000px){
+ .timeline-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+ .timeline-list>.empty{grid-column:1/-1}
+ .timeline-list .timeline-card{margin:0;padding:16px 18px}
+ .timeline-card-top{align-items:center}
+ .timeline-card-top time{font-size:22px;font-weight:700;color:#f2f7ff;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+ .timeline-card .timeline-value strong{font-size:28px}
+ .timeline-card h3{font-size:18px}
+}
+.ib-row{margin-top:6px}
+.ib-row h4{margin:6px 0 0;font-size:13px;color:#c9d6e6}
+.bc-tip[hidden]{display:none}
+.quick-timed output{font-weight:700;color:#8ce4e0;margin-left:6px}

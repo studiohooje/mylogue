@@ -1,5 +1,5 @@
 // General exercise names only. No third-party media or proprietary programs.
-import {MORE_EXERCISES,MORE_CARDIO,NAME_RULES,SOURCES} from './exercise-data.js';
+import {MORE_EXERCISES,MORE_CARDIO,NAME_RULES,SOURCES,MORE_TIMED} from './exercise-data.js';
 const strength={
  '가슴':['벤치프레스','인클라인 벤치프레스','덤벨 벤치프레스','클로즈그립 벤치프레스','원암 덤벨 체스트프레스','체스트 프레스','케이블 플라이','푸시업','딥스'],
  '등':['데드리프트','랫풀다운','풀업','바벨 로우','시티드 케이블 로우','원암 덤벨 로우','페이스 풀'],
@@ -84,7 +84,8 @@ const BASE=entries.map(x=>{
 const taken=new Set(BASE.map(x=>x.name));
 const MORE=MORE_EXERCISES.filter(([name])=>!taken.has(name)).map(([name,part,equipment,p,s,o={}])=>{const dumbbell=equipment==='덤벨'||equipment==='케틀벨',hands=o.h1?1:dumbbell?2:0;return {name,part,kind:'strength',id:'exercise:'+name,aliases:o.aliases||[],equipment,weightBasis:dumbbell?'per-hand':'total',handCount:hands,repBasis:o.u?'per-side':'total',defaultWeight:0,weightDisplay:dumbbell?(hands===1?'한 손 기준':'한 손 기준 · 양손 각각'):'총중량',primaryMuscleIds:p,secondaryMuscleIds:s.filter(x=>!p.includes(x)),anatomyMapVersion:2,sourceUrl:SOURCES[0]}});
 const CARDIO=MORE_CARDIO.filter(n=>!taken.has(n)).map(name=>({name,part:'유산소',kind:'cardio',id:'exercise:'+name,aliases:[],equipment:'유산소',weightBasis:'total',handCount:0,repBasis:'total',defaultWeight:0,weightDisplay:'총중량',primaryMuscleIds:[],secondaryMuscleIds:[],anatomyMapVersion:2,sourceUrl:''}));
-export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO]);
+const TIMED=MORE_TIMED.filter(([n])=>!taken.has(n)&&!MORE_CARDIO.includes(n)).map(([name,part])=>({name,part,kind:'cardio',id:'exercise:'+name,aliases:[],equipment:part==='유산소'?'유산소':part,weightBasis:'total',handCount:0,repBasis:'total',defaultWeight:0,weightDisplay:'시간',primaryMuscleIds:[],secondaryMuscleIds:[],anatomyMapVersion:2,sourceUrl:''}));
+export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO,...TIMED]);
 const norm=v=>String(v||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/]/g,'');
 // 이름(또는 별칭)으로 도감 종목을 찾는다. 띄어쓰기·괄호 차이는 무시.
 export function findExercise(name){const n=norm(name);if(!n)return null;return EXERCISE_CATALOG.find(x=>norm(x.name)===n||(x.aliases||[]).some(a=>norm(a)===n))||null}

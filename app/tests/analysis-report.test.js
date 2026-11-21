@@ -48,7 +48,7 @@ test('리포트: 이번 달 카드와 식단·몸 연결', () => {
  assert.equal(r.diet.proteinHit, 1);
  assert.equal(r.diet.smmChange, 0.6);
  const html = reportHTML(r, {exerciseOptions:r.growth.names});
- for(const k of ['이번 주 리포트','회복 지도','이번 달 새 기록','성장','부위 균형','꾸준함','리포트 카드','식단·몸과 함께 보기','id="apply-recommendation"','id="ar-share"','id="ar-exercise"']) assert.ok(html.includes(k), k);
+ for(const k of ['이번 주 리포트','회복 지도','이번 달 새 기록','성장','부위 균형','꾸준함','리포트 카드','식단·수치와 함께 보기','id="apply-recommendation"','id="ar-share"','id="ar-exercise"']) assert.ok(html.includes(k), k);
 });
 
 test('리포트: 기록이 없어도 깨지지 않는다', () => {

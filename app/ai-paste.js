@@ -33,7 +33,7 @@ export function extractCode(text){
  throw Error('AI 답에서 마이로그 코드를 찾지 못했어요. AI 답의 코드 블록을 통째로 복사해 붙여넣어 주세요.');
 }
 
-const TYPE = {meal:'meal', 식사:'meal', 식단:'meal', food:'meal', workout:'workout', 운동:'workout', exercise:'workout', body:'body', 몸:'body', 체중:'body', 인바디:'body', inbody:'body'};
+const TYPE = {meal:'meal', 식사:'meal', 식단:'meal', food:'meal', workout:'workout', 운동:'workout', exercise:'workout', body:'body', 몸:'body', 수치:'body', 체중:'body', 인바디:'body', inbody:'body'};
 const MACHINES = [...GENERIC_MACHINES, ...BUILTIN_BRANDS];
 // 사용자가 말한 머신 이름을 앱의 머신 종류·제조사 모델에 맞춘다(모르면 비워 두고 검토함에서 고른다).
 export function matchMachine(name, exercise){
@@ -88,7 +88,7 @@ function workoutDraft(r){
 function bodyDraft(r){
  const date = dateOk(r.date) ? r.date : today();
  const parsedData = {date, weight:num(pick(r, 'weight', '체중')), bodyFatPct:num(pick(r, 'bodyFat', 'bodyFatPct', '체지방률')), skeletalMuscle:num(pick(r, 'muscle', 'skeletalMuscle', '골격근량')), waistCm:num(pick(r, 'waist', 'waistCm', '허리')), bodyFatMass:num(pick(r, 'bodyFatMass', '체지방량')), bmi:num(r.bmi), score:num(pick(r, 'score', '점수')), visceralFatLevel:num(pick(r, 'visceralFat', 'visceralFatLevel', '내장지방')), bmr:num(pick(r, 'bmr', '기초대사량'))};
- if(!['weight','bodyFatPct','skeletalMuscle','waistCm'].some(k => parsedData[k]!=null)) throw Error('몸 기록에 체중·체지방률·골격근량·허리둘레 중 하나는 있어야 해요.');
+ if(!['weight','bodyFatPct','skeletalMuscle','waistCm'].some(k => parsedData[k]!=null)) throw Error('수치 기록에 체중·체지방률·골격근량·허리둘레 중 하나는 있어야 해요.');
  cleanBody(parsedData);
  return {type:'body', parsedData, summary:`${date} 체중 ${parsedData.weight??'-'}kg`};
 }
@@ -106,13 +106,13 @@ export function parsePaste(text){
   try{
    const d = type==='meal' ? mealDraft(r, said) : type==='workout' ? workoutDraft(r) : bodyDraft(r);
    return {type, sourceModel:String(code.model||'붙여넣기').slice(0, 80), originalUtterance:(said || d.summary).slice(0, 4000), parsedData:d.parsedData, uncertainty:{}, evidence:{source:'AI 답 붙여넣기'}, summary:d.summary};
-  }catch(error){ throw Error(`${i+1}번째 기록(${type==='meal'?'식사':type==='workout'?'운동':'몸'}): ${error.message}`); }
+  }catch(error){ throw Error(`${i+1}번째 기록(${type==='meal'?'식사':type==='workout'?'운동':'수치'}): ${error.message}`); }
  });
 }
 
 // ── AI 입력 창 ──
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KIND = {meal:'식사', workout:'운동', body:'몸'};
+const KIND = {meal:'식사', workout:'운동', body:'수치'};
 export function aiPreviewHTML(text){
  if(!String(text||'').trim()) return '';
  try{ const d = parsePaste(text); return `<p class="ai-in-ok">✓ ${d.length}개 기록을 찾았어요</p><ul class="ai-in-list">${d.map(x => `<li><span class="ai-tag">${KIND[x.type]}</span>${h(x.summary)}</li>`).join('')}</ul>`; }
@@ -139,6 +139,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}</div>
  ${state.msg?`<p class="ai-in-msg">${h(state.msg)}</p>`:''}
  ${ready?'':'<p class="ai-in-err">AI 입력은 로그인하고 이용 승인된 계정에서 쓸 수 있어요.</p>'}
+ <p class="hint ai-pc-link">PC에서 Codex·Claude Code 같은 AI 도구를 쓴다면 붙여넣기 없이 바로 검토함으로 보낼 수 있어요. <button type="button" class="text-button" data-page="settings" data-scroll-to="ai-connect">PC의 AI와 직접 연결 →</button></p>
  <div class="actions ai-in-actions"><button type="button" class="button" id="ai-send" ${ready&&!state.busy?'':'disabled'}>${state.busy?'넣는 중…':'검토함에 넣기'}</button><button type="button" class="button secondary" id="ai-go-inbox" data-page="ai-inbox">AI 검토함 열기${pending?` <span class="ai-in-count">${pending}</span>`:''}</button></div>
 </div>`;
 }

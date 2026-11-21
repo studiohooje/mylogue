@@ -5,7 +5,7 @@ import {emptyArt} from './brand-icons.js';
 const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>v==null?'':String(v);
 const stamp=v=>v?.toDate?.()?.toLocaleString('ko-KR')||String(v||'');
-const label={meal:'식단',workout:'운동',body:'몸·인바디',food:'새 음식',machine:'새 머신',exercise:'새 운동 종목'};
+const label={meal:'식단',workout:'운동',body:'수치·인바디',food:'새 음식',machine:'새 머신',exercise:'새 운동 종목'};
 const metric={weight:'체중 kg',bodyFatPct:'체지방률 %',skeletalMuscle:'골격근량 kg',waistCm:'허리둘레 cm',bodyFatMass:'체지방량 kg',bmi:'BMI',score:'인바디 점수',visceralFatLevel:'내장지방 레벨',bmr:'기초대사량 kcal'};
 const nutrient={calories:'칼로리 kcal',carbs:'탄수화물 g',protein:'단백질 g',fat:'지방 g'};
 const dateTimeValue=value=>{const raw=String(value||'');if(!raw)return '';const date=new Date(raw);if(Number.isNaN(date.getTime()))return '';const n=x=>String(x).padStart(2,'0');return `${date.getFullYear()}-${n(date.getMonth()+1)}-${n(date.getDate())}T${n(date.getHours())}:${n(date.getMinutes())}`};
