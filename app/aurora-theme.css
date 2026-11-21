@@ -688,3 +688,10 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .ib-row h4{margin:6px 0 0;font-size:13px;color:#c9d6e6}
 .bc-tip[hidden]{display:none}
 .quick-timed output{font-weight:700;color:#8ce4e0;margin-left:6px}
+/* 3.18.1 홈 AI 버튼: 다시 아래 버튼 줄과 같은 너비로 꽉 차게, 내용은 가운데(대표님 요청) */
+.home-quick .ai-magic{width:100%;margin:0 0 10px;flex-direction:row;justify-content:center;align-items:center;text-align:left;gap:14px;min-height:76px;padding:14px 18px}
+.home-quick .ai-magic .ai-magic-icon{width:44px;height:44px;border-radius:14px;font-size:22px}
+.home-quick .ai-magic .ai-magic-text{align-items:flex-start;flex:none;gap:2px}
+.home-quick .ai-magic .ai-magic-text b{font-size:18px}
+.home-quick .ai-magic .ai-magic-text small{font-size:13px}
+@media(max-width:650px){.home-quick .ai-magic{width:100%;margin-bottom:7px;min-height:68px;padding:12px 14px;gap:12px}.home-quick .ai-magic .ai-magic-icon{width:40px;height:40px}.home-quick .ai-magic .ai-magic-text b{font-size:17px}.home-quick .ai-magic .ai-magic-text small{font-size:12px}}
