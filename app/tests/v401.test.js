@@ -10,3 +10,5 @@ test('4.1.0 같은 음식을 하루에 여러 번: 시각이 다르면 새 기�
  assert.ok(findDuplicate([m('콩 현미밥','2026-11-21T12:50:00')],existing),'한 끼 전체가 똑같으면 중복');
  assert.ok(findDuplicate([{kind:'workouts',record:{date:'2026-11-21',title:'하체',gymName:'',exercises:[]}}],[{kind:'workouts',record:{date:'2026-11-21',title:'하체',gymName:'',exercises:[]}}]));
 });
+import {recordWritePlan} from '../ai-drafts.js';
+test('4.1.1 초안 기록 문서가 이미 있으면(지워진 자리 포함) 다음 revision으로 다시 쓴다',()=>{assert.deepEqual(recordWritePlan([null,null]).revisions,[1,1]);assert.deepEqual(recordWritePlan([{revision:1,payload:null},null]).revisions,[2,1]);assert.deepEqual(recordWritePlan([{revision:3,payload:'{}'}]).revisions,[4])});

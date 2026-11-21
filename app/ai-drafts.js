@@ -110,8 +110,8 @@ export async function resolveAIDraft(draft,{action,reviewedData=null,allowDuplic
     const records=draftRecords(current,reviewedData);
     const refs=records.map(({kind,record})=>ctx.fs.doc(ctx.db,'users',ctx.user.uid,'records',`${kind}~${encodeURIComponent(record.id)}`));
     const existing=await Promise.all(refs.map(ref=>tx.get(ref)));
-    if(existing.some(x=>x.exists()))throw Error('같은 AI 초안의 기록이 이미 있습니다. 목록을 새로고침해 주세요.');
-    records.forEach(({record},i)=>tx.set(refs[i],{revision:1,payload:stableJSON(record),updatedAt:ctx.fs.serverTimestamp()}));
+    const plan=recordWritePlan(existing.map(x=>x.exists()?x.data():null));
+    records.forEach(({record},i)=>tx.set(refs[i],{revision:plan.revisions[i],payload:stableJSON(record),updatedAt:ctx.fs.serverTimestamp()}));
     finalRecordIds=records.map(({record})=>record.id);
     tx.update(draftRef,{status:'confirmed',reviewedData:reviewedData??current.parsedData,finalRecordIds,reviewedAt:ctx.fs.serverTimestamp(),updatedAt:ctx.fs.serverTimestamp()});
   });
@@ -120,6 +120,12 @@ export async function resolveAIDraft(draft,{action,reviewedData=null,allowDuplic
     try{const t=draft.evidence.trainerUid,sid=String(draft.evidence.sessionId);await ctx.fs.setDoc(ctx.fs.doc(ctx.db,'sessionAcks',`${t}_${sid}_${ctx.user.uid}`),{trainerUid:t,memberUid:ctx.user.uid,memberName:String(ctx.user.displayName||'').slice(0,60),sessionId:sid,draftId:draft.id,result:action==='reject'?'rejected':edited?'edited':'confirmed',edits:edited?editSummary(draft.parsedData,reviewedData):'',feedback:reviewFeedback(reviewedData),ptDeduct:draft.evidence.ptDeduct!==false,createdAt:ctx.fs.serverTimestamp()})}catch{}
   }
   return finalRecordIds;
+}
+// 4.1.1 이 초안의 기록 문서가 이미 있을 때(대표님: "같은 AI 초안의 기록이 이미 있습니다"인데 화면엔 없음):
+// 문서 ID가 이 초안 전용(ai-<초안>-n)이라 다시 써도 중복이 생기지 않는다. 지워진 자리(payload null)든 남은 기록이든
+// 다음 revision으로 이 초안 내용을 다시 쓰고 초안을 확정한다(규칙: update는 revision+1).
+export function recordWritePlan(existing){
+ return {mode:'write',revisions:existing.map(x=>x?(Number(x.revision)||1)+1:1)};
 }
 // 4.1.0 중복 판정(대표님: 하루에 같은 음식을 여러 번 먹는다). 식사는 초안의 음식이 '모두' 같은 날·같은 분에 이미 있을 때만 중복.
 // 시각이 다르거나 한 가지라도 다르면 새 기록으로 받는다. 운동·수치 등은 기록 하나 단위로 그대로.
