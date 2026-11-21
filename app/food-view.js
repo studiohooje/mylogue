@@ -1,3 +1,5 @@
+import {macroPlanCardHTML} from './macro-plan.js';
+import {scaleRecords} from './body-series.js';
 import {mealTotals} from './domain.js';
 import {macroGoalsHTML} from './nutrition-goals.js';
 import {mealGroups} from './timeline-view.js';
@@ -24,7 +26,8 @@ function goalRow(key,label,actual,goal,unit){const rate=goal>0?actual/goal:0,ove
 export function renderFoodPage(db,date,{stateHtml='',trendHtml='',planned=null,plannedCount=0,showPlanned=false}={}){
  const meals=(db.meals||[]).filter(x=>x.date===date),groups=mealGroups(meals),day=mealTotals(meals.filter(x=>!x.planned)),s=db.settings||{};
  const header=`<div class="page-head"><div><h2>식단 기록</h2><p>먹은 음식과 양을 하나씩 남겨보세요.</p></div><button class="button" data-modal="batch">＋ 식사 기록</button></div><label class="field nutrition-date">기록 날짜<input id="selected-date" type="date" value="${esc(date)}"></label>`;
- const ratio=s.goalMode==='ratio'?`<p class="hint">목표 탄단지 열량 비율 · 탄수 ${fmt(s.carbsPctGoal)}% · 단백질 ${fmt(s.proteinPctGoal)}% · 지방 ${fmt(s.fatPctGoal)}%</p>`:'';
+ const lastW=scaleRecords(db).at(-1)?.weight||[...(db.body||[])].filter(x=>x.weight).sort((x,y)=>String(x.date).localeCompare(String(y.date))).at(-1)?.weight||null;
+ const ratio=macroPlanCardHTML(s,lastW?Number(lastW):null);
  const summary=`<section class="section nutrition-summary-v2"><div class="section-title"><h3>하루 누적 · 지금까지</h3><button class="text-button" data-page="settings">목표 수정 →</button></div>${macroGoalsHTML(day,s,{meals:groups.filter(g=>!g.planned).length,planned,plannedCount,showPlanned})}${ratio}</section>`;
  const content=groups.map((g,i)=>{const total=mealTotals(g.items),parts=[['kcal','칼로리','calories','kcal'],['carbs','탄수화물','carbs','g'],['protein','단백질','protein','g'],['fat','지방','fat','g']];return `<article class="card nutrition-meal"><div class="nutrition-meal-head"><h4>식사${i+1}${g.planned?'<span class="plan-badge">예정</span>':''}</h4><span class="tl-right"><time>${time(g.at)}</time>${g.planned?`<button type="button" class="button small tl-confirm" data-plan-confirm="meal:${esc(g.key)}">확정</button>`:''}<button type="button" class="button secondary small" data-qm="${esc(g.key)}" data-qm-date="${esc(date)}">식사 수정</button></span></div><div class="nutrition-food-list">${g.items.map(x=>`<div class="nutrition-food"><div><strong>${esc(x.name)}</strong><small>${fmt(x.servingQty,1)} ${esc(x.servingUnit||'회')}</small>${evidenceLabel(x)}</div><div class="nutrition-food-side">${calorieLabel(x)}<button data-meal-edit="${esc(x.id)}" aria-label="${esc(x.name)} 수정">수정</button></div></div>`).join('')}</div><div class="nutrition-meal-stats">${parts.map(([cl,label,key,unit])=>`<div class="nutrition-share ${cl}"><span>${label}</span><strong>${fmt(total[key],1)} ${unit}</strong><small>오늘 누적의 ${pct(total[key],day[key])}</small></div>`).join('')}</div></article>`}).join('');
  return `${header}${summary}<section class="section nutrition-meals"><div class="section-title"><h3>식사별 기록</h3><button class="text-button" data-modal="codex-import">숫자 파일 가져오기</button></div><div class="nutrition-meal-list">${content||emptyArt('food','첫 식사를 기록하면 음식과 영양값이 여기에 표시됩니다.','card')}</div></section>${stateHtml}${trendHtml}`;

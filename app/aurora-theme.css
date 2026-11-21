@@ -835,3 +835,39 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .brand .brand-en{font-size:11px;font-weight:600;letter-spacing:.16em;color:#8ce4e0;opacity:.85;text-transform:lowercase;line-height:1.2}
 .app-version{text-align:center;margin:18px 0 0;opacity:.7}
 @media(max-width:650px){.brand .brand-mark{width:40px;height:40px}.brand .brand-mark img{width:30px!important;height:30px!important}.brand .brand-title{font-size:19px}.brand .brand-en{font-size:10px;letter-spacing:.14em}}
+/* 3.19.0 식단 목표 카드·탄단지 목표 정하기 창(탄수 노랑·단백질 초록·지방 분홍) */
+.mplan-card,.mp-form{--c-carbs:#f0d466;--c-protein:#6fd6a3;--c-fat:#ff7b93}
+.mplan-card{margin-top:14px;padding:16px;border-radius:16px;background:#16223b;border:1px solid #2c3d63;display:flex;flex-direction:column;gap:12px}
+.mplan-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.mplan-head small{display:block;font-size:12px;color:#a9bbce}
+.mplan-head b{font-size:24px;font-variant-numeric:tabular-nums}
+.mplan-head b span{font-size:13px;font-weight:500;color:#a9bbce}
+.mplan-actions{display:flex;gap:8px}
+.mplan-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:#13203a}
+.mplan-bar i{display:block;height:100%}
+.mplan-bar .m-carbs{background:var(--c-carbs)}.mplan-bar .m-protein{background:var(--c-protein)}.mplan-bar .m-fat{background:var(--c-fat)}
+.mplan-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mplan-item{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:6px;row-gap:2px;padding:10px 12px;border-radius:12px;background:#1d2b4a;min-width:0}
+.mplan-item .dot,.mp-row .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.m-carbs{--c:var(--c-carbs)}.m-protein{--c:var(--c-protein)}.m-fat{--c:var(--c-fat)}
+.mplan-name{font-size:13px;color:#c9d6e6}
+.mplan-item b{grid-column:1/-1;font-size:20px;color:var(--c);font-variant-numeric:tabular-nums}
+.mplan-item small{grid-column:1/-1;font-size:12px;color:#a9bbce;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mplan-note{margin:0}
+@media(max-width:420px){.mplan-list{gap:6px}.mplan-item{padding:8px}.mplan-item b{font-size:17px}}
+.mp-form{display:flex;flex-direction:column;gap:12px}
+.mp-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mp-presets small{width:100%;color:#a9bbce}
+.mp-presets .chip{font-size:12px;min-height:34px}
+.mp-row{padding:12px;border-radius:14px;background:#16223b;border:1px solid #2c3d63;border-left:3px solid var(--c);display:flex;flex-direction:column;gap:8px}
+.mp-row-head{display:flex;align-items:center;gap:8px}
+.mp-row-head b{flex:1}
+.mp-result{font-weight:700;color:var(--c);font-variant-numeric:tabular-nums}
+.mp-modes{flex-wrap:wrap;border-radius:14px}
+.mp-modes button{min-height:34px;font-size:12px;padding:0 10px}
+.mp-val{display:flex;align-items:center;gap:8px}
+.mp-val input{width:120px;font-size:16px}
+.mp-val span{color:#a9bbce;font-size:13px}
+.mp-sum{display:flex;flex-direction:column;gap:6px}
+.mp-sum p{margin:0;font-size:14px}
+.mp-err{color:#ffb4a8!important;font-size:13px!important}
