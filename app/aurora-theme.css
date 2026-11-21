@@ -815,3 +815,11 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .wl-row .rest-ico{width:12px;height:12px;vertical-align:-2px;color:#c9b8ff}
 .wl-row .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media(max-width:650px){.home-stat-work .stat-vis.work-vis{height:84px}.wl-row{font-size:10px;grid-template-columns:12px minmax(0,1fr);gap:3px}.home-stat-work .wv-week{padding-left:2px}}
+/* 3.18.4 하단 메뉴: 모든 칸 아이콘 자리 높이 통일, 가운데 홈·추가는 메뉴 안에 들어가는 둥근 사각형(삐져나오지 않게), 글자 줄 정렬 */
+.nav button{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:4px 2px}
+.nav button b{display:grid;place-items:center;height:34px;width:34px;margin:0 auto!important}
+.nav button.nav-special b{width:46px;height:34px;border-radius:12px;margin:0 auto!important;box-shadow:none}
+.nav button.nav-home b{background:linear-gradient(#16223b,#16223b) padding-box,linear-gradient(145deg,#8ce4e0,#a9a5ee) border-box;border:1.5px solid transparent}
+.nav button.nav-add b{background:linear-gradient(145deg,#8ce4e0,#a9a5ee);box-shadow:0 4px 12px #72aaca44}
+.nav button .mlg-icon{width:22px;height:22px}
+@media(max-width:400px){.nav button.nav-special b{width:40px;height:32px}.nav button b{height:32px}}
