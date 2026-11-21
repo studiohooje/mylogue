@@ -22,8 +22,8 @@ test('막대 축: 평소 ×1.25, 하나라도 넘치면 모두 ×2, 또 넘치�
  assert.ok(Math.abs(b.over - 26.67) < .1);
  const mini = macroMiniHTML({calories:1800, carbs:100, protein:310, fat:40}, {calorieGoal:2200, carbsGoal:250, proteinGoal:150, fatGoal:70});
  assert.match(mini, /left:25\.0%/, '모든 막대 목표선이 1/4 자리(×4)');
- assert.match(mini, /axis-badge[^>]*>×4/);
- assert.match(macroGoalsHTML({calories:1800, protein:190}, {calorieGoal:2200, proteinGoal:150}), /막대 끝 = 목표×2/);
+ assert.doesNotMatch(mini, /axis-badge|×4/, '배수 표시는 보이지 않는다(대표님 지시)');
+ assert.doesNotMatch(macroGoalsHTML({calories:1800, protein:190}, {calorieGoal:2200, proteinGoal:150}), /막대 끝 = 목표/);
 });
 
 test('예정 기록: 미래 시각이면 planned, 합계·헤일로에서 빠지고, 1시간 지나면 중요 알림', () => {
