@@ -33,3 +33,9 @@ ${shown.length ? `<ul class="admin-items">${shown.map(x => `<li class="admin-ite
 // 승인 상태를 사람이 읽는 말과 색으로
 export const STATUS_LABEL = {pending:['승인 대기','wait'], in_review:['검토 중','wait'], approved:['승인됨','ok'], rejected:['반려됨','no'], needs_info:['추가 정보 요청','info']};
 export function statusBadge(status){ const [t, c] = STATUS_LABEL[status] || ['상태 없음','info']; return `<span class="status-badge ${c}">${c==='ok'?'✓ ':''}${t}</span>`; }
+
+// 3.16.3 바깥을 눌렀을 때 닫을지: 종을 눌러 연 알림(via 'bell')만 닫는다. 자동으로 뜬 중요한 알림은 '나중에 확인'으로만 닫는다.
+export function closesOnOutside(state, target){
+ if(!state?.open || state.via!=='bell' || !target) return false;
+ return !(target.closest?.('.admin-panel') || target.closest?.('#admin-bell'));
+}

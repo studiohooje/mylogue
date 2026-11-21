@@ -54,3 +54,14 @@ test('알림: AI 초안도 모이고 종류별 색 구분 클래스가 붙는다
  assert.match(html, />확정</);
  assert.match(html, />AI 검토</);
 });
+
+test('알림: 종으로 연 것만 바깥을 누르면 닫히고, 자동으로 뜬 알림은 남는다', async () => {
+ const {closesOnOutside} = await import('../admin-panel.js');
+ const el = sel => ({closest:q => q===sel ? {} : null});
+ const outside = {closest:() => null};
+ assert.equal(closesOnOutside({open:true, via:'bell'}, outside), true);
+ assert.equal(closesOnOutside({open:true, via:'bell'}, el('.admin-panel')), false, '알림 안을 누르면 그대로');
+ assert.equal(closesOnOutside({open:true, via:'bell'}, el('#admin-bell')), false, '종은 종대로 토글');
+ assert.equal(closesOnOutside({open:true, via:'auto'}, outside), false, '자동으로 뜬 알림은 나중에 확인으로만');
+ assert.equal(closesOnOutside({open:false, via:'bell'}, outside), false);
+});

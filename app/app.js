@@ -7,7 +7,7 @@ import {gymSettingsHTML as gymSettingsView,gymMapHTML,mapResultsHTML,addGymPlace
 import {brandIcon,emptyArt} from './brand-icons.js';
 import {initializeCloud,cloudState,cloudLogin,cloudLogout,synchronize,refreshApproval,applyForAccess,listApplicants,reviewApplicant} from './cloud-sync.js';
 import {cloudSettingsHTML,accountAdminHTML} from './cloud-ui.js';
-import {pendingItems,bellHTML,panelHTML,statusBadge} from './admin-panel.js';
+import {pendingItems,bellHTML,panelHTML,statusBadge,closesOnOutside} from './admin-panel.js';
 import {scopedKey} from './storage-scope.js';
 import {cloudRecords,recordsToDB} from './cloud-model.js';
 import {cleanBody,cleanMeal,cleanWorkout,mealTotals,workoutTotals,estimate1RM,normalizeDB,importBody,validDate,uid,round,cleanMachine,cleanCustomExercise,cleanCheckin,dietState,setDietState,setWeightKg,convertSetUnit} from './domain.js';
@@ -59,7 +59,7 @@ let guidePlan=null,guideRun=null,guideCues=null,guideTicker=null,goalWiz=null,qm
 let sheetDirty=false,dirtyModal=null,navFromPop=false,ignorePop=false,popularity={};
 let gymSearch={},gymMap=null,gymMapView=null,gymMapEl=null,gymMapTimer=null,gymMapSeq=0;
 let sharedCatalog={foods:[],exercises:[],machineModels:[],gymLocations:[],gymMachines:[],error:''};
-let adminState={open:false,snoozed:new Set(),done:[],autoShown:false},adminJust={},adminRefreshedAt=0,onbChecked=false,aiPair=null,aiBridge={checked:false,checking:false,status:null,port:BRIDGE_PORT};
+let adminState={open:false,via:'',snoozed:new Set(),done:[],autoShown:false},adminJust={},adminRefreshedAt=0,onbChecked=false,aiPair=null,aiBridge={checked:false,checking:false,status:null,port:BRIDGE_PORT};
 let catalogRequests=[],catalogRequestError='',catalogRequestMode='manual',catalogRequestType='machine',catalogAdminFood=null,catalogPhotoView=null;
 let autoSyncTimer=null,autoSyncBusy=false,autoSyncStatus='';
 let aiDrafts=[],aiDraftError='',aiDraftLoading=false;
@@ -128,11 +128,11 @@ function placesClick(t){
 function noticeOn(){return !!cloudState.user&&(isCatalogAdmin(cloudState.user)||aiLinkedNow())}
 function aiLinkedNow(){return prefsOf(db).aiLinked||!!aiPair}
 function adminItems(){if(!noticeOn())return [];const admin=isCatalogAdmin(cloudState.user);return pendingItems({applicants:admin?cloudState.applicants:[],requests:admin?catalogRequests:[],aiDrafts:aiLinkedNow()||admin?aiDrafts:[]})}
-function adminAutoOpen(){if(!noticeOn()||adminState.autoShown||page!=='home'||modal)return;if(adminItems().some(x=>!adminState.snoozed.has(x.key))){adminState.open=true;adminState.autoShown=true}}
+function adminAutoOpen(){if(!noticeOn()||adminState.autoShown||page!=='home'||modal)return;if(adminItems().some(x=>!adminState.snoozed.has(x.key))){adminState.open=true;adminState.via='auto';adminState.autoShown=true}}
 function maybeOnboard(afterSync){if(onbChecked||!cloudState.user||getStorageStatus().blocked)return;if(afterSync===false&&cloudState.approval==='approved')return;onbChecked=true;if(prefsOf(db).onboarded||modal)return;onb=newOnboarding(db);modal='onboarding';render()}
 async function adminClick(t){
  if(!noticeOn())return false;
- if(t.id==='admin-bell'){adminState.open=!adminState.open;if(adminState.open){adminState.snoozed.clear();adminState.done=[];if(Date.now()-adminRefreshedAt>30000){adminRefreshedAt=Date.now();refreshApplicants().catch(console.error);refreshCatalog().catch(console.error);if(aiLinkedNow())refreshAIDrafts().catch(console.error)}}render();return true}
+ if(t.id==='admin-bell'){adminState.open=!adminState.open;adminState.via=adminState.open?'bell':'';if(adminState.open){adminState.snoozed.clear();adminState.done=[];if(Date.now()-adminRefreshedAt>30000){adminRefreshedAt=Date.now();refreshApplicants().catch(console.error);refreshCatalog().catch(console.error);if(aiLinkedNow())refreshAIDrafts().catch(console.error)}}render();return true}
  if(t.id==='admin-later-all'){for(const x of adminItems())adminState.snoozed.add(x.key);adminState.open=false;render();toast('오른쪽 위 종을 누르면 다시 볼 수 있어요.');return true}
  const key=t.dataset.adminLater||t.dataset.adminReview||t.dataset.adminApprove||t.dataset.adminReject;if(!key)return false;
  const item=adminItems().find(x=>x.key===key);
@@ -214,6 +214,8 @@ root.addEventListener('input',event=>{if(event.target.id!=='q-set-weight')return
 root.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.classList?.contains('brand-home')){event.preventDefault();event.target.click()}});
 // 3.11.0 팝업 바깥(어두운 배경)을 누르면 닫기. 작성 중인 내용이 있으면 먼저 묻는다.
 root.addEventListener('input',event=>{const t=event.target;if(t.closest?.('.sheet')&&t.id!=='pf-photo'&&t.type!=='search'&&!/search/i.test(t.id||'')){sheetDirty=true;dirtyModal=modal}},true);
+// 3.16.3 종을 눌러 연 알림은 바깥을 누르면 닫힌다(자동으로 뜬 중요한 알림은 '나중에 확인'으로만 닫힘). 누른 곳의 원래 동작은 그대로 한다.
+root.addEventListener('click',event=>{if(!closesOnOutside(adminState,event.target))return;adminState.open=false;adminState.via='';document.querySelector('.admin-panel')?.remove()},true);
 root.addEventListener('click',event=>{if(event.target.id!=='backdrop'||!event.target.classList.contains('modal-backdrop'))return;event.stopPropagation();if(sheetDirty&&dirtyModal===modal&&!confirm('작성 중인 내용이 아직 저장되지 않았어요. 닫으면 지금 바꾼 내용이 사라져요. 닫을까요?'))return;sheetDirty=false;const x=document.getElementById('close');if(x)x.click();else{modal=null;render()}},true);
 async function publishMachineRequest(id){const r=catalogRequests.find(x=>x.id===id);if(!r||r.type!=='machine'||!r.manufacturer||!r.model)return false;const modelId=brandModelId(r.manufacturer,r.model),ex=findExerciseByName(r.name);await saveSharedCatalogItem('machineModels',{id:modelId,name:r.name||`${r.manufacturer} ${r.model}`,manufacturer:r.manufacturer,model:r.model,exerciseId:ex?.id||'',targetIds:r.targetIds||[]});if(r.gymName)await saveSharedCatalogItem('gymMachines',{id:gymMachineId(r.gymName,modelId),name:`${r.gymName} · ${r.manufacturer} ${r.model}`,gymName:r.gymName,modelId});return true}
 async function shareReportCard(){const c=drawShareCard(buildReport(db,new Date(),{focus:analysisExercise}));const blob=await new Promise(r=>c.toBlob(r,'image/png'));if(!blob)throw Error('이미지를 만들지 못했어요.');const file=new File([blob],`mylogue-report-${today().slice(0,7)}.png`,{type:'image/png'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'마이로그 이번 달 리포트'});return}catch(e){if(e.name==='AbortError')return}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('리포트 카드 이미지를 저장했어요.')}
