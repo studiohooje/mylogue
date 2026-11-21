@@ -1,6 +1,6 @@
 import {firebaseConfig} from './firebase-config.js';
 import {scopedKey,setStorageAccount,storageAccount} from './storage-scope.js';
-import {cloudRecords,planSync,recordsToDB,validRecordKey} from './cloud-model.js';
+import {cloudRecords,planSync,recordsToDB,validRecordKey,isFreshDevice} from './cloud-model.js';
 import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
@@ -106,7 +106,7 @@ export async function synchronize(db, save, choices={}) {
     if(!validRecordKey(doc.id)||!Number.isInteger(value.revision)||value.revision<1||!(typeof value.payload==='string'||value.payload===null))throw Error('서버 기록 형식을 확인해 주세요.');
     remote[doc.id]={revision:value.revision,payload:value.payload};
   });
-  const plan=planSync(current,remote,baseline,choices);
+  const plan=planSync(current,remote,baseline,choices,{fresh:isFreshDevice(db,baseline)});
   cloudState.conflicts=plan.conflicts;
   if(plan.conflicts.length){
     localStorage.setItem(scopedKey('mylogue.cloud.conflicts'),JSON.stringify(plan.conflicts));

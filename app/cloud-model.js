@@ -45,7 +45,12 @@ export function recordsToDB(records, local = emptyDB()) {
   return normalizeDB(out);
 }
 // Missing entries represent deletion. Remote tombstones retain their revision permanently.
-export function planSync(local, remote, baseline = {}, choices = {}) {
+// 4.1.2 새 기기 첫 동기화: 이 계정으로 한 번도 동기화한 적 없고(baseline 없음) 이 기기에 직접 남긴 기록이 없으면,
+// 기본 설정값끼리 부딪히는 '충돌'로 멈추지 않고 서버 값을 쓴다(서버에 없는 키는 이 기기 값 유지). 대표님: 앱에 로그인하니 첫 사용자처럼 비어 있음.
+export function isFreshDevice(db = {}, baseline = {}) {
+  return Object.keys(baseline).length === 0 && LISTS.every(k => !(db[k]||[]).length) && !(db.favorites||[]).length;
+}
+export function planSync(local, remote, baseline = {}, choices = {}, {fresh = false} = {}) {
   const merged = {}, writes = [], conflicts = [];
   for (const key of new Set([...Object.keys(local),...Object.keys(remote),...Object.keys(baseline)])) {
     const l = local[key] ?? null, r = remote[key]?.payload ?? null, b = baseline[key]?.payload ?? null;
@@ -55,6 +60,7 @@ export function planSync(local, remote, baseline = {}, choices = {}) {
     else if (r === b && !(r===null && remote[key]?.revision>0 && !baseline[key])) value = l;
     else if (choices[key]?.side === 'local' && choices[key].local === l && choices[key].remote === r) value = l;
     else if (choices[key]?.side === 'remote' && choices[key].local === l && choices[key].remote === r) value = r;
+    else if (fresh && !baseline[key]) value = r ?? l;
     else { conflicts.push({key,local:l,remote:r}); continue; }
     if (value !== null) merged[key] = value;
     if (value !== r) writes.push({key,payload:value,expectedRevision:remote[key]?.revision || 0});
