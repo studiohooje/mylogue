@@ -199,13 +199,14 @@ export function readAfterWorkoutForm(form){
 export function afterWorkoutRecord(state, nowIso=new Date().toISOString()){
  const rows = state.rows.filter(r=>String(r.name||'').trim());
  if(!rows.length) throw Error('종목을 하나 이상 입력해 주세요.');
+ const loc = new Date(nowIso).toLocaleString('sv-SE').replace(' ','T').slice(0,16), setTime = /^\d{4}-\d{2}-\d{2}$/.test(state.date||'')&&state.date!==loc.slice(0,10) ? `${state.date}${loc.slice(10)}` : nowIso;
  const exercises = rows.map(r=>{
   const weight = r.weight===''||r.weight==null ? 0 : Number(r.weight), reps = Number(r.reps), sets = Number(r.sets);
   if(!Number.isFinite(weight)||weight<0) throw Error(`${r.name}: 무게를 확인해 주세요.`);
   if(!Number.isInteger(reps)||reps<1) throw Error(`${r.name}: 횟수를 확인해 주세요.`);
   if(!Number.isInteger(sets)||sets<1||sets>20) throw Error(`${r.name}: 세트 수는 1~20이에요.`);
   const unit = r.unit==='lb'?'lb':'kg';
-  return {name:String(r.name).trim(), sets:Array.from({length:sets}, ()=>({id:uid(), weight, originalWeight:weight, unit, originalUnit:unit, reps, type:'본세트', completed:true, completedAt:nowIso}))};
+  return {name:String(r.name).trim(), sets:Array.from({length:sets}, ()=>({id:uid(), weight, originalWeight:weight, unit, originalUnit:unit, reps, type:'본세트', completed:true, completedAt:setTime}))};
  });
  return cleanWorkout({date:state.date, gymName:state.gymName||'', title:'오늘의 운동', exercises, note:'끝나고 한 번에 입력', updatedAt:nowIso});
 }

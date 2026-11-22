@@ -27,7 +27,8 @@ service cloud.firestore {
         && request.resource.data.reviewerUid == request.auth.uid
         && request.resource.data.reviewedAt == request.time
         && request.resource.data.updatedAt == request.time;
-      allow delete: if false;
+      // 4.11.0 계정 삭제: 본인은 자기 계정 문서를 지울 수 있다(하위 기록·초안을 먼저 지운 뒤).
+      allow delete: if owner(uid);
     }
     match /users/{uid}/records/{recordId} {
       allow read: if owner(uid) && approved();
@@ -35,7 +36,9 @@ service cloud.firestore {
       allow update: if owner(uid) && approved() && validRecord()
         && request.resource.data.revision == resource.data.revision + 1;
       // Deletions use versioned null payloads, never remove tombstones.
-      allow delete: if false;
+      // 4.11.0 예외: 계정 삭제 때 본인은 자기 기록 문서를 실제로 지운다(승인이 취소된 뒤에도 지울 수 있게 approved는 묻지 않음).
+      allow list: if owner(uid);
+      allow delete: if owner(uid);
       function validRecord() {
         return request.resource.data.keys().hasOnly(['revision','payload','updatedAt'])
           && request.resource.data.revision is int
@@ -99,7 +102,9 @@ service cloud.firestore {
             && request.resource.data.finalRecordIds.size() <= 100
             && request.resource.data.reviewedAt == request.time
             && request.resource.data.reviewedData is map));
-      allow delete: if false;
+      // 4.11.0 계정 삭제: 본인은 자기 검토함 초안을 지울 수 있다.
+      allow list: if owner(uid);
+      allow delete: if owner(uid);
     }
     // ---- 4.0.0 코치 모드: 대표님 결정으로 지금은 마스터 계정끼리만 쓴다(나중에 강사 승인 roles.trainer로 넓힘) ----
     function coachMaster() { return admin(); }

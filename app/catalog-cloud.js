@@ -51,7 +51,7 @@ export function validateCatalogRequest(input){
 
 let sdkPromise;
 async function sdk(){
- if(!firebaseConfig)throw Error('Firebase 연결 설정이 없습니다.');
+ if(!firebaseConfig)throw Error('서버 연결 설정이 없어요.');
  if(!sdkPromise)sdkPromise=Promise.all([
   import('./vendor/firebase/firebase-app.js'),
   import('./vendor/firebase/firebase-auth.js'),
@@ -73,7 +73,7 @@ export function isCatalogAdmin(user){return isAdminUser(user)}
 
 export async function loadSharedCatalog(){
  const result=Object.fromEntries(CATALOG_KINDS.map(kind=>[kind,[]]));
- if(!firebaseConfig)return {...result,error:'Firebase 연결 설정이 없습니다.'};
+ if(!firebaseConfig)return {...result,error:'서버 연결 설정이 없어요.'};
  let ctx;
  try{ctx=await context()}catch(error){return {...result,error:error.message}}
  try{

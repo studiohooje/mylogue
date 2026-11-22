@@ -74,12 +74,45 @@ export async function initializeCloud() {
   finally { clearTimeout(timeout); }
 }
 export async function cloudLogin() {
-  if (!auth) throw Error('Firebase 연결 설정 또는 네트워크를 확인해 주세요.');
+  if (!auth) throw Error('인터넷 연결을 확인해 주세요.');
   if(cloudState.native){const {idToken}=await signInNativeGoogle();await authSDK.signInWithCredential(auth,authSDK.GoogleAuthProvider.credential(idToken));location.reload();return;}
   const provider=new authSDK.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
   await authSDK.signInWithPopup(auth,provider);location.reload();
 }
 export async function cloudLogout() { if(cloudState.native)await signOutNativeGoogle();if(auth)await authSDK.signOut(auth);location.reload(); }
+// 4.11.0 계정 삭제: 본인 확인(Google 다시 로그인) → 서버 기록·검토함 초안·계정 문서 삭제 → 이 기기의 이 계정 기록 삭제 → 로그인 계정 삭제.
+// 하나라도 실패하면 거기서 멈추고 알린다(다시 누르면 남은 것부터 이어서 지운다).
+export async function deleteAccount({onStep=()=>{}}={}){
+  const user=auth?.currentUser;
+  if(!user)throw Error('로그인한 계정만 삭제할 수 있어요.');
+  if(isAdminUser(user))throw Error('관리자 계정은 앱에서 삭제할 수 없어요.');
+  onStep('본인 확인');
+  try{
+    if(cloudState.native){const {idToken}=await signInNativeGoogle();await authSDK.reauthenticateWithCredential(user,authSDK.GoogleAuthProvider.credential(idToken))}
+    else{const p=new authSDK.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account',login_hint:user.email||''});await authSDK.reauthenticateWithPopup(user,p)}
+  }catch(e){if(String(e?.code||'').includes('user-mismatch'))throw Error('지금 로그인한 계정과 다른 Google 계정을 골랐어요. 같은 계정으로 다시 해 주세요.');if(String(e?.code||'').includes('popup-closed')||String(e?.code||'').includes('cancelled'))throw Error('본인 확인을 취소해서 삭제하지 않았어요.');throw e}
+  const uid=user.uid;
+  for(const sub of ['records','aiDrafts']){
+    onStep(sub==='records'?'서버 기록 삭제':'검토함 초안 삭제');
+    let snap;try{snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,sub))}catch(e){if(String(e?.code||'').includes('permission'))throw Error('서버가 아직 앱 안 삭제를 받을 준비가 안 됐어요. studiohooje@gmail.com으로 삭제를 요청해 주시면 바로 지워 드릴게요.');throw e}
+    for(let i=0;i<snap.docs.length;i+=400){const b=fsSDK.writeBatch(firestore);snap.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}
+  }
+  onStep('계정 정보 삭제');
+  await fsSDK.deleteDoc(profileRef(uid));
+  onStep('이 기기 기록 삭제');
+  clearAccountLocal(uid);
+  onStep('로그인 계정 삭제');
+  await authSDK.deleteUser(user);
+  if(cloudState.native){try{await signOutNativeGoogle()}catch{}}
+  return true;
+}
+// 이 기기에 남은 그 계정의 기록(로컬 저장소 키·사진 DB)을 지운다. 로그인 없이 쓰던 기록은 건드리지 않는다.
+export function clearAccountLocal(uid,store=globalThis.localStorage,idb=globalThis.indexedDB){
+  const tail=`.user.${encodeURIComponent(uid)}`;let n=0;
+  try{const keys=[];for(let i=0;i<store.length;i++){const k=store.key(i);if(k&&k.endsWith(tail))keys.push(k)}for(const k of keys){store.removeItem(k);n++}}catch{}
+  try{idb?.deleteDatabase?.(`mylogue.photos${tail}`)}catch{}
+  return n;
+}
 export function syncMetadata() {
   const raw=localStorage.getItem(scopedKey('mylogue.cloud.baseline'));
   if(!raw)return {};
@@ -92,7 +125,7 @@ export function syncMetadata() {
 export async function synchronize(db, save, choices={}) {
   const user=auth?.currentUser;
   if(!user||user.uid!==storageAccount())throw Error('먼저 로그인해 주세요.');
-  if(cloudState.approval!=='approved')throw Error('계정 이용 승인 후 Firebase 동기화를 사용할 수 있습니다.');
+  if(cloudState.approval!=='approved')throw Error('계정 이용 승인 후 동기화를 사용할 수 있습니다.');
   const scope=storageAccount(), current=cloudRecords(db), baseline=syncMetadata();
   const originalRaw=localStorage.getItem(STORAGE_KEY), originalBaseline=localStorage.getItem(scopedKey('mylogue.cloud.baseline'));
   if(originalRaw!==getLoadedRaw())throw Error('다른 탭에서 기록이 변경됐습니다. 페이지를 새로 열고 다시 동기화해 주세요.');

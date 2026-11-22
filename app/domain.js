@@ -57,7 +57,9 @@ export function cleanWorkout(raw){const date=String(raw.date??'');if(!validDate(
 export const MASS=new Set(['g','ml','mL']);
 // 4.4.1 점검 C-16: 100당/1단위당 판단은 이 두 함수로만. L·kg·cc·대문자는 저장할 때 g·ml로 바꾼다.
 export const unitFactor=(qty,unit)=>MASS.has(unit)?(Number(qty)||0)/100:(Number(qty)||0);
-export function normalizeUnit(qty,unit){const u=String(unit||'').trim(),q=Number(qty);if(/^(l|ℓ|리터)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'ml'};if(/^(kg|킬로그램)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'g'};if(/^(ml|cc|밀리리터)$/i.test(u))return {qty:q,unit:'ml'};if(/^(g|그램)$/i.test(u))return {qty:q,unit:'g'};return {qty:q,unit:u}}
+// 4.11.0 점검 R-11: 식사 단위 목록은 여기 하나만 둔다(상세 입력·식사 수정이 같은 목록을 쓴다)
+export const MEAL_UNITS=['g','ml','개','회','인분','공기','그릇','컵','잔','팩','봉','캔','병','조각','큰술','작은술','스쿱'];
+export function normalizeUnit(qty,unit){const u=String(unit||'').trim(),q=Number(qty);if(/^(l|ℓ|리터)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'ml'};if(/^(kg|킬로그램)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'g'};if(/^(ml|cc|밀리리터)$/i.test(u))return {qty:q,unit:'ml'};if(/^(g|그램)$/i.test(u))return {qty:q,unit:'g'};if(/^(mg|밀리그램)$/i.test(u))return {qty:Math.round(q/1000*1000)/1000,unit:'g'};if(/^(oz|온스)$/i.test(u))return {qty:Math.round(q*28.35*10)/10,unit:'g'};return {qty:q,unit:u}}
 export const unitLabel=(qty,unit,unitGrams)=>`${qty??''}${unit||''}${unitGrams&&!MASS.has(unit)?`(${Math.round(unitGrams*Number(qty||1))}${unit==='병'||unit==='캔'||unit==='잔'?'ml':'g'})`:''}`;
 export const macroCalories=(m)=>({carbs:(m.carbs||0)*4,protein:(m.protein||0)*4,fat:(m.fat||0)*9});
 export function mealTotals(meals){const t={calories:0,carbs:0,protein:0,fat:0};for(const m of meals)for(const k of Object.keys(t))t[k]+=m[k]||0;const e=macroCalories(t),sum=e.carbs+e.protein+e.fat,cp=sum?round(e.carbs/sum*100):0,pp=sum?round(e.protein/sum*100):0;return {...Object.fromEntries(Object.entries(t).map(([k,v])=>[k,round(v)])),percent:{carbs:cp,protein:pp,fat:sum?round(100-cp-pp):0}}}

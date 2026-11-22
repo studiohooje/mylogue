@@ -125,6 +125,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
   <div class="ai-say-tools"><label class="button secondary small ai-photo-btn">사진 넣기<input id="ai-photo" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label>${photos.length?`<span class="ai-photo-count">사진 ${photos.length}장</span><button type="button" class="text-button" id="ai-photo-clear">사진 빼기</button>`:''}</div>
   <button type="button" class="button ai-ask" id="ai-ask" ${ready&&!state.asking?'':'disabled'}>${state.asking?'AI가 정리하는 중…':'✦ AI에게 정리 맡기'}</button>
   ${state.left!=null?`<p class="hint">오늘 AI 정리 ${state.left}번 남았어요.</p>`:''}
+  ${ready?'':'<p class="hint">앱 안 AI 정리는 계정 이용 승인 후 쓸 수 있어요. 그 전에는 아래 ‘다른 AI의 답 붙여넣기’로 기록할 수 있고, 이 기기 검토함에 모여요.</p>'}
  </section>` : '';
  return `<div class="ai-in">${say}${server?`<details class="ai-in-alt" ${state.altOpen?'open':''}><summary>다른 AI(ChatGPT 등)의 답 붙여넣기</summary>`:''}
  <div class="ai-in-how"><p><b>이렇게 쓰세요</b></p><ol>

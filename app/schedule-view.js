@@ -28,7 +28,7 @@ function cellHTML(db, date, n, {today, selected}){
  const f = dayFacts(db, date), any = f.weight!==null || f.kcal!==null || f.work || f.rest || f.plan.length;
  const work = f.work ? `<i class="sc-work" title="${esc(f.work)}">${esc(shortWork(f.work))}</i>` : f.plan.length ? `<i class="sc-work plan" title="예정 ${esc(f.plan.join(', '))}">${esc(f.plan.map(shortWork).join(' '))}</i>` : f.rest ? '<i class="sc-work rest">휴식</i>' : '';
  const bar = f.pct ? `<span class="sc-bar" aria-hidden="true"><b class="m-carbs" style="width:${f.pct.carbs}%"></b><b class="m-protein" style="width:${f.pct.protein}%"></b><b class="m-fat" style="width:${f.pct.fat}%"></b></span>` : '';
- return `<button type="button" data-calendar="${date}" class="sc-cell${any?' filled':''}${today?' today':''}${selected?' selected':''}" aria-label="${date}"><span class="sc-day">${n}</span>${f.weight!==null?`<i class="sc-w">${n1(f.weight)}<span class="sc-u">kg</span></i>`:''}${f.kcal!==null?`<i class="sc-k">${Math.round(f.kcal).toLocaleString('ko-KR')}<span class="sc-u">kcal</span></i>${bar}`:''}${work}</button>`;
+ return `<button type="button" data-calendar="${date}" class="sc-cell${any?' filled':''}${today?' today':''}${selected?' selected':''}" aria-label="${date}"><span class="sc-day">${n}</span>${f.weight!==null?`<i class="sc-w">${n1(f.weight)}<span class="sc-u">kg</span></i>`:''}${f.kcal!==null?`<i class="sc-k"><span class="sc-k-full">${Math.round(f.kcal).toLocaleString('ko-KR')}<span class="sc-u">kcal</span></span><span class="sc-k-short" aria-hidden="true">${f.kcal>=1000?(Math.round(f.kcal/100)/10).toFixed(1)+'k':Math.round(f.kcal)}</span></i>${bar}`:''}${work}</button>`;
 }
 
 export function scheduleCalendarHTML(db, selectedDate, todayKey){

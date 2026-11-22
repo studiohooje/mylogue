@@ -24,7 +24,8 @@ test('점검 D-2: 단위를 바꾸면 영양값은 그대로, 내 음식은 새 
  const db={meals:[{id:'m1',date:'2026-11-22',name:'현미밥',servingQty:210,servingUnit:'g',calories:300,carbs:60,protein:6,fat:2,loggedAt:'2026-11-22T03:00:00.000Z'}],foods:[{name:'현미밥',servingUnit:'g',calories:143,carbs:29,protein:3,fat:1}]};
  const out=applyQuickMeal(db,{newDate:'2026-11-22',slot:'식사',time:'12:00',rows:[row]});
  assert.equal(out.meals[0].calories,300);assert.equal(out.meals[0].servingUnit,'공기');
- assert.equal(out.foods.length,1);assert.equal(out.foods[0].servingUnit,'공기');assert.equal(out.foods[0].calories,300);
+ // 4.11.0 R-6: 양까지 바뀐 단위 변경은 g 기준 음식은 지키고 공기 음식을 새로 만든다
+ assert.equal(out.foods.length,2);assert.equal(out.foods.find(f=>f.servingUnit==='g').calories,143);assert.equal(out.foods.find(f=>f.servingUnit==='공기').calories,300);
 });
 test('점검 C-6: 기름·버터 소량은 정상, 1mL 40kcal는 이상',()=>{
  assert.equal(foodIssue({servingQty:5,servingUnit:'g',calories:44}),null);

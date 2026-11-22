@@ -2,6 +2,19 @@ import {firebaseConfig} from './firebase-config.js';
 import {cleanBody,cleanMeal,cleanWorkout,cleanFoodPreset,cleanMachine,cleanCustomExercise,isFuture} from './domain.js';
 import {stableJSON} from './cloud-model.js';
 import {cloudState} from './cloud-sync.js';
+import {scopedKey} from './storage-scope.js';
+// 4.11.0 승인 전·로그인 전에도 AI 입력(붙여넣기)을 쓸 수 있게: 초안을 이 기기의 검토함에 두고, 확정하면 이 기기 기록에 넣는다.
+// 승인된 계정은 예전처럼 서버 검토함을 쓴다. 이 기기 초안은 id가 'l-'로 시작한다.
+const LOCAL_KEY=()=>scopedKey('mylogue.localDrafts');
+export const localDraftMode=()=>!cloudState.user||cloudState.approval!=='approved';
+const stamp=ms=>({toMillis:()=>ms,toDate:()=>new Date(ms)});
+function readLocal(){try{const v=JSON.parse(globalThis.localStorage?.getItem(LOCAL_KEY())||'[]');return Array.isArray(v)?v:[]}catch{return []}}
+function writeLocal(list){try{globalThis.localStorage?.setItem(LOCAL_KEY(),JSON.stringify(list.slice(-200)))}catch{throw Error('이 기기 저장 공간이 부족해 검토함에 넣지 못했어요.')}}
+export function listLocalDrafts(){return readLocal().map(d=>({...d,local:true,createdAt:stamp(d.createdAtMs||0)})).sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0))}
+let applyLocal=null;
+export function onLocalConfirm(fn){applyLocal=fn}
+// 4.11.0 결함 재점검 R-3: 날짜만 미래인 초안도 '예정'으로(시각이 없어도)
+const localToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 
 const TYPES=new Set(['meal','workout','body','food','machine','exercise']);
 const DRAFT_ID=/^[A-Za-z0-9_-]{1,100}$/;
@@ -21,7 +34,7 @@ const evidenceFor=(item,draft)=>{const source=item?.aiEvidence||draft.evidence||
 function finalized(records){const identities=new Set();for(const entry of records){const key=recordIdentity(entry.kind,entry.record);if(identities.has(key))throw Error('초안 안에 같은 내용의 기록이 두 번 있습니다. 음식·세트의 시각이나 양을 확인해 주세요.');identities.add(key);entry.record.id=`ai-${fingerprint(key)}`}return records}
 let sdkPromise;
 async function context(){
-  if(!firebaseConfig)throw Error('Firebase 연결이 필요합니다.');
+  if(!firebaseConfig)throw Error('서버 연결이 필요해요. 로그인 상태를 확인해 주세요.');
   if(!sdkPromise)sdkPromise=Promise.all([
     import('./vendor/firebase/firebase-app.js'),
     import('./vendor/firebase/firebase-auth.js'),
@@ -55,6 +68,7 @@ export async function unpairLocalAgent(port=BRIDGE_PORT){
   return true;
 }
 export async function listAIDrafts(){
+  if(localDraftMode())return listLocalDrafts();
   const ctx=await context();
   const ref=ctx.fs.collection(ctx.db,'users',ctx.user.uid,'aiDrafts');
   const docs=await ctx.fs.getDocsFromServer(ref);
@@ -71,11 +85,11 @@ function draftRecords(draft,reviewedData){
     if(!Array.isArray(raw.items)||raw.items.length<1||raw.items.length>30)throw Error('식사 음식은 1~30개여야 합니다.');
     return finalized(raw.items.map((item,i)=>{
       const aiEstimate=item.aiEstimate||null;
-      const m=cleanMeal({...item,planned:isFuture(item.loggedAt),id:`ai-${draft.id}-${i}`,mealGroupId:`ai-${draft.id}`,source:aiEstimate?.estimated?'ai-estimated':'ai-reviewed',aiEvidence:evidenceFor(item,draft)});
+      const m=cleanMeal({...item,planned:isFuture(item.loggedAt)||String(item.date||'')>localToday(),id:`ai-${draft.id}-${i}`,mealGroupId:`ai-${draft.id}`,source:aiEstimate?.estimated?'ai-estimated':'ai-reviewed',aiEvidence:evidenceFor(item,draft)});
       return {kind:'meals',record:m};
     }));
   }
-  if(draft.type==='workout'){const times=[raw.loggedAt,...(raw.exercises||[]).flatMap(e=>[e.completedAt,...(e.sets||[]).map(s=>s.completedAt)])].filter(Boolean),at=raw.loggedAtTime&&raw.date?`${raw.date}T${raw.loggedAtTime}:00`:null;const planned=at?isFuture(at):times.length>0&&times.every(t=>isFuture(t));return finalized([{kind:'workouts',record:cleanWorkout({...raw,planned,id:`ai-${draft.id}`,sourceDraftId:`ai-${draft.id}`})}])}
+  if(draft.type==='workout'){const times=[raw.loggedAt,...(raw.exercises||[]).flatMap(e=>[e.completedAt,...(e.sets||[]).map(s=>s.completedAt)])].filter(Boolean),at=raw.loggedAtTime&&raw.date?`${raw.date}T${raw.loggedAtTime}:00`:null;const planned=String(raw.date||'')>localToday()||(at?isFuture(at):times.length>0&&times.every(t=>isFuture(t)));return finalized([{kind:'workouts',record:cleanWorkout({...raw,planned,id:`ai-${draft.id}`,sourceDraftId:`ai-${draft.id}`})}])}
   if(draft.type==='body')return finalized([{kind:'body',record:cleanBody({...raw,id:`ai-${draft.id}`,source:'ai-reviewed'})}]);
   if(draft.type==='food')return finalized([{kind:'foods',record:cleanFoodPreset({...raw,id:`ai-${draft.id}`,source:'ai-reviewed',aiEvidence:evidenceFor(raw,draft)})}]);
   if(draft.type==='machine'){
@@ -90,6 +104,7 @@ export function validateDraftRecords(draft,reviewedData){return draftRecords(dra
 // 4.4.3 점검 C-13: 중복 확인은 앱이 넘겨주는 이 기기 기록(existing)으로 한다(확정마다 서버 기록 전체를 받지 않음). 넘겨주지 않으면 예전처럼 서버에서 읽는다.
 export async function resolveAIDraft(draft,{action,reviewedData=null,allowDuplicate=false,existing:local=null}={}){
   if(!DRAFT_ID.test(draft?.id)||!['confirm','reject'].includes(action))throw Error('AI 초안 처리 방식을 확인해 주세요.');
+  if(draft.local||String(draft.id).startsWith('l-'))return resolveLocal(draft,{action,reviewedData,allowDuplicate,existing:local});
   const ctx=await context(),draftRef=ctx.fs.doc(ctx.db,'users',ctx.user.uid,'aiDrafts',draft.id);
   let finalRecordIds=[];
   if(action==='confirm'&&!allowDuplicate){
@@ -143,7 +158,46 @@ export function duplicateMessage(kind,x={}){const at=x.loggedAt?new Date(x.logge
 function editSummary(a={},b={}){const name=x=>(x.exercises||[]).map(e=>`${e.name} ${(e.sets||[]).length}세트`).join(', ');const A=name(a),B=name(b);return (A===B?'세트 무게·횟수를 고쳤어요':`${A} → ${B}`).slice(0,400)}
 function reviewFeedback(d={}){const f=d?.feedback||{};return {effort:Number(f.effort)||null,pain:Array.isArray(f.pain)?f.pain.slice(0,8).map(String):[],note:String(f.note||'').slice(0,300)}}
 // 3.16.0 AI 입력(붙여넣기)으로 만든 초안을 내 검토함에 넣는다. 같은 내용을 두 번 붙여넣어도 하나만 생긴다(내용 지문 = 문서 ID).
+function resolveLocal(draft,{action,reviewedData,allowDuplicate,existing}){
+  const list=readLocal(),i=list.findIndex(x=>x.id===draft.id);
+  if(i<0)throw Error('초안을 찾을 수 없습니다.');
+  if(list[i].status!=='pending')throw Error('이미 처리된 초안입니다. 목록을 새로고침해 주세요.');
+  if(action==='reject'){list[i]={...list[i],status:'rejected',reviewedAtMs:Date.now()};writeLocal(list);return []}
+  const records=draftRecords(list[i],reviewedData);
+  if(!allowDuplicate){const dup=findDuplicate(records,Array.isArray(existing)?existing:[]);if(dup)throw Object.assign(Error(duplicateMessage(dup.kind,dup.record)),{code:'duplicate'})}
+  if(!applyLocal)throw Error('기록을 저장할 준비가 안 됐어요. 앱을 다시 열어 주세요.');
+  applyLocal(records);
+  list[i]={...list[i],status:'confirmed',reviewedData:reviewedData??list[i].parsedData,finalRecordIds:records.map(r=>r.record.id),reviewedAtMs:Date.now()};writeLocal(list);
+  return records.map(r=>r.record.id);
+}
+// 승인 뒤 처음 검토함을 열 때, 이 기기에서 기다리던 초안(로그인 전·승인 전 것 모두)을 서버 검토함으로 옮긴다.
+export async function migrateLocalDrafts(){
+  if(localDraftMode())return 0;
+  let moved=0;
+  for(const key of [...new Set([LOCAL_KEY(),'mylogue.localDrafts'])]){
+    let list;try{list=JSON.parse(globalThis.localStorage?.getItem(key)||'[]')}catch{list=[]}
+    if(!Array.isArray(list))continue;
+    const pend=list.filter(d=>d.status==='pending'&&['meal','workout','body'].includes(d.type));
+    if(!pend.length)continue;
+    await addPastedDrafts(pend.map(d=>({type:d.type,parsedData:d.parsedData,sourceModel:d.sourceModel,originalUtterance:d.originalUtterance,uncertainty:d.uncertainty,evidence:d.evidence})));
+    try{globalThis.localStorage?.setItem(key,JSON.stringify(list.filter(d=>d.status!=='pending')))}catch{}
+    moved+=pend.length;
+  }
+  return moved;
+}
 export async function addPastedDrafts(drafts){
+  if(localDraftMode()){
+    const list=readLocal();let added=0,duplicate=0;
+    for(const d of drafts){
+      if(!['meal','workout','body'].includes(d.type))throw Error('AI 입력은 식사·운동·수치 기록만 넣을 수 있어요.');
+      const id=`l-${fingerprint(`local ${d.type} ${stableJSON(d.parsedData)}`)}`;
+      if(list.some(x=>x.id===id&&x.status==='pending')){duplicate++;continue}
+      for(let k=list.length-1;k>=0;k--)if(list[k].id===id)list.splice(k,1);
+      const now=Date.now();list.push({id,requestId:id,type:d.type,status:'pending',schemaVersion:1,sourceModel:String(d.sourceModel||'붙여넣기').slice(0,80),originalUtterance:String(d.originalUtterance||'').slice(0,4000),parsedData:d.parsedData,uncertainty:d.uncertainty||{},evidence:d.evidence||{},createdAtMs:now});added++;
+    }
+    writeLocal(list);
+    return {added,duplicate,local:true};
+  }
   const ctx=await context();let added=0,duplicate=0;
   for(const d of drafts){
     if(!TYPES.has(d.type)||!['meal','workout','body'].includes(d.type))throw Error('AI 입력은 식사·운동·수치 기록만 넣을 수 있어요.');

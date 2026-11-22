@@ -45,8 +45,12 @@ const muscleOverrides={
 const equipmentOverrides={
  '데드리프트':'바벨','루마니안 데드리프트':'바벨','굿모닝':'바벨','스쿼트':'바벨','프론트 스쿼트':'바벨',
  '벤치프레스':'바벨','인클라인 벤치프레스':'바벨','클로즈그립 벤치프레스':'바벨','바벨 로우':'바벨','바벨 컬':'바벨',
- '고블릿 스쿼트':'덤벨/케틀벨','불가리안 스플릿 스쿼트':'덤벨'
+ '고블릿 스쿼트':'덤벨/케틀벨','불가리안 스플릿 스쿼트':'덤벨',
+ // 4.11.0 도감 검수: 이름에 '덤벨'이 없어도 덤벨 종목(한 손 무게 기준), 오버헤드 프레스는 바벨
+ '해머 컬':'덤벨','사이드 레터럴 레이즈':'덤벨','리어 델트 플라이':'덤벨','프론트 레이즈':'덤벨','오버헤드 프레스':'바벨'
 };
+// 4.11.0 도감 검수: 한쪽씩 하는 종목은 반복을 '한쪽 기준'으로(새 기록부터, 지난 기록은 저장된 값 그대로)
+const perSide=new Set(['불가리안 스플릿 스쿼트','원암 덤벨 체스트프레스','원암 덤벨 로우','덤벨 스텝업','런지','덤벨 슈트케이스 캐리']);
 const aliases={
  '데드리프트':['바벨 데드리프트','컨벤셔널 데드리프트'],
  '루마니안 데드리프트':['바벨 루마니안 데드리프트','RDL'],
@@ -75,7 +79,7 @@ const BASE=entries.map(x=>{
  const equipment=equipmentOverrides[x.name]||(/덤벨/.test(x.name)?'덤벨':/케이블|페이스 풀/.test(x.name)?'케이블':/머신|프레스|풀다운|케이블|레그 컬|레그 익스텐션|스텝밀/.test(x.name)&&! /벤치|덤벨|오버헤드|클린/.test(x.name)?'머신':/푸시업|풀업|딥스|플랭크|크런치|버피/.test(x.name)?'맨몸':x.kind==='cardio'?'유산소':'프리웨이트');
  const dumbbell=equipment==='덤벨',hands=oneHand.has(x.name)?1:dumbbell?2:0;
  return {...x,id:'exercise:'+x.name,aliases:aliases[x.name]||[],equipment,
-  weightBasis:dumbbell?'per-hand':'total',handCount:hands,repBasis:x.name==='불가리안 스플릿 스쿼트'?'per-side':'total',defaultWeight:0,
+  weightBasis:dumbbell?'per-hand':'total',handCount:hands,repBasis:perSide.has(x.name)?'per-side':'total',defaultWeight:0,
   weightDisplay:dumbbell?(hands===1?'한 손 기준':'한 손 기준 · 양손 각각'):'총중량',
   primaryMuscleIds:muscleOverrides[x.name]?.[0]||primary[x.part]||[],secondaryMuscleIds:muscleOverrides[x.name]?.[1]||secondary[x.part]||[],
   anatomyMapVersion:2,sourceUrl:sourceUrls[x.name]||''};

@@ -145,7 +145,7 @@ export const MORE_EXERCISES = [
  ['데드버그','복근','맨몸',['abs'],[]],
  ['마운틴 클라이머','복근','맨몸',['abs'],['shoulders','quads']],
  ['팔로프 프레스','복근','케이블',['obliques','abs'],[],{u:1}],
- ['토르소 로테이션 머신','복근','머신',['obliques'],['abs'],{aliases:['로터리 토르소']}],
+ ['토르소 로테이션 머신','복근','머신',['obliques'],['abs'],{u:true,aliases:['로터리 토르소']}],
  ['할로우 바디 홀드','복근','맨몸',['abs'],[]],
  // 전신
  ['파워 클린','전신','바벨',['glutes','quads','traps'],['hamstrings','back','shoulders']],

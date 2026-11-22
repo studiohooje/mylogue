@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {initializeTestEnvironment, assertFails, assertSucceeds} from '@firebase/rules-unit-testing';
-import {collection,doc,getDoc,getDocs,setDoc,updateDoc,serverTimestamp,runTransaction} from 'firebase/firestore';
+import {collection,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,serverTimestamp,runTransaction} from 'firebase/firestore';
 
 const projectId='mylogue-approval-rules-test';
 const adminUid='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
@@ -157,5 +157,29 @@ test('AI 입력(붙여넣기): 승인된 본인만 같은 형식으로 검토함
     await assertFails(add(member,'p1',drafts[0],'p-y'));
     const list=await getDocs(collection(member,'users','m1','aiDrafts'));
     assert.equal(list.size,3);
+  }finally{await env.cleanup()}
+});
+
+test('4.11.0 계정 삭제: 본인만 자기 기록·초안·계정 문서를 지울 수 있다', {skip:!host}, async()=>{
+  const rules=await readFile(new URL('../firestore.rules',import.meta.url),'utf8');
+  const [emulatorHost,portText]=host.split(':');
+  const env=await initializeTestEnvironment({projectId:projectId+'-delete',firestore:{host:emulatorHost,port:Number(portText),rules}});
+  try{
+    await env.withSecurityRulesDisabled(async ctx=>{const f=ctx.firestore();await setDoc(doc(f,'users','m1'),{uid:'m1',email:'m1@x',status:'approved'});await setDoc(doc(f,'users','m1','records','meals~a'),{revision:1,payload:'{}'});await setDoc(doc(f,'users','m1','aiDrafts','p-a'),{id:'p-a',status:'pending'});await setDoc(doc(f,'users','r1'),{uid:'r1',email:'r1@x',status:'rejected'});await setDoc(doc(f,'users','r1','records','body~b'),{revision:1,payload:'{}'})});
+    const member=env.authenticatedContext('m1',{email:'m1@x'}).firestore();
+    const other=env.authenticatedContext('o1',{email:'o1@x'}).firestore();
+    const rejected=env.authenticatedContext('r1',{email:'r1@x'}).firestore();
+    await assertFails(deleteDoc(doc(other,'users','m1','records','meals~a')));
+    await assertFails(getDocs(collection(other,'users','m1','records')));
+    await assertFails(deleteDoc(doc(other,'users','m1')));
+    assert.equal((await assertSucceeds(getDocs(collection(member,'users','m1','records')))).size,1);
+    await assertSucceeds(deleteDoc(doc(member,'users','m1','records','meals~a')));
+    await assertSucceeds(getDocs(collection(member,'users','m1','aiDrafts')));
+    await assertSucceeds(deleteDoc(doc(member,'users','m1','aiDrafts','p-a')));
+    await assertSucceeds(deleteDoc(doc(member,'users','m1')));
+    // 승인이 거절된 사람도 자기 기록은 지울 수 있다
+    assert.equal((await assertSucceeds(getDocs(collection(rejected,'users','r1','records')))).size,1);
+    await assertSucceeds(deleteDoc(doc(rejected,'users','r1','records','body~b')));
+    await assertSucceeds(deleteDoc(doc(rejected,'users','r1')));
   }finally{await env.cleanup()}
 });

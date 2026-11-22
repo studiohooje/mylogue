@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {quickMealState, applyQuickMeal, rowTotals, stepFor, quickMealHTML, quickWorkoutState, applyQuickWorkout, quickWorkoutHTML} from '../quick-edit.js';
+import {quickMealState, applyQuickMeal, mealDiff, rowTotals, stepFor, quickMealHTML, quickWorkoutState, applyQuickWorkout, quickWorkoutHTML} from '../quick-edit.js';
 import {profileOf, avatarHTML, applyProfile, profileEditHTML, newProfileEdit} from '../profile.js';
 import {cleanMeal, cleanWorkout} from '../domain.js';
 
@@ -49,3 +49,11 @@ test('프로필: 이름·아이콘 저장, 기본은 Google 이름과 사진', (
  assert.match(profileEditHTML(st, {email:'m@x.com'}), /id="pf-save"/);
  assert.doesNotMatch(profileEditHTML(st, {email:'m@x.com', statusText:''}), /승인됨/);
 });
+
+test('4.11.0 R-6 단위와 양을 함께 바꾸면 원래 저장 음식은 지키고 새 단위 음식만 추가',async()=>{const {quickMealState,applyQuickMeal}=await import('../quick-edit.js');const db={meals:[{id:'m1',date:'2026-11-22',mealGroupId:'G',slot:'식사',name:'현미밥',servingQty:210,servingUnit:'g',calories:300,loggedAt:'2026-11-22T10:00:00'}],foods:[{id:'f1',name:'현미밥',servingQty:100,servingUnit:'g',calories:143}]};const st=quickMealState(db,'2026-11-22','G');st.rows[0].unit='공기';st.rows[0].qty=2;const out=applyQuickMeal(db,st);const g=out.foods.find(f=>f.servingUnit==='g'),b=out.foods.find(f=>f.servingUnit==='공기');assert.equal(g.calories,143);assert.ok(b);assert.equal(out.foods.length,2)});
+
+test('4.11.0 R-8 날짜·시각만 바꿔도 바뀐 것으로 본다',()=>{const db={meals:[{id:'m1',date:'2026-11-22',mealGroupId:'G',slot:'식사',name:'김밥',servingQty:1,servingUnit:'줄',calories:400,loggedAt:'2026-11-22T12:00:00'}]};const st=quickMealState(db,'2026-11-22','G');assert.equal(mealDiff(st),'바뀐 것 없음');st.time='13:00';assert.match(mealDiff(st),/날짜·시각/)});
+
+test('4.11.0 R-11 단위 목록 하나로, mg·oz는 g으로',async()=>{const d=await import('../domain.js');const b=await import('../meal-batch.js');const q=await import('../quick-edit.js');assert.equal(b.UNIT_OPTIONS,d.MEAL_UNITS);assert.equal(q.UNITS,d.MEAL_UNITS);assert.deepEqual(d.normalizeUnit(500,'mg'),{qty:0.5,unit:'g'});assert.deepEqual(d.normalizeUnit(2,'oz'),{qty:56.7,unit:'g'})});
+
+test('4.11.0 도감 검수: 한쪽씩 종목은 per-side, 이름에 덤벨 없는 덤벨 종목은 한 손 기준',async()=>{const {EXERCISE_CATALOG}=await import('../catalog.js');const f=n=>EXERCISE_CATALOG.find(x=>x.name===n);for(const n of ['런지','덤벨 스텝업','원암 덤벨 로우','토르소 로테이션 머신'])assert.equal(f(n)?.repBasis,'per-side',n);for(const n of ['해머 컬','사이드 레터럴 레이즈'])assert.equal(f(n)?.weightBasis,'per-hand',n);assert.equal(f('오버헤드 프레스')?.equipment,'바벨')});

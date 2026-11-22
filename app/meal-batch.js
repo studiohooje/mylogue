@@ -1,6 +1,6 @@
-import {cleanMeal,uid,MASS} from './domain.js';
+import {cleanMeal,uid,MASS,MEAL_UNITS} from './domain.js';
 // 4.3.0 단위를 분명하게: 1팩(100g)·1스쿱(30g)처럼 기성품은 1단위의 무게를 함께 적는다
-export const UNIT_OPTIONS=['g','ml','개','팩','봉','병','캔','스쿱','공기','그릇','인분','조각','회'];
+export const UNIT_OPTIONS=MEAL_UNITS;
 import {scaleNutrition,scaleEstimate} from './nutrition.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const blankFood=()=>({name:'',servingQty:100,servingUnit:'g',calories:'',carbs:'',protein:'',fat:'',source:'manual'});
