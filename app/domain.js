@@ -10,7 +10,7 @@ export function cleanBody(raw){const date=String(raw.date??'').trim();if(!validD
 export function cleanMeal(raw){
  const date=String(raw.date??'');if(!validDate(date))throw Error('식사 날짜를 확인해 주세요.');
  const name=String(raw.name??'').trim();if(!name)throw Error('음식 이름을 입력해 주세요.');
- const servingQty=number(raw.servingQty)??1,servingUnit=String(raw.servingUnit||'회').trim();
+ const nu=normalizeUnit(number(raw.servingQty)??1,String(raw.servingUnit||'회').trim()),servingQty=nu.qty,servingUnit=nu.unit;
  if(servingQty<=0||!servingUnit)throw Error('섭취량과 단위를 확인해 주세요.');
  const estimate=raw.aiEstimate&&typeof raw.aiEstimate==='object'?raw.aiEstimate:{};
  const caloriesMin=number(estimate.caloriesMin),caloriesMax=number(estimate.caloriesMax);
@@ -53,6 +53,9 @@ function workoutLoggedAt(raw,date){const t=String(raw.loggedAtTime||'').trim();i
 export function cleanWorkout(raw){const date=String(raw.date??'');if(!validDate(date))throw Error('운동 날짜를 확인해 주세요.');const rest=raw.rest===true;const exercises=rest?[]:(raw.exercises??[]).map(cleanExercise);if(!rest&&raw.planned!==true&&!exercises.length)throw Error('운동 종목을 하나 이상 입력해 주세요.');const duration=number(raw.duration);if(duration!==null&&duration<0)throw Error('운동 시간은 음수가 될 수 없습니다.');const condition=number(raw.condition);if(condition!==null&&(condition<1||condition>5))throw Error('컨디션은 1~5 사이여야 합니다.');return {id:raw.id||uid(),sourceDraftId:String(raw.sourceDraftId||''),date,...(rest?{rest:true}:{}),...(raw.planned===true?{planned:true}:{}),title:String(raw.title||(rest?'의도적 휴식':'오늘의 운동')).trim(),gymName:String(raw.gymName||'').trim(),duration,condition,exercises,note:String(raw.note??'').trim(),loggedAt:workoutLoggedAt(raw,date),createdAt:raw.createdAt||raw.updatedAt||new Date().toISOString(),updatedAt:raw.updatedAt||new Date().toISOString()}}
 // 4.3.0 무게·부피 단위(g·ml)는 영양값을 100당으로 본다. 그 밖의 단위(개·팩·스쿱…)는 1단위당.
 export const MASS=new Set(['g','ml','mL']);
+// 4.4.1 점검 C-16: 100당/1단위당 판단은 이 두 함수로만. L·kg·cc·대문자는 저장할 때 g·ml로 바꾼다.
+export const unitFactor=(qty,unit)=>MASS.has(unit)?(Number(qty)||0)/100:(Number(qty)||0);
+export function normalizeUnit(qty,unit){const u=String(unit||'').trim(),q=Number(qty);if(/^(l|ℓ|리터)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'ml'};if(/^(kg|킬로그램)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'g'};if(/^(ml|cc|밀리리터)$/i.test(u))return {qty:q,unit:'ml'};if(/^(g|그램)$/i.test(u))return {qty:q,unit:'g'};return {qty:q,unit:u}}
 export const unitLabel=(qty,unit,unitGrams)=>`${qty??''}${unit||''}${unitGrams&&!MASS.has(unit)?`(${Math.round(unitGrams*Number(qty||1))}${unit==='병'||unit==='캔'||unit==='잔'?'ml':'g'})`:''}`;
 export const macroCalories=(m)=>({carbs:(m.carbs||0)*4,protein:(m.protein||0)*4,fat:(m.fat||0)*9});
 export function mealTotals(meals){const t={calories:0,carbs:0,protein:0,fat:0};for(const m of meals)for(const k of Object.keys(t))t[k]+=m[k]||0;const e=macroCalories(t),sum=e.carbs+e.protein+e.fat,cp=sum?round(e.carbs/sum*100):0,pp=sum?round(e.protein/sum*100):0;return {...Object.fromEntries(Object.entries(t).map(([k,v])=>[k,round(v)])),percent:{carbs:cp,protein:pp,fat:sum?round(100-cp-pp):0}}}
@@ -93,6 +96,7 @@ export function dietState(db,date){
  if(state==='complete'&&!hasMeals)return 'unrecorded';
  if(state==='fasting'&&hasMeals)return 'partial';
  if(state==='unrecorded'&&hasMeals)return 'partial';
+ if(state==='partial'&&!hasMeals)return 'unrecorded'; // 4.4.1 점검 C-9: 식사를 다 지운 날은 '일부 기록'으로 남기지 않는다
  return ['partial','complete','fasting','unrecorded'].includes(state)?state:hasMeals?'partial':'unrecorded';
 }
 export function setDietState(db,date,state){

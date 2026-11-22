@@ -6,7 +6,8 @@ test('4.1.2 새 기기 첫 로그인: 기본 설정이 서버와 달라도 충�
  const remote=Object.fromEntries(Object.entries(cloudRecords(web)).map(([k,v])=>[k,{revision:1,payload:v}]));
  const phone={...emptyDB(),settings:{...emptyDB().settings,preferences:{onboarded:true}}};
  assert.equal(isFreshDevice(phone,{}),true);
- const old=planSync(cloudRecords(phone),remote,{});assert.ok(old.conflicts.length>0,'예전 규칙은 충돌로 멈춤');
+ const old=planSync(cloudRecords(phone),remote,{});assert.equal(old.conflicts.length,0,'4.4.1: 첫 동기화는 설정 충돌로 멈추지 않음');
+ const withRec={...phone,body:[{id:'b1',date:'2026-11-22',weight:80}]};const q=planSync(cloudRecords(withRec),remote,{});assert.equal(q.conflicts.length,0,'점검 B-1: 첫 동기화 전에 한 건 기록해도 설정 충돌 없음');assert.equal(recordsToDB(q.merged,withRec).settings.calorieGoal,2300);assert.equal(recordsToDB(q.merged,withRec).body.length,1);
  const p=planSync(cloudRecords(phone),remote,{},{}, {fresh:true});assert.equal(p.conflicts.length,0);
  const db=recordsToDB(p.merged,phone);assert.equal(db.meals.length,1);assert.equal(db.settings.calorieGoal,2300);assert.deepEqual(db.settings.preferences,{onboarded:true},'서버에 없는 이 기기 값은 유지');
 });

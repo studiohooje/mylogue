@@ -52,6 +52,8 @@ export function isFreshDevice(db = {}, baseline = {}) {
 }
 export function planSync(local, remote, baseline = {}, choices = {}, {fresh = false} = {}) {
   const merged = {}, writes = [], conflicts = [];
+  // 4.4.1 점검 B-1: 이 계정으로 처음 맞추는 기기(baseline 없음)는 기록이 이미 있어도 설정·하루 상태·체크인은 서버 값을 쓴다.
+  const firstSync = Object.keys(baseline).length === 0, isSetting = key => /^(settings|dayStates|checkins|favorites)~/.test(key);
   for (const key of new Set([...Object.keys(local),...Object.keys(remote),...Object.keys(baseline)])) {
     const l = local[key] ?? null, r = remote[key]?.payload ?? null, b = baseline[key]?.payload ?? null;
     let value;
@@ -61,6 +63,7 @@ export function planSync(local, remote, baseline = {}, choices = {}, {fresh = fa
     else if (choices[key]?.side === 'local' && choices[key].local === l && choices[key].remote === r) value = l;
     else if (choices[key]?.side === 'remote' && choices[key].local === l && choices[key].remote === r) value = r;
     else if (fresh && !baseline[key]) value = r ?? l;
+    else if (firstSync && isSetting(key)) value = r ?? l;
     else { conflicts.push({key,local:l,remote:r}); continue; }
     if (value !== null) merged[key] = value;
     if (value !== r) writes.push({key,payload:value,expectedRevision:remote[key]?.revision || 0});

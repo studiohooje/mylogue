@@ -21,7 +21,8 @@ export function reminderItems(db, today){
  const ib = body.filter(isInbody).map(b => b.date).sort(), lastI = ib.at(-1);
  if(p.inbody!=='off'){
   if(lastI){ const gap = dayGap(lastI, today); if(gap>=Number(p.inbody)) out.push({key:`remind:inbody:${today}`, kind:'remind', what:'inbody', title:`인바디를 잰 지 ${gap>=60?`${Math.floor(gap/30)}달`:gap>=14?`${Math.floor(gap/7)}주`:`${gap}일`} 지났어요`, sub:'체성분이 어떻게 바뀌었는지 볼 때가 됐어요'}); }
-  else if(p.firstInbody) out.push({key:`remind:inbody-first:${today}`, kind:'remind', what:'inbody', title:'첫 인바디 기록을 기다려요', sub:'결과지를 사진으로 넣거나 숫자만 적어도 돼요'});
+  // 4.4.1 점검 C-2: 체중을 기록하는 사람에게만, 한 번만(날짜 없는 키) 묻는다.
+  else if(p.firstInbody && weights.length) out.push({key:'remind:inbody-first', kind:'remind', what:'inbody', title:'첫 인바디 기록을 기다려요', sub:'결과지를 사진으로 넣거나 숫자만 적어도 돼요'});
  }
  return out;
 }

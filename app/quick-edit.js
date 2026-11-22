@@ -1,7 +1,7 @@
 // 3.10.0 쉬운 수정: 기록 카드에서 바로 여는 짧은 수정 화면.
 // 식사 = 한 끼 전체(시각·끼니·날짜, 음식별 양 −/+, 음식 빼기). 양을 바꾸면 영양값은 같은 비율로 바뀐다.
 // 운동 = 종목별 세트(무게·횟수·완료)만 바로 고치고, 세트 추가·삭제. 머신·컨디션 등은 '자세히 수정'(기존 화면).
-import {cleanMeal, cleanWorkout, isFuture} from './domain.js';
+import {cleanMeal, cleanWorkout, isFuture, MASS, unitFactor} from './domain.js';
 import {mealGroups} from './timeline-view.js';
 import {foodIssue} from './food-check.js';
 
@@ -22,8 +22,9 @@ export function quickMealState(db, date, key){
  const first = g.items[0];
  return {key, date, newDate:date, slot:first.slot||'식사', time:hhmm(g.at), rows:g.items.map(m => ({id:m.id, name:m.name, unit:m.servingUnit||'회', origUnit:m.servingUnit||'회', qty:m.servingQty, base:{qty:m.servingQty, ...Object.fromEntries(NUT.map(k=>[k, m[k]]))}, removed:false}))};
 }
-export const stepFor = unit => unit==='g'||unit==='ml' ? 10 : 0.5;
-export function rowTotals(row){ const f = row.base.qty>0 ? Number(row.qty)/row.base.qty : 0; return Object.fromEntries(NUT.map(k => [k, row.base[k]==null ? null : r1(row.base[k]*f)])); }
+export const stepFor = unit => MASS.has(unit) ? 10 : 0.5;
+// 4.4.1 점검 D-2: 단위를 바꾸면 같은 양을 다른 단위로 적은 것으로 보고 영양값은 그대로 둔다(양 비율은 같은 단위일 때만).
+export function rowTotals(row){ const unitChanged = row.origUnit && row.unit && row.unit!==row.origUnit; const f = unitChanged ? 1 : row.base.qty>0 ? Number(row.qty)/row.base.qty : 0; return Object.fromEntries(NUT.map(k => [k, row.base[k]==null ? null : r1(row.base[k]*f)])); }
 export function readQuickMeal(st, root){
  if(!root) return st;
  const v = id => root.querySelector('#'+id)?.value;
@@ -38,7 +39,7 @@ export function quickMealHTML(st){
  return `<div class="qe"><div class="qe-meta"><label class="field">날짜<input id="qm-date" type="date" value="${h(st.newDate)}"></label><label class="field">끼니<select id="qm-slot">${[...new Set([st.slot, ...SLOTS])].map(s=>`<option ${s===st.slot?'selected':''}>${h(s)}</option>`).join('')}</select></label><label class="field">먹은 시각<input id="qm-time" type="time" value="${h(st.time)}"></label></div>
 <ul class="qe-rows">${st.rows.map((r, i) => { const t = rowTotals(r); return `<li class="qe-row${r.removed?' removed':''}">${r.removed ? `<span class="qe-name"><s>${h(r.name)}</s> <small>빼기로 함</small></span><button type="button" class="text-button" data-qm-undo="${i}">되돌리기</button>` : `<div class="qe-name"><b>${h(r.name)}</b><small>${fmt(t.calories)}kcal · 탄${fmt(t.carbs)} 단${fmt(t.protein)} 지${fmt(t.fat)}</small>${(() => { const is = foodIssue({servingQty:r.qty, servingUnit:r.unit, ...t}); return is ? `<small class="qe-warn">⚠ ${h(is.text)}</small>` : ''; })()}</div><div class="qe-step"><button type="button" class="qe-btn" data-qm-step="${i}" data-d="-1" aria-label="${h(r.name)} 줄이기">−</button><input id="qm-qty-${i}" type="number" inputmode="decimal" min="0.1" step="any" value="${h(r.qty)}" aria-label="${h(r.name)} 양"><select id="qm-unit-${i}" class="qe-unit-sel" aria-label="${h(r.name)} 단위">${[...new Set([r.unit, ...UNITS])].map(u => `<option ${u===r.unit?'selected':''}>${h(u)}</option>`).join('')}</select><button type="button" class="qe-btn" data-qm-step="${i}" data-d="1" aria-label="${h(r.name)} 늘리기">＋</button></div><div class="qe-row-actions"><button type="button" class="text-button" data-meal-edit="${h(r.id)}">영양값 고치기</button><button type="button" class="text-button qe-del" data-qm-remove="${i}">빼기</button></div>`}</li>`; }).join('')}</ul>
 <p class="qe-total">이 식사 <b>${fmt(tot.calories)}kcal</b> · 탄${fmt(tot.carbs)}g 단${fmt(tot.protein)}g 지${fmt(tot.fat)}g</p>
-<p class="hint">양을 바꾸면 칼로리·탄단지도 같은 비율로 바뀌어요. 음식 이름이나 영양값 자체는 ‘영양값 고치기’에서.</p>
+<p class="hint">양을 바꾸면 칼로리·탄단지도 같은 비율로 바뀌어요. 단위를 바꾸면 영양값은 그대로 두고 단위만 바꿔요(예: 210g → 1공기). 음식 이름이나 영양값 자체는 ‘영양값 고치기’에서.</p>
 <div class="actions qe-actions"><button type="button" class="button qm-save-btn" id="qm-save">저장<small>${h(mealDiff(st))}</small></button><button type="button" class="button secondary" id="qm-add">음식 추가</button><button type="button" class="text-button qe-del" id="qm-delete-all">이 식사 모두 삭제</button></div></div>`;
 }
 export function applyQuickMeal(db, st){
@@ -47,8 +48,10 @@ export function applyQuickMeal(db, st){
  const at = new Date(`${st.newDate}T${st.time}:00`); if(Number.isNaN(at.getTime())) throw Error('날짜를 확인해 주세요.');
  const kept = st.rows.filter(r => !r.removed).map(r => { const m = byId.get(r.id); if(!m) return null; const t = rowTotals(r); return cleanMeal({...m, planned:m.planned===true||isFuture(at), date:st.newDate, slot:st.slot, loggedAt:at.toISOString(), servingQty:r.qty, servingUnit:r.unit||m.servingUnit, ...t, updatedAt:new Date().toISOString()}); }).filter(Boolean);
  // 단위를 바로잡았으면 같은 이름·옛 단위의 저장된 음식도 함께 바로잡는다(다음에 또 잘못 나오지 않게)
- const fixes = st.rows.filter(r => !r.removed && r.unit && byId.get(r.id) && (byId.get(r.id).servingUnit||'회')!==r.unit).map(r => ({name:byId.get(r.id).name, from:byId.get(r.id).servingUnit||'회', to:r.unit}));
- const foods = fixes.length ? (db.foods||[]).map(f => { const x = fixes.find(z => z.name===f.name && z.from===(f.servingUnit||'회')); return x ? {...f, servingUnit:x.to, updatedAt:new Date().toISOString()} : f; }) : db.foods;
+ // 4.4.1 점검 D-2: 값도 새 단위 기준(1단위당·100당)으로 바꿔 넣는다. 같은 이름·새 단위가 이미 있으면 하나로.
+ const fixes = st.rows.filter(r => !r.removed && r.unit && byId.get(r.id) && (byId.get(r.id).servingUnit||'회')!==r.unit).map(r => { const t = rowTotals(r), fac = unitFactor(r.qty, r.unit) || 1; return {name:byId.get(r.id).name, from:byId.get(r.id).servingUnit||'회', to:r.unit, per:Object.fromEntries(NUT.map(k => [k, t[k]==null ? null : Math.round(t[k]/fac*10)/10]))}; });
+ let foods = db.foods;
+ if(fixes.length){ foods = (db.foods||[]).filter(f => !fixes.some(z => z.name===f.name && z.to===(f.servingUnit||'회'))).map(f => { const x = fixes.find(z => z.name===f.name && z.from===(f.servingUnit||'회')); if(!x) return f; const {unitGrams, ...rest} = f; return {...rest, servingUnit:x.to, ...x.per, updatedAt:new Date().toISOString()}; }); }
  return {...db, foods, meals:[...(db.meals||[]).filter(m => !ids.has(m.id)), ...kept]};
 }
 

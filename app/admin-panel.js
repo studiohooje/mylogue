@@ -36,7 +36,7 @@ export function statusBadge(status){ const [t, c] = STATUS_LABEL[status] || ['�
 
 // 3.16.3 바깥을 눌렀을 때 닫을지: 종을 눌러 연 알림(via 'bell')만 닫는다. 자동으로 뜬 중요한 알림은 '나중에 확인'으로만 닫는다.
 export function closesOnOutside(state, target){
- if(!state?.open || state.via!=='bell' || !target) return false;
+ if(!state?.open || !['bell','remind'].includes(state.via) || !target) return false;
  return !(target.closest?.('.admin-panel') || target.closest?.('#admin-bell'));
 }
 

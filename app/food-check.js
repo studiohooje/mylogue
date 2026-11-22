@@ -13,7 +13,7 @@ export function foodIssue(x, {kind = 'meal'} = {}){
  if(MASS.has(unit)){
   // 기록은 먹은 양 전체 값, 저장된 음식은 100당 값
   const per100 = kind==='meal' ? kcal/qty*100 : kcal;
-  if(kind==='meal' && qty <= 5 && kcal >= 15) return {code:'tiny', text:`${qty}${unit}에 ${n0(kcal)}kcal는 이상해요. 1${unit}이 아니라 1회·1병이었나요?`};
+  if(kind==='meal' && qty <= 5 && kcal >= 15 && per100 > 950) return {code:'tiny', text:`${qty}${unit}에 ${n0(kcal)}kcal는 이상해요. 1${unit}이 아니라 1회·1병이었나요?`};
   if(per100 > 950) return {code:'dense', text:`100${unit}에 ${n0(per100)}kcal는 불가능한 값이에요(기름도 약 900kcal). 단위를 확인해 주세요.`};
  }
  const p = Number(x.carbs)||0, pr = Number(x.protein)||0, f = Number(x.fat)||0, est = p*4 + pr*4 + f*9;

@@ -20,7 +20,7 @@ test('식단 수량 계산과 수정, 프로그램 운동 저장과 수정을 �
   const click=async dataset=>events.get('click')({target:{closest:()=>({dataset})}});
   const submit=values=>events.get('submit')({preventDefault(){},target:{id:values._id,values}});
   await click({modal:'meal'});
-  assert.match(root.innerHTML,/1회 칼로리/);
+  assert.match(root.innerHTML,/음식 빠른 검색/);assert.doesNotMatch(root.innerHTML,/1회 칼로리/);
   submit({_id:'meal-form',date:'2026-11-01',slot:'점심',name:'테스트 식사',servingQty:'2',servingUnit:'접시',calories:'200',carbs:'20',protein:'10',fat:'4',note:''});
   let db=JSON.parse(data.get('mylogue.v1'));
   assert.equal(db.meals[0].calories,400);

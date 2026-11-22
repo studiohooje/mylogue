@@ -1,4 +1,5 @@
 import {photoDatabaseName} from './storage-scope.js';
+import {MASS,unitFactor} from './domain.js';
 import {genericMachinesFor,brandsOf} from './machines-catalog.js';
 import {exercisePickerHTML,muscleMapHTML,machineIconHTML} from './exercise-ui.js';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -8,14 +9,14 @@ const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
 
 export function mealFormHTML({meal, date, recent=[], presets=[]}) {
   const m=meal||{};
-  const qty=num(m.servingQty)||(m.servingUnit==='g'?100:1);
-  const base=k=>m[k]==null?'':Math.round((m[k]/(m.servingUnit==='g'?qty/100:qty))*10)/10;
+  const qty=num(m.servingQty)||(MASS.has(m.servingUnit)?100:1);
+  const base=k=>m[k]==null?'':Math.round((m[k]/unitFactor(qty,m.servingUnit||'회'))*10)/10;
   const choices=[...presets.map((x,i)=>({key:`preset:${i}`,name:x.name})),...recent.map((x,i)=>({key:`recent:${i}`,name:x.name}))];
   return `<div class="gap"><p class="hint">한 번 먹는 양의 영양값을 입력하고 수량을 정하세요. 총 섭취량을 저장합니다.</p>
     ${choices.length?`<div class="chip-row" aria-label="음식 빠른 선택">${choices.slice(0,12).map(x=>`<button type="button" class="chip" data-food-choice="${x.key}">${esc(x.name)}</button>`).join('')}</div>`:''}
     <form id="meal-form" class="form-grid">
       <label class="field">날짜<input name="date" type="date" required value="${esc(m.date||date)}"></label>
-      <label class="field">끼니<select name="slot">${option(['아침','점심','저녁','간식','보충제'],m.slot||'아침')}</select></label>
+      <label class="field">끼니<select name="slot">${option([...new Set([m.slot||'식사','식사','아침','점심','저녁','간식','보충제'])],m.slot||'식사')}</select></label>
       <label class="field wide">음식 이름<input name="name" required value="${esc(m.name||'')}" placeholder="예: 현미밥 1공기"></label>
       <label class="field">수량<input name="servingQty" type="number" min="0.1" step="0.1" value="${esc(qty)}"></label>
       <label class="field">단위<input name="servingUnit" value="${esc(m.servingUnit||'회')}" placeholder="회, 개, 접시"></label>
@@ -36,7 +37,7 @@ export function mealPreview(form, scaleNutrition) {
   const box=document.getElementById('meal-preview');
   if(!box)return;
   if(!Number.isFinite(quantity)||quantity<=0){box.textContent='수량은 0보다 커야 합니다.';return}
-  const scaled=scaleNutrition(Object.fromEntries(['calories','carbs','protein','fat'].map(k=>[k,data[k]===''?null:Number(data[k])])),data.servingUnit==='g'?quantity/100:quantity);
+  const scaled=scaleNutrition(Object.fromEntries(['calories','carbs','protein','fat'].map(k=>[k,data[k]===''?null:Number(data[k])])),unitFactor(quantity,data.servingUnit));
   box.textContent=`총 ${scaled.calories??'—'} kcal · 탄수화물 ${scaled.carbs??'—'} g · 단백질 ${scaled.protein??'—'} g · 지방 ${scaled.fat??'—'} g`;
 }
 

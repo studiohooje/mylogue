@@ -1,4 +1,4 @@
-import {round,number,cleanFoodPreset} from './domain.js';
+import {round,number,cleanFoodPreset,unitFactor} from './domain.js';
 
 // Food values require the user's own label or verified source. No fabricated database values.
 export const FOOD_PRESETS=Object.freeze([]);
@@ -19,7 +19,7 @@ export function scaleEstimate(estimate,servingQty=1){
 }
 export function toFoodPreset(meal){
  const q=number(meal?.servingQty)??1;if(q<=0)throw Error('섭취량을 확인해 주세요.');
- const factor=meal.servingUnit==='g'?q/100:q;
+ const factor=unitFactor(q,meal.servingUnit||'회');
  return {name:String(meal.name||'').trim(),servingUnit:String(meal.servingUnit||'회'),aiEstimate:scaleEstimate(meal.aiEstimate,1/factor),aiEvidence:meal.aiEvidence||null,...Object.fromEntries(NUTRIENT_KEYS.map(k=>[k,meal[k]==null?null:round(meal[k]/factor)]))};
 }
 export function recentFoods(meals,limit=12){
