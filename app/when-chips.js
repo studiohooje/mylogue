@@ -1,6 +1,6 @@
 // 4.0.0 날짜·시각 빠른 입력 → 4.2.0 '언제' 칸 통일(대표님 승인 제안 2).
 // 기록 창(.sheet) 안의 날짜·시각 입력을 한 블록으로 묶는다: 위 줄 = 날짜 칸 + 시각 칸(무엇인지 작게 표시), 아래 = 자주 쓰는 버튼,
-// '시간표'를 누르면 15분 단위 표. 입력 칸 자체는 그대로 두므로 저장 로직은 바뀌지 않는다(값을 바꾸면 input·change 이벤트를 보낸다).
+// (4.4.2 쓰이지 않던 15분 단위 표 제거) 입력 칸 자체는 그대로 두므로 저장 로직은 바뀌지 않는다(값을 바꾸면 input·change 이벤트를 보낸다).
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -18,12 +18,6 @@ export function relTime(v){
  if(!/^\d{2}:\d{2}/.test(v||'')) return '';
  const [h, m] = v.split(':').map(Number);
  return `${h<12?'오전':'오후'} ${h%12||12}:${pad(m)}`;
-}
-// 15분 단위 표: 고른 시각의 한 시간 전부터 12칸
-export function timeSlots(v, now = new Date()){
- const [h] = (/^\d{2}:\d{2}/.test(v||'') ? v : hm(now)).split(':').map(Number);
- const start = Math.max(0, Math.min(21, h-1));
- return Array.from({length:12}, (_, i) => { const t = start*60 + i*15; return `${pad(Math.floor(t/60))}:${pad(t%60)}`; });
 }
 
 function dateChips(id){ return `<div class="when-row" data-when-row="date">${[['d:-1','어제'],['d:0','오늘'],['d:1','내일']].map(([c, l]) => `<button type="button" class="when-chip" data-when="${c}" data-when-target="${id}">${l}</button>`).join('')}</div>`; }
@@ -96,6 +90,8 @@ function read(input){
  if(input.type==='time'){ const d = new Date(); const [h, m] = (input.value || hm(d)).split(':').map(Number); d.setHours(h, m, 0, 0); return d; }
  const v = input.value ? new Date(input.value) : new Date(); return Number.isNaN(v.getTime()) ? new Date() : v;
 }
+// 4.4.2 점검 A-12: 시각만 있는 칸에서 자정을 넘기면 같은 '언제' 블록의 날짜 칸도 하루 옮긴다.
+function shiftDate(input, days){ if(!days || input.type!=='time') return; const di = input.closest?.('.when-block')?.querySelector('input[type="date"]'); if(!di) return; const d = new Date(`${di.value || ymd(new Date())}T12:00:00`); d.setDate(d.getDate() + days); write(di, d); }
 function write(input, d){
  input.value = input.type==='date' ? ymd(d) : input.type==='time' ? hm(d) : `${ymd(d)}T${hm(d)}`;
  const btn = document.querySelector(`[data-when-btn="${input.id}"]`); if(btn) btn.textContent = relTime(input.value) || '시각 고르기';
@@ -114,16 +110,14 @@ export function handleWhenClick(target){
   if(k==='ap') H = a==='pm' ? (H%12)+12 : H%12;
   if(k==='hh'){ const n = Number(a)%12; H = (H>=12 ? 12 : 0) + n; }
   if(k==='mm') M = Number(a);
-  if(k==='mf'){ let t = H*60 + M + Number(a); t = (t + 1440) % 1440; H = Math.floor(t/60); M = t%60; }
-  const d = new Date(); d.setHours(H, M, 0, 0); write(input, d); return true; }
- if(code==='grid'){ const g = document.querySelector(`[data-when-grid="${input.id}"]`); if(!g) return true; const open = g.hidden; g.hidden = !open; b.setAttribute('aria-expanded', String(open)); if(open) g.innerHTML = timeSlots(input.type==='datetime-local'?String(input.value).slice(11,16):input.value).map(t => `<button type="button" class="when-slot${t===input.value?' on':''}" data-when="s:${t}" data-when-target="${input.id}">${relTime(t)}</button>`).join(''); return true; }
- if(code.startsWith('s:')){ const t = code.slice(2); input.value = input.type==='datetime-local' ? `${(input.value||ymd(new Date())).slice(0,10)}T${t}` : t; write(input, read(input)); const g = document.querySelector(`[data-when-grid="${input.id}"]`); if(g){ g.querySelectorAll('.when-slot').forEach(x => x.classList.toggle('on', x.dataset.when===code)); } return true; }
+  let carry = 0; if(k==='mf'){ let t = H*60 + M + Number(a); carry = Math.floor(t/1440); t = (t%1440 + 1440) % 1440; H = Math.floor(t/60); M = t%60; }
+  const d = new Date(); d.setHours(H, M, 0, 0); write(input, d); shiftDate(input, carry); return true; }
  const [kind, arg] = code.split(':'), now = new Date();
  let d = read(input);
  if(kind==='d'){ const base = new Date(now); base.setDate(base.getDate() + Number(arg)); if(input.type==='date') d = base; else { base.setHours(d.getHours(), d.getMinutes(), 0, 0); d = base; } }
  else if(arg==='now'){ if(input.type==='datetime-local'){ d = new Date(d); d.setHours(now.getHours(), now.getMinutes(), 0, 0); } else d = now; }
  else if(arg==='hour'){ d = new Date(d); d.setHours(now.getHours(), 0, 0, 0); }
- else { d = new Date(d.getTime() + Number(arg)*60000); }
+ else { const before = new Date(d); d = new Date(d.getTime() + Number(arg)*60000); const days = Math.round((new Date(ymd(d)+'T12:00:00') - new Date(ymd(before)+'T12:00:00'))/86400000); write(input, d); shiftDate(input, days); return true; }
  write(input, d);
  return true;
 }

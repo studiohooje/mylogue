@@ -11,9 +11,10 @@ const foodKey=x=>`${String(x.name).toLocaleLowerCase('ko')}|${x.servingUnit||'g'
 const factor=x=>MASS.has(x.servingUnit)?Number(x.servingQty)/100:Number(x.servingQty);
 const foodValues=(row)=>scaleNutrition(row,factor(row));
 const quickGap=(a,b)=>{const minutes=Math.round((new Date(b)-new Date(a))/60000);return Number.isFinite(minutes)&&minutes>=0?`${minutes}분`:'—'};
-export const quickTime=()=>new Date().toLocaleString('sv-SE').replace(' ','T').slice(0,16);
+// 4.4.2 점검 C-21: 보는 날이 오늘이 아니면 그 날짜 + 지금 시각
+export const quickTime=(date)=>{const n=new Date().toLocaleString('sv-SE').replace(' ','T').slice(0,16);return date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date!==n.slice(0,10)?`${date}${n.slice(10)}`:n};
 export const emptyQuickMeal=(date,time)=>({date,time,rows:[],tab:'recent',query:'',picked:null,editIndex:-1,qty:100});
-export const emptyQuickWorkout=(date,gyms=[])=>({date,gymName:gyms[0]||'',title:'',query:'',part:'전체',kind:'전체',exerciseId:'',machineId:'',weight:0,reps:10,unit:'kg',completedAt:quickTime(),sets:[],editIndex:-1,workoutId:null,showAtlas:false});
+export const emptyQuickWorkout=(date,gyms=[])=>({date,gymName:gyms[0]||'',title:'',query:'',part:'전체',kind:'전체',exerciseId:'',machineId:'',weight:0,reps:10,unit:'kg',completedAt:quickTime(date),sets:[],editIndex:-1,workoutId:null,showAtlas:false});
 // 3.14.0 내 값: 공용·대표값과 같은 음식을 내가 다른 영양값으로 저장(또는 먹은 기록)하면 내 값이 우선이고 '내 값'으로 표시한다.
 const differs=(a,b)=>['calories','carbs','protein','fat'].some(k=>a[k]!=null&&b[k]!=null&&Math.abs(Number(a[k])-Number(b[k]))>0.05);
 // 3.16.0 AI 입력으로 확정한 음식은 오래돼도 '내 값'으로 남는다(이름+단위가 같으면 하나, 가장 최근 값).
@@ -50,7 +51,7 @@ export const WEIGHT_PARTS=['전체','하체','가슴','등','어깨','팔','복�
 export const catOf=x=>x.part==='유산소'?'러닝·유산소':x.part==='필라테스'?'필라테스':x.part==='요가'?'요가':x.part==='기타'?'기타':'웨이트';
 // 시간으로 기록하는 종목의 입력칸(러닝은 거리·심박, 필라테스는 수업 형태)
 export function timedEditorHTML(selected,s){
- const cat=catOf(selected),now=quickTime();
+ const cat=catOf(selected),now=quickTime(s?.date);
  return `<section class="quick-timed"><div class="section-title"><h3>${cat==='러닝·유산소'?'러닝·유산소 기록':cat==='필라테스'?'필라테스 수업 기록':'운동 기록'}</h3><small>헤일로에 반영돼요</small></div><div class="form-grid">
  <label class="field">${cat==='필라테스'?'수업 시간(분)':'시간(분)'}<input id="q-t-min" type="number" inputmode="decimal" min="1" max="600" placeholder="예: 50"></label>
  ${cat==='러닝·유산소'?'<label class="field">거리(km)<input id="q-t-km" type="number" inputmode="decimal" min="0" step="0.01" placeholder="예: 5.2"></label><label class="field">평균 심박(선택)<input id="q-t-hr" type="number" inputmode="numeric" min="30" max="250" placeholder="예: 150"></label>':''}
