@@ -1,0 +1,5 @@
+# 앱에 넣지 않을 그림(다시 그리기 전까지). 한 줄에 파일 이름 하나. 다시 받으면 이 줄을 지우고 npm run art
+ez-bar-preacher-curl-on-a-preacher-bench.png
+barbell-front-squat.png
+barbell-power-clean.png
+iso-lateral-high-row-machine.png
