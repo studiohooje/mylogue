@@ -87,14 +87,15 @@ function draftRecords(draft,reviewedData){
   return finalized([{kind:'customExercises',record:cleanCustomExercise({...raw,id:`ai-${draft.id}`})}]);
 }
 export function validateDraftRecords(draft,reviewedData){return draftRecords(draft,reviewedData)}
-export async function resolveAIDraft(draft,{action,reviewedData=null,allowDuplicate=false}={}){
+// 4.4.3 점검 C-13: 중복 확인은 앱이 넘겨주는 이 기기 기록(existing)으로 한다(확정마다 서버 기록 전체를 받지 않음). 넘겨주지 않으면 예전처럼 서버에서 읽는다.
+export async function resolveAIDraft(draft,{action,reviewedData=null,allowDuplicate=false,existing:local=null}={}){
   if(!DRAFT_ID.test(draft?.id)||!['confirm','reject'].includes(action))throw Error('AI 초안 처리 방식을 확인해 주세요.');
   const ctx=await context(),draftRef=ctx.fs.doc(ctx.db,'users',ctx.user.uid,'aiDrafts',draft.id);
   let finalRecordIds=[];
   if(action==='confirm'&&!allowDuplicate){
     const proposed=draftRecords(draft,reviewedData);
-    const snapshot=await ctx.fs.getDocsFromServer(ctx.fs.collection(ctx.db,'users',ctx.user.uid,'records'));
-    const existing=[];for(const doc of snapshot.docs){const separator=doc.id.indexOf('~');if(separator<0)continue;const payload=doc.data().payload;if(typeof payload!=='string')continue;try{existing.push({kind:doc.id.slice(0,separator),record:JSON.parse(payload)})}catch{}}
+    const existing=Array.isArray(local)?local:[];
+    if(!Array.isArray(local)){const snapshot=await ctx.fs.getDocsFromServer(ctx.fs.collection(ctx.db,'users',ctx.user.uid,'records'));for(const doc of snapshot.docs){const separator=doc.id.indexOf('~');if(separator<0)continue;const payload=doc.data().payload;if(typeof payload!=='string')continue;try{existing.push({kind:doc.id.slice(0,separator),record:JSON.parse(payload)})}catch{}}}
     const dup=findDuplicate(proposed,existing);if(dup)throw Object.assign(Error(duplicateMessage(dup.kind,dup.record)),{code:'duplicate'});
   }
 

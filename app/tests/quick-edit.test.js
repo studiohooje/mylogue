@@ -18,7 +18,7 @@ test('식사 빠른 수정: 한 끼 전체, 양을 바꾸면 영양값도 같은
  st.rows[1].removed = true; st.time = '13:10'; st.slot = '저녁';
  const out = applyQuickMeal(db, st);
  assert.equal(out.meals.length, 1);
- assert.equal(out.meals[0].servingQty, 105); assert.equal(out.meals[0].calories, 165); assert.equal(out.meals[0].slot, '저녁');
+ assert.equal(out.meals[0].servingQty, 105); assert.equal(out.meals[0].calories, 165); assert.equal(out.meals[0].slot, '점심', '4.4.3: 끼니 칸이 없어져 원래 끼니 값은 그대로');assert.doesNotMatch(quickMealHTML(st),/qm-slot/);
  assert.equal(new Date(out.meals[0].loggedAt).getHours(), 13);
  assert.match(quickMealHTML(st), /data-qm-step="0"/);
  assert.match(quickMealHTML(st), /되돌리기/);

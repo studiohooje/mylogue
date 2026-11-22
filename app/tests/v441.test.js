@@ -35,3 +35,12 @@ test('점검 C-2: 첫 인바디 알림은 체중을 기록하는 사람에게만
  assert.equal(reminderItems({body:[],settings:{}},'2026-11-22').length,0);
  const r=reminderItems({body:[{date:'2026-11-22',weight:80}],settings:{}},'2026-11-22');assert.equal(r.length,1);assert.equal(r[0].key,'remind:inbody-first');
 });
+import {validateDraftRecords,findDuplicate} from '../ai-drafts.js';
+test('점검 C-13: 모두 확정 때 이 기기 기록 + 방금 확정한 기록으로 중복을 잡는다',()=>{
+ const item={date:'2026-11-22',slot:'식사',name:'콩 현미밥',servingQty:210,servingUnit:'g',calories:300,loggedAt:'2026-11-22T12:30:00+09:00'};
+ const a={id:'ai-a',status:'pending',createdAt:'2026-11-22T12:31:00+09:00',type:'meal',parsedData:{items:[item]},uncertainty:{},evidence:{}},b={...a,id:'ai-b'};
+ const existing=[];
+ assert.equal(findDuplicate(validateDraftRecords(a,a.parsedData),existing),null);
+ existing.push(...validateDraftRecords(a,a.parsedData));
+ assert.ok(findDuplicate(validateDraftRecords(b,b.parsedData),existing),'같은 초안 두 번은 두 번째에서 잡힘');
+});
