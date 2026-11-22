@@ -1,5 +1,6 @@
 import {EXERCISE_CATALOG,findExercise,inferTargets} from './catalog.js';
 import {cleanGymPlaces} from './places.js';
+import {cleanMoves} from './pilates.js';
 export const VERSION=1;
 export const uid=()=>globalThis.crypto?.randomUUID?.()??`id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 export const number=(v)=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null};
@@ -39,13 +40,14 @@ export function cleanExercise(raw){
  const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:w2(number(s.weight)),unit:s.unit||'kg',originalWeight:w2(number(s.originalWeight??s.weight)),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:w2(number(s.targetWeight)),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),...(number(s.barKg)!==null&&number(s.barKg)>=0?{barKg:number(s.barKg)}:{}),...(number(s.levelKg)!==null&&number(s.levelKg)>=0?{levelKg:number(s.levelKg),...(s.levelEst===true?{levelEst:true}:{})}:{}),completedAt:String(s.completedAt||'')}));
  if(kind==='strength'&&!sets.length)throw Error('세트를 하나 이상 입력해 주세요.');
  for(const s of sets){if(s.originalWeight===null||s.originalWeight<0||!UNITS.includes(s.originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');if(!UNITS.includes(s.targetUnit)||s.targetWeight!==null&&s.targetWeight<0||s.targetReps!==null&&(s.targetReps<0||!Number.isInteger(s.targetReps)))throw Error('목표 중량·반복·단위를 확인해 주세요.');if(!UNITS.includes(s.unit))throw Error('중량 단위는 kg·lb·숫자 단계 중 하나여야 합니다.');if(s.weight===null||s.reps===null||s.weight<0||s.reps<0||!Number.isInteger(s.reps))throw Error('중량과 반복 횟수를 확인해 주세요.');if(s.rpe!==null&&(s.rpe<0||s.rpe>10))throw Error('RPE는 0~10 사이여야 합니다.')}
- if(kind==='cardio'&&durationMin===null&&distanceKm===null)throw Error('유산소 시간 또는 거리를 입력해 주세요.');
+ const moves=kind==='cardio'?cleanMoves(raw.moves):[];
+ if(kind==='cardio'&&durationMin===null&&distanceKm===null&&!moves.length)throw Error('유산소 시간 또는 거리를 입력해 주세요.');
  const known=EXERCISE_CATALOG.find(x=>x.id===raw.exerciseId)||EXERCISE_CATALOG.find(x=>x.name===name)||findExercise(name);
  const weightBasis=raw.weightBasis==='per-hand'?'per-hand':'total';
  const handCount=weightBasis==='per-hand'&&(raw.handCount===2||raw.loadCount===2)?2:weightBasis==='per-hand'?1:0;
  const repBasis=raw.repBasis==='per-side'?'per-side':'total';
  const effort=number(raw.effort),avgHr=number(raw.avgHr);if(effort!==null&&(effort<1||effort>10))throw Error('느낀 강도는 1~10 사이로 적어 주세요.');if(avgHr!==null&&(avgHr<30||avgHr>250))throw Error('평균 심박을 확인해 주세요.');
- const timed=kind==='cardio'?{effort,avgHr,sessionType:['개인','듀엣','그룹'].includes(raw.sessionType)?raw.sessionType:'',note:String(raw.note??'').trim().slice(0,300),completedAt:String(raw.completedAt||'')}:{};
+ const timed=kind==='cardio'?{effort,avgHr,sessionType:['개인','듀엣','트리오','그룹'].includes(raw.sessionType)?raw.sessionType:'',note:String(raw.note??'').trim().slice(0,300),completedAt:String(raw.completedAt||''),...(moves.length?{moves}:{})}:{};
  return {id:raw.id||uid(),name,exerciseId:String(raw.exerciseId||known?.id||'')||null,machineId:String(raw.machineId||'')||null,...exerciseTargets(raw,name,known),anatomyMapVersion:1,part:String(raw.part||known?.part||'기타'),kind,weightBasis,handCount,repBasis,durationMin,distanceKm,...timed,supersetGroup:String(raw.supersetGroup||'').trim()||null,sets}
 }
 function workoutLoggedAt(raw,date){const t=String(raw.loggedAtTime||'').trim();if(/^\d{2}:\d{2}$/.test(t)){const d=new Date(`${date}T${t}:00`);if(!Number.isNaN(d.getTime()))return d.toISOString()}const v=String(raw.loggedAt||'');if(v&&!Number.isNaN(new Date(v).getTime())){if(raw.loggedAtTime===undefined&&!v.startsWith(date)){const o=new Date(v),d=new Date(`${date}T${String(o.getHours()).padStart(2,'0')}:${String(o.getMinutes()).padStart(2,'0')}:00`);return d.toISOString()}return v}return ''}

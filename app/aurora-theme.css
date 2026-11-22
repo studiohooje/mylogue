@@ -1267,3 +1267,36 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .q-memo:hover{color:#b4c6d8}
 .q-memo.has{color:#d9cdfa;font-size:13px}
 .q-memo-edit{display:flex;gap:6px;align-items:center;margin-top:4px}.q-memo-edit input{flex:1;min-width:0;min-height:40px}
+/* 4.8.0 필라테스 수업 기록(코치로그) */
+.cs-row.pilates{display:block;border:1px solid var(--line,rgba(127,127,127,.25));border-radius:14px;padding:10px;margin-bottom:10px}
+.pm-head{display:grid;grid-template-columns:auto minmax(0,1fr) 60px 84px 32px;gap:6px;margin-bottom:8px;align-items:center}
+.pm-tag{font-size:13px;font-weight:700;color:var(--accent,#b8aaf2)}
+.pm-head select,.pm-head input,.pm-move input,.pm-move select{min-width:0;font-size:16px;min-height:44px}
+.pm-move{border-top:1px dashed var(--line,rgba(127,127,127,.25));padding:8px 0}
+.pm-line{display:grid;grid-template-columns:24px minmax(0,1fr) 120px 32px;gap:6px;align-items:center}
+.pm-line.pm-amt{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:6px}
+.pm-more .pm-line{grid-template-columns:minmax(0,1fr)}
+.pm-amt label,.pm-more .pm-line label{display:flex;flex-direction:column;font-size:12px;gap:2px}
+.pm-no{font-variant-numeric:tabular-nums;font-size:13px;opacity:.7;text-align:center}
+.pm-springrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.pm-springrow select{width:96px}
+.pm-spring{min-width:44px;min-height:44px;border-radius:22px;border:1px solid var(--line,rgba(127,127,127,.35));background:transparent;display:inline-flex;align-items:center;justify-content:center;gap:3px;font-variant-numeric:tabular-nums}
+.pm-spring.on{border-width:2px;border-color:currentColor}
+.pm-dot{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25);vertical-align:-2px}
+.pm-springs{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.pm-more{margin-top:6px}.pm-more summary{min-height:44px;display:flex;align-items:center;font-size:14px;cursor:pointer}
+.pm-props{gap:6px}.chip-check{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 10px;border:1px solid var(--line,rgba(127,127,127,.3));border-radius:18px;font-size:14px}
+.pm-last{min-height:44px;font-size:14px}
+.pm-flow{font-size:12px;opacity:.75;align-self:center}
+.pm-list{margin:6px 0;padding-left:20px;display:grid;gap:8px}
+.pm-list li{line-height:1.45;word-break:keep-all}
+.pm-list small{opacity:.75}.pm-setup{display:block}
+.pm-cue{margin:2px 0;font-size:14px;opacity:.85}
+.pm-obs{display:block}.pm-obs.warn{color:var(--warn,#c0582a)}
+.cd-brief,.cd-assess{margin:12px 0;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(127,127,127,.08))}
+.cd-assess em{font-style:normal;font-size:12px;opacity:.7;margin-left:6px}
+.pa-form fieldset{border:0;padding:0;margin:8px 0}.pa-form legend{font-size:14px;font-weight:600;margin-bottom:4px}
+.pa-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px;align-items:center;min-height:44px;font-size:14px;margin-bottom:6px}
+.pa-row select{font-size:16px;min-height:44px}
+.pa-diff{margin:4px 0;padding-left:18px;font-size:14px}
+@media (max-width:380px){.pm-head{grid-template-columns:auto minmax(0,1fr) 52px 76px 28px}.pm-line{grid-template-columns:20px minmax(0,1fr) 104px 28px}}

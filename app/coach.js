@@ -3,6 +3,7 @@
 // 코치 쪽 데이터(회원·템플릿·보낸 수업·그룹·예약·알림 설정)는 코치 본인 settings 키로 저장해 기존 동기화를 그대로 탄다.
 // 계정 사이 데이터(초대·연동·수업 초안·회신)는 coach-cloud.js가 Firestore로 주고받는다.
 import {isAdminUser} from './admin.js';
+import {cleanMoves, movesForMember, movesSummary, pilatesRowHTML, moveNamesDatalist, readMoves, lastMove, briefingHTML, assessmentHTML} from './pilates.js';
 
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -42,24 +43,26 @@ export function clientStatus(c, links=[]){
 export function rowsToExercises(rows=[]){
  return rows.filter(r => String(r.name||'').trim()).map(r => {
   const name = String(r.name).trim();
+  if(r.kind==='pilates'){ const moves = cleanMoves(r.moves); return {name, part:'필라테스', kind:'cardio', durationMin:Number(r.min)||null, distanceKm:null, sessionType:r.type||'', note:String(r.note||'').slice(0,300), effort:null, avgHr:null, sets:[], ...(moves.length?{moves}:{})}; }
   if(r.kind==='timed') return {name, kind:'cardio', durationMin:Number(r.min)||null, distanceKm:null, sessionType:r.type||'', note:String(r.note||'').slice(0,300), effort:null, avgHr:null, sets:[]};
   const n = Math.max(1, Math.min(20, Math.round(Number(r.sets)||1)));
   return {name, kind:'strength', sets:Array.from({length:n}, () => ({weight:Number(r.weight)||0, unit:'kg', reps:Math.max(0, Math.round(Number(r.reps)||0))}))};
  });
 }
 export function exercisesToRows(ex=[]){
- return ex.map(e => e.kind==='cardio' ? {kind:'timed', name:e.name, min:e.durationMin??'', type:e.sessionType||'', note:e.note||''} : {kind:'strength', name:e.name, weight:e.sets?.[0]?.weight??'', reps:e.sets?.[0]?.reps??'', sets:(e.sets||[]).length||1});
+ return ex.map(e => e.kind==='cardio' && (e.moves?.length || e.part==='필라테스') ? {kind:'pilates', name:e.name, min:e.durationMin??'', type:e.sessionType||'', note:e.note||'', moves:structuredClone(e.moves||[])} : e.kind==='cardio' ? {kind:'timed', name:e.name, min:e.durationMin??'', type:e.sessionType||'', note:e.note||''} : {kind:'strength', name:e.name, weight:e.sets?.[0]?.weight??'', reps:e.sets?.[0]?.reps??'', sets:(e.sets||[]).length||1});
 }
 export function sessionSummary(s){
  const ex = s.exercises||[], sets = ex.reduce((a, e) => a + (e.kind==='cardio' ? 0 : (e.sets||[]).length), 0), min = ex.reduce((a, e) => a + (e.kind==='cardio' ? Number(e.durationMin)||0 : 0), 0);
- return [s.title||'수업', ex.length ? `${ex.length}종목` : '', sets ? `${sets}세트` : '', min ? `${min}분` : ''].filter(Boolean).join(' · ');
+ const moves = ex.flatMap(e => e.moves||[]);
+ return [s.title||'수업', ex.length ? `${ex.length}종목` : '', sets ? `${sets}세트` : '', moves.length ? movesSummary(moves) : '', min ? `${min}분` : ''].filter(Boolean).join(' · ');
 }
 export const emptySend = (date, clientIds=[]) => ({date, time:'', title:'', clientIds, rows:[{kind:'strength', name:'', weight:'', reps:'', sets:3}], memberNote:'', privateNote:'', ptOff:[], step:'edit', scheduleId:''});
 
 // 회원에게 갈 초안(검토함 형식). 회원이 확정해야 회원 기록이 된다.
 export function sessionDraft(session, client, {trainerUid, trainerName}){
  const at = session.time ? `${session.date}T${session.time}:00` : null;
- return {type:'workout', sourceModel:'trainer', originalUtterance:`${trainerName} 코치님이 보낸 수업`.slice(0,4000), parsedData:{date:session.date, ...(session.time?{loggedAtTime:session.time}:{}), title:session.title||'코치 수업', gymName:session.place||'', note:session.memberNote||'', exercises:session.exercises}, uncertainty:{}, evidence:{trainerUid, trainerName, sessionId:session.id, clientId:client.id, ptDeduct:!(session.ptOff||[]).includes(client.id), memberNote:session.memberNote||''}, at};
+ return {type:'workout', sourceModel:'trainer', originalUtterance:`${trainerName} 코치님이 보낸 수업`.slice(0,4000), parsedData:{date:session.date, ...(session.time?{loggedAtTime:session.time}:{}), title:session.title||'코치 수업', gymName:session.place||'', note:session.memberNote||'', exercises:(session.exercises||[]).map(e => e.moves?.length ? {...e, moves:movesForMember(e.moves)} : e)}, uncertainty:{}, evidence:{trainerUid, trainerName, sessionId:session.id, clientId:client.id, ptDeduct:!(session.ptOff||[]).includes(client.id), memberNote:session.memberNote||''}, at};
 }
 
 // 회원 회신(sessionAcks)을 코치 데이터에 반영: 상태 갱신, 확정·고침이면 PT 차감(한 번만)
@@ -110,13 +113,13 @@ export const coachNav = () => [['coach-clients','회원','body'], ['coach-dash',
 export function coachToggleHTML(on){ return `<div class="coach-toggle" role="group" aria-label="모드 전환"><button type="button" class="${on?'':'active'}" data-coach-mode="off" aria-pressed="${!on}">마이로그</button><button type="button" class="${on?'active':''}" data-coach-mode="on" aria-pressed="${on}">코치로그</button></div>`; }
 
 const badge = ([t, k]) => `<span class="status-badge ${k}">${esc(t)}</span>`;
-export function coachClientsHTML(data, {links=[], open='', today='', form=false}={}){
+export function coachClientsHTML(data, {links=[], open='', today='', form=false, assess=''}={}){
  const used = data.clients.length;
  const list = data.clients.map(c => { const left = ptLeft(c), last = data.sessions.filter(s => (s.targets||[]).some(t => t.clientId===c.id)).map(s => s.date).sort().at(-1); return `<button type="button" class="card coach-client" data-coach-client="${esc(c.id)}"><div class="cc-main"><b>${esc(c.name)}</b>${badge(clientStatus(c, links))}${(c.groups||[]).map(g => `<span class="cc-tag">${esc(g)}</span>`).join('')}</div><div class="cc-sub"><span>${last?`최근 수업 ${md(last)}`:'아직 수업 없음'}</span>${left!==null?`<span class="cc-pt${left<=3?' low':''}">PT 남은 ${left}회${c.pt?.expiresAt?` · ~${md(c.pt.expiresAt)}`:''}</span>`:''}</div></button>`; }).join('');
  return `<div class="page-head coach-head"><div><span class="eyebrow">Coach</span><h2>회원</h2><p>관리하는 회원을 모아 보고, 수업을 보내요. 회원 ${used}/${SEATS_FREE}명 · 무료</p></div></div>
  <section class="section"><div class="actions"><button type="button" class="button" data-coach-new="invite">＋ 앱 회원 초대</button><button type="button" class="button secondary" data-coach-new="offline">＋ 미가입 회원으로 기록 시작</button></div>${form?clientFormHTML(form):''}</section>
  <section class="section coach-list">${list||'<p class="hint">아직 회원이 없어요. 앱을 쓰는 회원은 초대하고, 앱이 없는 회원은 이름만 넣어 먼저 기록해 둘 수 있어요.</p>'}</section>
- ${open?clientDetailHTML(data, data.clients.find(c => c.id===open), {links, today}):''}`;
+ ${open?clientDetailHTML(data, data.clients.find(c => c.id===open), {links, today, assess}):''}`;
 }
 function clientFormHTML(kind){
  return `<form id="coach-client-form" class="card coach-form" data-kind="${esc(kind)}"><h3>${kind==='invite'?'앱 회원 초대':'미가입 회원'}</h3><label class="field">이름<input name="name" required maxlength="40" placeholder="예: 김회원"></label><label class="field">목표(선택)<input name="goal" maxlength="120" placeholder="예: 체지방 줄이기, 데드리프트 100kg"></label><label class="field">주의사항·부상(선택)<input name="cautions" maxlength="200" placeholder="예: 왼쪽 무릎 통증"></label><div class="grid2"><label class="field">PT 총 회차(선택)<input name="ptTotal" type="number" inputmode="numeric" min="0" max="500"></label><label class="field">만료일(선택)<input name="ptExpires" type="date" data-no-when></label></div><div class="actions"><button class="button" type="submit">${kind==='invite'?'추가하고 초대 코드 만들기':'추가'}</button><button type="button" class="button secondary" data-coach-new="">취소</button></div>${kind==='offline'?'<p class="hint">나중에 회원이 앱을 쓰게 되면 초대해서, 미리 기록한 수업을 한꺼번에 보낼 수 있어요.</p>':''}</form>`;
@@ -126,7 +129,7 @@ function inviteHTML(c){
  const url = `https://studiohooje.github.io/mylogue/?invite=${c.inviteCode}`;
  return `<div class="invite-box"><div><small>초대 코드 · ${c.inviteExpires?`${md(String(c.inviteExpires).slice(0,10))}까지`:'7일'}</small><b class="invite-code">${esc(c.inviteCode)}</b></div><div class="invite-qr" aria-label="초대 QR">${qrSVG(url)}</div><div class="actions"><button type="button" class="button secondary small" data-copy="${esc(url)}">링크 복사</button><button type="button" class="button secondary small" data-copy="${esc(c.inviteCode)}">코드 복사</button><button type="button" class="text-button" data-coach-invite="${esc(c.id)}">새로 만들기</button></div></div>`;
 }
-export function clientDetailHTML(data, c, {links=[], today=''}={}){
+export function clientDetailHTML(data, c, {links=[], today='', assess=''}={}){
  if(!c) return '';
  const left = ptLeft(c), st = clientStatus(c, links), link = links.find(l => l.id===c.linkId);
  const hist = data.sessions.filter(s => (s.targets||[]).some(t => t.clientId===c.id)).sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 12);
@@ -140,6 +143,7 @@ export function clientDetailHTML(data, c, {links=[], today=''}={}){
  ${link?.status==='active'?`<div class="cd-scope"><small>회원이 동의한 범위</small><p>${[['sessions','보낸 수업'], ['workouts','따로 한 운동'], ['diet','식단'], ['body','수치']].map(([k, l]) => `<span class="scope-chip${scope[k]?' on':''}">${scope[k]?'✓':'—'} ${l}</span>`).join('')}</p>${link.shared?sharedHTML(link.shared, scope):''}<p class="hint">수업 밖 기록은 회원이 켤 때만 보여요. 회원에게 공유를 절대 강요해선 안 됩니다.</p></div>`:''}
  <div class="cd-hist"><small>보낸 수업</small>${hist.length?hist.map(s => { const t = (s.targets||[]).find(x => x.clientId===c.id); return `<div class="cd-row"><span>${md(s.date)} · ${esc(sessionSummary(s))}</span>${badge(tLabel[t.status]||['—','info'])}${t.edits?`<em>${esc(t.edits)}</em>`:''}</div>`; }).join(''):'<p class="hint">아직 보낸 수업이 없어요.</p>'}</div>
  ${fb.length?`<div class="cd-fb"><small>회원 피드백</small>${fb.slice(0,5).map(f => `<p>${f.effort?`강도 ${f.effort}/10`:''}${f.pain?.length?` · 불편: ${esc(f.pain.join(', '))}`:''}${f.note?` · “${esc(f.note)}”`:''}</p>`).join('')}</div>`:''}
+ ${briefingHTML(data, c, {today})}${assessmentHTML(c, {open:assess===c.id})}
  <div class="actions"><button type="button" class="button" data-coach-send-to="${esc(c.id)}">이 회원에게 수업 입력</button>${link?.status==='active'?`<button type="button" class="text-button danger" data-coach-unlink="${esc(link.id)}">연동 끊기</button>`:''}<button type="button" class="text-button" data-coach-remove="${esc(c.id)}">목록에서 빼기</button></div></section>`;
 }
 function sharedHTML(sh, scope){
@@ -160,7 +164,8 @@ export function coachSendHTML(data, st, {links=[]}={}){
   const ex = rowsToExercises(st.rows), s = {title:st.title, exercises:ex};
   return `<div class="page-head coach-head"><div><span class="eyebrow">Coach</span><h2>보내기 확인</h2></div></div><section class="section card coach-confirm">${targets.map(c => { const off = (st.ptOff||[]).includes(c.id), left = ptLeft(c), linked = clientStatus(c, links)[0]==='연동'; return `<div class="cf-row"><p><b>${esc(c.name)}</b>님에게 ${md(st.date)} 수업(${esc(sessionSummary(s))})을 ${linked?'보낼까요?':'미리 기록해 둘까요? <small>(미가입 — 연동하면 한꺼번에 보내요)</small>'}</p>${off?'<p class="warn">⚠ 회차 차감이 꺼져 있어요. 이 수업은 PT 횟수에서 빠지지 않아요.</p>':left!==null?`<p class="hint">PT 1회 차감(남은 ${left}회 → ${Math.max(0, left-1)}회) · 회원이 확정하면 차감돼요</p>`:''}</div>`; }).join('')}<div class="actions"><button type="button" class="button" id="coach-send-go">보내기</button><button type="button" class="button secondary" data-coach-step="edit">고치기</button></div></section>`;
  }
- const row = (r, i) => r.kind==='timed'
+ const one = targets.length===1 ? targets[0].id : '';
+ const row = (r, i) => r.kind==='pilates' ? pilatesRowHTML(r, i, {lastOf:name => name ? lastMove(data.sessions, one, name) : null}) : r.kind==='timed'
   ? `<div class="cs-row timed" data-row="${i}"><input data-r="name" value="${esc(r.name)}" placeholder="수업·종목(예: 필라테스 리포머)" aria-label="종목"><input data-r="min" type="number" inputmode="numeric" min="0" value="${esc(r.min)}" placeholder="분" aria-label="분"><select data-r="type" aria-label="형태">${['','개인','듀엣','그룹'].map(t => `<option ${r.type===t?'selected':''} value="${t}">${t||'형태'}</option>`).join('')}</select><input data-r="note" value="${esc(r.note)}" placeholder="메모(기구·동작)" aria-label="메모"><button type="button" class="text-button" data-cs-del="${i}" aria-label="줄 지우기">×</button></div>`
   : `<div class="cs-row" data-row="${i}"><input data-r="name" value="${esc(r.name)}" placeholder="종목(예: 스쿼트)" aria-label="종목"><input data-r="weight" type="number" inputmode="decimal" min="0" step="0.5" value="${esc(r.weight)}" placeholder="kg" aria-label="무게"><input data-r="reps" type="number" inputmode="numeric" min="0" value="${esc(r.reps)}" placeholder="회" aria-label="횟수"><input data-r="sets" type="number" inputmode="numeric" min="1" max="20" value="${esc(r.sets)}" placeholder="세트" aria-label="세트 수"><button type="button" class="text-button" data-cs-del="${i}" aria-label="줄 지우기">×</button></div>`;
  return `<div class="page-head coach-head"><div><span class="eyebrow">Coach</span><h2>수업 입력</h2><p>회원이 확정해야 회원 기록이 돼요.</p></div></div>
@@ -168,14 +173,15 @@ export function coachSendHTML(data, st, {links=[]}={}){
  <div class="card"><h3>대상</h3>${clients.length?`<div class="chips">${clients.map(c => `<button type="button" class="chip${sel.has(c.id)?' active':''}" data-cs-client="${esc(c.id)}" aria-pressed="${sel.has(c.id)}">${esc(c.name)}</button>`).join('')}</div>${data.groups.length?`<div class="chips cs-groups"><small>그룹</small>${data.groups.map(g => `<button type="button" class="chip" data-cs-group="${esc(g.id)}">${esc(g.name)} ${g.clientIds.length}명</button>`).join('')}</div>`:''}${sel.size>1?`<button type="button" class="text-button" id="cs-save-group">이 회원들을 그룹으로 저장</button>`:''}`:'<p class="hint">먼저 ‘회원’에서 회원을 추가해 주세요.</p>'}</div>
  ${tpls.length||last?`<div class="card"><h3>불러오기</h3><div class="chips">${last?`<button type="button" class="chip" data-cs-load="session:${esc(last.id)}">지난 수업 · ${md(last.date)} ${esc(last.title||'')}</button>`:''}${tpls.map(t => `<button type="button" class="chip" data-cs-load="tpl:${esc(t.id)}">${t.clientId?'':'공용 · '}${esc(t.title)}</button>`).join('')}</div></div>`:''}
  <div class="card"><div class="grid2"><label class="field">날짜<input name="date" type="date" value="${esc(st.date)}"></label><label class="field">시각(선택)<input name="time" type="time" value="${esc(st.time)}"></label></div><label class="field">수업 이름<input name="title" value="${esc(st.title)}" maxlength="60" placeholder="예: 하체 PT, 리포머 그룹"></label>
- <div class="cs-rows">${(st.rows||[]).some(r => r.kind!=='timed')?'<div class="cs-row cs-label" aria-hidden="true"><span>근력 종목</span><span>kg</span><span>회</span><span>세트</span><span></span></div>':''}${(st.rows||[]).map(row).join('')}</div><div class="actions"><button type="button" class="button secondary small" data-cs-add="strength">＋ 근력 종목</button><button type="button" class="button secondary small" data-cs-add="timed">＋ 시간 종목(필라테스·요가 등)</button></div></div>
+ <div class="cs-rows">${(st.rows||[]).some(r => r.kind==='strength')?'<div class="cs-row cs-label" aria-hidden="true"><span>근력 종목</span><span>kg</span><span>회</span><span>세트</span><span></span></div>':''}${(st.rows||[]).map(row).join('')}</div>${moveNamesDatalist()}<div class="actions"><button type="button" class="button secondary small" data-cs-add="strength">＋ 근력 종목</button><button type="button" class="button secondary small" data-cs-add="pilates">＋ 필라테스 수업</button><button type="button" class="button secondary small" data-cs-add="timed">＋ 시간 종목(요가 등)</button></div></div>
+ ${one?briefingHTML(data, targets[0], {today:st.date}):''}
  <div class="card"><label class="field">회원에게 보이는 코멘트<textarea name="memberNote" rows="2" maxlength="300" placeholder="예: 무릎 각도 신경 쓰기, 다음엔 5kg 올려요">${esc(st.memberNote)}</textarea></label><label class="field">나만 보는 메모<textarea name="privateNote" rows="2" maxlength="300">${esc(st.privateNote)}</textarea></label></div>
  ${targets.length?`<div class="card"><h3>PT 회차 차감</h3>${targets.map(c => { const on = !(st.ptOff||[]).includes(c.id); return `<label class="check-row"><input type="checkbox" data-cs-pt="${esc(c.id)}" ${on?'checked':''}> ${esc(c.name)} ${ptLeft(c)!==null?`<small>(남은 ${ptLeft(c)}회)</small>`:''}</label>`; }).join('')}<p class="hint">기본으로 켜져 있어요. 끄면 보내기 전에 한 번 더 알려 드려요.</p></div>`:''}
  <div class="actions"><button class="button" type="submit" ${targets.length?'':'disabled'}>보내기 전에 확인</button><button type="button" class="button secondary" id="cs-save-tpl">템플릿으로 저장</button></div></form>`;
 }
 export function readSendForm(form, st){
  if(!form) return st;
- const f = form.elements, rows = [...form.querySelectorAll('.cs-row')].map(el => { const g = k => el.querySelector(`[data-r="${k}"]`)?.value ?? ''; return el.classList.contains('timed') ? {kind:'timed', name:g('name'), min:g('min'), type:g('type'), note:g('note')} : {kind:'strength', name:g('name'), weight:g('weight'), reps:g('reps'), sets:g('sets')}; });
+ const f = form.elements, rows = [...form.querySelectorAll('.cs-row:not(.cs-label)')].map(el => { const g = k => el.querySelector(`:scope > .pm-head [data-r="${k}"], :scope > [data-r="${k}"]`)?.value ?? ''; if(el.classList.contains('pilates')){ const prev = st.rows?.[Number(el.dataset.row)]; return {kind:'pilates', name:g('name'), min:g('min'), type:g('type'), note:g('note'), moves:readMoves(el, prev?.moves||[])}; } return el.classList.contains('timed') ? {kind:'timed', name:g('name'), min:g('min'), type:g('type'), note:g('note')} : {kind:'strength', name:g('name'), weight:g('weight'), reps:g('reps'), sets:g('sets')}; });
  const ptOff = [...form.querySelectorAll('[data-cs-pt]')].filter(x => !x.checked).map(x => x.dataset.csPt);
  return {...st, date:f.date?.value||st.date, time:f.time?.value||'', title:f.title?.value||'', memberNote:f.memberNote?.value||'', privateNote:f.privateNote?.value||'', rows, ptOff};
 }
