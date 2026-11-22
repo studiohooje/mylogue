@@ -27,7 +27,21 @@ export function timeSlots(v, now = new Date()){
 }
 
 function dateChips(id){ return `<div class="when-row" data-when-row="date">${[['d:-1','어제'],['d:0','오늘'],['d:1','내일']].map(([c, l]) => `<button type="button" class="when-chip" data-when="${c}" data-when-target="${id}">${l}</button>`).join('')}</div>`; }
-function timeChips(id){ const now = new Date(); return `<div class="when-row" data-when-row="time"><button type="button" class="when-chip strong" data-when="t:now" data-when-target="${id}">지금</button><button type="button" class="when-chip" data-when="t:hour" data-when-target="${id}">${pad(now.getHours())}:00</button>${STEPS.map(([m, l]) => `<button type="button" class="when-chip step" data-when="t:${m}" data-when-target="${id}">${l}</button>`).join('')}<button type="button" class="when-chip grid" data-when="grid" data-when-target="${id}" aria-expanded="false">시간표</button></div><div class="when-grid" data-when-grid="${id}" hidden></div>`; }
+function timeChips(id){ const now = new Date(); return `<div class="when-row" data-when-row="time"><button type="button" class="when-chip strong" data-when="t:now" data-when-target="${id}">지금</button><button type="button" class="when-chip" data-when="t:hour" data-when-target="${id}">${pad(now.getHours())}:00</button>${STEPS.map(([m, l]) => `<button type="button" class="when-chip step" data-when="t:${m}" data-when-target="${id}">${l}</button>`).join('')}</div><div class="when-tp" data-when-tp="${id}" hidden></div>`; }
+// 4.2.1 시각 고르기 판(대표님: 분이 현재 분에 맞춰져 00·30분 찾기가 불편) — 오전/오후·시(1~12)·분 10분 단위 + 세밀 조정 + 직접 입력
+export function timePanelHTML(id, v){
+ const [H, M] = (/^\d{2}:\d{2}/.test(v||'') ? v : hm(new Date())).split(':').map(Number), pm = H>=12, h12 = H%12||12;
+ const b = (code, label, on, cls='') => `<button type="button" class="tp-btn${on?' on':''}${cls?' '+cls:''}" data-when="${code}" data-when-target="${id}" aria-pressed="${!!on}">${label}</button>`;
+ return `<div class="tp-row tp-ap">${b('ap:am','오전',!pm)}${b('ap:pm','오후',pm)}</div><div class="tp-label">시</div><div class="tp-grid tp-hours">${[12,1,2,3,4,5,6,7,8,9,10,11].map(n => b(`hh:${n}`, `${n}`, n===h12)).join('')}</div><div class="tp-label">분</div><div class="tp-grid tp-mins">${[0,10,20,30,40,50].map(n => b(`mm:${n}`, pad(n), n===M)).join('')}</div><div class="tp-row tp-fine">${b('mf:-5','−5분','', 'fine')}${b('mf:-1','−1분','', 'fine')}<b class="tp-now">${relTime(`${pad(H)}:${pad(M)}`)}</b>${b('mf:1','+1분','', 'fine')}${b('mf:5','+5분','', 'fine')}</div><div class="tp-row tp-foot">${b('tpn','직접 입력','', 'ghost')}${b('tpx','완료','', 'done')}</div>`;
+}
+function timeButton(input){
+ if(input.type!=='time' || input.nextElementSibling?.classList?.contains('when-timebtn')) return;
+ input.classList.add('when-native');
+ const btn = document.createElement('button');
+ btn.type = 'button'; btn.className = 'when-timebtn'; btn.dataset.when = 'tp'; btn.dataset.whenTarget = input.id; btn.dataset.whenBtn = input.id; btn.setAttribute('aria-expanded', 'false');
+ btn.textContent = relTime(input.value) || '시각 고르기';
+ input.insertAdjacentElement('afterend', btn);
+}
 
 function ensureId(input){ if(!input.id) input.id = `when-${Math.random().toString(36).slice(2, 9)}`; return input.id; }
 function capOf(input){ return input.type==='date' ? relDate(input.value) : input.type==='time' ? relTime(input.value) : input.value ? `${relDate(input.value.slice(0,10))} ${relTime(input.value.slice(11,16))}` : ''; }
@@ -50,7 +64,8 @@ export function enhanceWhenInputs(root = document){
    if(!lab) continue;
    inp.dataset.whenDone = '1'; ensureId(inp);
    lab.classList.add('when-pill');
-   if(!lab.querySelector('.when-cap')){ const cap = document.createElement('small'); cap.className = 'when-cap'; cap.dataset.whenCap = inp.id; cap.textContent = capOf(inp); lab.append(cap); }
+   if(inp.type==='time') timeButton(inp);
+   else if(!lab.querySelector('.when-cap')){ const cap = document.createElement('small'); cap.className = 'when-cap'; cap.dataset.whenCap = inp.id; cap.textContent = capOf(inp); lab.append(cap); }
    main.append(lab);
   }
   const chips = document.createElement('div');
@@ -65,7 +80,7 @@ export function enhanceWhenInputs(root = document){
   t.dataset.whenDone = '1'; ensureId(t);
   const lab = t.closest('label') || t, block = document.createElement('div');
   block.className = 'when-block'; block.innerHTML = '<div class="when-title">언제</div><div class="when-main one"></div>';
-  lab.parentNode.insertBefore(block, lab); lab.classList.add('when-pill'); block.querySelector('.when-main').append(lab);
+  lab.parentNode.insertBefore(block, lab); lab.classList.add('when-pill'); timeButton(t); block.querySelector('.when-main').append(lab);
   const chips = document.createElement('div'); chips.className = 'when-chips'; chips.innerHTML = timeChips(t.id); block.append(chips);
  }
  bindCaptions();
@@ -83,6 +98,8 @@ function read(input){
 }
 function write(input, d){
  input.value = input.type==='date' ? ymd(d) : input.type==='time' ? hm(d) : `${ymd(d)}T${hm(d)}`;
+ const btn = document.querySelector(`[data-when-btn="${input.id}"]`); if(btn) btn.textContent = relTime(input.value) || '시각 고르기';
+ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(tp && !tp.hidden) tp.innerHTML = timePanelHTML(input.id, input.value);
  input.dispatchEvent(new Event('input', {bubbles:true}));
  input.dispatchEvent(new Event('change', {bubbles:true}));
 }
@@ -91,6 +108,14 @@ export function handleWhenClick(target){
  const b = target?.closest?.('[data-when]'); if(!b || !b.dataset?.when || typeof b.closest!=='function') return false;
  const input = document.getElementById(b.dataset.whenTarget || b.closest('[data-when-for]')?.dataset.whenFor || ''); if(!input || input.disabled) return true;
  const code = b.dataset.when;
+ if(code==='tp' || code==='tpx'){ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(!tp) return true; const open = code==='tp' ? tp.hidden : false; tp.hidden = !open; if(open) tp.innerHTML = timePanelHTML(input.id, input.value); document.querySelector(`[data-when-btn="${input.id}"]`)?.setAttribute('aria-expanded', String(open)); return true; }
+ if(code==='tpn'){ input.classList.remove('when-native'); input.focus?.(); input.showPicker?.(); const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(tp) tp.hidden = true; return true; }
+ if(/^(ap|hh|mm|mf):/.test(code)){ const [k, a] = code.split(':'); const [H0, M0] = (/^\d{2}:\d{2}/.test(input.value||'') ? input.value : hm(new Date())).split(':').map(Number); let H = H0, M = M0;
+  if(k==='ap') H = a==='pm' ? (H%12)+12 : H%12;
+  if(k==='hh'){ const n = Number(a)%12; H = (H>=12 ? 12 : 0) + n; }
+  if(k==='mm') M = Number(a);
+  if(k==='mf'){ let t = H*60 + M + Number(a); t = (t + 1440) % 1440; H = Math.floor(t/60); M = t%60; }
+  const d = new Date(); d.setHours(H, M, 0, 0); write(input, d); return true; }
  if(code==='grid'){ const g = document.querySelector(`[data-when-grid="${input.id}"]`); if(!g) return true; const open = g.hidden; g.hidden = !open; b.setAttribute('aria-expanded', String(open)); if(open) g.innerHTML = timeSlots(input.type==='datetime-local'?String(input.value).slice(11,16):input.value).map(t => `<button type="button" class="when-slot${t===input.value?' on':''}" data-when="s:${t}" data-when-target="${input.id}">${relTime(t)}</button>`).join(''); return true; }
  if(code.startsWith('s:')){ const t = code.slice(2); input.value = input.type==='datetime-local' ? `${(input.value||ymd(new Date())).slice(0,10)}T${t}` : t; write(input, read(input)); const g = document.querySelector(`[data-when-grid="${input.id}"]`); if(g){ g.querySelectorAll('.when-slot').forEach(x => x.classList.toggle('on', x.dataset.when===code)); } return true; }
  const [kind, arg] = code.split(':'), now = new Date();

@@ -10,6 +10,8 @@ const r1 = v => Math.round(v*10)/10;
 const pad = n => String(n).padStart(2, '0');
 const hhmm = iso => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '12:00' : `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const SLOTS = ['아침','점심','저녁','간식','보충제','식사'];
+// 4.2.1 단위 바로잡기(예: 1 mL로 잘못 저장된 '1회'). 단위만 바꾸고 영양값은 그대로다.
+export const UNITS = ['회','개','g','ml','인분','공기','그릇','컵','잔','팩','봉','캔','병','조각','큰술','스쿱'];
 const NUT = ['calories','carbs','protein','fat'];
 
 // ── 식사 ──
@@ -25,13 +27,13 @@ export function readQuickMeal(st, root){
  if(!root) return st;
  const v = id => root.querySelector('#'+id)?.value;
  st.newDate = v('qm-date') || st.newDate; st.slot = v('qm-slot') || st.slot; st.time = v('qm-time') || st.time;
- st.rows.forEach((r, i) => { const q = Number(v(`qm-qty-${i}`)); if(Number.isFinite(q) && q>0) r.qty = q; });
+ st.rows.forEach((r, i) => { const q = Number(v(`qm-qty-${i}`)); if(Number.isFinite(q) && q>0) r.qty = q; const u = v(`qm-unit-${i}`); if(u) r.unit = u; });
  return st;
 }
 export function quickMealHTML(st){
  const live = st.rows.filter(r => !r.removed), tot = live.reduce((s, r) => { const t = rowTotals(r); for(const k of NUT) s[k] += t[k]||0; return s; }, {calories:0,carbs:0,protein:0,fat:0});
  return `<div class="qe"><div class="qe-meta"><label class="field">날짜<input id="qm-date" type="date" value="${h(st.newDate)}"></label><label class="field">끼니<select id="qm-slot">${[...new Set([st.slot, ...SLOTS])].map(s=>`<option ${s===st.slot?'selected':''}>${h(s)}</option>`).join('')}</select></label><label class="field">먹은 시각<input id="qm-time" type="time" value="${h(st.time)}"></label></div>
-<ul class="qe-rows">${st.rows.map((r, i) => { const t = rowTotals(r); return `<li class="qe-row${r.removed?' removed':''}">${r.removed ? `<span class="qe-name"><s>${h(r.name)}</s> <small>빼기로 함</small></span><button type="button" class="text-button" data-qm-undo="${i}">되돌리기</button>` : `<div class="qe-name"><b>${h(r.name)}</b><small>${fmt(t.calories)}kcal · 탄${fmt(t.carbs)} 단${fmt(t.protein)} 지${fmt(t.fat)}</small></div><div class="qe-step"><button type="button" class="qe-btn" data-qm-step="${i}" data-d="-1" aria-label="${h(r.name)} 줄이기">−</button><input id="qm-qty-${i}" type="number" inputmode="decimal" min="0.1" step="any" value="${h(r.qty)}" aria-label="${h(r.name)} 양"><span class="qe-unit">${h(r.unit)}</span><button type="button" class="qe-btn" data-qm-step="${i}" data-d="1" aria-label="${h(r.name)} 늘리기">＋</button></div><div class="qe-row-actions"><button type="button" class="text-button" data-meal-edit="${h(r.id)}">영양값 고치기</button><button type="button" class="text-button qe-del" data-qm-remove="${i}">빼기</button></div>`}</li>`; }).join('')}</ul>
+<ul class="qe-rows">${st.rows.map((r, i) => { const t = rowTotals(r); return `<li class="qe-row${r.removed?' removed':''}">${r.removed ? `<span class="qe-name"><s>${h(r.name)}</s> <small>빼기로 함</small></span><button type="button" class="text-button" data-qm-undo="${i}">되돌리기</button>` : `<div class="qe-name"><b>${h(r.name)}</b><small>${fmt(t.calories)}kcal · 탄${fmt(t.carbs)} 단${fmt(t.protein)} 지${fmt(t.fat)}</small></div><div class="qe-step"><button type="button" class="qe-btn" data-qm-step="${i}" data-d="-1" aria-label="${h(r.name)} 줄이기">−</button><input id="qm-qty-${i}" type="number" inputmode="decimal" min="0.1" step="any" value="${h(r.qty)}" aria-label="${h(r.name)} 양"><select id="qm-unit-${i}" class="qe-unit-sel" aria-label="${h(r.name)} 단위">${[...new Set([r.unit, ...UNITS])].map(u => `<option ${u===r.unit?'selected':''}>${h(u)}</option>`).join('')}</select><button type="button" class="qe-btn" data-qm-step="${i}" data-d="1" aria-label="${h(r.name)} 늘리기">＋</button></div><div class="qe-row-actions"><button type="button" class="text-button" data-meal-edit="${h(r.id)}">영양값 고치기</button><button type="button" class="text-button qe-del" data-qm-remove="${i}">빼기</button></div>`}</li>`; }).join('')}</ul>
 <p class="qe-total">이 식사 <b>${fmt(tot.calories)}kcal</b> · 탄${fmt(tot.carbs)}g 단${fmt(tot.protein)}g 지${fmt(tot.fat)}g</p>
 <p class="hint">양을 바꾸면 칼로리·탄단지도 같은 비율로 바뀌어요. 음식 이름이나 영양값 자체는 ‘영양값 고치기’에서.</p>
 <div class="actions qe-actions"><button type="button" class="button" id="qm-save">저장</button><button type="button" class="button secondary" id="qm-add">음식 추가</button><button type="button" class="text-button qe-del" id="qm-delete-all">이 식사 모두 삭제</button></div></div>`;
@@ -40,8 +42,11 @@ export function applyQuickMeal(db, st){
  const ids = new Set(st.rows.map(r => r.id)), byId = new Map((db.meals||[]).map(m => [m.id, m]));
  if(!/^\d{2}:\d{2}$/.test(st.time)) throw Error('먹은 시각을 확인해 주세요.');
  const at = new Date(`${st.newDate}T${st.time}:00`); if(Number.isNaN(at.getTime())) throw Error('날짜를 확인해 주세요.');
- const kept = st.rows.filter(r => !r.removed).map(r => { const m = byId.get(r.id); if(!m) return null; const t = rowTotals(r); return cleanMeal({...m, planned:m.planned===true||isFuture(at), date:st.newDate, slot:st.slot, loggedAt:at.toISOString(), servingQty:r.qty, ...t, updatedAt:new Date().toISOString()}); }).filter(Boolean);
- return {...db, meals:[...(db.meals||[]).filter(m => !ids.has(m.id)), ...kept]};
+ const kept = st.rows.filter(r => !r.removed).map(r => { const m = byId.get(r.id); if(!m) return null; const t = rowTotals(r); return cleanMeal({...m, planned:m.planned===true||isFuture(at), date:st.newDate, slot:st.slot, loggedAt:at.toISOString(), servingQty:r.qty, servingUnit:r.unit||m.servingUnit, ...t, updatedAt:new Date().toISOString()}); }).filter(Boolean);
+ // 단위를 바로잡았으면 같은 이름·옛 단위의 저장된 음식도 함께 바로잡는다(다음에 또 잘못 나오지 않게)
+ const fixes = st.rows.filter(r => !r.removed && r.unit && byId.get(r.id) && (byId.get(r.id).servingUnit||'회')!==r.unit).map(r => ({name:byId.get(r.id).name, from:byId.get(r.id).servingUnit||'회', to:r.unit}));
+ const foods = fixes.length ? (db.foods||[]).map(f => { const x = fixes.find(z => z.name===f.name && z.from===(f.servingUnit||'회')); return x ? {...f, servingUnit:x.to, updatedAt:new Date().toISOString()} : f; }) : db.foods;
+ return {...db, foods, meals:[...(db.meals||[]).filter(m => !ids.has(m.id)), ...kept]};
 }
 
 // ── 운동 ──

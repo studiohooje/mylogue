@@ -1067,3 +1067,25 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .header .account-chip.account-login .account-text strong,.header .account-chip.account-login .account-text small{color:#edf4f8!important;-webkit-text-fill-color:#edf4f8}
 .header .account-chip.account-login .account-text small{opacity:.7}
 .header .account-chip .account-avatar{background:#ffffff14;color:#edf4f8}
+/* 4.2.1 시각 고르기 판 */
+.when-native{position:absolute!important;opacity:0;pointer-events:none;width:1px!important;height:1px!important;min-height:0!important}
+.when-pill{position:relative}
+.when-timebtn{min-height:44px;width:100%;padding:0 14px;border-radius:12px;border:1px solid #33506d;background:#1c2b46;color:#edf4f8;font:inherit;font-size:17px;font-weight:700;text-align:left;font-variant-numeric:tabular-nums;cursor:pointer}
+.when-timebtn[aria-expanded="true"]{border-color:#8ce4e0}
+.when-tp{display:grid;gap:8px;padding:10px;border-radius:14px;background:#16223b;border:1px solid #8ce4e066}
+.when-tp[hidden]{display:none}
+.tp-row{display:flex;gap:6px;align-items:center}
+.tp-ap .tp-btn{flex:1}
+.tp-label{font-size:12px;color:#8a9bb0;margin-top:2px}
+.tp-grid{display:grid;gap:6px}.tp-hours{grid-template-columns:repeat(6,minmax(0,1fr))}.tp-mins{grid-template-columns:repeat(6,minmax(0,1fr))}
+.tp-btn{min-height:40px;border-radius:10px;border:1px solid #ffffff1a;background:#ffffff0a;color:inherit;font:inherit;font-size:15px;font-variant-numeric:tabular-nums;cursor:pointer}
+.tp-btn.on{background:#8ce4e0;color:#120f24;border-color:transparent;font-weight:700}
+.tp-mins .tp-btn{font-size:16px;font-weight:700}
+.tp-fine{justify-content:space-between}.tp-fine .tp-btn{flex:1;font-size:13px}
+.tp-now{flex:1.4;text-align:center;font-size:16px;font-variant-numeric:tabular-nums}
+.tp-foot{justify-content:space-between}.tp-btn.ghost{background:transparent;border-color:transparent;color:#8ce4e0;font-size:13px;flex:0 0 auto;padding:0 8px}.tp-btn.done{flex:0 0 auto;padding:0 18px;background:#2a3d66;font-weight:700}
+
+/* 4.2.1 AI 입력 버튼: 바깥으로 번지는 빛 제거(옆·아래 버튼 침범). 강조는 안쪽 밝은 테두리선과 아이콘으로만 */
+.ai-magic{box-shadow:inset 0 1px 0 #ffffff26,inset 0 0 0 1px #ffffff0f!important}
+.ai-magic:hover{box-shadow:inset 0 1px 0 #ffffff33,inset 0 0 0 1px #ffffff1f!important;filter:brightness(1.06)}
+.ai-magic .ai-magic-icon{box-shadow:none!important}
