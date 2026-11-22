@@ -1,0 +1,116 @@
+<title>기록 동기부여 문구 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 위 = 공통 규칙(바뀌는 방식·출처), 아래 = 시안 5개. 각 시안은 왼쪽 휴대폰 화면 + 오른쪽 문구 묶음. 앱과 같은 남색 한 가지 테마 */
+:root{--bg:#0c1220;--app:#101625;--card:#18243d;--card2:#1e2c49;--edge:#2c4060;--text:#edf4f8;--muted:#b4c6d8;--dim:#7f90a6;--mint:#8ce4e0;--lav:#b8aaf2;--amber:#f7c270;
+ --sans:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);margin:0;padding-block:32px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:40px}
+h1{font-size:clamp(24px,4vw,32px);margin:0 0 6px;text-wrap:balance}
+h2{font-size:21px;margin:0;text-wrap:balance}
+p{margin:0}
+.lead{color:var(--muted);max-width:780px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.rule{background:var(--card);border:1px solid var(--edge);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--muted)}.rule b{display:block;color:var(--text);margin-bottom:2px}
+section.v{display:grid;gap:14px}
+.vh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.tag{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--mint)}
+.desc{color:var(--muted);max-width:820px;font-size:14px}
+.row{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.row{grid-template-columns:minmax(0,1fr)}.phone{justify-self:center}}
+.phone{width:min(360px,100%);background:var(--app);border:1px solid #2b3c58;border-radius:30px;padding:16px 14px 18px;display:grid;gap:12px;position:relative;overflow:hidden;min-height:520px;align-content:start}
+.ph-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}.ph-top b{color:var(--text);font-size:16px}
+.hero{border-radius:20px;padding:20px 18px;background:radial-gradient(circle at 85% 20%,#7c6db780,transparent 40%),radial-gradient(circle at 20% 90%,#1c7a9270,transparent 50%),#283758;border:1px solid #5d7698;display:grid;gap:8px}
+.hero h3{margin:0;font-size:22px;line-height:1.3}.hero h3 em{font-style:normal;color:var(--mint)}
+.hero .msg{font-size:13.5px;color:#d6e4ef;min-height:44px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.quick span{background:#22324f;border:1px solid #3c5576;border-radius:12px;padding:9px 0;text-align:center;font-size:12.5px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.stat div{background:var(--card);border-radius:12px;padding:10px;font-size:12px;color:var(--dim)}.stat b{display:block;color:var(--text);font-size:16px}
+.tip{background:linear-gradient(135deg,#b8aaf21f,#8ce4e012);border:1px solid #b8aaf255;border-radius:14px;padding:12px 14px;display:grid;gap:6px;font-size:14px}
+.tip small{color:var(--lav);font-weight:700;font-size:11.5px;letter-spacing:.06em}
+.tip .foot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim)}
+.src{border:0;background:none;color:var(--lav);font:inherit;font-size:12px;cursor:pointer;padding:6px 0;min-height:32px}
+.src:focus-visible,.next:focus-visible,.x:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.x{border:0;background:none;color:var(--dim);font:inherit;font-size:12px;cursor:pointer;min-height:32px}
+.toast{position:absolute;left:14px;right:14px;bottom:18px;background:#e8f4f6;color:#142538;border-radius:14px;padding:12px 14px;font-size:14px;box-shadow:0 10px 30px #0008;display:grid;gap:3px}.toast small{color:#4c6278;font-size:12px}
+.empty{border:1px dashed #3c5576;border-radius:16px;padding:18px 14px;text-align:center;display:grid;gap:8px;justify-items:center;color:var(--muted);font-size:14px}
+.empty .act{background:var(--mint);color:#142538;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13.5px}
+.slot{font-size:11.5px;color:var(--amber);font-weight:700;letter-spacing:.06em}
+.next{justify-self:start;border:1px solid #3c5576;background:#1b2a45;color:var(--text);border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer;min-height:40px}
+.pool{background:var(--card);border:1px solid var(--edge);border-radius:16px;padding:14px 16px;display:grid;gap:10px;min-width:0}
+.pool h4{margin:0;font-size:14px;color:var(--muted);font-weight:600}
+.pool ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.pool li.on{color:var(--mint)}
+.pool .note{font-size:12.5px;color:var(--dim)}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#b8aaf22a;color:var(--lav);margin-left:6px;vertical-align:1px}
+.sheet{position:absolute;inset:auto 0 0 0;background:#17223a;border-top:1px solid #3c5576;border-radius:20px 20px 0 0;padding:16px;font-size:13px;color:var(--muted);display:grid;gap:6px;box-shadow:0 -10px 30px #0009}
+.sheet b{color:var(--text)}
+.decide{background:#1f1a2e;border:1px solid #b8aaf266;border-radius:14px;padding:14px 16px;font-size:14px;max-width:900px;display:grid;gap:6px}.decide b{color:var(--lav)}
+@media (prefers-reduced-motion:no-preference){.msg,.tip p,.toast,.empty p{transition:opacity .25s}}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:12px">
+ <h1>기록 동기부여 문구 시안</h1>
+ <p class="lead">문구가 <b>어디에, 어떻게</b> 나타나는지 다섯 가지로 만들었어요. 각 휴대폰 아래 <b>다른 문구 보기</b>를 누르면, 앱에 들어올 때마다 문구가 바뀌는 모습을 미리 볼 수 있어요. 문구는 리서치 문서의 근거를 바탕으로 했고, 유명인 이름은 쓰지 않았어요.</p>
+ <div class="rules">
+  <div class="rule"><b>들어올 때마다 바뀌어요</b>같은 문구가 연달아 나오지 않게 순서대로 돌고, 한 바퀴를 다 돌면 다시 섞어요.</div>
+  <div class="rule"><b>근거 문구는 가끔만</b>연구 문구는 대략 다섯 번에 한 번 나와요. 작은 ⓘ를 누르면 연구 이름과 연도가 보여요.</div>
+  <div class="rule"><b>재촉하지 않아요</b>"아직 안 했어요", "연속 기록이 끊겼어요" 같은 말은 쓰지 않아요.</div>
+  <div class="rule"><b>효과는 연구가, 쉬움은 마이로그가</b>마이로그가 감량을 약속하지 않아요. 기록을 쉽게 만드는 것만 약속해요.</div>
+ </div>
+</header>
+<div id="root"></div>
+<div class="decide"><b>정해 주세요</b><span>마음에 드는 번호를 골라 주세요. 섞어도 좋아요(예: "1번 + 3번", 홈은 1번이고 저장 뒤에는 3번). 문구 묶음에서 빼거나 바꾸고 싶은 문장이 있으면 번호와 함께 알려 주세요.</span></div>
+</div>
+
+<script>
+const SRC={
+ kaiser:'미국 Kaiser Permanente 등 다기관 연구(2008, 약 1,700명): 식사 기록을 매일 한 사람이 기록하지 않은 사람보다 약 2배 감량. 관찰 연구예요.',
+ burke:'Burke 외 체계적 고찰(2011): 식단·운동·체중 자기기록과 감량 사이의 연관이 여러 연구에서 일관되게 나타났어요.',
+ harvey:'Harvey 외 "Log Often, Lose More"(2019): 감량에 성공한 사람은 하루에 기록을 더 자주 열었고, 기록에 드는 시간은 갈수록 줄었어요.',
+ weigh:'Steinberg 외 매일 체중 재기 연구(2013): 매일 재고 흐름을 본 그룹이 더 많이 감량했고, 마음 부담은 늘지 않았어요.',
+ quit:'Cordeiro 외 CHI 2015: 기록을 그만둔 사람들이 가장 많이 꼽은 이유는 "너무 손이 많이 가서"였어요.',
+ short:'축약 식사일기 연구: 자세한 기록 대신 간단한 기록으로 바꿔도 단기 감량에 손해가 없었어요.'
+};
+const V=[
+ {id:'v1',name:'홈 히어로 한 줄',desc:'홈 맨 위 큰 문장(“가장 쉬운 건강 관리의 시작, 기록.”)은 그대로 두고, 그 아래 작은 한 줄만 들어올 때마다 바뀌어요. 가장 조용하고 매일 보게 되는 자리예요.',
+  pool:[['기록하는 사람이 더 잘 관리한다는 연구가 많아요. 쉽게 만드는 건 마이로그가 할게요.','burke'],['완벽하지 않아도 돼요. 대충 남겨도 기록이에요.'],['생각날 때 열어 주세요. 재촉하지 않을게요.'],['먹은 걸 꾸준히 적은 사람이 더 많이 감량했다는 연구도 있어요.','kaiser'],['체중 하나만 남겨도 오늘의 흐름이 이어져요.'],['어제 그대로 한 번이면 끝나요.']]},
+ {id:'v2',name:'오늘의 한 줄 카드',desc:'홈 ‘한눈에 보기’ 위에 작은 카드로 나와요. 근거가 있는 문장은 ⓘ 출처를 누르면 연구가 보여요. ‘오늘은 그만 보기’로 닫으면 그날은 다시 안 나와요.',
+  pool:[['자주 남기는 사람이 더 잘 관리해요. 하루에 여러 번 짧게 여는 것으로 충분해요.','harvey'],['처음 3일은 평소대로만 적어 보세요. 내가 뭘 먹는지 보이기 시작해요.'],['운동선수와 트레이너들도 관리의 첫 단계로 기록을 꼽아요.'],['간단한 기록도 자세한 기록만큼 도움이 됐다는 연구가 있어요.','short'],['체중은 매일 오르내려요. 하루보다 주 평균을 봐 주세요.','weigh'],['기록을 그만두는 가장 큰 이유는 귀찮음이래요. 그건 마이로그가 줄일게요.','quit']]},
+ {id:'v3',name:'기록 직후 한마디',desc:'식사·운동·체중을 저장하면 아래에 짧은 한마디가 떠요. 평소엔 “남겼어요” 같은 행동 칭찬이고, 다섯 번에 한 번쯤 근거 문장이 섞여요.',
+  pool:[['남겼어요. 이번 주 3일째예요.'],['첫 기록이에요. 시작이 제일 어려워요.'],['자주 남기는 사람이 더 잘 관리한다는 연구가 있어요.','harvey'],['대충 남긴 끼니는 나중에 고쳐도 돼요.'],['체중 기록 4주째예요. 흐름이 보이기 시작해요.'],['어제 그대로, 한 번에 끝났어요.']],toast:true},
+ {id:'v4',name:'빈 자리 안내',desc:'기록이 비어 있는 칸(오늘 식사·체중 등)에 탓하지 않는 한 줄과 가장 작은 행동 버튼 하나를 둬요. 기록할 마음이 없는 사람에게 첫 누름을 만들어 주는 자리예요.',
+  pool:[['방금 먹은 것 하나만 남겨 볼까요?','','식사 하나 남기기'],['체중부터 시작해도 돼요. 5초면 끝나요.','','체중 남기기'],['사진 없이 이름만 적어도 충분해요.','short','이름만 적기'],['기억나는 것만 남겨도 기록이에요.','','기억나는 것 남기기'],['어제 먹은 게 생각나면 그것도 좋아요.','','어제로 남기기']],empty:true},
+ {id:'v5',name:'시간대 말투',desc:'홈 그림이 아침·낮·저녁·밤으로 바뀌는 것처럼, 문구도 시간대에 맞춰 바뀌어요. 같은 시간대 안에서는 들어올 때마다 돌아가요.',
+  pool:[['아침','일어나서 체중 한 번이면 오늘 기록은 시작이에요.','weigh'],['아침','아침을 걸렀어도 괜찮아요. 먹은 것만 남기면 돼요.'],['낮','점심 사진 대신 이름만 적어도 충분해요.','short'],['낮','운동 끝나고 한 번에 남겨도 돼요.'],['저녁','오늘 먹은 것 중 기억나는 것만 남겨 볼까요?'],['저녁','자주 짧게 남기는 사람이 더 잘 관리한대요.','harvey'],['밤','오늘 못 남겼어도 괜찮아요. 내일 아침에 이어서 해요.'],['밤','하루를 다 채우지 않아도 흐름은 이어져요.']],slots:true}
+];
+const root=document.getElementById('root');
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+for(const v of V){
+ const sec=el('section','v');sec.id=v.id;
+ sec.innerHTML=`<div class="vh"><span class="tag">시안 ${V.indexOf(v)+1}</span><h2>${v.name}</h2></div><p class="desc">${v.desc}</p>`;
+ const row=el('div','row');sec.append(row);
+ const col=el('div');col.style.display='grid';col.style.gap='10px';
+ const ph=el('div','phone');col.append(ph);
+ const btn=el('button','next','다른 문구 보기 (다시 들어온 것처럼)');btn.type='button';col.append(btn);
+ row.append(col);
+ const pool=el('div','pool');row.append(pool);
+ let i=0;let sheet=null;
+ const line=k=>v.slots?v.pool[k][1]:v.pool[k][0],src=k=>v.slots?v.pool[k][2]:v.pool[k][1];
+ const draw=()=>{
+  const s=src(i);sheet?.remove();sheet=null;
+  const srcBtn=s?`<button type="button" class="src" aria-label="이 문장의 근거 보기">ⓘ 연구</button>`:'';
+  let body=`<div class="ph-top"><b>마이로그</b><span>11월 22일 (일)</span></div>`;
+  if(v.id==='v1'||v.id==='v5')body+=`<div class="hero">${v.slots?`<span class="slot">${v.pool[i][0]}</span>`:''}<h3>가장 쉬운 건강 관리의 시작,<br><em>기록.</em></h3><p class="msg">${line(i)} ${srcBtn}</p></div><div class="quick"><span>수치 기록</span><span>식사 기록</span><span>운동 기록</span></div><div class="stat"><div>체중<b>83.0</b></div><div>식단<b>1,240</b></div><div>운동<b>12세트</b></div></div>`;
+  if(v.id==='v2')body+=`<div class="quick"><span>수치 기록</span><span>식사 기록</span><span>운동 기록</span></div><div class="tip"><small>오늘의 한 줄</small><p>${line(i)}</p><div class="foot">${srcBtn||'<span></span>'}<button type="button" class="x">오늘은 그만 보기</button></div></div><div class="stat"><div>체중<b>83.0</b></div><div>식단<b>1,240</b></div><div>운동<b>12세트</b></div></div>`;
+  if(v.id==='v3')body+=`<div class="quick"><span>수치 기록</span><span>식사 기록</span><span>운동 기록</span></div><div class="stat"><div>체중<b>83.0</b></div><div>식단<b>1,240</b></div><div>운동<b>12세트</b></div></div><div class="toast" role="status"><b>${line(i)}</b>${s?`<small>ⓘ 연구 보기</small>`:'<small>식사를 기록했어요</small>'}</div>`;
+  if(v.id==='v4')body+=`<div class="stat"><div>체중<b>—</b></div><div>식단<b>0</b></div><div>운동<b>—</b></div></div><div class="empty"><p>${line(i)}</p><span class="act">${v.pool[i][2]}</span>${srcBtn}</div>`;
+  ph.innerHTML=body;
+  ph.querySelector('.src')?.addEventListener('click',()=>{if(sheet){sheet.remove();sheet=null;return}sheet=el('div','sheet',`<b>이 문장의 근거</b><span>${SRC[s]}</span><span style="font-size:12px">연구는 '기록'의 효과이고, 마이로그를 쓰면 똑같이 된다는 뜻은 아니에요.</span>`);ph.append(sheet)});
+  ph.querySelector('.x')?.addEventListener('click',e=>{e.target.closest('.tip').style.opacity='.35'});
+  pool.innerHTML=`<h4>이 자리의 문구 묶음 (${v.pool.length}개)</h4><ol>${v.pool.map((p,k)=>`<li class="${k===i?'on':''}">${v.slots?`<b style="color:var(--amber);font-weight:700">${p[0]}</b> · `:''}${v.slots?p[1]:p[0]}${(v.slots?p[2]:p[1])?'<span class="badge">ⓘ 연구</span>':''}</li>`).join('')}</ol><p class="note">초록색이 지금 화면에 보이는 문장이에요. 실제 앱에서는 들어올 때마다 다음 문장으로 넘어가요.</p>`;
+ };
+ btn.addEventListener('click',()=>{i=(i+1)%v.pool.length;draw()});
+ draw();root.append(sec);
+}
+</script>

@@ -1205,3 +1205,7 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .ex-art-lg{width:96px;height:96px;border-radius:16px;background:#ffffff06;margin-right:4px}
 .ex-art-md{width:48px;height:48px}
 .quick-choice.has-art{display:flex!important;flex-direction:row!important;align-items:center;justify-content:flex-start;gap:12px;text-align:left}.quick-choice.has-art>span{display:grid;gap:2px;min-width:0}
+/* 4.5.0 운동 기록 편의 */
+.quick-prev{margin:8px 0 0;padding:8px 12px;border-radius:12px;background:#b8aaf214;border:1px solid #b8aaf233;font-size:13px;color:#cfd9e6;font-variant-numeric:tabular-nums}.quick-prev span{color:#b8aaf2;font-weight:700;margin-right:8px}
+.quick-check{min-height:56px;font-size:16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px}.quick-check b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#14253899;font-size:16px}
+.quick-again{display:grid;gap:8px;margin-bottom:12px}.qa-row{padding:10px 12px;border-radius:14px;background:#ffffff08;border:1px solid #ffffff12}.qa-row p{margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}.qa-row small{color:#8a9bb0}

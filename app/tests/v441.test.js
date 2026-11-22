@@ -44,3 +44,13 @@ test('점검 C-13: 모두 확정 때 이 기기 기록 + 방금 확정한 기록
  existing.push(...validateDraftRecords(a,a.parsedData));
  assert.ok(findDuplicate(validateDraftRecords(b,b.parsedData),existing),'같은 초안 두 번은 두 번째에서 잡힘');
 });
+import {lastSession,lastSessionHTML,againHTML} from '../quick-entry.js';
+test('4.5.0 운동 편의: 지난번 세트(같은 머신 우선)·지난 운동처럼 하기',()=>{
+ const W=(id,date,machineId,w)=>({id,date,title:'하체',exercises:[{name:'레그 프레스',exerciseId:'exercise:레그 프레스',machineId,kind:'strength',sets:[{weight:w,reps:10,unit:'kg'},{weight:w+10,reps:8,unit:'kg',completed:false}]}]});
+ const db={workouts:[W('a','2026-11-10','m1',100),W('b','2026-11-15','m2',140),{id:'p',date:'2026-11-20',planned:true,exercises:[]}]};
+ const s={date:'2026-11-22',exerciseId:'exercise:레그 프레스',machineId:'m1',workoutId:null};
+ const p=lastSession(db,s);assert.equal(p.date,'2026-11-10');assert.equal(p.sets.length,1,'완료 안 한 세트 제외');
+ assert.equal(lastSession(db,{...s,machineId:'m9'}).date,'2026-11-15','같은 머신이 없으면 가장 최근');
+ assert.match(lastSessionHTML(p),/지난번 11\/10/);
+ assert.match(againHTML(db,{date:'2026-11-22'}),/data-q-ex="exercise:레그 프레스"/);
+});

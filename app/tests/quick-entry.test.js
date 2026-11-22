@@ -27,6 +27,6 @@ test('빠른 운동은 지점별 머신을 보여주고 실제 완료 세트만 
  const local=cleanMachine({name:'내 레그프레스',manufacturer:'회사 A',model:'LP-1',location:'헬스플러스 안산점',exerciseId:leg.id,unit:'kg'}),other=cleanMachine({name:'타 지점 레그프레스',manufacturer:'회사 B',model:'LP-2',location:'다른 지점',exerciseId:leg.id,unit:'lb'});db.machines=[local,other];
  const s=emptyQuickWorkout(date,db.settings.gyms);s.exerciseId=leg.id;s.machineId=local.id;s.title='하체';s.sets=[{id:'set-1',exerciseId:leg.id,machineId:local.id,exercise:leg,weight:120,reps:10,unit:'kg',completedAt:'2026-11-13T13:40'},{id:'set-2',exerciseId:leg.id,machineId:local.id,exercise:leg,weight:140,reps:8,unit:'kg',completedAt:'2026-11-13T13:43'}];
  const html=quickWorkoutHTML(db,s,EXERCISE_CATALOG),w=quickWorkoutRecord(s,db);
- assert.match(html,/주·보조 근육 그림 보기/);assert.match(html,/동일 값 기록/);assert.match(html,/LP-1/);assert.doesNotMatch(html,/LP-2/);assert.equal(w.exercises.length,1);assert.equal(w.exercises[0].sets.length,2);assert.equal(w.exercises[0].machineId,local.id);assert.equal(w.exercises[0].sets[1].completedAt,'2026-11-13T13:43');
+ assert.match(html,/주·보조 근육 그림 보기/);assert.match(html,/같은 값으로 한 세트 더/);assert.match(html,/LP-1/);assert.doesNotMatch(html,/LP-2/);assert.equal(w.exercises.length,1);assert.equal(w.exercises[0].sets.length,2);assert.equal(w.exercises[0].machineId,local.id);assert.equal(w.exercises[0].sets[1].completedAt,'2026-11-13T13:43');
  s.workoutId=w.id;db.workouts=[w];s.sets[1].reps=9;const changed=quickWorkoutRecord(s,db);assert.equal(changed.id,w.id);assert.equal(changed.exercises[0].sets[1].reps,9);
 });
