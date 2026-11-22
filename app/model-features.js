@@ -29,9 +29,10 @@ export function weightTrend(body,windowDays=7){
 }
 export function exercisePRs(db){
  const groups=new Map();
- for(const w of db.workouts||[])for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const key=`${e.exerciseId||e.name}|${e.machineId||'unspecified'}`,g=groups.get(key)||{key,exerciseId:e.exerciseId||null,machineId:e.machineId||null,name:e.name,maxWeightKg:0,maxReps:0,best1RM:0,maxSetVolume:0,sets:0};
+ for(const w of db.workouts||[])for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const key=`${e.exerciseId||e.name}|${e.machineId||'unspecified'}`,g=groups.get(key)||{key,exerciseId:e.exerciseId||null,machineId:e.machineId||null,name:e.name,maxWeightKg:0,maxReps:0,best1RM:0,maxSetVolume:0,sets:0,days:new Set(),muscles:new Map(),part:e.part||''};g.days.add(w.date);for(const m of e.primaryMuscleIds||[])g.muscles.set(m,(g.muscles.get(m)||0)+1);
  for(const s of e.sets||[]){if(s.completed===false)continue;const kg=setWeightKg(s);g.maxWeightKg=Math.max(g.maxWeightKg,kg);g.maxReps=Math.max(g.maxReps,s.reps||0);g.best1RM=Math.max(g.best1RM,estimate1RM(kg,s.reps));g.maxSetVolume=Math.max(g.maxSetVolume,kg*(s.reps||0));g.sets++;}if(g.sets)groups.set(key,g);}
- return [...groups.values()].map(g=>({...g,maxWeightKg:round(g.maxWeightKg,2),maxSetVolume:round(g.maxSetVolume,2)}));
+ // 4.3.1 많이 한 순서(운동한 날 수 → 세트 수)로 정렬, 대표 주동근을 함께 돌려준다
+ return [...groups.values()].map(g=>({...g,sessions:g.days.size,primaryMuscle:[...g.muscles.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||null,days:undefined,muscles:undefined,maxWeightKg:round(g.maxWeightKg,2),maxSetVolume:round(g.maxSetVolume,2),best1RM:round(g.best1RM,2)})).sort((a,b)=>b.sessions-a.sessions||b.sets-a.sets);
 }
 export function recommendWorkout(db,date){
  if(!validDate(date))throw Error('제안 날짜를 확인해 주세요.');

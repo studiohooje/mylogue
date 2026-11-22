@@ -1147,3 +1147,4 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .wf-prs{list-style:none;margin:0;padding:0;display:grid;gap:4px}.wf-prs li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #ffffff10;font-size:14px}.wf-prs b{color:#6fd6a3}.wf-prs small{color:#8a9bb0;font-size:11px}
 @media (max-width:380px){.wf-stats{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:650px){.df-ax,.bf-ax,.wf-ax{font-size:11px}}
+.pr-filter{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}

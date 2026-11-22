@@ -35,7 +35,8 @@ export function cleanExercise(raw){
  const name=String(raw.name??'').trim();if(!name)throw Error('운동 이름을 입력해 주세요.');
  const kind=raw.kind==='cardio'?'cardio':'strength',durationMin=number(raw.durationMin),distanceKm=number(raw.distanceKm);
  if(durationMin!==null&&durationMin<0||distanceKm!==null&&distanceKm<0)throw Error('유산소 시간과 거리를 확인해 주세요.');
- const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:number(s.weight),unit:s.unit||'kg',originalWeight:number(s.originalWeight??s.weight),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:number(s.targetWeight),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),completedAt:String(s.completedAt||'')}));
+ const w2=v=>v==null?null:Math.round(v*100)/100;// 4.3.1 중량은 소수점 둘째 자리까지(대표님: 18.1436948 같은 값 금지)
+ const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:w2(number(s.weight)),unit:s.unit||'kg',originalWeight:w2(number(s.originalWeight??s.weight)),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:w2(number(s.targetWeight)),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),completedAt:String(s.completedAt||'')}));
  if(kind==='strength'&&!sets.length)throw Error('세트를 하나 이상 입력해 주세요.');
  for(const s of sets){if(s.originalWeight===null||s.originalWeight<0||!['kg','lb'].includes(s.originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');if(!['kg','lb'].includes(s.targetUnit)||s.targetWeight!==null&&s.targetWeight<0||s.targetReps!==null&&(s.targetReps<0||!Number.isInteger(s.targetReps)))throw Error('목표 중량·반복·단위를 확인해 주세요.');if(!['kg','lb'].includes(s.unit))throw Error('중량 단위는 kg 또는 lb여야 합니다.');if(s.weight===null||s.reps===null||s.weight<0||s.reps<0||!Number.isInteger(s.reps))throw Error('중량과 반복 횟수를 확인해 주세요.');if(s.rpe!==null&&(s.rpe<0||s.rpe>10))throw Error('RPE는 0~10 사이여야 합니다.')}
  if(kind==='cardio'&&durationMin===null&&distanceKm===null)throw Error('유산소 시간 또는 거리를 입력해 주세요.');
@@ -61,14 +62,14 @@ export const emptyDB=()=>({schemaVersion:VERSION,body:[],meals:[],foods:[],worko
 export const LB_TO_KG=0.45359237;
 export const setWeightKg=s=>{
  const hasOriginal=number(s?.originalWeight)!==null&&['kg','lb'].includes(s?.originalUnit);
- return (number(hasOriginal?s.originalWeight:s?.weight)||0)*((hasOriginal?s.originalUnit:s?.unit)==='lb'?LB_TO_KG:1);
+ return Math.round((number(hasOriginal?s.originalWeight:s?.weight)||0)*((hasOriginal?s.originalUnit:s?.unit)==='lb'?LB_TO_KG:1)*100)/100;
 };
 export function convertSetUnit(set,newUnit){
  if(!['kg','lb'].includes(newUnit))throw Error('중량 단위는 kg 또는 lb여야 합니다.');
  const originalWeight=number(set.originalWeight??set.weight),originalUnit=set.originalUnit||set.unit||'kg';
  if(originalWeight===null||originalWeight<0||!['kg','lb'].includes(originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');
  const kg=originalWeight*(originalUnit==='lb'?LB_TO_KG:1);
- return {...set,originalWeight,originalUnit,unit:newUnit,weight:newUnit===originalUnit?originalWeight:round(newUnit==='lb'?kg/LB_TO_KG:kg,4)};
+ return {...set,originalWeight,originalUnit,unit:newUnit,weight:newUnit===originalUnit?originalWeight:round(newUnit==='lb'?kg/LB_TO_KG:kg,2)};
 }
 const cleanIds=items=>Array.isArray(items)?[...new Set(items.map(String).filter(Boolean))]:[];
 export function cleanMachine(raw){

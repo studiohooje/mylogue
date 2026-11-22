@@ -1,0 +1,138 @@
+<title>그래프 스타일 다섯 가지</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 버전 하나 = 한 구역. 각 구역에 같은 데이터로 ① 식단 대시보드(작은 그래프 5개) ② 체중 큰 그래프 ③ 주간 변화 막대. 앱과 같은 짙은 남청 단일 테마 */
+:root{--bg:#0c1220;--app:#101625;--card:#18243d;--card2:#1c2b46;--line:#33506d;--text:#edf4f8;--muted:#b4c6d8;--dim:#7f90a6;--teal:#8ce4e0;--lav:#b8aaf2;--amber:#f7c270;--peach:#f2b49b;--carbs:#f0d466;--protein:#6fd6a3;--fat:#ff7b93;--good:#6fd6a3;--bad:#ff8a8a;--sans:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);margin:0;padding-block:32px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-size:15px;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:44px}
+h1{font-size:clamp(24px,4vw,32px);margin:0 0 6px}
+.lead{color:var(--muted);margin:0;max-width:760px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.toc a{color:var(--teal);font-size:13px;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+section.v{display:grid;gap:14px;scroll-margin-top:12px}
+.vh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.vh .tag{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--teal)}.vh h2{margin:0;font-size:22px}
+.vp{color:var(--muted);margin:0;max-width:820px;font-size:14px}
+.rules{display:flex;flex-wrap:wrap;gap:6px}.rules span{font-size:12px;color:var(--muted);background:#ffffff0a;border:1px solid #ffffff14;border-radius:999px;padding:3px 10px}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:14px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid #2c4060;border-radius:18px;padding:14px;display:grid;gap:10px;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:8px}.ch b{font-size:15px}.ch small{color:var(--dim);font-size:12px}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mini{background:var(--card2);border-radius:14px;padding:10px 10px 6px;min-width:0;display:grid;gap:2px;position:relative}.mini .cw{margin-top:-22px}
+.mini .mt{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:12px;color:var(--muted)}
+.mini .mt i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.mini .mv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}.mini .mv small{font-size:11px;font-weight:500;color:var(--dim);margin-left:2px}
+.mini .ms{font-size:11px;color:var(--dim)}
+.cw{position:relative;min-width:0;padding-top:24px}
+.cw svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;z-index:5;background:#0b1222ee;border:1px solid #ffffff2a;border-radius:10px;padding:6px 9px;font-size:12px;line-height:1.35;white-space:nowrap;transform:translate(-50%,-110%);box-shadow:0 8px 20px #0008;opacity:0;transition:opacity .12s}
+.tip b{font-size:13px}.tip .d{color:var(--dim);display:block;font-size:11px}
+.cw.hovering .tip{opacity:1}
+.hov{position:absolute;top:0;right:0;z-index:6;width:22px;height:22px;border-radius:7px;font-size:11px!important;border:1px solid #ffffff1f;background:#ffffff0a;color:var(--muted);font-size:13px;cursor:pointer;display:grid;place-items:center}
+.hov[aria-pressed="false"]{opacity:.55;text-decoration:line-through}
+.hov:focus-visible{outline:2px solid var(--teal)}
+.hovlab{position:absolute;top:2px;right:28px;font-size:10px;color:var(--dim);white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none}.hov:hover+.hovlab{opacity:1}
+.foot{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);flex-wrap:wrap;gap:6px}
+.decide{background:#1f1a2e;border:1px solid #b8aaf277;border-radius:14px;padding:12px 14px;font-size:14px;max-width:820px}.decide b{color:var(--lav)}
+.pill{font-size:10px;font-weight:700}
+</style>
+
+<div class="wrap">
+<header>
+ <h1>그래프 스타일 다섯 가지</h1>
+ <p class="lead">같은 데이터(최근 30일 식단, 90일 체중)로 그린 다섯 가지 안이에요. 식단 흐름은 탭을 누르지 않아도 한눈에 보이는 작은 그래프 묶음(대시보드)으로 바꿨어요. 그래프 위에 마우스를 올리면(휴대폰은 손가락을 대면) 그 점의 날짜와 값이 떠요. 각 그래프 오른쪽 위 <b>ⓘ</b>를 누르면 이 정보 표시를 끌 수 있어요.</p>
+ <nav class="toc"><a href="#v1">1 여백형</a><a href="#v2">2 끝값형</a><a href="#v3">3 목표 띠형</a><a href="#v4">4 강조형</a><a href="#v5">5 숫자 카드형</a></nav>
+</header>
+<div id="root"></div>
+<p class="decide"><b>정해 주세요</b> · 마음에 드는 번호 하나(또는 “3번 + 5번의 숫자 카드”처럼 섞기)를 알려 주시면 마이로그의 모든 그래프(식단·수치·운동·분석)를 그 방식으로 통일할게요. ⓘ 끄기 상태는 기기마다 기억해요.</p>
+</div>
+
+<script>
+// 예시 데이터
+const pad=n=>String(n).padStart(2,'0');const T=new Date('2026-11-22T12:00:00');
+const dayStr=k=>{const d=new Date(T);d.setDate(d.getDate()-k);return `${d.getMonth()+1}/${d.getDate()}`};
+let s=11;const rnd=()=>(s=(s*9301+49297)%233280)/233280;
+const diet=[];for(let i=29;i>=0;i--){const kc=Math.round(2050+Math.sin(i*1.3)*280+(rnd()-.5)*200);diet.push({d:dayStr(i),kcal:kc,carbs:Math.round(kc*.46/4),protein:Math.round(120+Math.sin(i*.9)*30+rnd()*15),fat:Math.round(kc*.26/9),score:Math.max(38,Math.min(100,Math.round(84+Math.sin(i*1.1)*12+(rnd()-.5)*14)))})}
+const weight=[];let w=86.4;for(let i=89;i>=0;i--){w+=-0.04+(rnd()-.5)*.55;weight.push({d:dayStr(i),v:Math.round(w*10)/10})}
+const avg7=weight.map((p,i)=>{const a=weight.slice(Math.max(0,i-6),i+1);return Math.round(a.reduce((x,y)=>x+y.v,0)/a.length*10)/10});
+const weeks=[];for(let i=0;i<weight.length;i+=7){const a=weight.slice(i,i+7);weeks.push({d:a[0].d,v:a.reduce((x,y)=>x+y.v,0)/a.length})}
+const wch=weeks.slice(1).map((x,i)=>({d:x.d,v:Math.round((x.v-weeks[i].v)*10)/10}));
+const GOAL={kcal:2200,carbs:250,protein:150,fat:60,score:80,weight:80};
+const METR=[['score','식단 점수','점','#b8aaf2'],['kcal','칼로리','kcal','#8ce4e0'],['carbs','탄수','g','#f0d466'],['protein','단백질','g','#6fd6a3'],['fat','지방','g','#ff7b93']];
+
+// 버전별 규칙
+const V=[
+ {id:'v1',name:'여백형',desc:'축 숫자와 격자를 모두 빼고, 날짜는 처음과 끝만 아주 흐리게. 숫자는 마우스를 올릴 때만 보여요. 가장 조용한 안.',rules:['축 숫자 없음','격자 없음','날짜는 처음·끝만','목표선 아주 얇게'],axis:'none',dates:'ends',goal:'thin',ends:false,band:false,recent:false,area:true,dots:false},
+ {id:'v2',name:'끝값형',desc:'선 끝에 마지막 값만 작은 알약으로 붙여요. 축은 오른쪽에 눈금 2개(최저·최고)만. 주식 앱처럼 “지금 얼마”가 바로 보여요.',rules:['마지막 값만 표시','오른쪽 눈금 2개','날짜 3개(처음·가운데·끝)','점은 마지막만'],axis:'right2',dates:'three',goal:'dash',ends:true,band:false,recent:false,area:false,dots:false},
+ {id:'v3',name:'목표 띠형',desc:'목표 ±10% 범위를 옅은 띠로 깔고, 띠 안은 초록·밖은 주황으로 점을 칠해요. 숫자 대신 “범위 안이냐”로 읽혀요.',rules:['목표 범위 띠','범위 안·밖 색','축 숫자 없음','날짜는 주 단위(4주 전·이번 주)'],axis:'none',dates:'weeks',goal:'band',ends:false,band:true,recent:false,area:false,dots:true},
+ {id:'v4',name:'강조형',desc:'전체는 흐린 회색, 최근 7일만 색을 입혀요. 최고·최저 점에만 작은 표시. 요즘 어떤지가 먼저 눈에 들어와요.',rules:['최근 7일만 색','최고·최저 점만 표시','축 숫자 없음','날짜 처음·끝'],axis:'none',dates:'ends',goal:'thin',ends:false,band:false,recent:true,area:false,dots:false,minmax:true},
+ {id:'v5',name:'숫자 카드형',desc:'작은 그래프 위에 큰 숫자(평균 또는 지금)와 목표 대비 한 줄을 두고, 그래프는 모양만. 대시보드 느낌이 가장 강해요.',rules:['큰 숫자 + 한 줄 요약','그래프는 모양만','축·날짜 없음(마우스로)','목표선 얇게'],axis:'none',dates:'none',goal:'thin',ends:false,band:false,recent:false,area:true,dots:false,cards:true},
+];
+const NS='http://www.w3.org/2000/svg';
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.append(e);return e};
+const tx=(p,x,y,t,a={})=>{const e=mk('text',{x,y,fill:'#7f90a6','font-size':10,...a},p);e.textContent=t;return e};
+
+// 그래프 하나: 컨테이너 + svg + 툴팁 + ⓘ 끄기
+function chart(host,{data,key,color,unit,goal,ver,w=300,h=90,kind='line',label,extra}){
+ const cw=document.createElement('div');cw.className='cw';host.append(cw);
+ const svg=mk('svg',{viewBox:`0 0 ${w} ${h}`,role:'img','aria-label':label},cw);
+ const vals=data.map(d=>d[key]);const all=goal&&kind==='line'?[...vals,goal]:vals;
+ let lo=Math.min(...all),hi=Math.max(...all);if(kind==='bars'){lo=Math.min(0,lo);hi=Math.max(0,hi)}const padv=(hi-lo)*.12||1;lo-=kind==='bars'?0:padv;hi+=padv;
+ const L=4,R=ver.axis==='right2'&&w>=220?34:(ver.ends?44:6),Tp=8,B=ver.dates==='none'?6:18;
+ const x=i=>L+(data.length===1?0:i*(w-L-R)/(data.length-1)),y=v=>Tp+(h-Tp-B)*(1-(v-lo)/(hi-lo));
+ const recentFrom=data.length-7;
+ if(kind==='line'){
+  if(goal){ if(ver.band){const bd=key==='v'?1:goal*.1,g1=goal-bd,g2=goal+bd;mk('rect',{x:L,y:y(Math.min(hi,g2)),width:w-L-R,height:Math.max(0,y(Math.max(lo,g1))-y(Math.min(hi,g2))),fill:'#6fd6a3',opacity:.09},svg)} else mk('line',{x1:L,x2:w-R,y1:y(goal),y2:y(goal),stroke:'#ff8a8a','stroke-opacity':ver.goal==='dash'?.6:.35,'stroke-dasharray':ver.goal==='dash'?'4 4':'2 4','stroke-width':1},svg) }
+  const pts=vals.map((v,i)=>[x(i),y(v)]);const dpath=pts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  if(ver.area){mk('path',{d:dpath+` L${x(vals.length-1)} ${h-B} L${x(0)} ${h-B} Z`,fill:color,opacity:.10},svg)}
+  if(ver.recent){mk('path',{d:dpath,fill:'none',stroke:'#5b6b85','stroke-width':1.6},svg);const rp=pts.slice(recentFrom).map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');mk('path',{d:rp,fill:'none',stroke:color,'stroke-width':2.4,'stroke-linecap':'round'},svg)}
+  else mk('path',{d:extra?extra.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' '):dpath,fill:'none',stroke:color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+  if(extra&&!ver.recent)pts.forEach(p=>mk('circle',{cx:p[0],cy:p[1],r:1.3,fill:color,opacity:.35},svg));
+  if(ver.dots)vals.forEach((v,i)=>{const inb=goal?(key==='v'?Math.abs(v-goal)<=1:Math.abs(v/goal-1)<=.1):true;mk('circle',{cx:x(i),cy:y(v),r:2.2,fill:inb?'#6fd6a3':'#f7a44a'},svg)});
+  if(ver.ends){const i=vals.length-1;mk('circle',{cx:x(i),cy:y(vals[i]),r:3,fill:color},svg);const g=mk('g',{},svg);mk('rect',{x:x(i)+5,y:y(vals[i])-8,width:38,height:16,rx:8,fill:color},g);tx(g,x(i)+24,y(vals[i])+4,String(vals[i]),{'text-anchor':'middle',fill:'#0d1424','font-size':10,'font-weight':700})}
+  if(ver.minmax){const mi=vals.indexOf(Math.max(...vals)),mn=vals.indexOf(Math.min(...vals));[[mi,'▲'],[mn,'▼']].forEach(([i,s])=>{mk('circle',{cx:x(i),cy:y(vals[i]),r:2.6,fill:'none',stroke:'#edf4f8','stroke-width':1.2},svg);tx(svg,x(i),y(vals[i])+(s==='▲'?-6:13),s,{'text-anchor':'middle','font-size':8,fill:'#b4c6d8'})})}
+  if(ver.axis==='right2'&&w>=220){[lo+padv,hi-padv].forEach(v=>tx(svg,w-2,y(v)+3,(Math.round(v*10)/10).toString(),{'text-anchor':'end'}))}
+ } else {
+  const bw=Math.max(3,(w-L-R)/data.length*.62);const z=y(0);mk('line',{x1:L,x2:w-R,y1:z,y2:z,stroke:'#ffffff',opacity:.15},svg);
+  vals.forEach((v,i)=>{const good=v<=0;const hgt=Math.max(1.5,Math.abs(y(v)-z));mk('rect',{x:x(i)-bw/2,y:v>0?z-hgt:z,width:bw,height:hgt,rx:2,fill:ver.recent&&i<recentFrom-0?'#4a5a73':good?'#6fd6a3':'#ff8a8a',opacity:ver.recent&&i<data.length-4?.6:1},svg)});
+  if(ver.ends){const i=vals.length-1;tx(svg,w-2,(vals[i]>0?y(vals[i]):y(vals[i])+10),`${vals[i]>0?'+':''}${vals[i]}`,{'text-anchor':'end','font-size':10,'font-weight':700,fill:vals[i]<=0?'#6fd6a3':'#ff8a8a'})}
+ }
+ // 날짜
+ const D=i=>data[i].d;
+ if(ver.dates==='ends'){tx(svg,L,h-4,D(0),{opacity:.7});tx(svg,w-R,h-4,D(data.length-1),{'text-anchor':'end',opacity:.7})}
+ if(ver.dates==='three'){[0,Math.floor((data.length-1)/2),data.length-1].forEach((i,k)=>tx(svg,x(i),h-4,D(i),{'text-anchor':k===0?'start':k===2?'end':'middle'}))}
+ if(ver.dates==='weeks'){const n=Math.round(data.length/7);[0,data.length-1].forEach((i,k)=>tx(svg,x(i),h-4,k?'이번 주':`${n}주 전`,{'text-anchor':k?'end':'start'}))}
+ // 마우스오버
+ const cross=mk('line',{y1:Tp,y2:h-B,stroke:'#fff','stroke-opacity':.25,visibility:'hidden'},svg),dot=mk('circle',{r:3.5,fill:color,stroke:'#0c1220','stroke-width':1.5,visibility:'hidden'},svg);
+ const tip=document.createElement('div');tip.className='tip';cw.append(tip);
+ const btn=document.createElement('button');btn.type='button';btn.className='hov';btn.textContent='ⓘ';btn.setAttribute('aria-pressed','true');btn.setAttribute('aria-label',`${label}: 마우스를 올리면 값 보기`);btn.title='마우스를 올리면 값 보기 (눌러서 끄기)';cw.append(btn);
+ const hl=document.createElement('span');hl.className='hovlab';hl.textContent='값 보기 켜짐';cw.append(hl);
+ const KEY='mylogue-mock-hover-'+ver.id+label;let on=true;try{on=localStorage.getItem(KEY)!=='off'}catch{}
+ const sync=()=>{btn.setAttribute('aria-pressed',String(on));hl.textContent=on?'값 보기 켜짐 · 누르면 끄기':'값 보기 꺼짐 · 누르면 켜기'};sync();
+ btn.addEventListener('click',()=>{on=!on;try{localStorage.setItem(KEY,on?'on':'off')}catch{};sync();hide()});
+ const hide=()=>{cw.classList.remove('hovering');cross.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden')};
+ const move=e=>{if(!on)return;const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*w;let i=Math.round((px-L)/((w-L-R)/(data.length-1||1)));i=Math.max(0,Math.min(data.length-1,i));const v=vals[i],cx=x(i),cy=kind==='bars'?(v>0?y(v):y(0)):y(extra?extra[i]:v);
+  cross.setAttribute('x1',cx);cross.setAttribute('x2',cx);cross.setAttribute('visibility','visible');dot.setAttribute('cx',cx);dot.setAttribute('cy',kind==='bars'?y(v):cy);dot.setAttribute('visibility',kind==='bars'?'hidden':'visible');
+  const sub=kind==='bars'?(v<=0?'지난주보다 줄었어요':'지난주보다 늘었어요'):goal?`목표 ${goal}${unit} 대비 ${v>=goal?'+':''}${Math.round((v-goal)*10)/10}${unit}`:'';
+  tip.innerHTML=`<span class="d">${D(i)}${kind==='bars'?' 주':''}</span><b>${kind==='bars'&&v>0?'+':''}${v}${unit}</b>${extra?`<span class="d">7일 평균 ${extra[i]}${unit}</span>`:''}${sub?`<span class="d">${sub}</span>`:''}`;
+  tip.style.left=(cx/w*r.width)+'px';tip.style.top=((kind==='bars'?y(v):cy)/h*r.height)+'px';cw.classList.add('hovering')};
+ svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);svg.addEventListener('pointerleave',hide);
+ return cw;
+}
+
+const root=document.getElementById('root');
+for(const ver of V){
+ const sec=document.createElement('section');sec.className='v';sec.id=ver.id;
+ sec.innerHTML=`<div class="vh"><span class="tag">안 ${V.indexOf(ver)+1}</span><h2>${ver.name}</h2></div><p class="vp">${ver.desc}</p><div class="rules">${ver.rules.map(r=>`<span>${r}</span>`).join('')}</div><div class="grid"><div class="card diet"><div class="ch"><b>식단 흐름</b><small>최근 30일 · 한눈에</small></div><div class="minis"></div></div><div class="card body"><div class="ch"><b>체중</b><small>최근 90일 · 점=매일, 선=7일 평균</small></div><div class="wchart"></div><div class="ch"><b style="font-size:13px">주간 변화</b><small>초록=줄었어요 · 빨강=늘었어요</small></div><div class="bchart"></div></div></div>`;
+ root.append(sec);
+ const minis=sec.querySelector('.minis');
+ for(const [k,l,u,c] of METR){
+  const m=document.createElement('div');m.className='mini';const vals=diet.map(d=>d[k]),last=vals.at(-1),av=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length),gl=GOAL[k];
+  const inGoal=vals.filter(v=>k==='score'?v>=80:Math.abs(v/gl-1)<=.1).length;
+  m.innerHTML=ver.cards?`<div class="mt"><span><i style="background:${c}"></i>${l}</span><span>평균</span></div><div class="mv">${av.toLocaleString('ko-KR')}<small>${u}</small></div><div class="ms">${k==='score'?`80점 이상 ${inGoal}일`:`목표 ±10% 안 ${inGoal}일`}</div>`:`<div class="mt"><span><i style="background:${c}"></i>${l}</span><span>${ver.ends?'':`평균 ${av.toLocaleString('ko-KR')}`}</span></div>`;
+  minis.append(m);chart(m,{data:diet,key:k,color:c,unit:u,goal:gl,ver,w:180,h:ver.cards?54:70,label:`${l} 30일`});
+ }
+ chart(sec.querySelector('.wchart'),{data:weight,key:'v',color:'#f2b49b',unit:'kg',goal:GOAL.weight,ver,w:420,h:170,label:'체중 90일',extra:avg7});
+ chart(sec.querySelector('.bchart'),{data:wch,key:'v',color:'#6fd6a3',unit:'kg',ver,w:420,h:70,kind:'bars',label:'주간 체중 변화'});
+}
+</script>
