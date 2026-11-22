@@ -1218,3 +1218,8 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .motiv-src:focus-visible,.motiv-x:focus-visible{outline:2px solid #8ce4e0}
 .motiv-why{margin:-6px 0 10px;padding:8px 10px;border-radius:10px;background:#ffffff08;font-size:12px;color:#a9bbce;line-height:1.55}
 .motiv-act{margin-top:10px}
+/* 4.7.0 GLP-1: 단백질 먼저 */
+.prot-first{display:grid;gap:6px;padding:12px 14px;margin-bottom:12px;border-radius:14px;background:linear-gradient(180deg,color-mix(in srgb,#6fd6a3 10%,#1b2843),#1b2843);border:1px solid color-mix(in srgb,#6fd6a3 30%,#22324f)}
+.pf-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}.pf-head b{color:#6fd6a3}.pf-head strong{font-size:20px}
+.pf-bar{height:8px;border-radius:9px;background:#ffffff12;overflow:hidden}.pf-bar i{display:block;height:100%;background:#6fd6a3;border-radius:9px}
+.prot-first small{color:#a9bbce;font-size:12.5px}

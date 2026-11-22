@@ -9,6 +9,7 @@ export const PREF_DEFAULTS = Object.freeze({
  level:'mid',                      // new | mid | pro → 운동 설명(사용 근육) 기본 표시
  workoutMode:'set',                // set | after | guide(3.5.0 계획→안내)
  mealMode:'exact',                 // exact | simple | photo(예정, 지금은 exact) | off
+ glp1:false,                       // 4.7.0 GLP-1 계열 약 사용 중 → 단백질 먼저(식단 목표·식단 화면)
  mealLabel:'number',               // 4.6.0 끼니 부르는 법: number(식사1·식사2) | slot(아침·점심·간식·저녁·야식)
  place:'gym',                      // gym | home | multi
  sports:[],                        // 3.7.0 평소 하는 운동(복수, 비워도 됨). 지금은 수요 파악·지도 근처 검색에만 씀
@@ -36,6 +37,7 @@ export function prefsOf(db){
  if(!p.tracks.includes('meal')) p.mealMode = 'off';
  p.restSec = Math.min(300, Math.max(15, Number(p.restSec)||PREF_DEFAULTS.restSec));
  p.halo = p.halo !== false;
+ p.glp1 = p.glp1 === true || (Array.isArray(db?.settings?.nutritionProfile?.diets) && db.settings.nutritionProfile.diets.includes('glp1'));
  return p;
 }
 
@@ -63,6 +65,8 @@ export const QUESTIONS = [
   ['exact','정','음식과 양까지 정확히','음식 검색 · g 단위 · 영양 성분'], ['simple','간','끼니만 간단히','“점심 · 약 700kcal”처럼 빠르게'], ['photo','사','사진 먼저, 정리는 나중에','곧 제공돼요 · 그전까지는 정확히로 기록해요'], ['off','×','식단은 안 할래요','식단 탭을 숨겨요']]},
  {key:'mealLabel', q:'끼니는 어떻게 부를까요?', s:'언제든 설정에서 바꿀 수 있어요.', o:[
   ['number','1','식사1 · 식사2 순서대로','하루에 여러 번 나눠 먹는다면 이쪽이 편해요'], ['slot','아','아침 · 점심 · 저녁으로','먹은 시각에 따라 아침·점심·간식·저녁·야식으로 불러요']]},
+ {key:'glp1', q:'GLP-1 계열 약(위고비·마운자로 등)을 쓰고 있나요?', s:'쓰고 있다면 적게 먹어도 단백질은 먼저 채우도록 목표와 화면을 맞춰요. 언제든 설정에서 바꿀 수 있어요.', o:[
+  ['no','아','아니요','일반 기준으로 제안해요'], ['yes','네','네, 쓰고 있어요','단백질을 체중 기준으로 먼저 정하고, 식단 화면에 단백질을 먼저 보여 줘요']]},
  {key:'place', q:'주로 어디서 운동해요?', s:'운동 장소는 설정의 ‘내 운동 장소’에서 이름이나 지도로 찾아 추가해요.', o:[
   ['gym','헬','헬스장','헬스장 머신 위주로 보여 줘요'], ['home','집','집에서','홈트 장소를 미리 만들어 둘게요'], ['multi','여','여러 곳','장소를 여러 개 등록해요']]}
 ];
@@ -102,14 +106,16 @@ export function onboardingPick(state, value){
 
 export const newOnboarding = db => {
  const p = prefsOf(db);
- return {step:0, answers:{tracks:[...p.tracks], level:p.level, workoutMode:p.workoutMode, mealMode:p.mealMode==='off'&&p.tracks.includes('meal')?'exact':p.mealMode, mealLabel:p.mealLabel, place:p.place, sports:[...p.sports]}};
+ return {step:0, answers:{tracks:[...p.tracks], level:p.level, workoutMode:p.workoutMode, mealMode:p.mealMode==='off'&&p.tracks.includes('meal')?'exact':p.mealMode, mealLabel:p.mealLabel, glp1:p.glp1?'yes':'no', place:p.place, sports:[...p.sports]}};
 };
 
 export function finishOnboarding(db, answers){
  const a = {...answers};
  if(!(a.tracks||[]).includes('meal')) a.mealMode = 'off';
  else if(a.mealMode==='off') a.mealMode = 'exact';
- let next = withPrefs(db, {...a, onboarded:true});
+ const glp = a.glp1==='yes'; delete a.glp1;
+ let next = withPrefs(db, {...a, glp1:glp, onboarded:true});
+ { const prof = next.settings.nutritionProfile||{}, diets = new Set(prof.diets||[]); glp ? diets.add('glp1') : diets.delete('glp1'); next = {...next, settings:{...next.settings, nutritionProfile:{...prof, diets:[...diets]}}}; }
  if(a.place==='home'){ const gyms = next.settings.gyms||[]; if(!gyms.includes('집')) next = {...next, settings:{...next.settings, gyms:[...gyms, '집']}}; }
  return next;
 }
@@ -130,6 +136,7 @@ export function prefsSettingsHTML(db){
  <div class="pref-item"><div><b>운동 기록 방식</b><small>세트마다 바로 / 다 끝나고 한 번에 / 미리 계획하고 소리 안내</small></div>${seg('workoutMode',['set','after','guide'])}</div>
  <div class="pref-item"><div><b>식단 입력 방식</b><small>${p.mealMode==='photo'?'‘사진 먼저’는 곧 제공돼요. 그전까지는 정확히로 기록해요':'정확히 = 음식 검색 · 간단히 = 끼니와 대략 열량'}</small></div>${seg('mealMode',['exact','simple','photo','off'])}</div>
  <div class="pref-item"><div><b>끼니 부르는 법</b><small>순서대로 = 식사1·식사2 · 이름으로 = 먹은 시각에 따라 아침·점심·간식·저녁·야식</small></div>${seg('mealLabel',['number','slot'])}</div>
+ <div class="pref-item"><div><b>GLP-1 계열 약 사용</b><small>쓰는 중이면 단백질을 체중 기준으로 먼저 채우도록 보여 줘요(식단 목표 문답의 제안도 바뀌어요)</small></div><div class="pref-seg"><button type="button" class="${p.glp1?'on':''}" data-pref="glp1" data-pref-value="on" aria-pressed="${p.glp1}">쓰고 있어요</button><button type="button" class="${!p.glp1?'on':''}" data-pref="glp1" data-pref-value="off" aria-pressed="${!p.glp1}">안 써요</button></div></div>
  <div class="pref-item"><div><b>운동 설명</b><small>운동을 고를 때 쓰는 근육 그림을 바로 보여 줄지</small></div>${seg('level',['new','mid','pro'])}</div>
  <div class="pref-item"><div><b>기본 휴식 시간</b><small>세트를 마치면 이 시간으로 휴식 타이머가 시작돼요</small></div><div class="pref-seg">${[60,90,120,180].map(s=>`<button type="button" class="${p.restSec===s?'on':''}" data-pref="restSec" data-pref-value="${s}" aria-pressed="${p.restSec===s}">${s<120?s+'초':(s/60)+'분'}</button>`).join('')}</div></div>
  <div class="pref-item"><div><b>안내 방식</b><small>계획→안내 모드의 휴식·세트 알림. 진동은 Android만 돼요</small></div>${seg('cue',['voice','sound','vibrate','silent'])}</div>
@@ -144,6 +151,7 @@ export function applyPrefClick(db, target){
  if(key==='tracks'){ const p = prefsOf(db); let next = p.tracks.includes(v) ? p.tracks.filter(x=>x!==v) : [...p.tracks, v]; if(!next.length) return {db, message:'하나 이상은 기록해야 해요.'}; return {db:withPrefs(db,{tracks:next}), message:`기록할 것: ${prefLabel('tracks', next)}`}; }
  if(key==='sports'){ const p = prefsOf(db); const next = p.sports.includes(v) ? p.sports.filter(x=>x!==v) : [...p.sports, v]; return {db:withPrefs(db,{sports:next}), message:`평소 하는 운동: ${sportsLabel(next)}`}; }
  if(key==='restSec') return {db:withPrefs(db,{restSec:Number(v)}), message:`기본 휴식 ${Number(v)}초`};
+ if(key==='glp1'){ const on = v==='on', prof = db.settings?.nutritionProfile||{}, diets = new Set(prof.diets||[]); on ? diets.add('glp1') : diets.delete('glp1'); const next = withPrefs({...db, settings:{...db.settings, nutritionProfile:{...prof, diets:[...diets]}}}, {glp1:on}); return {db:next, message:on?'단백질을 먼저 챙기도록 보여 줄게요. 식단 목표도 다시 제안받을 수 있어요.':'GLP-1 기준을 껐어요'}; }
  if(key==='halo') return {db:withPrefs(db,{halo:v==='on'}), message:v==='on'?'헤일로를 보여 줘요':'헤일로를 숨겼어요'};
  if(key==='keepAwake') return {db:withPrefs(db,{keepAwake:v==='on'}), message:v==='on'?'안내 중 화면을 켜 둬요':'화면은 기기 설정대로 꺼져요'};
  if(!ALLOWED[key]?.includes(v)) return {db};

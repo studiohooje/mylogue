@@ -24,7 +24,7 @@ export const PRESETS = {
  perform:  {name:'운동 퍼포먼스', c:55, p:25, f:20, what:'탄수화물을 넉넉히 둬서 운동 에너지를 채워요.', good:'고강도 운동·증량 때 힘이 잘 나요.', care:'활동량이 적은 날엔 남는 탄수화물이 체지방이 될 수 있어요.'},
  lowcarb:  {name:'저탄수', c:25, p:35, f:40, what:'탄수화물을 줄이고 단백질·지방으로 채워요.', good:'혈당 변동과 식후 졸림이 줄 수 있어요.', care:'고강도 운동 수행이 떨어질 수 있어요. 당뇨약을 먹고 있다면 의료진과 상의하세요.'},
  keto:     {name:'저탄고지(키토)', c:5, p:25, f:70, what:'탄수화물을 하루 30~50g 안쪽으로 제한하는 식단이에요.', good:'키토를 이미 하는 분의 기록 기준으로 맞아요.', care:'초기 피로·변비가 흔하고, 콜레스테롤 수치를 확인하세요. 당뇨·신장 질환이 있으면 의료진과 상의하세요.'},
- glp1:     {name:'단백질 우선(GLP-1 사용 중)', c:35, p:35, f:30, what:'식사량이 줄어도 단백질은 먼저 채우도록 짠 비율이에요.', good:'적게 먹는 기간에 근육 손실을 줄이는 데 도움이 돼요.', care:'약 용량·식단은 의료진 지시가 우선이에요. 메스꺼우면 기름진 음식을 줄이고 물을 충분히 드세요.'},
+ glp1:     {name:'단백질 우선(GLP-1 사용 중)', c:35, p:35, f:30, what:'단백질을 체중 기준(1kg당 1.4~1.6g)으로 먼저 정하고, 나머지를 탄수·지방으로 나눠요. 식사량이 줄어도 단백질은 줄지 않아요.', good:'적게 먹는 기간에 근육 손실을 줄이는 데 도움이 돼요.', care:'약 용량·식단은 의료진 지시가 우선이에요. 메스꺼우면 기름진 음식을 줄이고 물을 충분히 드세요.'},
 };
 
 export function cleanProfile(p={}){
@@ -78,13 +78,34 @@ export function presetOrder(profile){
  return {rec, order:[rec, ...order.filter(k=>k!==rec)]};
 }
 
+// 4.7.0 GLP-1 사용 중: 단백질을 칼로리 %가 아니라 체중 기준으로 먼저 정한다(적게 먹을수록 단백질이 같이 줄지 않게).
+// 근거: ACLM·ASN·OMA·TOS 공동 권고(2025, Am J Lifestyle Med, doi:10.1177/15598276251344827) — 감량 중 1.2~1.6 g/kg/일 제안,
+// 비만이면 실제 체중으로 계산할 때 과대평가될 수 있음. → 기준 체중: 실제 체중이 BMI 22 체중의 1.2배를 넘으면 보정 체중(BMI 22 체중 + 0.4×차이).
+// 대표님 방향(단백질을 최대한 챙기게)에 맞춰 권고 범위(1.2~1.6)의 위쪽: 활동이 적으면 1.4, 가볍게 1.5, 꾸준히 이상 1.6 g/kg. 실제 체중 기준 2 g/kg는 넘기지 않는다. 지방 30%, 나머지 탄수.
+export function refWeight(profile){
+ const p = cleanProfile(profile); if(!p.weightKg) return null;
+ if(!p.heightCm) return p.weightKg;
+ const ibw = 22 * (p.heightCm/100) ** 2;
+ return p.weightKg > ibw*1.2 ? Math.round((ibw + 0.4*(p.weightKg-ibw))*10)/10 : p.weightKg;
+}
+export function glp1Macros(profile, kcal){
+ const p = cleanProfile(profile), ref = refWeight(p);
+ if(!ref || !kcal) return {...PRESETS.glp1, proteinG:Math.round(kcal*PRESETS.glp1.p/100/4), perKg:null, ref:null};
+ const perKg = p.activity==='sedentary' ? 1.4 : p.activity==='light' ? 1.5 : 1.6;
+ let g = Math.round(ref*perKg/5)*5; g = Math.min(g, Math.floor(p.weightKg*2/5)*5); g = Math.min(g, Math.floor(kcal*0.5/4/5)*5);
+ const pp = Math.round(g*4/kcal*100), f = 30, c = Math.max(0, 100 - pp - f);
+ return {...PRESETS.glp1, c, p:pp, f, proteinG:g, perKg, ref};
+}
+const macrosFor = (key, profile, kcal) => key==='glp1' ? glp1Macros(profile, kcal) : PRESETS[key];
 export const grams = (kcal, c, p, f) => ({carbs:Math.round(kcal*c/100/4), protein:Math.round(kcal*p/100/4), fat:Math.round(kcal*f/100/9)});
 
 export function dietNotes(profile){
  const p = cleanProfile(profile), out = [];
  if(p.diets.includes('if')) out.push('간헐적 단식: 목표량은 같고 먹는 시간대만 정하면 돼요. 끼니 수가 줄면 한 끼에 단백질 30g 이상을 챙기세요.');
  if(p.diets.includes('vegetarian')) out.push('채식: 두부·콩·달걀·유제품·단백질 보충제로 단백질을 채우기 쉬워요.');
- if(p.diets.includes('glp1')) out.push('GLP-1 사용 중: 너무 적게 먹게 되기 쉬워요. 칼로리보다 단백질·수분을 먼저 채우는 걸 목표로 하세요.');
+ if(p.diets.includes('glp1')){ const ref = refWeight(p);
+  out.push(`GLP-1 사용 중: 너무 적게 먹게 되기 쉬워요. 칼로리보다 단백질·수분을 먼저 채우고, 끼니마다 단백질 반찬을 하나씩 챙기세요.${ref&&ref!==p.weightKg?` 단백질은 체중이 많이 나가는 분께 맞게 보정 체중(${ref}kg)으로 계산했어요.`:''}`);
+  out.push('근육을 지키려면 단백질과 함께 근력운동이 필요해요. 너무 적게 먹으면(여성 1,200kcal·남성 1,800kcal 아래) 비타민·무기질이 모자라기 쉬워요. 신장 질환이 있거나 약 용량을 바꾸는 중이면 목표량을 의료진과 정하세요.'); }
  if(p.weightKg) out.push(`참고: 근력운동을 한다면 단백질은 체중 1kg당 1.6g(${Math.round(p.weightKg*1.6)}g) 안팎을 많이 권해요.`);
  return out;
 }
@@ -114,7 +135,7 @@ export function goalWizardHTML(st){
  }
  if(step==='macros'){
   const kcal = st.kcal, {rec, order} = presetOrder(p);
-  const cards = order.map(k => { const x = PRESETS[k], g = grams(kcal, x.c, x.p, x.f), on = st.preset===k && !st.custom.on;
+  const cards = order.map(k => { const x = macrosFor(k, p, kcal), g = grams(kcal, x.c, x.p, x.f), on = st.preset===k && !st.custom.on;
    return `<button type="button" class="gw-preset ${on?'on':''}" data-gw-preset="${k}" aria-pressed="${on}"><span class="gw-preset-top"><b>${x.name}</b>${k===rec?'<em class="gw-rec">추천</em>':''}<span class="gw-ratio">탄 ${x.c} : 단 ${x.p} : 지 ${x.f}</span></span><span class="gw-bar" aria-hidden="true"><i style="width:${x.c}%" class="c"></i><i style="width:${x.p}%" class="p"></i><i style="width:${x.f}%" class="f"></i></span><span class="gw-grams">탄수화물 ${g.carbs}g · 단백질 ${g.protein}g · 지방 ${g.fat}g${p.weightKg?` <small>(단백질 체중당 ${(g.protein/p.weightKg).toFixed(1)}g)</small>`:''}</span><span class="gw-desc">${x.what}</span><span class="gw-good">효과 · ${x.good}</span><span class="gw-care">주의 · ${x.care}</span></button>`; }).join('');
   const c = st.custom, sum = Number(c.c)+Number(c.p)+Number(c.f);
   return `<div class="onb gw">${top}<p class="onb-q">탄단지 비율을 골라 주세요</p><p class="onb-s">하루 ${n0(kcal)}kcal 기준으로 계산했어요.</p><div class="gw-presets">${cards}</div><details class="gw-custom" ${c.on?'open':''}><summary>직접 비율 입력(고급)</summary><div class="gw-fields"><label class="field">탄수화물 %<input id="gw-c" type="number" min="0" max="100" value="${h(c.c)}"></label><label class="field">단백질 %<input id="gw-p" type="number" min="0" max="100" value="${h(c.p)}"></label><label class="field">지방 %<input id="gw-f" type="number" min="0" max="100" value="${h(c.f)}"></label></div><p class="hint" id="gw-sum">합계 ${sum}%${sum!==100?' · 100%로 맞춰 주세요':''}</p><button type="button" class="button secondary" id="gw-custom-use">이 비율로 하기</button></details>${dietNotes(p).map(x=>`<p class="hint gw-note">${h(x)}</p>`).join('')}${nav(st,'이대로 저장','gw-save')}</div>`;
@@ -125,7 +146,7 @@ export function goalWizardHTML(st){
 
 // 저장: 기존 목표 형식(비율 모드)으로 바꿔 넣고, 문답 답은 nutritionProfile로 남긴다.
 export function applyGoalWizard(db, st){
- const c = st.custom.on ? {c:Number(st.custom.c), p:Number(st.custom.p), f:Number(st.custom.f)} : PRESETS[st.preset];
+ const c = st.custom.on ? {c:Number(st.custom.c), p:Number(st.custom.p), f:Number(st.custom.f)} : st.preset ? macrosFor(st.preset, st.profile, st.kcal) : null;
  if(!c) throw Error('탄단지 비율을 골라 주세요.');
  if(!st.kcal || st.kcal < 800) throw Error('목표 칼로리를 골라 주세요.');
  const settings = saveGoalSettings(db.settings, {goalMode:'ratio', calorieGoal:st.kcal, carbsPctGoal:c.c, proteinPctGoal:c.p, fatPctGoal:c.f, barbellWeightKg:db.settings?.barbellWeightKg ?? 20});

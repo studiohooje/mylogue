@@ -16,9 +16,10 @@ test('맞춤: 문답 결과가 설정에 저장되고, 집을 고르면 홈트 �
  s.step = 3; onboardingPick(s, 'after');
  s.step = 4; onboardingPick(s, 'simple');
  s.step = 5; onboardingPick(s, 'slot');
- s.step = 6; onboardingPick(s, 'home');
+ s.step = 6; onboardingPick(s, 'yes');
+ s.step = 7; onboardingPick(s, 'home');
  const db = finishOnboarding(db0, s.answers), p = prefsOf(db);
- assert.equal(p.onboarded, true); assert.equal(p.workoutMode, 'after'); assert.equal(p.mealMode, 'simple'); assert.equal(p.mealLabel, 'slot');
+ assert.equal(p.onboarded, true); assert.equal(p.workoutMode, 'after'); assert.equal(p.mealMode, 'simple'); assert.equal(p.mealLabel, 'slot'); assert.equal(p.glp1, true); assert.ok(db.settings.nutritionProfile.diets.includes('glp1'));
  assert.ok(db.settings.gyms.includes('집'));
 });
 

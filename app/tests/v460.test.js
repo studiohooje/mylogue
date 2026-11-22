@@ -15,3 +15,12 @@ test('4.6.0 동기부여 문구: 시간대·근거·첫 기록·빈 자리',()=>
  assert.ok(!/범스테드|Bumstead|살 빠/.test(emptyLine('meal')+l.text),'유명인 이름·과장 금지');
  assert.ok(emptyLine('body').length>3);
 });
+import {glp1Macros,refWeight,dietNotes,applyGoalWizard} from '../nutrition-plan.js';
+import {renderFoodPage} from '../food-view.js';
+test('4.7.0 GLP-1: 단백질은 기준 체중 × 1.4~1.6g, 비만이면 보정 체중, 실제 체중 2g/kg 넘지 않음',()=>{
+ const f={sex:'female',age:40,heightCm:160,weightKg:90,activity:'light',goal:'lose',diets:['glp1']};
+ assert.equal(refWeight(f),69.8);const g=glp1Macros(f,1500);assert.equal(g.proteinG,105);assert.equal(g.p+g.c+g.f,100);
+ const lean={...f,weightKg:55};assert.equal(refWeight(lean),55);assert.equal(glp1Macros(lean,1300).proteinG,85);
+ assert.ok(dietNotes(f).some(x=>/보정 체중/.test(x)));
+ const db={settings:{},body:[]};const out=applyGoalWizard(db,{profile:f,kcal:1500,preset:'glp1',custom:{on:false}});assert.equal(out.settings.proteinPctGoal,28);
+});
