@@ -1262,3 +1262,8 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .q-bar .chip-row{flex-wrap:wrap;overflow:visible}
 .gm-row.locked{opacity:.7}.gm-done{margin-left:32px;color:#6fd6a3;font-size:12px}
 .gm-auto{margin-left:32px;color:#8a9bb0;font-size:12px}
+/* 4.7.0 내 머신 메모: 없으면 아주 작게, 있으면 한 줄 */
+.q-memo{display:inline-block;border:0;background:none;padding:2px 0;min-height:32px;font:inherit;font-size:12px;color:#7f90a6;cursor:pointer;text-align:left}
+.q-memo:hover{color:#b4c6d8}
+.q-memo.has{color:#d9cdfa;font-size:13px}
+.q-memo-edit{display:flex;gap:6px;align-items:center;margin-top:4px}.q-memo-edit input{flex:1;min-width:0;min-height:40px}

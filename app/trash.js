@@ -23,5 +23,6 @@ export function restoreInto(db, item){ const have = new Set((db[item.kind]||[]).
 const label = (kind, r) => kind==='meals' ? `${r.name||'음식'}${r.servingQty?` ${r.servingQty}${r.servingUnit||''}`:''}` : kind==='workouts' ? (r.rest ? '의도적 휴식' : r.title||'운동') : kind==='body' ? `${r.weight?`${r.weight}kg`:'수치'}${r.measure==='inbody'?' · 인바디':''}` : r.title||r.name||'루틴';
 export function trashHTML(list){
  const items = [...list].reverse();
+ if(!items.length) return ''; // 4.7.0 비어 있으면 카드를 보이지 않는다(되돌리기 토스트가 휴지통을 알려 줌)
  return `<section class="section card trash-card" id="trash"><h3>휴지통 <small>최근 ${DAYS}일 · 이 기기</small></h3>${items.length?`<ul class="trash-list">${items.map(x => { const d = new Date(x.at), first = x.records[0]; return `<li><span><b>${h(KINDS[x.kind])} · ${h(first?.date||'')}</b><small>${h(x.records.slice(0,3).map(r => label(x.kind, r)).join(', '))}${x.records.length>3?` 외 ${x.records.length-3}개`:''} · ${d.getMonth()+1}/${d.getDate()} 지움</small></span><button type="button" class="button small secondary" data-trash-restore="${h(x.group)}">되살리기</button></li>`; }).join('')}</ul><button type="button" class="text-button" id="trash-empty">휴지통 비우기</button>`:'<p class="hint">지운 기록이 없어요. 지운 기록은 여기서 30일 동안 되살릴 수 있어요.</p>'}</section>`;
 }
