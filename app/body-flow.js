@@ -1,8 +1,10 @@
 // 4.3.0 수치 '한눈에'(대표님: 마웨그처럼 볼거리 — 주간으로 얼마나 늘고 줄었는지 주봉처럼).
 // 요약 줄 → 체중 큰 그래프(일간·주간·월간, 최고·최저·현재, 목표선) → 주간 변화 막대(목표 쪽이면 초록, 반대면 빨강)
 // → 체성분 변화(인바디) → 식단과 함께(주별 평균 섭취·체중) → 요일 패턴.
+// 4.4.0 목표 띠형으로 통일: 최고·최저·현재 색 배지와 축 숫자를 없애고, 목표 체중 ±1kg 띠 + 마우스오버.
 import {mealTotals} from './domain.js';
 import {scaleRecords, inbodyRecords} from './body-series.js';
+import {lineChart, barChart, hoverButton} from './band-chart.js';
 
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -42,43 +44,26 @@ export function summary(points, goal, today){
  return {now:last.w, nowDate:last.date, avg7:w7.length ? r1(avg(w7.map(p => p.w))) : null, change30, goal:goal||null, left:goal ? r1(goal - last.w) : null, eta};
 }
 
+const BODY = '#f2b49b', DOWN = '#6fd6a3', UP = '#ff7b93';
 function mainChart(rows, view, goal, dayAvg){
  if(!rows.length) return '<p class="hint bf-empty">체중을 기록하면 여기에 흐름이 그려져요.</p>';
- const W = CW(), H = 240, L = 40, R = 46, T = 14, B = 24, n = rows.length;
- const vals = rows.map(r => r.w).concat(goal ? [goal] : []);
- const lo = Math.floor(Math.min(...vals) - 1), hi = Math.ceil(Math.max(...vals) + 1);
- const x = i => L + (n===1 ? (W-L-R)/2 : i*(W-L-R)/(n-1)), y = v => T + (H-T-B)*(1 - (v-lo)/(hi-lo||1));
- let g = '';
- const step = Math.max(1, Math.round((hi-lo)/5));
- for(let v = lo; v<=hi; v+=step) g += `<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="#fff" stroke-opacity=".06"/><text x="${L-6}" y="${(y(v)+4).toFixed(1)}" text-anchor="end" class="bf-ax">${v}</text><text x="${W-R+6}" y="${(y(v)+4).toFixed(1)}" class="bf-ax">${v}</text>`;
- if(goal) g += `<line x1="${L}" x2="${W-R}" y1="${y(goal).toFixed(1)}" y2="${y(goal).toFixed(1)}" stroke="#ff8a8a" stroke-opacity=".75" stroke-dasharray="5 5"/><text x="${W-R+4}" y="${(y(goal)-4).toFixed(1)}" class="bf-goal">목표 ${goal}</text>`;
- if(view==='day'){
-  g += rows.map((r, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(r.w).toFixed(1)}" r="2.2" fill="#f2b49b" opacity=".45"><title>${r.key} · ${f1(r.w)}kg</title></circle>`).join('');
-  const line = dayAvg.map((v, i) => `${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
-  g += `<path d="${line}" fill="none" stroke="#f2b49b" stroke-width="2.6" stroke-linejoin="round"/>`;
- } else {
-  const line = rows.map((r, i) => `${i?'L':'M'}${x(i).toFixed(1)} ${y(r.w).toFixed(1)}`).join(' ');
-  g += `<path d="${line}" fill="none" stroke="#8ce4e0" stroke-width="2.4" stroke-linejoin="round"/>` + rows.map((r, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(r.w).toFixed(1)}" r="${i===n-1?4.5:3}" fill="#8ce4e0"><title>${r.label} · ${f1(r.w)}kg${view==='week'?` (${r.n}번 잰 평균)`:''}</title></circle>`).join('');
- }
- const marks = [0, Math.floor((n-1)/2), n-1].filter((v, i, a) => a.indexOf(v)===i).map(i => `<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle" class="bf-ax">${esc(rows[i].label)}</text>`).join('');
- return `<svg class="bf-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="체중 흐름">${g}${marks}</svg>`;
+ const vals = rows.map(r => r.w), lo = goal ? goal-1 : null, hi = goal ? goal+1 : null;
+ const tips = rows.map((r, i) => `<span class="d">${esc(view==='day'?md(r.key):view==='week'?`${r.label} 주`:r.label)}</span><b>${f1(r.w)}kg</b>${view==='day'&&dayAvg[i]!=null?`<span class="d">7일 평균 ${f1(dayAvg[i])}kg</span>`:''}${view!=='day'?`<span class="d">${r.n}번 잰 평균</span>`:''}${goal?`<span class="s">${Math.abs(r.w-goal)<=1?'목표 범위 안':`목표까지 ${f1(Math.abs(r.w-goal))}kg`}</span>`:''}`);
+ return lineChart({vals, line:view==='day' ? dayAvg : null, lo, hi, color:BODY, h:170, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중 흐름'});
 }
 function changeBars(ch, goalDir){
  if(ch.length<2) return '';
- const W = CW(), H = 96, L = 40, R = 46, mid = 50, n = ch.length, max = Math.max(0.5, ...ch.map(c => Math.abs(c.d)));
- const bw = Math.min(26, (W-L-R)/n*0.7), x = i => L + (i+0.5)*(W-L-R)/n;
  const good = d => goalDir ? Math.sign(d)===goalDir || d===0 : d<=0;
- const bars = ch.map((c, i) => { const h = Math.max(2, Math.abs(c.d)/max*40); return `<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(c.d>0?mid-h:mid).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${good(c.d)?'#6fd6a3':'#ff7b7b'}"><title>${c.label} 주: ${c.d>0?'+':''}${f1(c.d)}kg</title></rect>`; }).join('');
- const lab = [0, n-1].map(i => `<text x="${x(i).toFixed(1)}" y="${H-4}" text-anchor="middle" class="bf-ax">${esc(ch[i].label)}</text>`).join('');
- return `<div class="bf-sub"><b>주간 변화</b><small>지난주 평균보다 ${goalDir>0?'늘면':'줄면'} 초록, 반대면 빨강</small></div><svg class="bf-bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="주간 체중 변화 막대"><line x1="${L}" x2="${W-R}" y1="${mid}" y2="${mid}" stroke="#fff" stroke-opacity=".2"/><text x="${L-6}" y="${mid+4}" text-anchor="end" class="bf-ax">0</text>${bars}${lab}</svg><p class="bf-last">이번 주 <b class="${good(ch.at(-1).d)?'good':'bad'}">${ch.at(-1).d>0?'+':''}${f1(ch.at(-1).d)}kg</b> · 지난 ${n}주 중 ${ch.filter(c => good(c.d)).length}주가 목표 쪽</p>`;
+ const tips = ch.map(c => `<span class="d">${esc(c.label)} 주</span><b>${c.d>0?'+':''}${f1(c.d)}kg</b><span class="d">지난주 평균보다 ${c.d>0?'늘었어요':c.d<0?'줄었어요':'그대로예요'}</span>`);
+ return `<div class="bf-sub"><b>주간 변화</b><small>목표 쪽이면 초록, 반대면 분홍</small></div>${barChart({bars:ch.map(c => ({v:c.d, color:good(c.d)?DOWN:UP})), signed:true, h:72, tips, dateL:ch[0].label, dateR:'이번 주', label:'주간 체중 변화'})}<p class="bf-last">이번 주 <b class="${good(ch.at(-1).d)?'good':'bad'}">${ch.at(-1).d>0?'+':''}${f1(ch.at(-1).d)}kg</b> · 지난 ${ch.length}주 중 ${ch.filter(c => good(c.d)).length}주가 목표 쪽</p>`;
 }
 function compositionCard(db){
  const ib = inbodyRecords(db).filter(x => Number(x.weight)>0 && (x.skeletalMuscle!=null || x.bodyFatMass!=null)).slice(-6);
  if(!ib.length) return '';
- const W = CW(), H = 150, n = ib.length, bw = Math.min(56, (W-80)/n*0.6), max = Math.max(...ib.map(x => Number(x.weight)));
- const bars = ib.map((x, i) => { const cx = 40 + (i+0.5)*(W-80)/n, m = Number(x.skeletalMuscle)||0, f = Number(x.bodyFatMass)||0, o = Math.max(0, Number(x.weight)-m-f), sc = 110/max; let yy = 124; return [[m,'#6fd6a3','골격근'],[f,'#ff7b93','체지방'],[o,'#3a4a66','그 외']].map(([v, c, l]) => { const h = v*sc; yy -= h; return `<rect x="${(cx-bw/2).toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, h-1).toFixed(1)}" rx="3" fill="${c}"><title>${x.date} ${l} ${f1(v)}kg</title></rect>`; }).join('') + `<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle" class="bf-ax">${md(x.date)}</text>`; }).join('');
+ const bars = ib.map(x => { const m = Number(x.skeletalMuscle)||0, f = Number(x.bodyFatMass)||0; return {stack:[{v:m, color:DOWN}, {v:f, color:UP}, {v:Math.max(0, Number(x.weight)-m-f), color:'#3a4a66'}]}; });
+ const tips = ib.map(x => `<span class="d">${md(x.date)} 인바디</span><b>${f1(Number(x.weight))}kg</b><span class="d">골격근 ${x.skeletalMuscle!=null?f1(x.skeletalMuscle)+'kg':'—'} · 체지방 ${x.bodyFatMass!=null?f1(x.bodyFatMass)+'kg':'—'}</span>`);
  const a = ib[0], b = ib.at(-1), dm = r1((b.skeletalMuscle||0)-(a.skeletalMuscle||0)), df = r1((b.bodyFatMass||0)-(a.bodyFatMass||0));
- return `<section class="section card bf-card"><div class="bf-sub"><b>체성분 변화</b><small>인바디 ${ib.length}회</small></div><svg class="bf-bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="인바디별 골격근·체지방">${bars}</svg><div class="bf-legend"><span><i style="background:#6fd6a3"></i>골격근</span><span><i style="background:#ff7b93"></i>체지방</span><span><i style="background:#3a4a66"></i>그 외</span></div>${ib.length>1?`<p class="bf-last">첫 측정보다 골격근 <b class="${dm>=0?'good':'bad'}">${dm>0?'+':''}${f1(dm)}kg</b> · 체지방 <b class="${df<=0?'good':'bad'}">${df>0?'+':''}${f1(df)}kg</b></p>`:''}</section>`;
+ return `<section class="section card bf-card"><div class="bf-sub"><b>체성분 변화</b><small>인바디 ${ib.length}회</small></div>${barChart({bars, h:120, tips, dateL:md(a.date), dateR:md(b.date), label:'인바디별 골격근·체지방'})}<div class="bf-legend"><span><i style="background:${DOWN}"></i>골격근</span><span><i style="background:${UP}"></i>체지방</span><span><i style="background:#3a4a66"></i>그 외</span></div>${ib.length>1?`<p class="bf-last">첫 측정보다 골격근 <b class="${dm>=0?'good':'bad'}">${dm>0?'+':''}${f1(dm)}kg</b> · 체지방 <b class="${df<=0?'good':'bad'}">${df>0?'+':''}${f1(df)}kg</b></p>`:''}</section>`;
 }
 function dietWithWeight(db, points, today){
  const weeks = []; let m = monday(today);
@@ -111,15 +96,13 @@ export function bodyOverviewHTML(db, {view = 'day', today}){
  const range = view==='day' ? points.slice(-90) : points;
  const rows = bucket(range, view).slice(view==='week' ? -26 : view==='month' ? -24 : -90);
  const dayAvg = view==='day' ? rows.map((r, i) => r1(avg(rows.slice(Math.max(0, i-6), i+1).map(x => x.w)))) : [];
- const ws = rows.map(r => r.w), hi = ws.length ? Math.max(...ws) : null, lo = ws.length ? Math.min(...ws) : null;
- const hiRow = rows.find(r => r.w===hi), loRow = rows.find(r => r.w===lo);
  const goalDir = goal && s ? Math.sign(goal - s.now) || -1 : -1;
  const stat = (k, v, cls = '') => `<div><small>${k}</small><b class="${cls}">${v}</b></div>`;
- return `<section class="section card bf-top">${s ? `<div class="bf-stats">${stat('지금', `${f1(s.now)}kg`)}${stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}${stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:'—', s.change30==null?'':Math.sign(s.change30)===goalDir||s.change30===0?'good':'bad')}${goal?stat(`목표 ${goal}kg`, s.left===0?'도착!':`${Math.abs(s.left)}kg ${s.left<0?'남음':'더'}${s.eta?` · 약 ${s.eta}주`:''}`):`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}
+ return `<section class="section card bf-top">${s ? `<div class="bf-stats">${stat('지금', `${f1(s.now)}kg`)}${stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}${stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:'—')}${goal?stat(`목표 ${goal}kg`, s.left===0?'도착!':`${Math.abs(s.left)}kg ${s.left<0?'남음':'더'}${s.eta?` · 약 ${s.eta}주`:''}`):`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}
  <form id="goal-weight-form" class="bf-goal-form" hidden><label class="field">목표 체중(kg)<input name="goalWeight" type="number" inputmode="decimal" step="0.1" min="20" max="300" value="${esc(goal||'')}"></label><button class="button small">저장</button></form>
- <div class="bf-head"><div class="bf-badges">${hiRow?`<span class="bf-badge hi">최고 ${f1(hi)}kg<small>${esc(hiRow.label)}</small></span>`:''}${loRow?`<span class="bf-badge lo">최저 ${f1(lo)}kg<small>${esc(loRow.label)}</small></span>`:''}${s?`<span class="bf-badge now">현재 ${f1(s.now)}kg<small>${md(s.nowDate)}</small></span>`:''}</div><div class="df-period" role="group" aria-label="보기 단위">${[['day','일간'],['week','주간'],['month','월간']].map(([k, l]) => `<button type="button" class="${k===view?'on':''}" data-bf-view="${k}" aria-pressed="${k===view}">${l}</button>`).join('')}</div></div>
+ <div class="bf-head"><b class="bf-title">체중</b><div class="df-tools"><div class="df-period" role="group" aria-label="보기 단위">${[['day','일간'],['week','주간'],['month','월간']].map(([k, l]) => `<button type="button" class="${k===view?'on':''}" data-bf-view="${k}" aria-pressed="${k===view}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
  ${mainChart(rows, view, goal, dayAvg)}
- ${view==='day'?'<p class="hint bf-note">점은 매일 잰 값, 선은 최근 7일 평균이에요. 인바디 체중은 기계가 달라 섞지 않아요.</p>':''}
+ ${view==='day'?`<p class="hint bf-note">점은 매일 잰 값, 선은 최근 7일 평균이에요.${goal?' 띠는 목표 체중 ±1kg이에요.':''} 인바디 체중은 기계가 달라 섞지 않아요.</p>`:''}
  ${changeBars(weeklyChanges(points), goalDir)}
  ${goal?'<p class="hint"><button type="button" class="text-button" data-goal-weight-open>목표 체중 바꾸기</button></p>':''}
  </section>${compositionCard(db)}${dietWithWeight(db, points, today)}${weekdayCard(points, today)}`;

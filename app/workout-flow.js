@@ -1,5 +1,6 @@
 // 4.3.0 운동 볼거리(대표님: 식단처럼 다양하게) — 이번 주 요약 · 12주 운동 잔디 · 운동 흐름(세트·볼륨·운동 일수·유산소) · 종목 성장 · 새 기록
 import {workoutTotals, setWeightKg} from './domain.js';
+import {lineChart, barChart, hoverButton} from './band-chart.js';
 
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -30,19 +31,12 @@ export function grassHTML(db, end){
 }
 
 function flowChart(ws, metric){
- const W = CW(), H = 200, L = 40, B = 24, T = 12, n = ws.length, x = i => L + (i+0.5)*(W-L-10)/n, bw = Math.min(40, (W-L-10)/n*0.6);
  const v = w => metric==='volume' ? w.volume/1000 : metric==='days' ? w.days : metric==='cardio' ? w.cardio : w.sets;
- const max = Math.max(1, ...ws.map(v)) * 1.12, y = val => T + (H-T-B)*(1 - val/max);
  const [, , color] = WF_METRICS.find(m => m[0]===metric);
- let body = '';
- ws.forEach((w, i) => {
-  if(metric==='sets'){ let yy = y(0); for(const [p, n] of Object.entries(w.parts).sort((a, b) => b[1]-a[1])){ const h = n/max*(H-T-B); yy -= h; body += `<rect x="${(x(i)-bw/2).toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, h-1).toFixed(1)}" rx="3" fill="${PART_COLOR[p]||'#5b6b85'}"><title>${md(w.k)} 주 ${p} ${n}세트</title></rect>`; } }
-  else { const val = v(w); body += `<rect x="${(x(i)-bw/2).toFixed(1)}" y="${y(val).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0)-y(val)).toFixed(1)}" rx="4" fill="${color}" opacity="${i===n-1?1:.75}"><title>${md(w.k)} 주 ${metric==='volume'?`${val.toFixed(1)}t`:metric==='cardio'?`${n0(val)}분`:`${val}일`}</title></rect>`; }
- });
- const unit = metric==='volume' ? 't' : metric==='cardio' ? '분' : metric==='days' ? '일' : '';
- const ticks = [0, max/2].map(t => `<text x="${L-6}" y="${(y(t)+4).toFixed(1)}" text-anchor="end" class="wf-ax">${metric==='volume'?t.toFixed(1):Math.round(t)}${unit}</text>`).join('');
- const labs = ws.map((w, i) => i%2===n%2 || i===n-1 ? `<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle" class="wf-ax">${i===n-1?'이번 주':md(w.k)}</text>` : '').join('');
- return `<svg class="wf-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="주별 운동 흐름"><line x1="${L}" x2="${W-10}" y1="${y(0)}" y2="${y(0)}" stroke="#fff" stroke-opacity=".15"/>${ticks}${body}${labs}</svg>${metric==='sets'?`<div class="wf-legend">${Object.entries(PART_COLOR).map(([p, c]) => `<span><i style="background:${c}"></i>${p}</span>`).join('')}</div>`:''}`;
+ const fmt = (w, val) => metric==='volume' ? `${val.toFixed(1)}t` : metric==='cardio' ? `${n0(val)}분` : metric==='days' ? `${val}일` : `${val}세트`;
+ const bars = ws.map(w => metric==='sets' ? {stack:Object.entries(w.parts).sort((a, b) => b[1]-a[1]).map(([p, n]) => ({v:n, color:PART_COLOR[p]||'#5b6b85'}))} : {v:v(w)});
+ const tips = ws.map(w => `<span class="d">${md(w.k)} 주</span><b>${fmt(w, v(w))}</b>${metric==='sets'&&w.sets?`<span class="d">${Object.entries(w.parts).sort((a, b) => b[1]-a[1]).map(([p, n]) => `${p} ${n}`).join(' · ')}</span>`:''}`);
+ return `${barChart({bars, color, h:150, tips, dateL:`${ws.length-1}주 전`, dateR:'이번 주', label:'주별 운동 흐름'})}${metric==='sets'?`<div class="wf-legend">${Object.entries(PART_COLOR).map(([p, c]) => `<span><i style="background:${c}"></i>${p}</span>`).join('')}</div>`:''}`;
 }
 
 // 대표 종목(최근 12주 가장 많이 한 근력 종목)의 날짜별 최고 무게
@@ -63,10 +57,8 @@ export function newRecords(db, end, days = 28){
  return [...last.values()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 }
 function growthChart(g){
- const W = CW(), H = 140, L = 40, n = g.pts.length, ws = g.pts.map(p => p.w), lo = Math.floor(Math.min(...ws) - 2.5), hi = Math.ceil(Math.max(...ws) + 2.5);
- const x = i => L + i*(W-L-20)/(n-1), y = v => 14 + (H-38)*(1 - (v-lo)/(hi-lo||1));
- const d = g.pts.map((p, i) => `${i?'L':'M'}${x(i).toFixed(1)} ${y(p.w).toFixed(1)}`).join(' ');
- return `<svg class="wf-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(g.name)} 최고 무게 추이"><path d="${d}" fill="none" stroke="#b8aaf2" stroke-width="2.6" stroke-linejoin="round"/>${g.pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.w).toFixed(1)}" r="${i===n-1?4.5:3}" fill="#b8aaf2"><title>${md(p.date)} ${p.w}kg</title></circle>`).join('')}<text x="${x(n-1).toFixed(1)}" y="${(y(ws.at(-1))-10).toFixed(1)}" text-anchor="end" class="wf-val">${ws.at(-1)}kg</text><text x="${x(0).toFixed(1)}" y="${H-6}" class="wf-ax">${md(g.pts[0].date)}</text><text x="${x(n-1).toFixed(1)}" y="${H-6}" text-anchor="end" class="wf-ax">${md(g.pts.at(-1).date)}</text></svg>`;
+ const tips = g.pts.map(p => `<span class="d">${md(p.date)}</span><b>${p.w}kg</b><span class="d">그날 가장 무거운 세트</span>`);
+ return lineChart({vals:g.pts.map(p => p.w), color:'#b8aaf2', h:120, tips, dateL:md(g.pts[0].date), dateR:md(g.pts.at(-1).date), label:`${g.name} 최고 무게 추이`});
 }
 
 export function workoutFlowHTML(db, {end, metric = 'sets'}){
@@ -74,6 +66,6 @@ export function workoutFlowHTML(db, {end, metric = 'sets'}){
  const ws = weeks(db, end, 8), cur = ws.at(-1), goal = Number(db.settings?.weeklyWorkoutGoal)||null;
  const g = liftGrowth(db, end), prs = newRecords(db, end);
  return `<section class="section card wf-top"><div class="wf-sub"><b>${end===ymd(new Date())?'이번 주':'그 주'}</b><small>${md(cur.k)} – ${md(addDays(cur.k, 6))}</small></div><div class="wf-stats"><div><small>운동한 날</small><b>${cur.days}${goal?` / ${goal}`:''}일</b></div><div><small>세트</small><b>${cur.sets}</b></div><div><small>볼륨</small><b>${(cur.volume/1000).toFixed(1)}t</b></div><div><small>유산소</small><b>${n0(cur.cardio)}분</b></div></div>${grassHTML(db, end)}</section>
- <section class="section card wf-flow"><div class="wf-sub"><b>운동 흐름</b><small>최근 8주</small></div><div class="df-tabs" role="tablist">${WF_METRICS.map(([k, l, c]) => `<button type="button" role="tab" class="df-tab${k===metric?' on':''}" style="--c:${c}" data-wf-metric="${k}" aria-selected="${k===metric}">${l}</button>`).join('')}</div>${flowChart(ws, metric)}</section>
+ <section class="section card wf-flow"><div class="wf-sub"><b>운동 흐름</b><span class="df-tools"><small>최근 8주</small>${hoverButton()}</span></div><div class="df-tabs" role="tablist">${WF_METRICS.map(([k, l, c]) => `<button type="button" role="tab" class="df-tab${k===metric?' on':''}" style="--c:${c}" data-wf-metric="${k}" aria-selected="${k===metric}">${l}</button>`).join('')}</div>${flowChart(ws, metric)}</section>
  ${g||prs.length?`<section class="section card wf-growth">${g?`<div class="wf-sub"><b>종목 성장</b><small>${esc(g.name)} · 날마다 가장 무거운 세트</small></div>${growthChart(g)}`:''}${prs.length?`<div class="wf-sub"><b>새 기록</b><small>최근 4주</small></div><ul class="wf-prs">${prs.map(r => `<li><span>${esc(r.name)}</span><span>${r.from} → <b>${r.to}kg</b> <small>${md(r.date)}</small></span></li>`).join('')}</ul>`:''}</section>`:''}`;
 }

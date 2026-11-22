@@ -40,6 +40,8 @@ import {createCoachController} from './coach-controller.js';
 import {COACH_PAGES} from './coach.js';
 import {dateBarHTML,dateBarClick,shiftDate} from './date-bar.js';
 import {dietFlowHTML} from './diet-trends.js';
+import {installChartHover} from './band-chart.js';
+installChartHover();
 import {bodyOverviewHTML} from './body-flow.js';
 import {workoutFlowHTML} from './workout-flow.js';
 import {reminderItems,reminderSettingsHTML,setReminder} from './reminders.js';
