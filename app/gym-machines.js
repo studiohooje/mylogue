@@ -39,9 +39,10 @@ export function makerCounts(shared = {}){
 export const SIDED_SHORT = {both:'양쪽 함께', iso:'좌우 따로 움직임', single:'한쪽씩'};
 const baseOf = (models, id) => GENERIC_MACHINES.find(g => g.id===(models.get(id)?.baseId||id));
 export function specOptions(baseLoad, load){
- const o = baseLoad==='cable' ? {load:['cable'], sided:['both','single'], unit:['kg','lb','level']}
-  : baseLoad==='smith' ? {load:['smith'], sided:['both'], unit:['kg','lb']}
-  : baseLoad==='body' ? {load:['stack'], sided:['both'], unit:['kg','lb','level']}
+ // 대표님: 케이블·스미스까지 세세히 물으면 번거로움 → 기본값으로 자동(무게 표시는 운동 기록 화면의 kg·lb·숫자 단계 버튼으로 바꿀 수 있음)
+ const o = baseLoad==='cable' ? {load:['cable'], sided:['both'], unit:['kg']}
+  : baseLoad==='smith' ? {load:['smith'], sided:['both'], unit:['kg']}
+  : baseLoad==='body' ? {load:['stack'], sided:['both'], unit:['kg']}
   : {load:['plate','stack'], sided:['both','iso'], unit:['kg','lb','level']};
  if(load==='plate') o.unit = ['kg','lb'];
  return o;
@@ -72,14 +73,21 @@ export function pickMachine(st, shared, id, on){
  return st;
 }
 export function setSpec(st, id, k, v){
- st.spec = st.spec||{}; const sp = {...(st.spec[id]||{}), [k]:v};
+ st.spec = st.spec||{}; let sp = {...(st.spec[id]||{}), [k]:v};
+ if(k==='levelPreset'){ const [f, s2] = String(v).split('/').map(Number); delete sp.levelPreset; sp = {...sp, levelFirst:f, levelStep:s2}; }
+ if(k==='levelFirst'||k==='levelStep'){ const n = Number(v); if(v===''||!(n>=0)) delete sp[k]; else sp[k] = n; }
+ if(k==='unit' && v!=='level'){ delete sp.levelFirst; delete sp.levelStep; }
  if(k==='load' && v==='plate' && sp.unit==='level') delete sp.unit;
  st.spec[id] = sp; return st;
 }
 const specHTML = (st, models, id) => { const sp = st.spec?.[id]||{}, o = specOptions(baseOf(models, id)?.load, sp.load), miss = !o.load.includes(sp.load) || !o.sided.includes(sp.sided) || !o.unit.includes(sp.unit);
- const grp = (k, label, opts, names) => `<div class="gm-spec-row"><span>${label}</span><div class="gm-seg">${opts.map(v => `<button type="button" class="${sp[k]===v?'on':''}" data-gm-spec="${h(id)}|${k}|${v}" aria-pressed="${sp[k]===v}">${h(names[v]||v)}</button>`).join('')}</div></div>`;
- return `<div class="gm-spec${miss?' miss':''}">${miss?'<small class="gm-need">이 헬스장 머신을 보고 골라 주세요</small>':''}${grp('load','무게 방식',o.load,LOAD_LABEL)}${grp('sided','움직임',o.sided,SIDED_SHORT)}${grp('unit','무게 표시',o.unit,UNIT_LABEL)}</div>`; };
+ if(o.load.length+o.sided.length+o.unit.length===3) return '<small class="gm-auto">기본값으로 등록돼요</small>';
+ const grp = (k, label, opts, names) => opts.length<2 ? '' : `<div class="gm-spec-row"><span>${label}</span><div class="gm-seg">${opts.map(v => `<button type="button" class="${sp[k]===v?'on':''}" data-gm-spec="${h(id)}|${k}|${v}" aria-pressed="${sp[k]===v}">${h(names[v]||v)}</button>`).join('')}</div></div>`;
+ const sug = sp.unit==='level' ? levelSuggest(st._shared||{}, id) : null;
+ const lvl = sp.unit==='level' ? `<div class="gm-spec-row gm-level"><span>숫자 → kg</span><div class="gm-lv"><label>첫 칸<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelFirst" value="${h(sp.levelFirst??'')}" placeholder="5">kg</label><label>한 칸마다<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelStep" value="${h(sp.levelStep??'')}" placeholder="5">kg</label>${sug?`<button type="button" class="gm-sug" data-gm-spec="${h(id)}|levelPreset|${sug.first}/${sug.step}">다른 헬스장 ${sug.n}곳: 첫 칸 ${sug.first} · 한 칸 ${sug.step}kg</button>`:''}<small>머신 옆 라벨에 적혀 있어요. 모르면 비워 두세요. 첫 칸 5kg · 한 칸 5kg으로 추정해 계산하고, 나중에 고칠 수 있어요.</small></div></div>` : '';
+ return `<div class="gm-spec${miss?' miss':''}">${miss?'<small class="gm-need">이 헬스장 머신을 보고 골라 주세요</small>':''}${grp('load','무게 방식',o.load,LOAD_LABEL)}${grp('sided','움직임',o.sided,SIDED_SHORT)}${grp('unit','무게 표시',o.unit,UNIT_LABEL)}${lvl}</div>`; };
 export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
+ st._shared = shared;
  const models = allModels(shared), brandsBy = new Map(), cnt = gymCounts(shared), makers = makerCounts(shared);
  for(const m of models.values()) if(m.kind==='brand' && m.baseId){ if(!brandsBy.has(m.baseId)) brandsBy.set(m.baseId, []); brandsBy.get(m.baseId).push(m); }
  // 머신 종류도 이 종류(+제조사 모델)를 등록한 헬스장이 많은 순서로
@@ -113,11 +121,11 @@ export function gymChanges(st, shared = {}){
 // 일반 사용자 요청: 머신 하나당 요청 하나(기존 등록 요청 형식). 메모에 모델 id·헬스장 키를 넣어 관리자가 한 번에 승인.
 export function gymRequests(st, shared = {}){
  const models = allModels(shared);
- return [...st.checked].filter(id => !st.initial.has(id)).map(id => { const m = models.get(id)||{}; const base = GENERIC_MACHINES.find(g => g.id===(m.baseId||id)); return {type:'machine', mode:'manual', name:base?.exercise||'', manufacturer:m.manufacturer||'일반 머신', model:m.model||m.name||id, gymName:st.gymName, targetIds:[], note:`[헬스장 머신] modelId=${encodeURIComponent(id)} gymKey=${encodeURIComponent(st.key)} spec=${[st.spec?.[id]?.load||'',st.spec?.[id]?.sided||'',st.spec?.[id]?.unit||''].join('.')}${m.kind==='brand'&&!String(id).startsWith('bm:')&&!String(id).startsWith('gm:')?` base=${encodeURIComponent(m.baseId)}`:''}`.slice(0, 1000)}; });
+ return [...st.checked].filter(id => !st.initial.has(id)).map(id => { const m = models.get(id)||{}; const base = GENERIC_MACHINES.find(g => g.id===(m.baseId||id)); return {type:'machine', mode:'manual', name:base?.exercise||'', manufacturer:m.manufacturer||'일반 머신', model:m.model||m.name||id, gymName:st.gymName, targetIds:[], note:`[헬스장 머신] modelId=${encodeURIComponent(id)} gymKey=${encodeURIComponent(st.key)} spec=${[st.spec?.[id]?.load||'',st.spec?.[id]?.sided||'',st.spec?.[id]?.unit||'',st.spec?.[id]?.levelFirst??'',st.spec?.[id]?.levelStep??''].join('_')}${m.kind==='brand'&&!String(id).startsWith('bm:')&&!String(id).startsWith('gm:')?` base=${encodeURIComponent(m.baseId)}`:''}`.slice(0, 1000)}; });
 }
 // 요청 메모에서 모델·헬스장 키 읽기(관리자 승인 때)
 export function parseGymRequest(note = ''){
- const m = /\[헬스장 머신\] modelId=(\S+) gymKey=(\S+)(?: spec=(\S*))?(?: base=(\S+))?/.exec(String(note)); const d = v => { try{ return decodeURIComponent(v||''); }catch{ return v||''; } }; if(!m) return null; const [load, sided, unit] = String(m[3]||'').split('.'); return {modelId:d(m[1]), gymKey:d(m[2]), baseId:d(m[4]), spec:load||sided||unit ? {load, sided, unit} : null};
+ const m = /\[헬스장 머신\] modelId=(\S+) gymKey=(\S+)(?: spec=(\S*))?(?: base=(\S+))?/.exec(String(note)); const d = v => { try{ return decodeURIComponent(v||''); }catch{ return v||''; } }; if(!m) return null; const [load, sided, unit, lf, ls] = (r => r.split(r.includes('_') ? '_' : '.'))(String(m[3]||'')); const spec = load||sided||unit ? {load, sided, unit, ...(lf!==undefined&&lf!==''?{levelFirst:Number(lf)}:{}), ...(ls!==undefined&&ls!==''?{levelStep:Number(ls)}:{})} : null; return {modelId:d(m[1]), gymKey:d(m[2]), baseId:d(m[4]), spec};
 }
 
 // 4.7.0 중복 방지(대표님: 한 헬스장 머신을 여러 사람이 중복 등록하거나 관리자에게 무분별한 요청이 오면 안 됨)
@@ -133,3 +141,13 @@ export function requestQuota(now = new Date()){
  return {...st, left:Math.max(0, MAX_PER_DAY - st.n)};
 }
 export function useQuota(n, now = new Date()){ const q = requestQuota(now); try{ globalThis.localStorage?.setItem('mylogue.gymReqQuota', JSON.stringify({day:q.day, n:q.n + n})); }catch{} }
+
+// 4.7.0 숫자 단계 → kg(대표님: 볼륨에서 빠지면 서운함). 헬스장 머신에 적은 첫 칸·한 칸 무게로, 없으면 5·5kg 추정.
+export const LEVEL_DEFAULT = {first:5, step:5};
+export function levelToKg(spec, n){ const v = Number(n); if(!(v>0)) return {kg:0, est:false}; const f = Number(spec?.levelFirst), s = Number(spec?.levelStep), est = !(f>=0 && s>=0 && spec?.levelFirst!=null && spec?.levelStep!=null); const first = est ? LEVEL_DEFAULT.first : f, step = est ? LEVEL_DEFAULT.step : s; return {kg:Math.round((first + (v-1)*step)*100)/100, est}; }
+// 같은 모델을 다른 헬스장에서 등록한 값 중 가장 많은 것
+export function levelSuggest(shared = {}, modelId = ''){
+ if(String(modelId).startsWith('gm:')) return null;
+ const c = new Map(); for(const g of shared.gymMachines||[]) if(!g.removed && g.modelId===modelId && g.spec?.unit==='level' && g.spec.levelFirst!=null && g.spec.levelStep!=null){ const k = `${g.spec.levelFirst}/${g.spec.levelStep}`; c.set(k, (c.get(k)||0) + 1); }
+ const best = [...c.entries()].sort((a, b) => b[1]-a[1])[0]; if(!best) return null; const [f, s] = best[0].split('/').map(Number); return {first:f, step:s, n:best[1]};
+}

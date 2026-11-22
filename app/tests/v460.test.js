@@ -74,7 +74,7 @@ import {specOptions,specMissing,pickMachine,setSpec} from '../gym-machines.js';
 import {findMachine} from '../quick-entry.js';
 import {setWeightKg,cleanWorkout} from '../domain.js';
 test('4.7.0 헬스장 머신 방식: 종류마다 가능한 것만, 다 고르기 전엔 저장 불가, 운동 기록에 반영, 숫자 단계는 볼륨 제외',()=>{
- assert.deepEqual(specOptions('cable').load,['cable']);assert.deepEqual(specOptions('plate','plate').unit,['kg','lb']);assert.deepEqual(specOptions('smith').unit,['kg','lb']);
+ assert.deepEqual(specOptions('cable').load,['cable']);assert.deepEqual(specOptions('plate','plate').unit,['kg','lb']);assert.deepEqual(specOptions('smith').unit,['kg'],'스미스는 묻지 않고 기본값');assert.deepEqual(specOptions('cable').unit,['kg'],'케이블도 기본값');
  const st=newGymPicker({},{},'집');pickMachine(st,{},'gm:leg-press-45',true);assert.equal(specMissing(st),1,'원판·핀, 좌우, 단위를 아직 안 고름');
  assert.match(gymPickerHTML({...st,part:'하체'},{},{admin:true}),/id="gm-save" disabled/);
  setSpec(st,'gm:leg-press-45','load','stack');setSpec(st,'gm:leg-press-45','sided','iso');setSpec(st,'gm:leg-press-45','unit','level');assert.equal(specMissing(st),0);
@@ -83,4 +83,15 @@ test('4.7.0 헬스장 머신 방식: 종류마다 가능한 것만, 다 고르�
  const m=findMachine({settings:{}},shared,'gm:leg-press-45',{gymName:'집'});assert.equal(m.load,'plate');assert.equal(m.unit,'lb');assert.equal(m.sided,'iso');
  assert.equal(setWeightKg({weight:7,unit:'level',reps:10}),0);
  const w=cleanWorkout({date:'2026-11-22',exercises:[{name:'레그 프레스',sets:[{weight:7,unit:'level',reps:10}]}]});assert.equal(w.exercises[0].sets[0].unit,'level');
+});
+import {levelToKg,levelSuggest} from '../gym-machines.js';
+test('4.7.0 숫자 단계 → kg: 헬스장에 적은 값, 없으면 5·5 추정, 다른 헬스장 추천, 볼륨 반영',()=>{
+ assert.deepEqual(levelToKg({levelFirst:10,levelStep:2.5},7),{kg:25,est:false});
+ assert.deepEqual(levelToKg({},7),{kg:35,est:true});
+ const shared={gymMachines:[{gymKey:'a',modelId:'bm:x',spec:{unit:'level',levelFirst:10,levelStep:5}},{gymKey:'b',modelId:'bm:x',spec:{unit:'level',levelFirst:10,levelStep:5}},{gymKey:'c',modelId:'bm:x',spec:{unit:'level',levelFirst:5,levelStep:5}}]};
+ assert.deepEqual(levelSuggest(shared,'bm:x'),{first:10,step:5,n:2});
+ const st=newGymPicker({},{},'집');pickMachine(st,{},'bm:x',true);setSpec(st,'bm:x','unit','level');setSpec(st,'bm:x','levelFirst','10');setSpec(st,'bm:x','levelStep','2.5');
+ const req=gymRequests(st,{})[0];assert.equal(parseGymRequest(req.note).spec.levelStep,2.5);
+ assert.equal(setWeightKg({weight:7,unit:'level',levelKg:25}),25);
+ const w=cleanWorkout({date:'2026-11-22',exercises:[{name:'랫풀다운',sets:[{weight:7,unit:'level',levelKg:35,levelEst:true,reps:10}]}]});assert.equal(w.exercises[0].sets[0].levelKg,35);assert.equal(w.exercises[0].sets[0].levelEst,true);
 });

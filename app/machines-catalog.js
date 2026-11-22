@@ -153,7 +153,7 @@ export function brandMachinesAt(shared={}, gymName='', exerciseId='', gymKey='')
  const gens = exerciseId ? new Set(genericMachinesFor(exerciseId).map(g => g.id)) : null;
  const fits = m => !exerciseId || (m.generic ? gens.has(m.id) : m.baseId ? gens.has(m.baseId) || m.exerciseId===exerciseId : (!m.exerciseId || m.exerciseId===exerciseId));
  // 헬스장에서 고른 방식(spec: 무게 방식·움직임·무게 표시)을 모델 기본값 위에 덮는다
- return (shared.gymMachines||[]).filter(g => !g.removed && (gymKey && g.gymKey ? g.gymKey===gymKey : g.gymName===gymName)).map(g => { const m = models.get(g.modelId); return m && {...m, ...(g.spec?.load?{load:g.spec.load}:{}), ...(g.spec?.sided?{sided:g.spec.sided}:{}), ...(g.spec?.unit?{unit:g.spec.unit}:{}), gymSpec:g.spec||null}; }).filter(m => m && fits(m)).map(m => ({...m, brand:!m.generic, atGym:true}));
+ return (shared.gymMachines||[]).filter(g => !g.removed && (gymKey && g.gymKey ? g.gymKey===gymKey : g.gymName===gymName)).map(g => { const m = models.get(g.modelId); return m && {...m, ...(g.spec?.load?{load:g.spec.load}:{}), ...(g.spec?.sided?{sided:g.spec.sided}:{}), ...(g.spec?.unit?{unit:g.spec.unit}:{}), ...(g.spec?.levelFirst!=null?{levelFirst:g.spec.levelFirst}:{}), ...(g.spec?.levelStep!=null?{levelStep:g.spec.levelStep}:{}), gymSpec:g.spec||null}; }).filter(m => m && fits(m)).map(m => ({...m, brand:!m.generic, atGym:true}));
 }
 export const brandModelId = (manufacturer, model) => `mm:${String(manufacturer).trim()}:${String(model).trim()}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
 export const gymMachineId = (gymName, modelId) => `gx:${String(gymName).trim()}:${modelId}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
