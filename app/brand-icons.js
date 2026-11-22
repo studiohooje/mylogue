@@ -36,6 +36,6 @@ export function heroSlot(hour=new Date().getHours()){
  if(hour>=17&&hour<21)return 'evening';
  return 'night';
 }
-export function emptyArt(kind,text,extraClass=''){
- return `<div class="empty empty-art ${extraClass}"><img src="art/object-${kind}.webp" alt="" width="104" height="104" loading="lazy" decoding="async"><p>${text}</p></div>`;
+export function emptyArt(kind,text,extraClass='',action=''){
+ return `<div class="empty empty-art ${extraClass}"><img src="art/object-${kind}.webp" alt="" width="104" height="104" loading="lazy" decoding="async"><p>${text}</p>${action}</div>`;
 }

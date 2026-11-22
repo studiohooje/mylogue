@@ -1209,3 +1209,12 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .quick-prev{margin:8px 0 0;padding:8px 12px;border-radius:12px;background:#b8aaf214;border:1px solid #b8aaf233;font-size:13px;color:#cfd9e6;font-variant-numeric:tabular-nums}.quick-prev span{color:#b8aaf2;font-weight:700;margin-right:8px}
 .quick-check{min-height:56px;font-size:16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px}.quick-check b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#14253899;font-size:16px}
 .quick-again{display:grid;gap:8px;margin-bottom:12px}.qa-row{padding:10px 12px;border-radius:14px;background:#ffffff08;border:1px solid #ffffff12}.qa-row p{margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}.qa-row small{color:#8a9bb0}
+/* 4.6.0 오늘의 한 줄(눈에 띄지 않게: 테두리·배경 없이 제목 아래 작은 글씨) */
+.motiv{display:flex;align-items:center;gap:8px;margin:-2px 0 10px;font-size:13px;line-height:1.5;color:#a9bbce;min-height:32px}
+.motiv-slot{flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;color:#b8aaf2;opacity:.85}
+.motiv-text{flex:1;min-width:0}
+.motiv-src,.motiv-x{flex:none;border:0;background:none;color:#7f90a6;font:inherit;font-size:14px;cursor:pointer;min-width:32px;min-height:32px;border-radius:8px}
+.motiv-src:hover,.motiv-x:hover{color:#edf4f8;background:#ffffff0d}
+.motiv-src:focus-visible,.motiv-x:focus-visible{outline:2px solid #8ce4e0}
+.motiv-why{margin:-6px 0 10px;padding:8px 10px;border-radius:10px;background:#ffffff08;font-size:12px;color:#a9bbce;line-height:1.55}
+.motiv-act{margin-top:10px}
