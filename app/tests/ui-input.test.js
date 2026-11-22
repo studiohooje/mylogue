@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 test('식단 수량 계산과 수정, 프로그램 운동 저장과 수정을 화면 이벤트로 수행한다',async()=>{
- const data=new Map(),events=new Map();
+ const data=new Map([['mylogue.landing.skip','1']]),events=new Map();
  const root={innerHTML:'',addEventListener:(type,handler)=>events.set(type,handler)};
  globalThis.localStorage={removeItem:key=>data.delete(key),getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value)};
  globalThis.document={

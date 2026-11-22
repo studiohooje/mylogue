@@ -4,7 +4,7 @@ import {readSession,writeSession,clearSession,rawSession} from '../session.js';
 
 const KEY='mylogue.draft.v1';
 const draft=()=>({editId:'workout-existing',timerEnds:1793570000123,meta:{date:'2026-11-01',title:'이어할 운동',note:'원본 메모'},exercises:[{id:'e1',exerciseId:'bench-press',machineId:'machine-one',name:'벤치프레스',sets:[{id:'s1',weight:'100.125',unit:'lb',reps:'8',rpe:'7.5',completed:false,targetWeight:95,targetUnit:'lb',targetReps:10}]}]});
-function storage(initial=[]){const disk=new Map(initial);let failWrite=false;globalThis.localStorage={getItem:k=>disk.get(k)??null,setItem:(k,v)=>{if(failWrite)throw Error('QuotaExceededError');disk.set(k,v)},removeItem:k=>disk.delete(k)};return {disk,failWrites:()=>{failWrite=true}}}
+function storage(initial=[]){const disk=new Map([['mylogue.landing.skip','1'],...initial]);let failWrite=false;globalThis.localStorage={getItem:k=>disk.get(k)??null,setItem:(k,v)=>{if(failWrite)throw Error('QuotaExceededError');disk.set(k,v)},removeItem:k=>disk.delete(k)};return {disk,failWrites:()=>{failWrite=true}}}
 
 test('session round trip retains original weight/unit, editing identity, targets and timer deadline',()=>{
  storage();const original=draft();writeSession(original);const restored=readSession();

@@ -4,7 +4,7 @@ import {emptyDB,cleanMeal,cleanMachine} from '../domain.js';
 import {EXERCISE_CATALOG} from '../catalog.js';
 
 test('실제 앱 버튼에서 빠른 식사와 연속 운동 세트를 같은 저장소에 남긴다',async()=>{
- const disk=new Map(),events=new Map(),fields=new Map(),toasts=[];
+ const disk=new Map([['mylogue.landing.skip','1']]),events=new Map(),fields=new Map(),toasts=[];
  const root={innerHTML:'',addEventListener:(type,fn)=>events.set(type,fn)};
  const old=Object.fromEntries(['localStorage','document','navigator','location','setTimeout','clearTimeout'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));
  const leg=EXERCISE_CATALOG.find(x=>x.name==='레그 프레스');
