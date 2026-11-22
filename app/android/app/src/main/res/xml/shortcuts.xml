@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 4.7.0 앱 아이콘을 길게 누르면 나오는 바로가기: 체중·식사·운동 기록 창을 바로 연다 -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="record-body" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_body" android:shortcutLongLabel="@string/sc_body">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="pro.hooje.mylogue"
+            android:targetClass="pro.hooje.mylogue.MainActivity" android:data="mylogue://record/body" />
+    </shortcut>
+    <shortcut android:shortcutId="record-meal" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_meal" android:shortcutLongLabel="@string/sc_meal">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="pro.hooje.mylogue"
+            android:targetClass="pro.hooje.mylogue.MainActivity" android:data="mylogue://record/meal" />
+    </shortcut>
+    <shortcut android:shortcutId="record-workout" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_workout" android:shortcutLongLabel="@string/sc_workout">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="pro.hooje.mylogue"
+            android:targetClass="pro.hooje.mylogue.MainActivity" android:data="mylogue://record/workout" />
+    </shortcut>
+</shortcuts>

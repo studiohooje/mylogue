@@ -70,11 +70,10 @@ function dietWithWeight(db, points, today){
  for(let i=0; i<8; i++){ weeks.unshift(m); const d = new Date(`${m}T12:00:00`); d.setDate(d.getDate()-7); m = ymd(d); }
  const rows = weeks.map(k => { const end = new Date(`${k}T12:00:00`); end.setDate(end.getDate()+6); const e = ymd(end); const days = new Map(); for(const x of db.meals||[]) if(!x.planned && x.date>=k && x.date<=e){ if(!days.has(x.date)) days.set(x.date, []); days.get(x.date).push(x); } const kcal = days.size ? avg([...days.values()].map(ms => mealTotals(ms).calories)) : null; const ws = points.filter(p => p.date>=k && p.date<=e).map(p => p.w); return {k, kcal, w:ws.length ? avg(ws) : null}; });
  if(rows.filter(r => r.kcal!=null).length<2 || rows.filter(r => r.w!=null).length<2) return '';
- const W = CW(), H = 160, x = i => 40 + i*(W-80)/7, kmax = Math.max(...rows.map(r => r.kcal||0)) * 1.1, wv = rows.filter(r => r.w!=null).map(r => r.w), wlo = Math.min(...wv)-0.5, whi = Math.max(...wv)+0.5;
- const bars = rows.map((r, i) => r.kcal==null ? '' : `<rect x="${(x(i)-14).toFixed(1)}" y="${(130 - r.kcal/kmax*110).toFixed(1)}" width="28" height="${(r.kcal/kmax*110).toFixed(1)}" rx="4" fill="#8ce4e0" opacity=".55"><title>${md(r.k)} 주 평균 ${Math.round(r.kcal)}kcal</title></rect>`).join('');
- const pts = rows.map((r, i) => r.w==null ? null : [x(i), 20 + (whi - r.w)/(whi-wlo)*100]);
- let path = '', open = false; pts.forEach(p => { if(!p){ open = false; return; } path += `${open?'L':'M'}${p[0]} ${p[1].toFixed(1)} `; open = true; });
- return `<section class="section card bf-card"><div class="bf-sub"><b>식단과 함께</b><small>주별 평균 섭취와 체중</small></div><svg class="bf-bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="주별 평균 섭취 칼로리와 체중">${bars}<path d="${path}" fill="none" stroke="#f2b49b" stroke-width="2.6"/>${pts.map((p, i) => p ? `<circle cx="${p[0]}" cy="${p[1].toFixed(1)}" r="3.5" fill="#f2b49b"><title>${md(rows[i].k)} 주 ${f1(rows[i].w)}kg</title></circle>` : '').join('')}<text x="${x(0)}" y="${H-6}" text-anchor="middle" class="bf-ax">8주 전</text><text x="${x(7)}" y="${H-6}" text-anchor="middle" class="bf-ax">이번 주</text></svg><div class="bf-legend"><span><i style="background:#8ce4e0"></i>평균 섭취 kcal</span><span><i style="background:#f2b49b"></i>체중</span></div></section>`;
+ // 4.7.0 목표 띠형으로: 위 = 주별 평균 섭취(민트 막대), 아래 = 주별 평균 체중(살구 선). 같은 8주 칸을 쓴다.
+ const kTips = rows.map(r => r.kcal==null ? '' : `<span class="d">${md(r.k)} 주</span><b>${Math.round(r.kcal).toLocaleString('ko-KR')}kcal</b><span class="d">하루 평균 섭취</span>`);
+ const wTips = rows.map(r => r.w==null ? '' : `<span class="d">${md(r.k)} 주</span><b>${f1(r.w)}kg</b><span class="d">주 평균 체중</span>`);
+ return `<section class="section card bf-card"><div class="bf-sub"><b>식단과 함께</b><small>주별 평균 섭취와 체중</small></div><div class="bf-legend"><span><i style="background:#8ce4e0"></i>평균 섭취 kcal</span></div>${barChart({bars:rows.map(r => ({v:r.kcal||0})), color:'#8ce4e0', h:70, tips:kTips, label:'주별 평균 섭취 칼로리'})}<div class="bf-legend"><span><i style="background:${BODY}"></i>체중</span></div>${lineChart({vals:rows.map(r => r.w==null ? null : r1(r.w)), color:BODY, h:80, tips:wTips, dateL:'8주 전', dateR:'이번 주', label:'주별 평균 체중'})}</section>`;
 }
 export function weekdayPattern(points, today){
  const from = new Date(`${today}T12:00:00`); from.setDate(from.getDate()-56); const f = ymd(from);
@@ -86,9 +85,9 @@ export function weekdayPattern(points, today){
 }
 function weekdayCard(points, today){
  const d = weekdayPattern(points, today); if(!d) return '';
- const W = CW(), H = 110, max = Math.max(0.3, ...d.filter(v => v!=null).map(Math.abs)), top = d.reduce((a, v, i) => v!=null && (a<0 || v>d[a]) ? i : a, -1);
- const bars = d.map((v, i) => { if(v==null) return ''; const x = 30 + (i+0.5)*(W-50)/7, h = Math.max(2, Math.abs(v)/max*36); return `<rect x="${x-14}" y="${(v>0?50-h:50).toFixed(1)}" width="28" height="${h.toFixed(1)}" rx="3" fill="${v>0?'#f2b49b':'#6fd6a3'}"><title>${'월화수목금토일'[i]} ${v>0?'+':''}${f1(v)}kg</title></rect><text x="${x}" y="${H-8}" text-anchor="middle" class="bf-ax">${'월화수목금토일'[i]}</text>`; }).join('');
- return `<section class="section card bf-card"><div class="bf-sub"><b>요일 패턴</b><small>최근 8주 · 그 주 평균과의 차이</small></div><svg class="bf-bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="요일별 체중 차이"><line x1="40" x2="${W-20}" y1="50" y2="50" stroke="#fff" stroke-opacity=".2"/>${bars}</svg>${top>=0&&d[top]>0.1?`<p class="bf-last">${'월화수목금토일'[top]}요일에 평균보다 <b class="bad">${f1(d[top])}kg</b> 무거워요</p>`:''}</section>`;
+ const top = d.reduce((a, v, i) => v!=null && (a<0 || v>d[a]) ? i : a, -1), W7 = '월화수목금토일';
+ const tips = d.map((v, i) => v==null ? '' : `<span class="d">${W7[i]}요일</span><b>${v>0?'+':''}${f1(v)}kg</b><span class="d">그 주 평균과의 차이</span>`);
+ return `<section class="section card bf-card"><div class="bf-sub"><b>요일 패턴</b><small>최근 8주 · 그 주 평균과의 차이</small></div>${barChart({bars:d.map(v => ({v:v||0, color:v>0?BODY:DOWN})), signed:true, h:80, tips, label:'요일별 체중 차이'})}<div class="bf-days" aria-hidden="true">${[...W7].map(x => `<span>${x}</span>`).join('')}</div>${top>=0&&d[top]>0.1?`<p class="bf-last">${W7[top]}요일에 평균보다 <b class="bad">${f1(d[top])}kg</b> 무거워요</p>`:''}</section>`;
 }
 
 export function bodyOverviewHTML(db, {view = 'day', today}){

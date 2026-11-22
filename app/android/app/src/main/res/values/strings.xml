@@ -4,4 +4,7 @@
     <string name="title_activity_main">마이로그</string>
     <string name="package_name">pro.hooje.mylogue</string>
     <string name="custom_url_scheme">pro.hooje.mylogue</string>
+    <string name="sc_body">체중 기록</string>
+    <string name="sc_meal">식사 기록</string>
+    <string name="sc_workout">운동 기록</string>
 </resources>

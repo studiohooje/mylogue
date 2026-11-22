@@ -14,7 +14,8 @@ export const PLAN_PARTS = WEIGHT_PARTS.filter(p => p!=='전체');
 export function planTitle(cat, parts=[]){ const c = String(cat||'웨이트'); return c==='웨이트' && parts.length ? `웨이트(${parts.join('·')})` : c; }
 
 // 좁은 달력 칸용 짧은 이름: '웨이트(하체·가슴) + 필라테스' → '하체·가슴 필라테스'
-export const shortWork = t => String(t||'').replace(/웨이트\(([^)]*)\)/g, '$1').replace(/러닝·유산소/g, '유산소').replace(/ \+ /g, ' ');
+// 4.7.0 대표님: 일정에서는 '하체'만이 아니라 '웨이트(하체)'처럼 종류까지 적는다
+export const shortWork = t => String(t||'').replace(/러닝·유산소/g, '유산소').replace(/ \+ /g, ' ');
 // 하루 요약(달력 칸에 쓰는 값)
 export function dayFacts(db, date){
  const body = (db.body||[]).filter(b => b.date===date && Number(b.weight)>0).sort((a, b) => String(a.loggedAt||'').localeCompare(String(b.loggedAt||'')));
@@ -27,7 +28,7 @@ function cellHTML(db, date, n, {today, selected}){
  const f = dayFacts(db, date), any = f.weight!==null || f.kcal!==null || f.work || f.rest || f.plan.length;
  const work = f.work ? `<i class="sc-work" title="${esc(f.work)}">${esc(shortWork(f.work))}</i>` : f.plan.length ? `<i class="sc-work plan" title="예정 ${esc(f.plan.join(', '))}">${esc(f.plan.map(shortWork).join(' '))}</i>` : f.rest ? '<i class="sc-work rest">휴식</i>' : '';
  const bar = f.pct ? `<span class="sc-bar" aria-hidden="true"><b class="m-carbs" style="width:${f.pct.carbs}%"></b><b class="m-protein" style="width:${f.pct.protein}%"></b><b class="m-fat" style="width:${f.pct.fat}%"></b></span>` : '';
- return `<button type="button" data-calendar="${date}" class="sc-cell${any?' filled':''}${today?' today':''}${selected?' selected':''}" aria-label="${date}"><span class="sc-day">${n}</span>${f.weight!==null?`<i class="sc-w">${n1(f.weight)}<span class="sc-u">kg</span></i>`:''}${f.kcal!==null?`<i class="sc-k">${Math.round(f.kcal).toLocaleString('ko-KR')}</i>${bar}`:''}${work}</button>`;
+ return `<button type="button" data-calendar="${date}" class="sc-cell${any?' filled':''}${today?' today':''}${selected?' selected':''}" aria-label="${date}"><span class="sc-day">${n}</span>${f.weight!==null?`<i class="sc-w">${n1(f.weight)}<span class="sc-u">kg</span></i>`:''}${f.kcal!==null?`<i class="sc-k">${Math.round(f.kcal).toLocaleString('ko-KR')}<span class="sc-u">kcal</span></i>${bar}`:''}${work}</button>`;
 }
 
 export function scheduleCalendarHTML(db, selectedDate, todayKey){

@@ -36,9 +36,9 @@ export function cleanExercise(raw){
  const kind=raw.kind==='cardio'?'cardio':'strength',durationMin=number(raw.durationMin),distanceKm=number(raw.distanceKm);
  if(durationMin!==null&&durationMin<0||distanceKm!==null&&distanceKm<0)throw Error('유산소 시간과 거리를 확인해 주세요.');
  const w2=v=>v==null?null:Math.round(v*100)/100;// 4.3.1 중량은 소수점 둘째 자리까지(대표님: 18.1436948 같은 값 금지)
- const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:w2(number(s.weight)),unit:s.unit||'kg',originalWeight:w2(number(s.originalWeight??s.weight)),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:w2(number(s.targetWeight)),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),completedAt:String(s.completedAt||'')}));
+ const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:w2(number(s.weight)),unit:s.unit||'kg',originalWeight:w2(number(s.originalWeight??s.weight)),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:w2(number(s.targetWeight)),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),...(number(s.barKg)!==null&&number(s.barKg)>=0?{barKg:number(s.barKg)}:{}),completedAt:String(s.completedAt||'')}));
  if(kind==='strength'&&!sets.length)throw Error('세트를 하나 이상 입력해 주세요.');
- for(const s of sets){if(s.originalWeight===null||s.originalWeight<0||!['kg','lb'].includes(s.originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');if(!['kg','lb'].includes(s.targetUnit)||s.targetWeight!==null&&s.targetWeight<0||s.targetReps!==null&&(s.targetReps<0||!Number.isInteger(s.targetReps)))throw Error('목표 중량·반복·단위를 확인해 주세요.');if(!['kg','lb'].includes(s.unit))throw Error('중량 단위는 kg 또는 lb여야 합니다.');if(s.weight===null||s.reps===null||s.weight<0||s.reps<0||!Number.isInteger(s.reps))throw Error('중량과 반복 횟수를 확인해 주세요.');if(s.rpe!==null&&(s.rpe<0||s.rpe>10))throw Error('RPE는 0~10 사이여야 합니다.')}
+ for(const s of sets){if(s.originalWeight===null||s.originalWeight<0||!UNITS.includes(s.originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');if(!UNITS.includes(s.targetUnit)||s.targetWeight!==null&&s.targetWeight<0||s.targetReps!==null&&(s.targetReps<0||!Number.isInteger(s.targetReps)))throw Error('목표 중량·반복·단위를 확인해 주세요.');if(!UNITS.includes(s.unit))throw Error('중량 단위는 kg·lb·숫자 단계 중 하나여야 합니다.');if(s.weight===null||s.reps===null||s.weight<0||s.reps<0||!Number.isInteger(s.reps))throw Error('중량과 반복 횟수를 확인해 주세요.');if(s.rpe!==null&&(s.rpe<0||s.rpe>10))throw Error('RPE는 0~10 사이여야 합니다.')}
  if(kind==='cardio'&&durationMin===null&&distanceKm===null)throw Error('유산소 시간 또는 거리를 입력해 주세요.');
  const known=EXERCISE_CATALOG.find(x=>x.id===raw.exerciseId)||EXERCISE_CATALOG.find(x=>x.name===name)||findExercise(name);
  const weightBasis=raw.weightBasis==='per-hand'?'per-hand':'total';
@@ -63,11 +63,16 @@ export const estimate1RM=(weight,reps)=>reps>0?round(weight*(1+Math.min(reps,30)
 export function workoutTotals(w){let volume=0,reps=0,sets=0,best1RM=0,cardioMinutes=0,distanceKm=0;const parts={};for(const ex of w.exercises||[]){if(ex.kind==='cardio'){cardioMinutes+=ex.durationMin||0;distanceKm+=ex.distanceKm||0;continue}for(const s of ex.sets||[]){if(s.completed===false)continue;const factor=(ex.weightBasis==='per-hand'&&ex.handCount===2?2:1)*(ex.repBasis==='per-side'?2:1);const v=setWeightKg(s)*(s.reps||0)*factor;volume+=v;reps+=(s.reps||0)*(ex.repBasis==='per-side'?2:1);sets++;best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0));parts[ex.part]=(parts[ex.part]||0)+v}}return {volume:round(volume),reps,sets,exercises:w.exercises?.length||0,best1RM,parts,cardioMinutes:round(cardioMinutes),distanceKm:round(distanceKm,2)}}
 export const emptyDB=()=>({schemaVersion:VERSION,body:[],meals:[],foods:[],workouts:[],routines:[],machines:[],customExercises:[],favorites:[],recipes:[],dayStates:{},checkins:{},settings:{calorieGoal:2200,carbsGoal:250,proteinGoal:150,fatGoal:70,barbellWeightKg:20,workoutTitles:[],gyms:[]}});
 export const LB_TO_KG=0.45359237;
+// 4.7.0 무게 표시: kg·lb, 그리고 'level' = 머신에 kg 없이 숫자(핀 번호·단계)만 적힌 경우. 단계는 kg로 바꿀 수 없어 볼륨·1RM에서 뺀다.
+export const UNITS=['kg','lb','level'];
+export const unitText=u=>u==='level'?'단계':u||'kg';
 export const setWeightKg=s=>{
+ if((s?.unit||'kg')==='level')return 0;
  const hasOriginal=number(s?.originalWeight)!==null&&['kg','lb'].includes(s?.originalUnit);
  return Math.round((number(hasOriginal?s.originalWeight:s?.weight)||0)*((hasOriginal?s.originalUnit:s?.unit)==='lb'?LB_TO_KG:1)*100)/100;
 };
 export function convertSetUnit(set,newUnit){
+ if(set?.unit==='level')throw Error('숫자 단계로 적은 무게는 kg·lb로 바꿀 수 없어요.');
  if(!['kg','lb'].includes(newUnit))throw Error('중량 단위는 kg 또는 lb여야 합니다.');
  const originalWeight=number(set.originalWeight??set.weight),originalUnit=set.originalUnit||set.unit||'kg';
  if(originalWeight===null||originalWeight<0||!['kg','lb'].includes(originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');
@@ -77,7 +82,7 @@ export function convertSetUnit(set,newUnit){
 const cleanIds=items=>Array.isArray(items)?[...new Set(items.map(String).filter(Boolean))]:[];
 export function cleanMachine(raw){
  const name=String(raw.name||raw.model||'이름 없는 머신').trim();
- const unit=raw.unit||'kg';if(!['kg','lb'].includes(unit))throw Error('머신 단위를 확인해 주세요.');
+ const unit=raw.unit||'kg';if(!UNITS.includes(unit))throw Error('머신 단위를 확인해 주세요.');
  const photoDataUrl=String(raw.photoDataUrl||'');if(photoDataUrl&&(photoDataUrl.length>2*1024*1024||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(photoDataUrl)))throw Error('머신 사진은 2 MB 이하의 PNG·JPEG·WebP로 선택해 주세요.');
  return {id:raw.id||uid(),name,aliases:cleanIds(raw.aliases).map(x=>x.trim()).filter(x=>x&&x!==name),photoDataUrl,exerciseId:String(raw.exerciseId||''),manufacturer:String(raw.manufacturer||'모름').trim(),model:String(raw.model||'모름').trim(),location:String(raw.location||'').trim(),resistance:String(raw.resistance||'모름').trim(),unit,baseId:/^gm:[a-z0-9-]{1,40}$/.test(String(raw.baseId||''))?String(raw.baseId):''};
 }

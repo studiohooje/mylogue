@@ -10,7 +10,8 @@ const DEFAULT_PORT=Number(process.env.MYLOGUE_BRIDGE_PORT||43127);
 const bridge=new FirestoreBridge({onRefresh:s=>{try{savePairing({uid:s.uid,refreshToken:s.refreshToken,email:s.email||''})}catch{}}});
 const saved=loadPairing();
 if(saved)bridge.setSession({uid:saved.uid,email:saved.email||'',refreshToken:saved.refreshToken,idToken:'',expiresAt:new Date(0).toISOString()});
-const origins=new Set(['https://studiohooje.github.io','http://localhost:4173','http://127.0.0.1:4173','capacitor://localhost','http://localhost','https://localhost']);
+// 보안 점검(2026-11-22): 포트 없는 http://localhost(다른 로컬 웹 서버)는 뺐다. 안드로이드 앱은 https://localhost.
+const origins=new Set(['https://studiohooje.github.io','http://localhost:4173','http://127.0.0.1:4173','capacitor://localhost','https://localhost']);
 let failures=0;
 const respond=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(body))};
 const status=()=>{const s=bridge.session;return {running:true,version:VERSION,paired:!!s,uid:s?.uid||'',email:s?.email||'',persistent:!!s?.refreshToken}};

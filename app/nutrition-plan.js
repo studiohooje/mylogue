@@ -81,7 +81,7 @@ export function presetOrder(profile){
 // 4.7.0 GLP-1 사용 중: 단백질을 칼로리 %가 아니라 체중 기준으로 먼저 정한다(적게 먹을수록 단백질이 같이 줄지 않게).
 // 근거: ACLM·ASN·OMA·TOS 공동 권고(2025, Am J Lifestyle Med, doi:10.1177/15598276251344827) — 감량 중 1.2~1.6 g/kg/일 제안,
 // 비만이면 실제 체중으로 계산할 때 과대평가될 수 있음. → 기준 체중: 실제 체중이 BMI 22 체중의 1.2배를 넘으면 보정 체중(BMI 22 체중 + 0.4×차이).
-// 대표님 방향(단백질을 최대한 챙기게)에 맞춰 권고 범위(1.2~1.6)의 위쪽: 활동이 적으면 1.4, 가볍게 1.5, 꾸준히 이상 1.6 g/kg. 실제 체중 기준 2 g/kg는 넘기지 않는다. 지방 30%, 나머지 탄수.
+// 대표님 방향(단백질을 최대한 챙기게)에 맞춰 권고 범위(1.2~1.6)의 위쪽: 활동이 적으면 1.4, 가볍게 1.5, 꾸준히 이상 1.6 g/kg. 그다음 원문의 절대량 80~120g/일 안으로 맞추고, 실제 체중 2 g/kg 미만으로. 지방 30%, 나머지 탄수.
 export function refWeight(profile){
  const p = cleanProfile(profile); if(!p.weightKg) return null;
  if(!p.heightCm) return p.weightKg;
@@ -92,7 +92,8 @@ export function glp1Macros(profile, kcal){
  const p = cleanProfile(profile), ref = refWeight(p);
  if(!ref || !kcal) return {...PRESETS.glp1, proteinG:Math.round(kcal*PRESETS.glp1.p/100/4), perKg:null, ref:null};
  const perKg = p.activity==='sedentary' ? 1.4 : p.activity==='light' ? 1.5 : 1.6;
- let g = Math.round(ref*perKg/5)*5; g = Math.min(g, Math.floor(p.weightKg*2/5)*5); g = Math.min(g, Math.floor(kcal*0.5/4/5)*5);
+ // 권고 원문: 절대량 80~120g/일이 지키기 쉽다, 2g/kg/일 이상을 오래 먹는 건 피한다 → 80~120g 안으로, 실제 체중 2g/kg 미만으로
+ let g = Math.round(ref*perKg/5)*5; g = Math.min(120, Math.max(80, g)); g = Math.min(g, Math.floor(p.weightKg*1.95/5)*5); g = Math.min(g, Math.floor(kcal*0.5/4/5)*5);
  const pp = Math.round(g*4/kcal*100), f = 30, c = Math.max(0, 100 - pp - f);
  return {...PRESETS.glp1, c, p:pp, f, proteinG:g, perKg, ref};
 }
@@ -105,7 +106,7 @@ export function dietNotes(profile){
  if(p.diets.includes('vegetarian')) out.push('채식: 두부·콩·달걀·유제품·단백질 보충제로 단백질을 채우기 쉬워요.');
  if(p.diets.includes('glp1')){ const ref = refWeight(p);
   out.push(`GLP-1 사용 중: 너무 적게 먹게 되기 쉬워요. 칼로리보다 단백질·수분을 먼저 채우고, 끼니마다 단백질 반찬을 하나씩 챙기세요.${ref&&ref!==p.weightKg?` 단백질은 체중이 많이 나가는 분께 맞게 보정 체중(${ref}kg)으로 계산했어요.`:''}`);
-  out.push('근육을 지키려면 단백질과 함께 근력운동이 필요해요. 너무 적게 먹으면(여성 1,200kcal·남성 1,800kcal 아래) 비타민·무기질이 모자라기 쉬워요. 신장 질환이 있거나 약 용량을 바꾸는 중이면 목표량을 의료진과 정하세요.'); }
+  out.push('단백질만으로는 근육을 지키기 어려워요. 근력운동 주 3회 이상과 걷기 같은 유산소 주 150분 이상을 함께 권해요. 끼니에서는 단백질 음식을 먼저 드세요. 너무 적게 먹으면(여성 1,200kcal·남성 1,800kcal 아래) 비타민·무기질이 모자라기 쉬워요. 신장 질환이 있거나 약 용량을 바꾸는 중이면 목표량을 의료진과 정하세요.'); }
  if(p.weightKg) out.push(`참고: 근력운동을 한다면 단백질은 체중 1kg당 1.6g(${Math.round(p.weightKg*1.6)}g) 안팎을 많이 권해요.`);
  return out;
 }

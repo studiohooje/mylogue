@@ -134,20 +134,26 @@ export function machineTargets(machine, exercise){
 
 // 무게 단계: 단위와 방식에 맞춰 ± 버튼으로 쓴다. 원판식은 양쪽에 한 장씩 끼우는 기준(×2)으로 보여 준다.
 export function weightSteps(load, unit){
+ if(unit==='level') return [-2,-1,1,2]; // 4.7.0 숫자 단계(핀 번호)
  if(load==='plate') return unit==='lb' ? [-90,-50,-20,20,50,90] : [-40,-20,-10,10,20,40];
  if(load==='smith') return unit==='lb' ? [-10,-5,5,10] : [-5,-2.5,2.5,5];
  if(load==='body') return unit==='lb' ? [-10,10] : [-5,5];
  return unit==='lb' ? [-10,-5,5,10] : [-5,-2.5,2.5,5];
 }
 export const KG_PER_LB = 0.45359237;
-export const otherUnit = (value, unit) => { const v = Number(value); if(!Number.isFinite(v) || v<=0) return ''; return unit==='lb' ? `≈ ${Math.round(v*KG_PER_LB*10)/10} kg` : `≈ ${Math.round(v/KG_PER_LB)} lb`; };
+export const otherUnit = (value, unit) => { const v = Number(value); if(unit==='level' || !Number.isFinite(v) || v<=0) return ''; return unit==='lb' ? `≈ ${Math.round(v*KG_PER_LB*10)/10} kg` : `≈ ${Math.round(v/KG_PER_LB)} lb`; };
+export const UNIT_LABEL = {kg:'kg', lb:'lb', level:'숫자 단계(핀 번호)'};
 export const LOAD_LABEL = {stack:'핀 꽂는 스택식', plate:'원판 끼우는 방식', cable:'케이블', smith:'스미스 바', body:'자기 체중·보조'};
 export const SIDED_LABEL = {both:'양쪽 함께', iso:'양쪽 따로 움직임 · 한쪽 무게로 기록', single:'한쪽씩'};
 
 // 관리자 승인으로 들어온 제조사 머신(공용 도감)을 헬스장별로 고른다.
-export function brandMachinesAt(shared={}, gymName='', exerciseId=''){
- const models = new Map((shared.machineModels||[]).map(m => [m.id, m]));
- return (shared.gymMachines||[]).filter(g => g.gymName===gymName).map(g => models.get(g.modelId)).filter(m => m && (!exerciseId || !m.exerciseId || m.exerciseId===exerciseId)).map(m => ({...m, brand:true}));
+// 4.7.0 헬스장에 등록된 머신: 일반 머신 종류·앱 기본 제조사 모델·관리자가 더한 모델 모두. 지도 장소 ID(gymKey)가 있으면 그걸로 맞춘다. removed는 뺀 것.
+export function brandMachinesAt(shared={}, gymName='', exerciseId='', gymKey=''){
+ const models = new Map([...GENERIC_MACHINES.map(g => [g.id, {...g, generic:true}]), ...BUILTIN_BRANDS.map(b => [b.id, b]), ...(shared.machineModels||[]).map(m => [m.id, m])]);
+ const gens = exerciseId ? new Set(genericMachinesFor(exerciseId).map(g => g.id)) : null;
+ const fits = m => !exerciseId || (m.generic ? gens.has(m.id) : m.baseId ? gens.has(m.baseId) || m.exerciseId===exerciseId : (!m.exerciseId || m.exerciseId===exerciseId));
+ // 헬스장에서 고른 방식(spec: 무게 방식·움직임·무게 표시)을 모델 기본값 위에 덮는다
+ return (shared.gymMachines||[]).filter(g => !g.removed && (gymKey && g.gymKey ? g.gymKey===gymKey : g.gymName===gymName)).map(g => { const m = models.get(g.modelId); return m && {...m, ...(g.spec?.load?{load:g.spec.load}:{}), ...(g.spec?.sided?{sided:g.spec.sided}:{}), ...(g.spec?.unit?{unit:g.spec.unit}:{}), gymSpec:g.spec||null}; }).filter(m => m && fits(m)).map(m => ({...m, brand:!m.generic, atGym:true}));
 }
 export const brandModelId = (manufacturer, model) => `mm:${String(manufacturer).trim()}:${String(model).trim()}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
 export const gymMachineId = (gymName, modelId) => `gx:${String(gymName).trim()}:${modelId}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);

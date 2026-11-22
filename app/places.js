@@ -136,7 +136,7 @@ export function gymSettingsHTML(db, search={}){
 ${status}${placeListHTML(search.results, 'gym-pick')}${search.results?.length?'<p class="place-credit">장소 정보: 카카오</p>':''}
 <div class="gym-tools"><button type="button" class="button secondary" id="gym-map-open">지도에서 고르기</button></div>
 <details class="gym-manual"><summary>이름만 직접 입력</summary><form id="gym-form" class="actions"><input name="name" required maxlength="60" placeholder="예: 우리 아파트 헬스장" aria-label="운동 장소 이름"><button class="button">추가</button></form></details>
-${gyms.length?`<div class="gym-list">${gyms.map((name, i) => { const p = places[name]; return `<div class="record gym-row"><span class="gym-name"><strong>${h(name)}</strong>${p?.address?`<small>${h(p.address)}</small>`:'<small>위치 정보 없음</small>'}</span><button class="text-button" data-gym-delete="${i}" aria-label="${h(name)} 목록에서 삭제">삭제</button></div>`; }).join('')}</div>`:'<p class="hint">아직 등록한 운동 장소가 없어요.</p>'}
+${gyms.length?`<div class="gym-list">${gyms.map((name, i) => { const p = places[name]; return `<div class="record gym-row"><span class="gym-name"><strong>${h(name)}</strong>${p?.address?`<small>${h(p.address)}</small>`:'<small>위치 정보 없음</small>'}</span><button class="text-button" data-gym-machines="${i}" aria-label="${h(name)} 머신 등록">머신 등록</button><button class="text-button" data-gym-delete="${i}" aria-label="${h(name)} 목록에서 삭제">삭제</button></div>`; }).join('')}</div>`:'<p class="hint">아직 등록한 운동 장소가 없어요.</p>'}
 </section>`;
 }
 

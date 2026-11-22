@@ -97,6 +97,15 @@ export function onboardingHTML(state){
  return `<div class="onb"><div class="onb-top"><div class="onb-dots" aria-label="${step+1} / ${QUESTIONS.length}">${QUESTIONS.map((_,i)=>`<i class="${i<=step?'on':''}"></i>`).join('')}</div><button type="button" class="text-button" id="onb-skip">건너뛰기</button></div><p class="onb-q">${Q.q}</p>${Q.s?`<p class="onb-s">${Q.s}</p>`:''}${Q.chips?`<div class="onb-chips" role="group">${Q.o.map(([v,,t])=>`<button type="button" class="onb-chip ${on(v)?'on':''}" data-onb-pick="${v}" aria-pressed="${on(v)}">${t}</button>`).join('')}</div>`:`<div class="onb-opts" role="${Q.multi?'group':'radiogroup'}">${Q.o.map(([v,ic,t,d])=>`<button type="button" class="onb-opt ${on(v)?'on':''}" data-onb-pick="${v}" aria-pressed="${on(v)}"><span class="onb-ic" aria-hidden="true">${ic}</span><span><b>${t}</b><small>${d}</small></span></button>`).join('')}</div>`}<div class="onb-btns">${step?'<button type="button" class="button secondary" id="onb-prev">이전</button>':''}<button type="button" class="button" id="onb-next">${step===QUESTIONS.length-1?'완료':'다음'}</button></div></div>`;
 }
 
+// 4.7.0 식단을 기록하지 않으면 식단 질문(입력 방식·끼니 부르는 법·GLP-1)은 건너뛴다
+const MEAL_Q = new Set(['mealMode','mealLabel','glp1']);
+export function onboardingMove(state, dir = 1){
+ let s = state.step + dir;
+ const skip = i => i>=0 && i<QUESTIONS.length && MEAL_Q.has(QUESTIONS[i].key) && !(state.answers.tracks||PREF_DEFAULTS.tracks).includes('meal');
+ while(skip(s)) s += dir;
+ state.step = Math.max(0, s);
+ return state;
+}
 export function onboardingPick(state, value){
  const Q = QUESTIONS[state.step];
  if(Q.multi){ const cur = state.answers[Q.key]||[]; let next = cur.includes(value) ? cur.filter(x=>x!==value) : [...cur, value]; if(!next.length && !Q.optional) next = cur; state.answers[Q.key] = next; }

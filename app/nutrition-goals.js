@@ -74,10 +74,11 @@ export function plannedToggle(count, on){
 }
 
 // 3.11.0 홈 3칸용 작은 식단 카드 → 3.18.0 '먹은 양 / 목표'를 숫자로, 막대는 2배 축.
-export function macroMiniHTML(day={},settings={},{planned=null,showPlanned=false}={}){
+export function macroMiniHTML(day={},settings={},{planned=null,showPlanned=false,proteinFirst=false}={}){
  const extra=k=>showPlanned&&planned?Number(planned[k])||0:0;
  const cal=(Number(day.calories)||0)+extra('calories'),goal=Number(settings.calorieGoal)||0;
- const bars=MACRO_ROWS.map(([cls,label,key,gk,unit])=>{const a=Number(day[key])||0,e=extra(key),g=Number(settings[gk])||0,s=macroStatus(a+e,g);
+ const rows=proteinFirst?[MACRO_ROWS[2],MACRO_ROWS[0],MACRO_ROWS[1],MACRO_ROWS[3]]:MACRO_ROWS;
+ const bars=rows.map(([cls,label,key,gk,unit])=>{const a=Number(day[key])||0,e=extra(key),g=Number(settings[gk])||0,s=macroStatus(a+e,g);
   return `<div class="mini-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}" title="${label} ${num(a+e)}${unit} / ${g?num(g)+unit:'목표 없음'}${s.state==='over'?` · +${num(s.diff)}${unit} 초과`:s.state==='under'?` · ${num(-s.diff)}${unit} 부족`:''}"><i>${label[0]}</i><span class="mini-bar">${barInner(a,g,e,rowAxis(a+e,g))}</span></div>`}).join('');
- return `<button type="button" class="home-stat home-stat-diet" data-page="food" aria-label="식단 ${num(cal)}${goal?` / 목표 ${num(goal)}`:''}kcal, 자세히 보기"><span class="stat-head"><small>식단</small></span><strong>${num(cal)}${goal?`<span class="stat-goal">/ ${num(goal)}</span>`:'<span>kcal</span>'}</strong><div class="stat-vis mini-bars" aria-hidden="true">${bars}</div></button>`;
+ return `<button type="button" class="home-stat home-stat-diet" data-page="food" aria-label="식단 ${num(cal)}${goal?` / 목표 ${num(goal)}`:''}kcal, 자세히 보기"><span class="stat-head"><small>식단</small>${proteinFirst&&Number(settings.proteinGoal)?`<small class="stat-prot">단백질 ${num(Number(day.protein)||0)}/${num(settings.proteinGoal)}g</small>`:''}</span><strong>${num(cal)}${goal?`<span class="stat-goal">/ ${num(goal)}</span>`:'<span>kcal</span>'}</strong><div class="stat-vis mini-bars" aria-hidden="true">${bars}</div></button>`;
 }

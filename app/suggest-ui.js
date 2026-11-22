@@ -46,19 +46,21 @@ export function exerciseSuggestions(query, catalog, {workouts=[], pop={}}={}){
  return rankItems(q, catalog, {names:x => [x.name, ...(x.aliases||[])], mine:x => ex.get(x.id||x.name)||0, global:x => g[popKey(x.id||x.name)]||0, limit:5}).map(r => r.x);
 }
 // 종목 안의 머신: 머신 종류 → 내가 쓴 머신·제조사 모델 → 나머지. 앱 기본 제조사 모델은 종류 아래에 접어 둔다.
-export function machineChoices(exerciseId, {db={}, shared={}, gymName='', pop={}}={}){
+export function machineChoices(exerciseId, {db={}, shared={}, gymName='', gymKey='', pop={}}={}){
  const {mc, none} = exerciseCounts(db.workouts||[]), g = pop.machines||{};
  const ex = EXERCISE_CATALOG.find(x => x.id===exerciseId);
- const generic = genericMachinesFor(exerciseId).map(m => ({m, tag:'일반'}));
+ const atGym = new Set(brandMachinesAt(shared, gymName, exerciseId, gymKey).filter(m => m.generic).map(m => m.id));
+ const generic = genericMachinesFor(exerciseId).filter(m => !atGym.has(m.id)).map(m => ({m, tag:'일반'}));
  const free = ex && !needsMachine(ex) ? [{m:{id:'', name:'머신 없이', free:true}, tag:ex.equipment||'프리웨이트', n:none.get(exerciseId)||0}] : [];
  const mine = (db.machines||[]).filter(m => m.exerciseId===exerciseId && (!gymName || !m.location || m.location===gymName)).map(m => ({m, tag:'내 머신', n:mc.get(m.id)||0}));
- const brands = brandMachinesAt(shared, gymName, exerciseId).map(m => ({m, tag:'제조사', n:mc.get(m.id)||0, gl:g[popKey(m.id)]||0}));
+ const brands = brandMachinesAt(shared, gymName, exerciseId, gymKey).map(m => ({m, tag:'이 헬스장', n:mc.get(m.id)||0, gl:(g[popKey(m.id)]||0) + 1000}));
  // 내가 쓴 적 있는 앱 기본 제조사 모델은 위로 올린다.
  const builtinUsed = generic.flatMap(({m:gm}) => brandsOf(gm.id)).map(m => ({m, tag:gmName(m), n:mc.get(m.id)||0})).filter(x => x.n>0);
  brands.push(...builtinUsed);
  const used = [...mine, ...brands, ...free].filter(x => x.n>0).sort((a, b) => b.n - a.n);
  const rest = [...mine, ...brands].filter(x => !x.n).sort((a, b) => (b.gl||0) - (a.gl||0));
- return [...generic, ...used, ...rest, ...free.filter(x => !x.n)];
+ // 4.7.0 이 헬스장에 등록된 머신은 맨 위(이미 쓴 것은 '자주 쓴 것' 순서대로)
+ return [...rest.filter(x => x.m.atGym), ...generic, ...used, ...rest.filter(x => !x.m.atGym), ...free.filter(x => !x.n)];
 }
 const gmName = b => genericMachinesFor(b.exerciseId||'').find(g => g.id===b.baseId)?.name || '';
 export function exerciseSuggestHTML(state, catalog, ctx){
