@@ -2,7 +2,7 @@
 // 근거: 개인정보보호법 제15조(수집·이용 동의), 제22조의2(만 14세 미만), 제23조(민감정보 별도 동의), 제28조의8(국외 이전), 제30조(처리방침 공개).
 // 법률 검토 전 초안이다. 운영자 정보(OPERATOR)는 대표님 확정 후 채운다.
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export const OPERATOR = {name:'스튜디오 후제(Studio Hooje)', email:''};
+export const OPERATOR = {name:'스튜디오 후제(Studio Hooje)', email:'studiohooje@gmail.com'};
 export const CONSENT_VERSION = '2026-11-23';
 export const COPYRIGHT = '© 2026 Studio Hooje. All rights reserved.';
 export const CONSENT_ITEMS = [
@@ -29,4 +29,4 @@ export function consentHTML({name='', checked={}, error=''}={}){
  </div></div>`;
 }
 export const consentRecord = checked => ({version:CONSENT_VERSION, at:new Date().toISOString(), items:Object.fromEntries(CONSENT_ITEMS.map(([k]) => [k, checked[k]===true]))});
-export const legalFooterHTML = consent => `<p class="legal-foot">${consent?.at ? `가입 동의 ${esc(String(consent.at).slice(0,10))} · ` : ''}<a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a><br>${COPYRIGHT}</p>`;
+export const legalFooterHTML = consent => `<p class="legal-foot">${consent?.at ? `가입 동의 ${esc(String(consent.at).slice(0,10))} · ` : ''}<a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a> · <a href="mailto:studiohooje@gmail.com">문의</a><br>${COPYRIGHT}</p>`;
