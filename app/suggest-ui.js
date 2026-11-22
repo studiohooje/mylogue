@@ -1,3 +1,4 @@
+import {exArtHTML} from './exercise-art-ui.js';
 import {MASS} from './domain.js';
 // 3.14.0 검색어 추천 화면: 검색창 바로 아래 가로 캡슐(최대 5개) → 대분류를 누르면 소분류 목록.
 import {matchScore, rankItems, normKey} from './suggest.js';
@@ -66,5 +67,5 @@ export function exerciseSuggestHTML(state, catalog, ctx){
  const label = m => m.generic || m.free ? m.name : `${m.manufacturer||''} ${m.model||m.name||''}`.trim();
  const row = ({m, tag, n}, sub) => `<button type="button" class="sg-row${m.free?' plain':''}${sub?' sub':''}" data-sg-pick="${h(state.sgEx)}" data-sg-machine="${h(m.id)}"><b>${h(label(m))}</b><small>${h(tag)}${n?`<i class="sg-n">${n}회</i>`:''}</small></button>`;
  const item = x => { if(!x.m.generic) return row(x); const bs = brandsOf(x.m.id), on = state.sgBrand===x.m.id; return `<div class="sg-row-wrap">${row(x)}${bs.length?`<button type="button" class="sg-brand-toggle ${on?'on':''}" data-sg-brand="${h(x.m.id)}" aria-expanded="${on}">제조사 ${bs.length}<span aria-hidden="true">▾</span></button>`:''}</div>${on?bs.map(b => row({m:b, tag:b.line}, true)).join(''):''}`; };
- return `${chips.length?`<div class="sg-chips" role="listbox" aria-label="종목 추천">${chips.map(x => { const has = machineChoices(x.id||x.name, ctx).some(c => !c.m.free); return `<button type="button" class="sg-chip ${has?'group':''} ${state.sgEx===(x.id||x.name)?'on':''}" ${has?`data-sg-ex="${h(x.id||x.name)}" aria-expanded="${state.sgEx===(x.id||x.name)}"`:`data-q-ex="${h(x.id||x.name)}"`}>${h(x.name)}${has?'<span aria-hidden="true">▾</span>':''}</button>`; }).join('')}</div>`:''}${open.length?`<div class="sg-list" aria-label="머신 고르기"><p class="sg-list-head">머신 고르기</p>${open.slice(0, 16).map(item).join('')}</div>`:''}`;
+ return `${chips.length?`<div class="sg-chips" role="listbox" aria-label="종목 추천">${chips.map(x => { const has = machineChoices(x.id||x.name, ctx).some(c => !c.m.free); return `<button type="button" class="sg-chip ${has?'group':''} ${state.sgEx===(x.id||x.name)?'on':''}" ${has?`data-sg-ex="${h(x.id||x.name)}" aria-expanded="${state.sgEx===(x.id||x.name)}"`:`data-q-ex="${h(x.id||x.name)}"`}>${exArtHTML(x.name)}${h(x.name)}${has?'<span aria-hidden="true">▾</span>':''}</button>`; }).join('')}</div>`:''}${open.length?`<div class="sg-list" aria-label="머신 고르기"><p class="sg-list-head">머신 고르기</p>${open.slice(0, 16).map(item).join('')}</div>`:''}`;
 }

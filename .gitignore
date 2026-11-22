@@ -19,3 +19,6 @@ GPT Source/**/*.png
 .wrangler/
 .wrangler-dry/
 .dev.vars
+
+# GPT 원본 그림(1024px). 앱에는 npm run art로 만든 art/ex/*.webp만 올린다
+app/exercise-art/
