@@ -3,7 +3,7 @@
 // - 둘러보기: 예시 기록을 'demo-tour' 저장 칸에 따로 만들어 실제 앱 화면을 써 보게 한다. 진짜 기록과 섞이지 않고, 끝내면 지운다.
 // 문구 원칙: 기록만으로도 이미 절반을 해낸 거라고 말해 준다. 프리미엄은 '필요하면' 정도로만.
 export const DEMO_ACCOUNT = 'demo-tour';
-const SKIP_KEY = 'mylogue.landing.skip', DEMO_FLAG = 'mylogue.demo';
+const SKIP_KEY = 'mylogue.landing.skip', DEMO_FLAG = 'mylogue.demo', VIEW_FLAG = 'mylogue.landing.view';
 const ls = {get:k => { try{ return localStorage.getItem(k); }catch{ return null; } }, set:(k, v) => { try{ localStorage.setItem(k, v); }catch{} }, del:k => { try{ localStorage.removeItem(k); }catch{} }};
 const ss = {get:k => { try{ return sessionStorage.getItem(k); }catch{ return null; } }, set:(k, v) => { try{ sessionStorage.setItem(k, v); }catch{} }, del:k => { try{ sessionStorage.removeItem(k); }catch{} }};
 
@@ -16,7 +16,11 @@ export function endDemo(){
 export const landingSkipped = () => ls.get(SKIP_KEY)==='1';
 export const skipLanding = () => ls.set(SKIP_KEY, '1');
 export const hasRecords = db => !!((db.body||[]).length || (db.meals||[]).length || (db.workouts||[]).length);
-export const showLanding = ({user, db, demo}) => !user && !demo && !landingSkipped() && !hasRecords(db);
+// 설정의 '첫 화면 다시 보기'로 연 경우(viewing)는 기록이 있어도 보여 준다.
+export const landingViewing = () => ss.get(VIEW_FLAG)==='1';
+export const viewLanding = () => ss.set(VIEW_FLAG, '1');
+export const closeLanding = () => ss.del(VIEW_FLAG);
+export const showLanding = ({user, db, demo}) => !user && !demo && (landingViewing() || (!landingSkipped() && !hasRecords(db)));
 
 // ---- 둘러보기 예시 기록: 8주 동안 꾸준히 기록한 가상의 사람 '마이'. 숫자는 화면을 보여 주기 위한 예시다. ----
 // g 단위는 100g당 값(도메인 계약), 개·공기·그릇·인분·스쿱은 1단위당 값.
@@ -95,7 +99,7 @@ export function demoRecords(todayStr, now=new Date()){
 const halo = `<svg class="ld-halo" viewBox="0 0 320 210" aria-hidden="true"><defs><linearGradient id="ldhg" x1="0" x2="1"><stop offset="0" stop-color="#f2b49b"/><stop offset=".5" stop-color="#8ce4e0"/><stop offset="1" stop-color="#b48cff"/></linearGradient></defs><path d="M40 150 A120 120 0 0 1 280 150" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round"/><path class="ld-arc" d="M40 150 A120 120 0 0 1 280 150" fill="none" stroke="url(#ldhg)" stroke-width="10" stroke-linecap="round"/><circle class="ld-dot" cx="110" cy="188" r="12" fill="#f2b49b"/><circle class="ld-dot d2" cx="160" cy="188" r="12" fill="#8ce4e0"/><circle class="ld-dot d3" cx="210" cy="188" r="12" fill="#b8aaf2"/></svg>`;
 const feature = (k, t, d) => `<article class="ld-feat"><span class="ld-feat-k">${k}</span><h3>${t}</h3><p>${d}</p></article>`;
 
-export function landingHTML({installHTML=''}={}){
+export function landingHTML({installHTML='', returning=false}={}){
  return `<div class="landing">
  <header class="ld-top"><span class="ld-brand"><img src="icon.svg" alt="">마이로그</span><button type="button" class="ld-login" id="landing-login">로그인</button></header>
 
@@ -109,7 +113,7 @@ export function landingHTML({installHTML=''}={}){
    <button type="button" class="ld-btn primary" id="landing-signup">Google로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo">로그인 전에 둘러보기</button>
   </div>
-  <button type="button" class="ld-link" id="landing-guest">가입 없이 이 기기에서만 써 볼게요</button>
+  ${returning ? '<button type="button" class="ld-link" id="landing-back">내 기록으로 돌아가기</button>' : '<button type="button" class="ld-link" id="landing-more">예시 화면과 이야기 먼저 보기 ↓</button>'}
  </section>
 
  <section class="ld-sec">
@@ -152,7 +156,7 @@ export function landingHTML({installHTML=''}={}){
   <a class="ld-btn" href="story.html">이야기 전체 보기 →</a>
  </section>
 
- <section class="ld-sec ld-end">
+ <section class="ld-sec ld-end" id="ld-end">
   <h2>오늘의 한 줄부터.</h2>
   <p>기록은 지금처럼 무료예요. 더 깊은 분석이 필요해지면, 그때 골라도 충분해요.</p>
   <div class="ld-cta">
@@ -161,7 +165,8 @@ export function landingHTML({installHTML=''}={}){
   </div>
   ${installHTML}
   <p class="ld-fine">가입하면 기록이 여러 기기에 이어져요. 가입 없이 쓰면 이 기기에만 저장돼요.</p>
-  <p class="legal-foot"><a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a><br>© 2026 Studio Hooje. All rights reserved.</p>
+  <button type="button" class="ld-link" id="landing-guest">${returning ? '내 기록으로 돌아가기' : '가입 없이 이 기기에서만 써 볼게요'}</button>
+  <p class="legal-foot"><a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a> · <a href="mailto:studiohooje@gmail.com">문의</a><br>© 2026 Studio Hooje. All rights reserved.</p>
  </section>
  </div>`;
 }

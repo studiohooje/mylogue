@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {showLanding, demoRecords, landingHTML, demoBannerHTML, hasRecords} from '../landing.js';
+import {showLanding, demoRecords, landingHTML, demoBannerHTML, hasRecords, viewLanding, closeLanding} from '../landing.js';
 import {cleanBody, cleanMeal, cleanWorkout, emptyDB} from '../domain.js';
 
 test('랜딩은 로그인 전·기록 없음·건너뛰지 않음·둘러보기 아님일 때만', () => {
@@ -12,6 +12,13 @@ test('랜딩은 로그인 전·기록 없음·건너뛰지 않음·둘러보기 
  assert.equal(showLanding({user:null, db:{...empty, meals:[{}]}, demo:false}), false, '이미 쓰던 게스트는 그대로');
  mem.set('mylogue.landing.skip', '1');
  assert.equal(showLanding({user:null, db:empty, demo:false}), false, '가입 없이 시작을 고르면 안 보임');
+ const smem = new Map(); globalThis.sessionStorage = {getItem:k => smem.get(k)??null, setItem:(k, v) => smem.set(k, v), removeItem:k => smem.delete(k)};
+ viewLanding();
+ assert.equal(showLanding({user:null, db:{...empty, meals:[{}]}, demo:false}), true, '설정에서 다시 보기를 누르면 기록이 있어도 보임');
+ assert.equal(showLanding({user:{uid:'u'}, db:empty, demo:false}), false, '로그인 상태에선 안 보임');
+ closeLanding();
+ assert.equal(showLanding({user:null, db:empty, demo:false}), false);
+ assert.match(landingHTML({returning:true}), /내 기록으로 돌아가기/);
 });
 
 test('둘러보기 예시 기록은 저장 계약을 통과한다', () => {
