@@ -1089,3 +1089,61 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .ai-magic{box-shadow:inset 0 1px 0 #ffffff26,inset 0 0 0 1px #ffffff0f!important}
 .ai-magic:hover{box-shadow:inset 0 1px 0 #ffffff33,inset 0 0 0 1px #ffffff1f!important;filter:brightness(1.06)}
 .ai-magic .ai-magic-icon{box-shadow:none!important}
+/* 4.3.0 식단 흐름 */
+.diet-flow{display:grid;gap:10px}
+.df-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.df-head h3{margin:0}
+.df-today{font-size:13px;color:#b4c6d8}.df-today b{color:var(--df);font-size:16px}
+.df-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.df-tab{flex:0 0 auto;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #ffffff1f;background:#ffffff08;color:#b4c6d8;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.df-tab::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:middle}
+.df-tab.on{background:color-mix(in srgb,var(--c) 22%,transparent);border-color:var(--c);color:#edf4f8}
+.df-period{display:inline-flex;gap:4px;justify-self:start;padding:3px;border-radius:999px;background:#ffffff0a;border:1px solid #ffffff14}
+.df-period button{min-height:30px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#b4c6d8;font:inherit;font-size:12px;cursor:pointer}
+.df-period button.on{background:#ffffff1a;color:#edf4f8;font-weight:700}
+.df-chart{width:100%;height:auto;display:block}
+.df-ax{fill:#8a9bb0;font-size:11px;font-variant-numeric:tabular-nums}
+.df-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+.df-stats div{padding:8px 10px;border-radius:12px;background:#ffffff08}.df-stats small{display:block;font-size:12px;color:#8a9bb0}.df-stats b{font-size:16px;font-variant-numeric:tabular-nums;color:var(--df)}
+.df-how summary{cursor:pointer;font-size:13px;color:#8ce4e0}.df-how p{font-size:13px;color:#b4c6d8;margin:6px 0 0;line-height:1.55}.df-parts{color:#edf4f8!important}
+.df-empty{text-align:center;padding:24px 0}
+/* 4.3.0 정리할 값 */
+.food-check{border-color:#f0d46677}
+.food-check summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.food-check summary b{color:#f0d466}.food-check summary small{color:#b4c6d8;font-size:12px}
+.fc-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.fc-item{display:grid;gap:6px;padding:10px;border-radius:12px;background:#ffffff08}
+.fc-what small{color:#8a9bb0;font-size:12px}.fc-what p{margin:4px 0 0;font-size:13px;color:#f0d466}
+.fc-fix{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.toast-undo{display:flex;align-items:center;gap:14px}.toast-undo button{border:0;background:transparent;color:#0b6b66;font-weight:800;font:inherit;cursor:pointer;padding:4px 6px}
+.qe-warn{display:block;font-size:12px;color:#f0d466;margin-top:2px}
+.usual-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px}.usual-row small{width:100%;font-size:12px;color:#8ce4e0}
+.chip.usual em{font-style:normal;font-size:11px;opacity:.7;margin-left:2px}
+.yday-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:0 0 8px;padding:10px 14px;border-radius:14px;border:1px dashed #8ce4e099;background:#8ce4e00f;color:#edf4f8;font:inherit;font-weight:700;text-align:left;cursor:pointer}.yday-chip small{font-weight:400;color:#b4c6d8;font-size:12px}
+.meal-ahead{display:flex;align-items:center;gap:8px;color:#b8aaf2;font-size:13px;font-weight:700;margin:6px 0 0}.meal-ahead::before,.meal-ahead::after{content:"";flex:1;height:1px;background:#b8aaf244}
+.qm-save-btn{display:flex;flex-direction:column;align-items:center;line-height:1.2}.qm-save-btn small{font-size:11px;font-weight:600;opacity:.75}
+/* 4.3.0 수치 한눈에 */
+.bf-top{display:grid;gap:10px}
+.bf-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.bf-stats div{padding:8px 10px;border-radius:12px;background:#ffffff08}.bf-stats small{display:block;font-size:12px;color:#8a9bb0}.bf-stats b{font-size:17px;font-variant-numeric:tabular-nums}
+.bf-stats .good,.bf-last .good{color:#6fd6a3}.bf-stats .bad,.bf-last .bad{color:#ff8a8a}
+.bf-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.bf-badges{display:flex;gap:6px;flex-wrap:wrap}
+.bf-badge{display:grid;line-height:1.2;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}.bf-badge small{font-size:10px;font-weight:500;opacity:.85}
+.bf-badge.hi{background:#c0392b;color:#fff}.bf-badge.lo{background:#2e7d32;color:#fff}.bf-badge.now{background:#1f5d99;color:#fff}
+.bf-chart,.bf-bars{width:100%;height:auto;display:block}
+.bf-ax{fill:#8a9bb0;font-size:11px;font-variant-numeric:tabular-nums}.bf-goal{fill:#ff8a8a;font-size:11px;font-weight:700}
+.bf-sub{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.bf-sub b{font-size:14px}.bf-sub small{font-size:12px;color:#8a9bb0}
+.bf-last{margin:0;font-size:13px;color:#b4c6d8}
+.bf-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#b4c6d8}.bf-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.bf-card{display:grid;gap:8px}
+.bf-goal-form{display:flex;gap:8px;align-items:end}.bf-goal-form[hidden]{display:none}
+.bf-note{margin:0}
+/* 4.3.0 운동 볼거리 */
+.wf-top,.wf-flow,.wf-growth{display:grid;gap:10px}
+.wf-sub{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.wf-sub b{font-size:14px}.wf-sub small{font-size:12px;color:#8a9bb0}
+.wf-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.wf-stats div{padding:8px;border-radius:12px;background:#ffffff08}.wf-stats small{display:block;font-size:11px;color:#8a9bb0}.wf-stats b{font-size:16px;font-variant-numeric:tabular-nums}
+.wf-grass,.wf-chart{width:100%;height:auto;display:block}
+.wf-legend{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;color:#b4c6d8}.wf-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;vertical-align:middle}
+.wf-ax{fill:#8a9bb0;font-size:11px}.wf-val{fill:#b8aaf2;font-size:12px;font-weight:700}
+.wf-prs{list-style:none;margin:0;padding:0;display:grid;gap:4px}.wf-prs li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #ffffff10;font-size:14px}.wf-prs b{color:#6fd6a3}.wf-prs small{color:#8a9bb0;font-size:11px}
+@media (max-width:380px){.wf-stats{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:650px){.df-ax,.bf-ax,.wf-ax{font-size:11px}}

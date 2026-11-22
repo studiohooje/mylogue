@@ -3,6 +3,7 @@
 // 운동 = 종목별 세트(무게·횟수·완료)만 바로 고치고, 세트 추가·삭제. 머신·컨디션 등은 '자세히 수정'(기존 화면).
 import {cleanMeal, cleanWorkout, isFuture} from './domain.js';
 import {mealGroups} from './timeline-view.js';
+import {foodIssue} from './food-check.js';
 
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (n, d=0) => Number(n||0).toLocaleString('ko-KR', {maximumFractionDigits:d});
@@ -19,7 +20,7 @@ export function quickMealState(db, date, key){
  const g = mealGroups((db.meals||[]).filter(m => m.date===date)).find(x => x.key===key);
  if(!g) return null;
  const first = g.items[0];
- return {key, date, newDate:date, slot:first.slot||'식사', time:hhmm(g.at), rows:g.items.map(m => ({id:m.id, name:m.name, unit:m.servingUnit||'회', qty:m.servingQty, base:{qty:m.servingQty, ...Object.fromEntries(NUT.map(k=>[k, m[k]]))}, removed:false}))};
+ return {key, date, newDate:date, slot:first.slot||'식사', time:hhmm(g.at), rows:g.items.map(m => ({id:m.id, name:m.name, unit:m.servingUnit||'회', origUnit:m.servingUnit||'회', qty:m.servingQty, base:{qty:m.servingQty, ...Object.fromEntries(NUT.map(k=>[k, m[k]]))}, removed:false}))};
 }
 export const stepFor = unit => unit==='g'||unit==='ml' ? 10 : 0.5;
 export function rowTotals(row){ const f = row.base.qty>0 ? Number(row.qty)/row.base.qty : 0; return Object.fromEntries(NUT.map(k => [k, row.base[k]==null ? null : r1(row.base[k]*f)])); }
@@ -30,13 +31,15 @@ export function readQuickMeal(st, root){
  st.rows.forEach((r, i) => { const q = Number(v(`qm-qty-${i}`)); if(Number.isFinite(q) && q>0) r.qty = q; const u = v(`qm-unit-${i}`); if(u) r.unit = u; });
  return st;
 }
+// 4.3.0 저장하면 무엇이 바뀌는지(개선안: 끼니 바구니)
+export function mealDiff(st){ const q = st.rows.filter(r => !r.removed && Number(r.qty)!==Number(r.base.qty)).length, u = st.rows.filter(r => !r.removed && r.origUnit && r.unit!==r.origUnit).length, x = st.rows.filter(r => r.removed).length; const p = []; if(q) p.push(`${q}개 양 바꿈`); if(u) p.push(`${u}개 단위 바꿈`); if(x) p.push(`${x}개 뺌`); return p.join(' · ') || '바뀐 것 없음'; }
 export function quickMealHTML(st){
  const live = st.rows.filter(r => !r.removed), tot = live.reduce((s, r) => { const t = rowTotals(r); for(const k of NUT) s[k] += t[k]||0; return s; }, {calories:0,carbs:0,protein:0,fat:0});
  return `<div class="qe"><div class="qe-meta"><label class="field">날짜<input id="qm-date" type="date" value="${h(st.newDate)}"></label><label class="field">끼니<select id="qm-slot">${[...new Set([st.slot, ...SLOTS])].map(s=>`<option ${s===st.slot?'selected':''}>${h(s)}</option>`).join('')}</select></label><label class="field">먹은 시각<input id="qm-time" type="time" value="${h(st.time)}"></label></div>
-<ul class="qe-rows">${st.rows.map((r, i) => { const t = rowTotals(r); return `<li class="qe-row${r.removed?' removed':''}">${r.removed ? `<span class="qe-name"><s>${h(r.name)}</s> <small>빼기로 함</small></span><button type="button" class="text-button" data-qm-undo="${i}">되돌리기</button>` : `<div class="qe-name"><b>${h(r.name)}</b><small>${fmt(t.calories)}kcal · 탄${fmt(t.carbs)} 단${fmt(t.protein)} 지${fmt(t.fat)}</small></div><div class="qe-step"><button type="button" class="qe-btn" data-qm-step="${i}" data-d="-1" aria-label="${h(r.name)} 줄이기">−</button><input id="qm-qty-${i}" type="number" inputmode="decimal" min="0.1" step="any" value="${h(r.qty)}" aria-label="${h(r.name)} 양"><select id="qm-unit-${i}" class="qe-unit-sel" aria-label="${h(r.name)} 단위">${[...new Set([r.unit, ...UNITS])].map(u => `<option ${u===r.unit?'selected':''}>${h(u)}</option>`).join('')}</select><button type="button" class="qe-btn" data-qm-step="${i}" data-d="1" aria-label="${h(r.name)} 늘리기">＋</button></div><div class="qe-row-actions"><button type="button" class="text-button" data-meal-edit="${h(r.id)}">영양값 고치기</button><button type="button" class="text-button qe-del" data-qm-remove="${i}">빼기</button></div>`}</li>`; }).join('')}</ul>
+<ul class="qe-rows">${st.rows.map((r, i) => { const t = rowTotals(r); return `<li class="qe-row${r.removed?' removed':''}">${r.removed ? `<span class="qe-name"><s>${h(r.name)}</s> <small>빼기로 함</small></span><button type="button" class="text-button" data-qm-undo="${i}">되돌리기</button>` : `<div class="qe-name"><b>${h(r.name)}</b><small>${fmt(t.calories)}kcal · 탄${fmt(t.carbs)} 단${fmt(t.protein)} 지${fmt(t.fat)}</small>${(() => { const is = foodIssue({servingQty:r.qty, servingUnit:r.unit, ...t}); return is ? `<small class="qe-warn">⚠ ${h(is.text)}</small>` : ''; })()}</div><div class="qe-step"><button type="button" class="qe-btn" data-qm-step="${i}" data-d="-1" aria-label="${h(r.name)} 줄이기">−</button><input id="qm-qty-${i}" type="number" inputmode="decimal" min="0.1" step="any" value="${h(r.qty)}" aria-label="${h(r.name)} 양"><select id="qm-unit-${i}" class="qe-unit-sel" aria-label="${h(r.name)} 단위">${[...new Set([r.unit, ...UNITS])].map(u => `<option ${u===r.unit?'selected':''}>${h(u)}</option>`).join('')}</select><button type="button" class="qe-btn" data-qm-step="${i}" data-d="1" aria-label="${h(r.name)} 늘리기">＋</button></div><div class="qe-row-actions"><button type="button" class="text-button" data-meal-edit="${h(r.id)}">영양값 고치기</button><button type="button" class="text-button qe-del" data-qm-remove="${i}">빼기</button></div>`}</li>`; }).join('')}</ul>
 <p class="qe-total">이 식사 <b>${fmt(tot.calories)}kcal</b> · 탄${fmt(tot.carbs)}g 단${fmt(tot.protein)}g 지${fmt(tot.fat)}g</p>
 <p class="hint">양을 바꾸면 칼로리·탄단지도 같은 비율로 바뀌어요. 음식 이름이나 영양값 자체는 ‘영양값 고치기’에서.</p>
-<div class="actions qe-actions"><button type="button" class="button" id="qm-save">저장</button><button type="button" class="button secondary" id="qm-add">음식 추가</button><button type="button" class="text-button qe-del" id="qm-delete-all">이 식사 모두 삭제</button></div></div>`;
+<div class="actions qe-actions"><button type="button" class="button qm-save-btn" id="qm-save">저장<small>${h(mealDiff(st))}</small></button><button type="button" class="button secondary" id="qm-add">음식 추가</button><button type="button" class="text-button qe-del" id="qm-delete-all">이 식사 모두 삭제</button></div></div>`;
 }
 export function applyQuickMeal(db, st){
  const ids = new Set(st.rows.map(r => r.id)), byId = new Map((db.meals||[]).map(m => [m.id, m]));
