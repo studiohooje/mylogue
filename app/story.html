@@ -83,9 +83,6 @@ em.k{font-style:normal;color:var(--text);font-weight:600}
 .halo-demo .dot{opacity:.18;transition:opacity .6s}
 .halo-demo.on .dot{opacity:1}
 .halo-demo .d2{transition-delay:.5s}.halo-demo .d3{transition-delay:1s}
-/* origin */
-.strike{text-decoration:line-through;text-decoration-color:var(--peach);text-decoration-thickness:3px;color:var(--mute)}
-.origin-word{font-size:clamp(26px,6vw,44px);font-weight:700;letter-spacing:-.02em;margin-top:28px;line-height:1.3}
 /* guardians */
 .duo{display:grid;gap:16px;margin-top:40px}
 @media (min-width:650px){.duo{grid-template-columns:1fr 1fr}}
@@ -144,7 +141,7 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
 <body>
 <header class="top"><div class="wrap">
  <a class="back" href="./" aria-label="마이로그로 돌아가기"><img src="icon.svg" alt="">마이로그</a>
- <nav class="toc" aria-label="이야기 목차"><a href="#name">이름</a><a href="#dialogue">대화</a><a href="#day">하루</a><a href="#origin">시작</a><a href="#guardians">마이와 로그</a><a href="#world">세계</a><a href="#promise">약속</a></nav>
+ <nav class="toc" aria-label="이야기 목차"><a href="#name">이름</a><a href="#dialogue">대화</a><a href="#day">하루</a><a href="#guardians">마이와 로그</a><a href="#world">세계</a><a href="#promise">약속</a></nav>
 </div></header>
 
 <main>
@@ -209,16 +206,8 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
  <p class="quote reveal">하루는 매일 다시 시작되어도,<br>이야기는 처음으로 돌아가지 않습니다.</p>
 </div></section>
 
-<section id="origin"><div class="wrap">
- <p class="eb reveal">04 · Origin</p>
- <h2 class="reveal">체중을 내려놓고, 이야기가 되기까지</h2>
- <p class="lead reveal">마이로그의 처음 이름은 <em class="k">마웨로그</em>, 마이 웨이트 로그(My Weight Log)였습니다. 체중 숫자 하나를 적던 작은 기록장이었습니다.</p>
- <p class="origin-word reveal">My <span class="strike">Weight</span> Log → <span style="color:var(--mint)">My</span><span style="background:linear-gradient(100deg,var(--mint),var(--violet2));-webkit-background-clip:text;background-clip:text;color:transparent">logue</span></p>
- <p class="lead reveal">그런데 몸은 체중 하나로 말하지 않았습니다. 무엇을 먹었는지, 어떤 머신에서 몇 번 들었는지, 인바디 결과지의 근육량이 어떻게 움직였는지가 함께 있어야 비로소 말이 됐습니다. 기록이 식단과 운동과 인바디로 넓어지면서, 이름에서 <em class="k">Weight를 내려놓고</em> 대신 <em class="k">-ue</em>를 붙였습니다. 숫자 하나의 장부에서, 몸 전체가 쓰는 이야기로.</p>
-</div></section>
-
 <section id="guardians"><div class="wrap">
- <p class="eb reveal">05 · Guardians</p>
+ <p class="eb reveal">04 · Guardians</p>
  <h2 class="reveal">이름을 둘로 나누면, 마이와 로그</h2>
  <p class="lead reveal">마이로그라는 이름을 둘로 나누면 두 존재가 태어납니다. 둘의 관계가 곧 마이로그의 첫 번째 원칙입니다. <em class="k">“AI는 초안만 쓰고, 확정은 사람이 한다.”</em></p>
  <div class="duo">
@@ -241,7 +230,7 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
 </div></section>
 
 <section id="world"><div class="wrap">
- <p class="eb reveal">06 · World</p>
+ <p class="eb reveal">05 · World</p>
  <h2 class="reveal">모든 것이 -logue로 이어집니다</h2>
  <p class="lead reveal">이름 하나가 세계가 되면, 앞으로 만들 기능의 이름이 저절로 생깁니다.</p>
  <div class="world">
@@ -255,7 +244,7 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
 </div></section>
 
 <section id="promise"><div class="wrap">
- <p class="eb reveal">07 · Promise</p>
+ <p class="eb reveal">06 · Promise</p>
  <h2 class="reveal">이야기를 지키는 네 가지 약속</h2>
  <div class="prom">
   <div class="card reveal"><span class="n">01</span><h3>AI는 초안만, 확정은 나</h3><p>AI가 쓴 기록은 검토함에 먼저 들어옵니다. 내가 확정하기 전에는 내 기록이 되지 않습니다.</p></div>
@@ -266,7 +255,7 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
 </div></section>
 
 <section id="mark"><div class="wrap">
- <p class="eb reveal">08 · Mark</p>
+ <p class="eb reveal">07 · Mark</p>
  <h2 class="reveal">헤일로와 세 점, 오로라의 색</h2>
  <div class="mark">
   <img class="reveal" src="icon.svg" alt="마이로그 아이콘: 위의 원호와 아래 세 점">
