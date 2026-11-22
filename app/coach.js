@@ -107,7 +107,7 @@ export function dashboardFacts(data, {today, links=[]}={}){
 
 // ---- 화면 조각 ----
 export const coachNav = () => [['coach-clients','회원','body'], ['coach-dash','대시보드','analysis'], ['coach-schedule','일정','calendar'], ['coach-send','수업 입력','add'], ['coach-templates','템플릿','workout'], ['settings','설정','settings']];
-export function coachToggleHTML(on){ return `<div class="coach-toggle" role="group" aria-label="모드 전환"><button type="button" class="${on?'':'active'}" data-coach-mode="off" aria-pressed="${!on}">내 기록</button><button type="button" class="${on?'active':''}" data-coach-mode="on" aria-pressed="${on}">코치</button></div>`; }
+export function coachToggleHTML(on){ return `<div class="coach-toggle" role="group" aria-label="모드 전환"><button type="button" class="${on?'':'active'}" data-coach-mode="off" aria-pressed="${!on}">마이로그</button><button type="button" class="${on?'active':''}" data-coach-mode="on" aria-pressed="${on}">코치로그</button></div>`; }
 
 const badge = ([t, k]) => `<span class="status-badge ${k}">${esc(t)}</span>`;
 export function coachClientsHTML(data, {links=[], open='', today='', form=false}={}){

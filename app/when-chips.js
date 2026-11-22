@@ -1,27 +1,79 @@
-// 4.0.0 날짜·시각 빠른 입력(대표님 요청): 기록 창 안의 날짜·시각 칸 아래에 버튼 줄을 붙인다.
-// 기본값은 지금 날짜·지금 시각. 날짜: 어제·오늘·내일 / 시각: 지금·가까운 정시·±15분·±30분·±1시간.
-// 칸 값을 바꾼 뒤 input·change 이벤트를 보내 기존 입력 처리(상태 저장)가 그대로 동작하게 한다.
+// 4.0.0 날짜·시각 빠른 입력 → 4.2.0 '언제' 칸 통일(대표님 승인 제안 2).
+// 기록 창(.sheet) 안의 날짜·시각 입력을 한 블록으로 묶는다: 위 줄 = 날짜 칸 + 시각 칸(무엇인지 작게 표시), 아래 = 자주 쓰는 버튼,
+// '시간표'를 누르면 15분 단위 표. 입력 칸 자체는 그대로 두므로 저장 로직은 바뀌지 않는다(값을 바꾸면 input·change 이벤트를 보낸다).
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const WD = '일월화수목금토';
 const STEPS = [[-60,'−1시간'], [-30,'−30분'], [-15,'−15분'], [15,'+15분'], [30,'+30분'], [60,'+1시간']];
 
-function dateRow(){ return `<div class="when-row" data-when-row="date"><button type="button" class="when-chip" data-when="d:-1">어제</button><button type="button" class="when-chip" data-when="d:0">오늘</button><button type="button" class="when-chip" data-when="d:1">내일</button></div>`; }
-function timeRow(){ const now = new Date(), hour = `${pad(now.getHours())}:00`; return `<div class="when-row" data-when-row="time"><button type="button" class="when-chip strong" data-when="t:now">지금</button><button type="button" class="when-chip" data-when="t:hour">${hour}</button>${STEPS.map(([m, l]) => `<button type="button" class="when-chip step" data-when="t:${m}">${l}</button>`).join('')}</div>`; }
+export function relDate(v, now = new Date()){
+ if(!v) return '';
+ const d = new Date(`${v}T12:00:00`); if(Number.isNaN(d.getTime())) return '';
+ const g = Math.round((d - new Date(`${ymd(now)}T12:00:00`))/86400000);
+ const name = g===0?'오늘':g===-1?'어제':g===1?'내일':g<0?`${-g}일 전`:`${g}일 뒤`;
+ return `${name} · ${d.getMonth()+1}/${d.getDate()} ${WD[d.getDay()]}`;
+}
+export function relTime(v){
+ if(!/^\d{2}:\d{2}/.test(v||'')) return '';
+ const [h, m] = v.split(':').map(Number);
+ return `${h<12?'오전':'오후'} ${h%12||12}:${pad(m)}`;
+}
+// 15분 단위 표: 고른 시각의 한 시간 전부터 12칸
+export function timeSlots(v, now = new Date()){
+ const [h] = (/^\d{2}:\d{2}/.test(v||'') ? v : hm(now)).split(':').map(Number);
+ const start = Math.max(0, Math.min(21, h-1));
+ return Array.from({length:12}, (_, i) => { const t = start*60 + i*15; return `${pad(Math.floor(t/60))}:${pad(t%60)}`; });
+}
 
-// 창(.sheet) 안의 날짜·시각 칸에 한 번만 버튼 줄을 붙인다. data-no-when이 있으면 건너뛴다.
+function dateChips(id){ return `<div class="when-row" data-when-row="date">${[['d:-1','어제'],['d:0','오늘'],['d:1','내일']].map(([c, l]) => `<button type="button" class="when-chip" data-when="${c}" data-when-target="${id}">${l}</button>`).join('')}</div>`; }
+function timeChips(id){ const now = new Date(); return `<div class="when-row" data-when-row="time"><button type="button" class="when-chip strong" data-when="t:now" data-when-target="${id}">지금</button><button type="button" class="when-chip" data-when="t:hour" data-when-target="${id}">${pad(now.getHours())}:00</button>${STEPS.map(([m, l]) => `<button type="button" class="when-chip step" data-when="t:${m}" data-when-target="${id}">${l}</button>`).join('')}<button type="button" class="when-chip grid" data-when="grid" data-when-target="${id}" aria-expanded="false">시간표</button></div><div class="when-grid" data-when-grid="${id}" hidden></div>`; }
+
+function ensureId(input){ if(!input.id) input.id = `when-${Math.random().toString(36).slice(2, 9)}`; return input.id; }
+function capOf(input){ return input.type==='date' ? relDate(input.value) : input.type==='time' ? relTime(input.value) : input.value ? `${relDate(input.value.slice(0,10))} ${relTime(input.value.slice(11,16))}` : ''; }
+
+// 창(.sheet) 안의 날짜·시각을 '언제' 블록으로. data-no-when이 있으면 건너뛴다.
 export function enhanceWhenInputs(root = document){
  if(typeof root?.querySelectorAll!=='function' || typeof document==='undefined' || typeof document.createElement!=='function') return;
- for(const input of root.querySelectorAll('.sheet input[type=date], .sheet input[type=time], .sheet input[type=datetime-local]')){
-  if(input.dataset.whenDone || input.dataset.noWhen!==undefined || input.disabled) continue;
-  input.dataset.whenDone = '1';
-  if(!input.id) input.id = `when-${Math.random().toString(36).slice(2, 9)}`;
-  const box = document.createElement('div');
-  box.className = 'when-chips';
-  box.dataset.whenFor = input.id;
-  box.innerHTML = input.type==='date' ? dateRow() : input.type==='time' ? timeRow() : dateRow() + timeRow();
-  (input.closest('label') || input).insertAdjacentElement('afterend', box);
+ const usable = el => el && !el.dataset.whenDone && el.dataset.noWhen===undefined;
+ for(const dateInput of root.querySelectorAll('.sheet input[type=date], .sheet input[type=datetime-local]')){
+  if(!usable(dateInput)) continue;
+  const scope = dateInput.closest('form') || dateInput.closest('.sheet');
+  const timeInput = dateInput.type==='date' ? [...scope.querySelectorAll('input[type=time]')].find(usable) : null;
+  const dl = dateInput.closest('label') || dateInput, tl = timeInput ? (timeInput.closest('label') || timeInput) : null;
+  const block = document.createElement('div');
+  block.className = 'when-block';
+  block.innerHTML = `<div class="when-title">언제</div><div class="when-main${tl?'':' one'}"></div>`;
+  dl.parentNode.insertBefore(block, dl);
+  const main = block.querySelector('.when-main');
+  for(const [lab, inp] of [[dl, dateInput], [tl, timeInput]]){
+   if(!lab) continue;
+   inp.dataset.whenDone = '1'; ensureId(inp);
+   lab.classList.add('when-pill');
+   if(!lab.querySelector('.when-cap')){ const cap = document.createElement('small'); cap.className = 'when-cap'; cap.dataset.whenCap = inp.id; cap.textContent = capOf(inp); lab.append(cap); }
+   main.append(lab);
+  }
+  const chips = document.createElement('div');
+  chips.className = 'when-chips';
+  chips.innerHTML = dateChips(dateInput.id) + (timeInput ? timeChips(timeInput.id) : dateInput.type==='datetime-local' ? timeChips(dateInput.id) : '');
+  block.append(chips);
+  if(dateInput.disabled) block.classList.add('date-locked');
  }
+ // 짝 없는 시각 칸(시각만 있는 창)
+ for(const t of root.querySelectorAll('.sheet input[type=time]')){
+  if(!usable(t)) continue;
+  t.dataset.whenDone = '1'; ensureId(t);
+  const lab = t.closest('label') || t, block = document.createElement('div');
+  block.className = 'when-block'; block.innerHTML = '<div class="when-title">언제</div><div class="when-main one"></div>';
+  lab.parentNode.insertBefore(block, lab); lab.classList.add('when-pill'); block.querySelector('.when-main').append(lab);
+  const chips = document.createElement('div'); chips.className = 'when-chips'; chips.innerHTML = timeChips(t.id); block.append(chips);
+ }
+ bindCaptions();
+}
+let captionsBound = false;
+function bindCaptions(){
+ if(captionsBound || typeof document.addEventListener!=='function') return; captionsBound = true;
+ document.addEventListener('input', e => { const t = e.target; if(!t?.dataset?.whenDone) return; const cap = document.querySelector(`[data-when-cap="${t.id}"]`); if(cap) cap.textContent = capOf(t); });
 }
 
 function read(input){
@@ -37,11 +89,14 @@ function write(input, d){
 // 버튼을 누르면 칸 값을 바꾼다. 처리했으면 true.
 export function handleWhenClick(target){
  const b = target?.closest?.('[data-when]'); if(!b || !b.dataset?.when || typeof b.closest!=='function') return false;
- const box = b.closest('[data-when-for]'), input = box && document.getElementById(box.dataset.whenFor); if(!input) return true;
- const [kind, arg] = b.dataset.when.split(':'), now = new Date();
+ const input = document.getElementById(b.dataset.whenTarget || b.closest('[data-when-for]')?.dataset.whenFor || ''); if(!input || input.disabled) return true;
+ const code = b.dataset.when;
+ if(code==='grid'){ const g = document.querySelector(`[data-when-grid="${input.id}"]`); if(!g) return true; const open = g.hidden; g.hidden = !open; b.setAttribute('aria-expanded', String(open)); if(open) g.innerHTML = timeSlots(input.type==='datetime-local'?String(input.value).slice(11,16):input.value).map(t => `<button type="button" class="when-slot${t===input.value?' on':''}" data-when="s:${t}" data-when-target="${input.id}">${relTime(t)}</button>`).join(''); return true; }
+ if(code.startsWith('s:')){ const t = code.slice(2); input.value = input.type==='datetime-local' ? `${(input.value||ymd(new Date())).slice(0,10)}T${t}` : t; write(input, read(input)); const g = document.querySelector(`[data-when-grid="${input.id}"]`); if(g){ g.querySelectorAll('.when-slot').forEach(x => x.classList.toggle('on', x.dataset.when===code)); } return true; }
+ const [kind, arg] = code.split(':'), now = new Date();
  let d = read(input);
  if(kind==='d'){ const base = new Date(now); base.setDate(base.getDate() + Number(arg)); if(input.type==='date') d = base; else { base.setHours(d.getHours(), d.getMinutes(), 0, 0); d = base; } }
- else if(arg==='now'){ if(input.type==='datetime-local'){ const keep = d; d = new Date(keep); d.setHours(now.getHours(), now.getMinutes(), 0, 0); } else d = now; }
+ else if(arg==='now'){ if(input.type==='datetime-local'){ d = new Date(d); d.setHours(now.getHours(), now.getMinutes(), 0, 0); } else d = now; }
  else if(arg==='hour'){ d = new Date(d); d.setHours(now.getHours(), 0, 0, 0); }
  else { d = new Date(d.getTime() + Number(arg)*60000); }
  write(input, d);

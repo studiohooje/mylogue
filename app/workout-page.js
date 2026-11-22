@@ -21,10 +21,10 @@ export function placesHTML(db, {open=false}={}){
 }
 
 // 이번 주(월~일) 흐름
-export function weekFlowHTML(db, today){
- const d0 = new Date(`${today}T12:00:00`), mon = new Date(d0); mon.setDate(d0.getDate() - ((d0.getDay()+6)%7));
- const rows = [...Array(7).keys()].map(i => { const d = new Date(mon); d.setDate(mon.getDate()+i); const k = ymd(d), ws = (db.workouts||[]).filter(w => w.date===k), real = ws.filter(w => !w.rest && !w.planned), plan = ws.filter(w => w.planned); return {k, wd:'월화수목금토일'[i], today:k===today, label:daySummary(real), rest:!real.length && ws.some(w => w.rest), plan:plan.length ? plan.map(w => w.title||'예정').join(', ') : ''}; });
- return `<section class="section card wp-week"><h3>이번 주 흐름</h3><div class="wp-week-list">${rows.map(r => `<div class="wpw-row${r.today?' today':''}${r.label?' done':''}"><b>${r.wd}</b><span>${r.label?esc(r.label):r.rest?`${REST_ICON} 휴식`:r.plan?`<em class="plan">예정 · ${esc(r.plan)}</em>`:'<i>—</i>'}</span></div>`).join('')}</div></section>`;
+export function weekFlowHTML(db, date, today=date){
+ const d0 = new Date(`${date}T12:00:00`), mon = new Date(d0); mon.setDate(d0.getDate() - ((d0.getDay()+6)%7));
+ const rows = [...Array(7).keys()].map(i => { const d = new Date(mon); d.setDate(mon.getDate()+i); const k = ymd(d), ws = (db.workouts||[]).filter(w => w.date===k), real = ws.filter(w => !w.rest && !w.planned), plan = ws.filter(w => w.planned); return {k, wd:'월화수목금토일'[i], today:k===today, sel:k===date&&date!==today, label:daySummary(real), rest:!real.length && ws.some(w => w.rest), plan:plan.length ? plan.map(w => w.title||'예정').join(', ') : ''}; });
+ return `<section class="section card wp-week"><h3>${date===today?'이번 주 흐름':'그 주 흐름'}</h3><div class="wp-week-list">${rows.map(r => `<div class="wpw-row${r.today?' today':''}${r.sel?' sel':''}${r.label?' done':''}"><b>${r.wd}</b><span>${r.label?esc(r.label):r.rest?`${REST_ICON} 휴식`:r.plan?`<em class="plan">예정 · ${esc(r.plan)}</em>`:'<i>—</i>'}</span></div>`).join('')}</div></section>`;
 }
 
 // 예정된 운동: 세트마다 완료 표시 → 확정. 종목이 없는 계획('웨이트(하체)')은 '기록하기'로 이어진다.
@@ -39,4 +39,11 @@ export function partBalanceHTML(db, now=new Date()){
  const parts = partSummary(db, 7, now).filter(p => p.sets>0 && p.part!=='유산소');
  const max = Math.max(1, ...parts.map(p => p.sets));
  return `<section class="section card wp-balance"><h3>이번 주 부위 균형</h3>${parts.length?`<div class="bal-list">${parts.map(p => `<div class="bal-row"><span>${esc(p.part)}</span><i><b style="width:${Math.round(p.sets/max*100)}%"></b></i><em>${p.sets}세트</em></div>`).join('')}</div><p class="hint">부위별 주 10~20세트가 일반적인 기준이에요.</p>`:'<p class="hint">이번 주 근력 운동을 기록하면 부위별 세트가 보여요.</p>'}</section>`;
+}
+
+// 4.2.0 날짜 바로 고른 날의 운동(카드에서 바로 수정)
+export function dayWorkoutsHTML(db, date){
+ const ws = (db.workouts||[]).filter(w => w.date===date);
+ if(!ws.length) return `<section class="section card wp-day empty"><p class="hint">이 날은 운동 기록이 없어요. ‘＋ 운동’이나 일정에서 예정을 넣을 수 있어요.</p></section>`;
+ return `<section class="section wp-day">${ws.map(w => w.rest ? `<article class="card wp-day-card rest"><b>${REST_ICON} 의도적 휴식</b><button type="button" class="text-button" data-delete="workouts:${esc(w.id)}">지우기</button></article>` : `<article class="card wp-day-card${w.planned?' planned':''}"><div><b>${w.planned?'<span class="plan-badge">예정</span> ':''}${esc(workoutTitle(w))}</b><small>${esc(daySummary([w])||'')}${w.gymName?` · ${esc(w.gymName)}`:''}</small></div><button type="button" class="button secondary small" data-qw="${esc(w.id)}">수정</button></article>`).join('')}</section>`;
 }

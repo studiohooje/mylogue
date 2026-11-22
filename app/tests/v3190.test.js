@@ -27,10 +27,10 @@ test('저장·체중이 바뀌면 다시 계산·제안(마법사) 뒤에는 옛
 test('식단 화면 목표 카드와 수정 창', () => {
  const s = applyMacroPlan({}, {calorieGoal:2300, rules:{protein:{mode:'perKg', value:2}, fat:{mode:'ratio', value:25}, carbs:{mode:'rest', value:1}}}, 73.4);
  const card = macroPlanCardHTML(s, 73.4);
- assert.match(card, /data-modal="macro-plan"/); assert.match(card, /id="gw-open"/);
+ assert.match(card, /data-modal="macro-plan"/); assert.doesNotMatch(card, /id="gw-open"/);
  assert.match(card, /체중 × 2/); assert.match(card, /최근 체중 73\.4kg 기준/);
  const form = macroPlanFormHTML(planFromSettings(s), 73.4);
  assert.match(form, /data-mp-mode="protein:perKg"[^>]*aria-pressed="true"/);
- assert.match(form, /data-mp-preset=/);
+ assert.match(form, /data-mp-preset=/); assert.match(form, /class="ai-magic ai-suggest" id="gw-open"/);
  assert.match(macroPlanCardHTML({}, null), /아직 목표가 없어요/);
 });

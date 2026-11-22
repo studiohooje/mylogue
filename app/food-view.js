@@ -24,9 +24,9 @@ function calorieLabel(item){
  return `<details class="nutrition-estimate" title="${esc(range)}"><summary>약 ${fmt(item.calories)} kcal · 추정</summary><small>${esc(range)}${macros.length?` · ${esc(macros.join(' · '))}`:''} · 정확하지 않을 수 있음${e.note?` · ${esc(e.note)}`:''}</small></details>`;
 }
 function goalRow(key,label,actual,goal,unit){const rate=goal>0?actual/goal:0,over=goal>0&&actual>goal,remaining=Math.max(0,goal-actual),extra=Math.max(0,actual-goal);return `<div class="nutrition-goal ${key}"><div class="nutrition-goal-head"><strong>${label}</strong><span>${fmt(actual,1)} / ${fmt(goal,1)} ${unit}</span></div><div class="nutrition-track"><i style="width:${Math.min(rate*100,100)}%"></i>${over?`<b style="width:${Math.min((rate-1)*100,30)}%"></b>`:''}</div><small>${goal<=0?'목표 미설정':over?`목표 초과 +${fmt(extra,1)} ${unit}`:remaining?`목표까지 ${fmt(remaining,1)} ${unit} 남음`:'목표 달성'}</small></div>`}
-export function renderFoodPage(db,date,{stateHtml='',trendHtml='',planned=null,plannedCount=0,showPlanned=false}={}){
+export function renderFoodPage(db,date,{stateHtml='',trendHtml='',planned=null,plannedCount=0,showPlanned=false,dateBar=''}={}){
  const meals=(db.meals||[]).filter(x=>x.date===date),groups=mealGroups(meals),day=mealTotals(meals.filter(x=>!x.planned)),s=db.settings||{};
- const header=`<div class="page-head"><div><h2>식단 기록</h2><p>먹은 음식과 양을 하나씩 남겨보세요.</p></div><button class="button" data-modal="batch">＋ 식사 기록</button></div><label class="field nutrition-date">기록 날짜<input id="selected-date" type="date" value="${esc(date)}"></label>`;
+ const header=`<div class="page-head"><div><h2>식단 기록</h2><p>먹은 음식과 양을 하나씩 남겨보세요.</p></div><button class="button" data-modal="batch">＋ 식사 기록</button></div>${dateBar||`<label class="field nutrition-date">기록 날짜<input id="selected-date" type="date" value="${esc(date)}"></label>`}`;
  const lastW=scaleRecords(db).at(-1)?.weight||[...(db.body||[])].filter(x=>x.weight).sort((x,y)=>String(x.date).localeCompare(String(y.date))).at(-1)?.weight||null;
  const ratio=macroPlanCardHTML(s,lastW?Number(lastW):null);
  const summary=`<section class="section nutrition-summary-v2"><div class="section-title"><h3>하루 누적 · 지금까지</h3><button class="text-button" data-page="settings">목표 수정 →</button></div>${macroGoalsHTML(day,s,{meals:groups.filter(g=>!g.planned).length,planned,plannedCount,showPlanned})}${ratio}</section>`;

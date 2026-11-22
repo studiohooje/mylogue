@@ -1,0 +1,347 @@
+<title>마이로그 통일 제안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+/* 레이아웃: 제안 하나 = 한 구역(왜 → 규칙 → 휴대폰 목업 나란히). 앱과 같은 짙은 남청 한 가지 테마 */
+:root{
+ --bg:#0c1220;--app:#101625;--card:#1c2b46;--card2:#22345a;--line:#33506d;--line2:#ffffff1f;
+ --text:#edf4f8;--muted:#b4c6d8;--dim:#8a9bb0;--teal:#8ce4e0;--lav:#b8aaf2;--amber:#f7c270;--peach:#f2b49b;--bad:#ff9a8a;
+ --carbs:#f0d466;--protein:#6fd6a3;--fat:#ff7b93;
+ --sans:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+ color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;margin:0;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:56px}
+header.top h1{font-size:clamp(26px,4vw,38px);line-height:1.25;margin:0 0 10px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0;max-width:760px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.toc a{color:var(--teal);text-decoration:none;font-size:13px;padding:6px 12px;border:1px solid var(--line);border-radius:999px}
+.toc a:focus-visible{outline:2px solid var(--teal)}
+section.p{display:grid;gap:18px;scroll-margin-top:16px}
+.ph{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ph .tag{font-size:12px;letter-spacing:.08em;color:var(--teal);font-weight:700}
+.ph h2{font-size:24px;margin:0;text-wrap:balance}
+.why{color:var(--muted);margin:0;max-width:820px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.rule{background:#16223b;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--muted)}
+.rule b{color:var(--text);display:block;margin-bottom:2px}
+.phones{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.cap{font-size:13px;color:var(--dim);margin:8px 4px 0;max-width:300px}
+.cap b{color:var(--text)}
+.ba{font-size:11px;font-weight:700;letter-spacing:.08em;padding:2px 8px;border-radius:6px;margin-right:6px}
+.ba.before{background:#ff9a8a22;color:var(--bad)}.ba.after{background:#8ce4e022;color:var(--teal)}
+/* 휴대폰 */
+.phone{width:300px;max-width:100%;background:var(--app);border:2px solid #2b3d5c;border-radius:34px;padding:14px 12px 0;box-shadow:0 20px 60px #03061088;overflow:hidden;font-size:12px;position:relative}
+.screen{display:grid;gap:10px;padding-bottom:12px}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 2px 8px;border-bottom:1px solid #ffffff14}
+.brand{display:flex;align-items:center;gap:6px}.ring{width:24px;height:24px;border-radius:50%;border:2px solid var(--lav);box-shadow:inset 0 0 0 3px #1c2b46}
+.brand b{font-size:14px}.brand small{display:block;color:var(--teal);font-size:9px;letter-spacing:.12em;margin-top:-3px}
+.navbar{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;border-top:1px solid #ffffff14;padding:8px 2px 12px;margin:0 -12px;background:#141d33;text-align:center;font-size:9px;color:var(--muted)}
+.navbar span.on{color:var(--teal)}
+.h3{font-size:14px;font-weight:700;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px}
+.muted{color:var(--muted)}.dim{color:var(--dim)}
+/* 날짜 바(제안의 핵심 부품) */
+.datebar{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:6px;background:#16223b;border:1px solid var(--line);border-radius:14px;padding:5px}
+.datebar button{all:unset;cursor:pointer;display:grid;place-items:center;height:30px;border-radius:10px;color:var(--text);font-size:16px}
+.datebar .arrow{background:#ffffff0c}
+.datebar .arrow.off{opacity:.3}
+.datebar .mid{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13px}
+.datebar .mid .cal{font-size:12px;color:var(--teal)}
+.datebar.past{border-color:#f7c27099;background:#2a2617}
+.today-chip{justify-self:center;font-size:11px;color:#120f24;background:var(--teal);border-radius:999px;padding:2px 10px;font-weight:700}
+.seeing{font-size:11px;color:var(--amber);text-align:center;margin-top:-4px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pop{position:absolute;left:24px;right:24px;top:150px;background:#1a2742;border:1px solid var(--teal);border-radius:16px;padding:10px;box-shadow:0 16px 40px #000a;z-index:2}
+.minical{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:10px}
+.minical i{font-style:normal;color:var(--dim)}
+.minical span{padding:4px 0;border-radius:8px;position:relative}
+.minical span.rec::after{content:"";position:absolute;left:50%;bottom:1px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--teal)}
+.minical span.sel{background:var(--teal);color:#120f24;font-weight:700}
+.minical span.td{outline:1px solid var(--teal)}
+/* 홈 카드 */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;min-height:84px}
+.stat small{color:var(--muted);font-size:10px}.stat b{display:block;font-size:16px;margin-top:2px}
+.bars i{display:block;height:4px;border-radius:2px;margin-top:4px}
+.halo{height:96px;border-radius:16px;background:radial-gradient(circle at 70% 40%,#5b4a8a,#1a1f3a 70%);border:1px solid var(--line);display:flex;align-items:flex-end;padding:10px;font-size:13px;font-weight:700}
+.tl{display:grid;gap:6px}
+.tlc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;justify-content:space-between;gap:8px}
+.tlc .t{font-weight:700}.tlc em{font-style:normal;color:var(--teal);font-size:11px}
+/* 시트(입력 창) */
+.sheet{background:#18233c;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:12px;display:grid;gap:10px;margin-top:4px}
+.sheet h4{margin:0;font-size:14px;display:flex;justify-content:space-between}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.inp{background:#121c31;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+/* 통일 '언제' 블록 */
+.when{background:#121c31;border:1px solid var(--line);border-radius:14px;padding:8px;display:grid;gap:6px}
+.when .row1{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.when .pill{background:#1c2b46;border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.when .pill small{color:var(--teal);font-size:10px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:11px;padding:4px 9px;border-radius:999px;background:#ffffff0c;border:1px solid var(--line2);color:var(--muted)}
+.chip.on{background:var(--teal);color:#120f24;border-color:transparent;font-weight:700}
+.chip.step{color:var(--dim)}
+.timegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.timegrid span{font-size:11px;text-align:center;padding:5px 0;border-radius:8px;background:#ffffff08}
+.timegrid span.on{background:var(--teal);color:#120f24;font-weight:700}
+/* 비교 표 */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+.tbl th{color:var(--muted);font-weight:500}
+.tbl td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tblwrap{overflow-x:auto;background:#16223b;border:1px solid var(--line);border-radius:14px;padding:6px 10px}
+/* 헤더 비교 */
+.hrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.unit{height:40px;display:inline-flex;align-items:center;gap:8px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:#ffffff0a;font-size:13px;font-weight:700;color:var(--text);white-space:nowrap}
+.unit.icon{width:40px;padding:0;justify-content:center}
+.unit .av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6b7a99,#2e3a55);margin-left:-8px}
+.seg{height:40px;display:inline-flex;padding:3px;border-radius:999px;border:1px solid var(--line2);background:#ffffff0a}
+.seg span{display:flex;align-items:center;padding:0 12px;border-radius:999px;font-size:12px;font-weight:700;color:var(--muted)}
+.seg span.on{background:linear-gradient(90deg,var(--teal),var(--lav));color:#120f24}
+/* 이전 헤더(제각각) */
+.old .a{height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 16px;border-radius:999px;border:1px solid #8a9bb0;font-weight:700;font-size:13px}
+.old .b{height:48px;display:inline-flex;align-items:center;gap:8px;padding:0 14px 0 4px;border-radius:999px;background:#2a3550;font-weight:700;font-size:13px}
+.old .b i{width:38px;height:38px;border-radius:50%;background:#55627c}
+.old .c{height:36px;display:inline-flex;padding:3px;border-radius:999px;background:#ffffff10;font-size:12px}
+.old .c span{padding:4px 10px;border-radius:999px}.old .c .on{background:linear-gradient(90deg,var(--teal),var(--lav));color:#120f24}
+.old .bell{width:36px;height:36px;border-radius:50%;border:1px solid #8a9bb0;display:grid;place-items:center}
+.frame{background:var(--app);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}
+.frame .lbl{font-size:12px;color:var(--dim)}
+/* AI 버튼 */
+.ai{position:relative;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;border-radius:16px;font-weight:700;font-size:13px;overflow:hidden}
+.ai .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--teal),var(--lav));color:#120f24}
+.ai small{display:block;font-weight:400;color:var(--muted);font-size:10px}
+.ai.withborder{background:linear-gradient(90deg,#3a2f63,#1f4f57);border:1px solid #8ce4e0aa;box-shadow:0 0 0 1px #b8aaf255 inset}
+.ai.noborder{background:linear-gradient(100deg,#3b2e66 0%,#2a3d66 50%,#1f5559 100%);box-shadow:0 10px 30px -14px #8ce4e0aa}
+.ai.noborder::before{content:"";position:absolute;inset:-40% 30% auto auto;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#b8aaf244,transparent 70%)}
+.rec3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rec3 span{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 0;text-align:center;font-weight:700;font-size:11px}
+/* 식단 목표 카드 */
+.mcard{background:#16223b;border:1px solid #2c3d63;border-radius:14px;padding:10px;display:grid;gap:8px}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.mbtn{font-size:11px;padding:5px 10px;border-radius:10px;background:#2a3d66;font-weight:700}
+.mbtn.ghost{background:#ffffff10}
+.mbar{display:flex;height:6px;border-radius:3px;overflow:hidden}.mbar i:nth-child(1){background:var(--carbs);width:42%}.mbar i:nth-child(2){background:var(--protein);width:32%}.mbar i:nth-child(3){background:var(--fat);width:26%}
+.note{font-size:13px;color:var(--muted);background:#16223b;border-left:3px solid var(--teal);padding:10px 12px;border-radius:0 10px 10px 0;margin:0;max-width:820px}
+.decide{background:#1f1a2e;border:1px solid #b8aaf277;border-radius:14px;padding:12px 14px;max-width:820px;font-size:14px}
+.decide b{color:var(--lav)}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pin .4s ease-out both}@keyframes pin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}}
+</style>
+
+<div class="wrap">
+<header class="top">
+ <h1>마이로그 화면 통일 제안</h1>
+ <p>날짜를 바꾸는 방법과 시각을 넣는 방법을 앱 전체에서 하나로 맞추고, 헤더·AI 버튼·운동 요약을 다듬는 안이에요. 아직 앱에는 적용하지 않은 목업이며, 숫자는 시험용 예시예요.</p>
+ <nav class="toc" aria-label="제안 목록">
+  <a href="#date">1 날짜 이동</a><a href="#time">2 시각 입력</a><a href="#rest">3 의도적 휴식</a><a href="#center">4 운동 센터 수정</a><a href="#parts">5 부위 표기</a><a href="#goal">6 목표 제안 버튼</a><a href="#header">7 헤더 정렬</a><a href="#ai">8 AI 입력 버튼</a>
+ </nav>
+</header>
+
+<!-- 1 날짜 이동 -->
+<section class="p" id="date">
+ <div class="ph"><span class="tag">제안 1</span><h2>날짜는 어디서나 ‘날짜 바’ 하나로 바꿔요</h2></div>
+ <p class="why">홈·식단·운동이 같은 자리에 같은 부품을 둬요. 한 번 익히면 어느 화면이든 똑같이 움직이고, 고른 날짜는 화면을 옮겨도 그대로 따라와요.</p>
+ <div class="rules">
+  <div class="rule"><b>‹ › 하루씩</b>옆 화살표나 날짜 바를 좌우로 밀면 하루 전·다음 날</div>
+  <div class="rule"><b>가운데를 누르면 달력</b>기록한 날에 점이 찍힌 작은 달력에서 바로 고르기</div>
+  <div class="rule"><b>‘오늘로’ 한 번에</b>다른 날을 볼 때만 날짜 바가 노랗게 바뀌고 ‘오늘로’가 생겨요</div>
+  <div class="rule"><b>한 번 고르면 모든 화면에</b>홈에서 20일을 고르고 식단으로 가도 20일. 일정 달력에서 날짜를 누르면 ‘이 날 보기’</div>
+ </div>
+ <div class="phones">
+  <div>
+   <div class="phone"><div class="screen">
+    <div class="hdr"><div class="brand"><span class="ring"></span><div><b>마이로그</b><small>MYLOGUE</small></div></div><span class="unit icon" style="width:28px;height:28px">👤</span></div>
+    <div class="halo">세 가지 모두 기록했어요</div>
+    <div class="sechead"><p class="h3">한눈에 보기</p></div>
+    <div class="datebar"><button class="arrow" aria-label="하루 전">‹</button><button class="mid"><span class="cal">▦</span>11월 22일 (일) · 오늘</button><button class="arrow off" aria-label="다음 날">›</button></div>
+    <div class="stats"><div class="stat"><small>체중</small><b>83.9</b></div><div class="stat"><small>식단</small><b>2,001</b><div class="bars"><i style="background:var(--carbs);width:80%"></i><i style="background:var(--protein);width:70%"></i><i style="background:var(--fat);width:95%"></i></div></div><div class="stat"><small>운동</small><b>18<span class="dim" style="font-size:10px"> 세트</span></b></div></div>
+    <p class="h3">타임라인</p>
+    <div class="tl"><div class="tlc"><span class="t">식사1</span><em>07:20</em></div></div>
+    <div class="navbar"><span>수치</span><span>식단</span><span>운동</span><span class="on">홈</span><span>추가</span><span>분석</span><span>일정</span><span>설정</span></div>
+   </div></div>
+   <p class="cap"><span class="ba after">홈</span>‘오늘 한눈에 보기’ 제목 바로 아래에 날짜 바. 헤일로·카드·타임라인이 모두 그 날로 바뀌어요.</p>
+  </div>
+  <div>
+   <div class="phone"><div class="screen">
+    <div class="hdr"><div class="brand"><span class="ring"></span><div><b>마이로그</b><small>MYLOGUE</small></div></div><span class="unit icon" style="width:28px;height:28px">👤</span></div>
+    <p class="h3" style="font-size:18px">식단</p>
+    <div class="datebar past"><button class="arrow" aria-label="하루 전">‹</button><button class="mid"><span class="cal">▦</span>11월 20일 (금)</button><button class="arrow" aria-label="다음 날">›</button></div>
+    <div style="display:flex;justify-content:center;gap:8px;align-items:center"><span class="seeing">이틀 전을 보고 있어요</span><span class="today-chip">오늘로</span></div>
+    <div class="mcard"><div class="mrow"><b>1,860 <span class="dim" style="font-weight:400">/ 2,300 kcal</span></b></div><div class="mbar"><i></i><i></i><i></i></div></div>
+    <div class="tl"><div class="tlc"><span class="t">아침 · 그릭요거트</span><em>08:10</em></div><div class="tlc"><span class="t">점심 · 콩 현미밥</span><em>12:50</em></div></div>
+    <div class="navbar"><span>수치</span><span class="on">식단</span><span>운동</span><span>홈</span><span>추가</span><span>분석</span><span>일정</span><span>설정</span></div>
+   </div></div>
+   <p class="cap"><span class="ba after">식단</span>다른 날을 볼 때는 날짜 바가 노랗게. 이 상태에서 ‘＋’로 넣으면 기본 날짜도 20일이에요.</p>
+  </div>
+  <div>
+   <div class="phone"><div class="screen">
+    <div class="hdr"><div class="brand"><span class="ring"></span><div><b>마이로그</b><small>MYLOGUE</small></div></div><span class="unit icon" style="width:28px;height:28px">👤</span></div>
+    <p class="h3" style="font-size:18px">운동</p>
+    <div class="datebar past"><button class="arrow">‹</button><button class="mid"><span class="cal">▦</span>11월 20일 (금)</button><button class="arrow">›</button></div>
+    <div class="pop" role="dialog" aria-label="날짜 고르기">
+     <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px"><span>‹</span><span>2026년 11월</span><span>›</span></div>
+     <div class="minical"><i>일</i><i>월</i><i>화</i><i>수</i><i>목</i><i>금</i><i>토</i>
+      <span class="rec">15</span><span class="rec">16</span><span class="rec">17</span><span class="rec">18</span><span>19</span><span class="sel">20</span><span class="rec">21</span>
+      <span class="rec td">22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+     <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span class="dim">점 = 운동한 날</span><span class="today-chip">오늘로</span></div>
+    </div>
+    <div style="height:150px"></div>
+    <div class="card"><b>11/20 · 웨이트(가슴·팔)</b><div class="dim">5종목 · 18세트</div></div>
+    <div class="navbar"><span>수치</span><span>식단</span><span class="on">운동</span><span>홈</span><span>추가</span><span>분석</span><span>일정</span><span>설정</span></div>
+   </div></div>
+   <p class="cap"><span class="ba after">운동</span>날짜를 누르면 작은 달력. 점은 그 화면의 기록이 있는 날(운동 화면은 운동한 날).</p>
+  </div>
+ </div>
+</section>
+
+<!-- 2 시각 입력 -->
+<section class="p" id="time">
+ <div class="ph"><span class="tag">제안 2</span><h2>시각 넣기도 어디서나 같은 ‘언제’ 칸</h2></div>
+ <p class="why">식사·운동·수치 기록 창의 날짜와 시각을 같은 블록으로 바꿔요. 위는 지금 값이 크게, 아래는 자주 쓰는 버튼. 시각을 누르면 15분 단위 표가 펼쳐져요. 기본값은 지금(다른 날을 보고 있으면 그 날).</p>
+ <div class="phones">
+  <div>
+   <div class="phone"><div class="screen">
+    <div class="sheet"><h4>식사 기록 <span class="dim">×</span></h4>
+     <div class="field"><label>음식</label><div class="inp">콩 현미밥 200g</div></div>
+     <div class="field"><label>언제</label><div class="when">
+      <div class="row1"><div class="pill">오늘 <small>11/22 일</small></div><div class="pill">오후 5:16 <small>지금</small></div></div>
+      <div class="chips"><span class="chip">어제</span><span class="chip on">오늘</span><span class="chip">내일</span></div>
+      <div class="chips"><span class="chip on">지금</span><span class="chip">5:00</span><span class="chip step">−1시간</span><span class="chip step">−30분</span><span class="chip step">−15분</span><span class="chip step">+15분</span></div>
+     </div></div>
+     <div class="field"><label>끼니</label><div class="chips"><span class="chip">아침</span><span class="chip">점심</span><span class="chip on">저녁</span><span class="chip">간식</span></div></div>
+    </div>
+   </div></div>
+   <p class="cap"><span class="ba after">식사</span>날짜·시각을 한 블록으로. 끼니는 시각을 보고 자동 추천(바꿀 수 있음).</p>
+  </div>
+  <div>
+   <div class="phone"><div class="screen">
+    <div class="sheet"><h4>운동 기록 <span class="dim">×</span></h4>
+     <div class="field"><label>언제</label><div class="when">
+      <div class="row1"><div class="pill">어제 <small>11/21 토</small></div><div class="pill">오후 7:00</div></div>
+      <div class="chips"><span class="chip on">어제</span><span class="chip">오늘</span><span class="chip">내일</span></div>
+      <div class="timegrid"><span>오후 6:00</span><span>6:15</span><span>6:30</span><span>6:45</span><span class="on">7:00</span><span>7:15</span><span>7:30</span><span>7:45</span></div>
+     </div></div>
+     <div class="field"><label>센터</label><div class="chips"><span class="chip on">🏋 안산 짐박스</span><span class="chip">🧘 필라테스 온</span><span class="chip">＋ 다른 곳</span></div></div>
+     <div class="field"><label>종목</label><div class="inp">벤치프레스 60kg × 10 · 3세트</div></div>
+    </div>
+   </div></div>
+   <p class="cap"><span class="ba after">운동</span>같은 ‘언제’ 칸. 시각을 누르면 15분 단위 표가 펼쳐져요(더 자세히는 직접 입력).</p>
+  </div>
+  <div>
+   <div class="phone"><div class="screen">
+    <div class="sheet"><h4>수치 기록 <span class="dim">×</span></h4>
+     <div class="field"><label>체중</label><div class="inp">83.9 kg</div></div>
+     <div class="field"><label>언제</label><div class="when">
+      <div class="row1"><div class="pill">오늘 <small>11/22 일</small></div><div class="pill">오전 7:00</div></div>
+      <div class="chips"><span class="chip">어제</span><span class="chip on">오늘</span><span class="chip">내일</span></div>
+      <div class="chips"><span class="chip">지금</span><span class="chip on">7:00</span><span class="chip step">−15분</span><span class="chip step">+15분</span></div>
+     </div></div>
+    </div>
+   </div></div>
+   <p class="cap"><span class="ba after">수치</span>같은 블록. 앞으로의 시각이면 “예정으로 들어가요” 한 줄이 블록 아래에 떠요.</p>
+  </div>
+ </div>
+</section>
+
+<!-- 3 의도적 휴식 -->
+<section class="p" id="rest">
+ <div class="ph"><span class="tag">제안 3</span><h2>의도적 휴식은 시각 없이, 타임라인 맨 앞에</h2></div>
+ <p class="why">휴식은 ‘그날 하루’의 표시라 시각이 필요 없어요. 화면에는 시각을 숨기고, 내부적으로는 새벽 6시로 두어 그날 타임라인의 맨 앞에 와요.</p>
+ <div class="phones">
+  <div><div class="phone"><div class="screen">
+   <p class="h3">오늘의 타임라인</p>
+   <div class="tl"><div class="tlc"><span class="t">식사1</span><em>07:20</em></div><div class="tlc" style="border-color:#ff9a8a77"><span class="t">☾ 의도적 휴식</span><em style="color:var(--bad)">12:50 · 수정 안 됨</em></div><div class="tlc"><span class="t">식사3</span><em>14:50</em></div></div>
+  </div></div><p class="cap"><span class="ba before">지금</span>누른 시각이 붙고, 고칠 수도 없어요.</p></div>
+  <div><div class="phone"><div class="screen">
+   <p class="h3">오늘의 타임라인</p>
+   <div class="tl"><div class="tlc" style="background:#1f1a2e;border-color:#b8aaf266"><span class="t">☾ 의도적 휴식 <span class="dim" style="font-weight:400">· 하루</span></span><em>지우기</em></div><div class="tlc"><span class="t">식사1</span><em>07:20</em></div><div class="tlc"><span class="t">식사3</span><em>14:50</em></div></div>
+  </div></div><p class="cap"><span class="ba after">바꾼 뒤</span>시각 없이 ‘하루’로, 늘 맨 앞. 지우기만 있으면 돼요.</p></div>
+ </div>
+</section>
+
+<!-- 4 센터 수정 -->
+<section class="p" id="center">
+ <div class="ph"><span class="tag">제안 4</span><h2>운동 수정 창에서 센터도 바꿔요</h2></div>
+ <p class="why">지금 빠른 수정 창에는 센터 칸이 없어요. 제안 2의 운동 기록 창처럼 ‘내 운동 장소’ 칩을 두고, 고른 센터의 방문 횟수도 바로 다시 세요. 운동 수정 창도 같은 ‘언제’ 칸을 써요.</p>
+ <p class="note">목업은 제안 2의 가운데 화면(운동 기록)과 같은 모양이에요. 수정 창에는 그 위에 세트 표가 붙어요.</p>
+</section>
+
+<!-- 5 부위 표기 -->
+<section class="p" id="parts">
+ <div class="ph"><span class="tag">제안 5</span><h2>운동 요약의 부위는 많이 한 순서로, 조금 한 부위는 빼요</h2></div>
+ <p class="why">지금은 운동을 입력한 순서대로 부위를 적고, 종목 하나라도 그 부위면 넣어요. 그래서 가슴을 가장 많이 했어도 ‘어깨·가슴·팔·하체’처럼 어깨가 먼저 오고, 레그 익스텐션 한 종목만 해도 하체가 들어가요.</p>
+ <div class="tblwrap"><table class="tbl">
+  <caption class="dim" style="text-align:left;padding:6px 0 4px;font-size:12px">예시: 한 날 기록 (완료한 세트 기준)</caption>
+  <tr><th scope="col">부위</th><th scope="col" style="text-align:right">세트</th><th scope="col" style="text-align:right">가장 많은 부위 대비</th><th scope="col">지금</th><th scope="col">바꾼 뒤</th></tr>
+  <tr><td>가슴</td><td class="num">12</td><td class="num">100%</td><td>2번째</td><td style="color:var(--teal)">표시 · 1번째</td></tr>
+  <tr><td>팔</td><td class="num">8</td><td class="num">67%</td><td>3번째</td><td style="color:var(--teal)">표시 · 2번째</td></tr>
+  <tr><td>어깨</td><td class="num">3</td><td class="num">25%</td><td>1번째(먼저 입력)</td><td class="dim">빼요</td></tr>
+  <tr><td>하체</td><td class="num">1</td><td class="num">8%</td><td>4번째</td><td class="dim">빼요</td></tr>
+ </table></div>
+ <div class="rules">
+  <div class="rule"><b>순서</b>완료한 세트가 많은 부위부터</div>
+  <div class="rule"><b>표시 기준</b>가장 많이 한 부위의 <b style="display:inline">40% 이상</b>인 부위만, 최대 3개</div>
+  <div class="rule"><b>결과</b>‘웨이트(어깨·가슴·팔·하체)’ → <b style="display:inline">‘웨이트(가슴·팔)’</b></div>
+ </div>
+ <p class="decide"><b>정해 주세요</b> · 기준 40%가 괜찮을지요? 30%면 어깨(25%)는 빠지고 비슷한 결과, 20%면 어깨가 들어가요.</p>
+</section>
+
+<!-- 6 목표 제안 -->
+<section class="p" id="goal">
+ <div class="ph"><span class="tag">제안 6</span><h2>‘제안해 주세요’는 수정 창 안의 AI 버튼으로</h2></div>
+ <p class="why">식단 화면의 목표 카드에는 ‘수정’만 남기고, 수정 창 맨 위에 AI 입력 버튼과 같은 모양의 ‘AI에게 목표 제안받기’를 둬요.</p>
+ <div class="phones">
+  <div><div class="phone"><div class="screen">
+   <div class="mcard"><div class="mrow"><div><small class="dim">목표 칼로리</small><br><b style="font-size:16px">2,300 kcal</b></div><div style="display:flex;gap:4px"><span class="mbtn ghost">제안해 주세요</span><span class="mbtn">수정</span></div></div><div class="mbar"><i></i><i></i><i></i></div></div>
+  </div></div><p class="cap"><span class="ba before">지금</span>카드에 버튼 두 개가 나란히.</p></div>
+  <div><div class="phone"><div class="screen">
+   <div class="mcard"><div class="mrow"><div><small class="dim">목표 칼로리</small><br><b style="font-size:16px">2,300 kcal</b></div><span class="mbtn">수정</span></div><div class="mbar"><i></i><i></i><i></i></div></div>
+   <div class="sheet"><h4>탄단지 목표 <span class="dim">×</span></h4>
+    <div class="ai noborder" style="justify-content:flex-start"><span class="ic">✦</span><span>AI에게 목표 제안받기<small>나이·키·체중·목표로 칼로리와 탄단지를 추천해요</small></span></div>
+    <div class="field"><label>목표 칼로리</label><div class="inp">2,300</div></div>
+    <div class="dim" style="font-size:11px">단백질 체중×2.1 · 탄수 나머지 · 지방 25% …</div>
+   </div>
+  </div></div><p class="cap"><span class="ba after">바꾼 뒤</span>카드는 ‘수정’ 하나. 창 맨 위에 AI 버튼.</p></div>
+ </div>
+</section>
+
+<!-- 7 헤더 -->
+<section class="p" id="header">
+ <div class="ph"><span class="tag">제안 7</span><h2>헤더 버튼은 같은 높이·같은 모양으로 한 줄</h2></div>
+ <p class="why">알림·앱 설치·프로필·모드 전환을 모두 높이 40px 알약 모양, 같은 테두리와 배경으로 맞추고 가운데 선을 맞춰요. ‘내 기록 | 코치’는 ‘마이로그 | 코치로그’로 바꿔요(운영진 계정에만 보임).</p>
+ <div class="frame old"><span class="lbl"><span class="ba before">지금</span>높이·테두리·채움이 제각각</span>
+  <div class="hrow" style="justify-content:flex-end"><span class="bell">🔔</span><span class="a">⬇ 앱 설치</span><span class="b"><i></i>Moon</span><span class="c"><span class="on">내 기록</span><span>코치</span></span></div>
+ </div>
+ <div class="frame"><span class="lbl"><span class="ba after">넓은 화면</span>모두 40px · 같은 테두리 · 같은 간격 8px</span>
+  <div class="hrow" style="justify-content:flex-end"><span class="unit icon">🔔</span><span class="unit">⬇ 앱 설치</span><span class="unit"><span class="av"></span>Moon</span><span class="seg"><span class="on">마이로그</span><span>코치로그</span></span></div>
+ </div>
+ <div class="frame" style="max-width:380px"><span class="lbl"><span class="ba after">휴대폰</span>앱 설치는 아이콘만, 모드 전환은 헤더 아래 한 줄 전체 폭</span>
+  <div class="hrow" style="justify-content:space-between"><div class="brand"><span class="ring"></span><div><b>마이로그</b><small>MYLOGUE</small></div></div><div class="hrow"><span class="unit icon">🔔</span><span class="unit icon">⬇</span><span class="unit"><span class="av"></span>Moon</span></div></div>
+  <span class="seg" style="display:grid;grid-template-columns:1fr 1fr;text-align:center"><span class="on" style="justify-content:center">마이로그</span><span style="justify-content:center">코치로그</span></span>
+ </div>
+</section>
+
+<!-- 8 AI 버튼 -->
+<section class="p" id="ai">
+ <div class="ph"><span class="tag">제안 8</span><h2>AI로 입력 버튼은 테두리 없이 빛으로</h2></div>
+ <p class="why">테두리 선을 빼고, 보라에서 청록으로 흐르는 배경과 아래로 번지는 은은한 빛만 남겨요. 홈과 ‘추가’ 창 모두 같은 모양이에요.</p>
+ <div class="phones">
+  <div><div class="phone"><div class="screen">
+   <div class="ai withborder"><span class="ic">✦</span><span>AI로 입력<small>말하듯 적으면 AI가 정리해요</small></span></div>
+   <div class="rec3"><span>수치 기록</span><span>식사 기록</span><span>운동 기록</span></div>
+  </div></div><p class="cap"><span class="ba before">지금 · 홈</span>청록 테두리와 안쪽 보라 선.</p></div>
+  <div><div class="phone"><div class="screen">
+   <div class="ai noborder"><span class="ic">✦</span><span>AI로 입력<small>말하듯 적으면 AI가 정리해요</small></span></div>
+   <div class="rec3"><span>수치 기록</span><span>식사 기록</span><span>운동 기록</span></div>
+  </div></div><p class="cap"><span class="ba after">바꾼 뒤 · 홈</span>선 없이 배경과 빛만.</p></div>
+  <div><div class="phone"><div class="screen">
+   <div class="sheet"><h4>무엇을 기록할까요? <span class="dim">×</span></h4>
+    <div class="ai noborder"><span class="ic">✦</span><span>AI로 입력<small>말하듯 적으면 AI가 정리해요</small></span></div>
+    <div class="inp" style="text-align:center;font-weight:700">수치 기록</div><div class="inp" style="text-align:center;font-weight:700">식사 기록</div><div class="inp" style="text-align:center;font-weight:700">운동 기록</div>
+   </div>
+  </div></div><p class="cap"><span class="ba after">바꾼 뒤 · 추가 창</span>같은 버튼을 그대로.</p></div>
+ </div>
+</section>
+</div>
