@@ -113,13 +113,14 @@ export async function compressRequestPhoto(file){
  throw Error('사진을 충분히 줄일 수 없습니다. 다른 사진을 선택해 주세요.');
 }
 
-export async function submitCatalogRequest(input,photos={}){
+export async function submitCatalogRequest(input,photos={},{id:fixedId=''}={}){
  const request=validateCatalogRequest(input),ctx=await context();
  if(request.mode==='photo'&&request.type!=='machine')throw Error('사진 등록 요청은 머신에만 사용할 수 있습니다.');
  if(request.mode==='photo'&&(!photos?.whole||!photos?.nameplate))throw Error('머신 전체 사진과 명판 사진 두 장을 선택해 주세요.');
  const wholePhotoDataUrl=request.mode==='photo'?await compressRequestPhoto(photos.whole):'';
  const nameplatePhotoDataUrl=request.mode==='photo'?await compressRequestPhoto(photos.nameplate):'';
- const id=globalThis.crypto?.randomUUID?.()??`request-${Date.now()}`;
+ // 4.7.0 헬스장 머신 요청은 '헬스장+머신'으로 ID를 고정 → 같은 요청은 한 건만(이미 있으면 규칙상 덮어쓰기 불가)
+ const id=fixedId||globalThis.crypto?.randomUUID?.()||`request-${Date.now()}`;
  const ref=ctx.db.doc(ctx.firestore,'catalogRequests',id);
  await ctx.db.setDoc(ref,{...request,requesterUid:ctx.user.uid,photoPath:'',wholePhotoDataUrl,nameplatePhotoDataUrl,status:'pending',adminNote:'',createdAt:ctx.db.serverTimestamp(),updatedAt:ctx.db.serverTimestamp()});
  return id;

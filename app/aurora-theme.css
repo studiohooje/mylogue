@@ -1260,3 +1260,4 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .q-bar-sum{color:#cfe6ef;font-size:13px}.q-bar-sum b{color:#8ce4e0}
 .q-bar-note{color:#8a9bb0;font-size:11.5px}
 .q-bar .chip-row{flex-wrap:wrap;overflow:visible}
+.gm-row.locked{opacity:.7}.gm-done{margin-left:32px;color:#6fd6a3;font-size:12px}

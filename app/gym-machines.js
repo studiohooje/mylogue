@@ -85,15 +85,15 @@ export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
  // 머신 종류도 이 종류(+제조사 모델)를 등록한 헬스장이 많은 순서로
  const score = g => (cnt.get(g.id)||0) + (brandsBy.get(g.id)||[]).reduce((t, b) => t + (cnt.get(b.id)||0), 0);
  const gens = GENERIC_MACHINES.filter(g => partOf(g)===st.part).sort((a, b) => score(b) - score(a));
- const missing = specMissing(st, shared), changedSpec = [...st.checked].filter(id => st.initial.has(id) && JSON.stringify(st.spec?.[id]||{})!==JSON.stringify(st.initialSpec?.[id]||{})).length;
+ const missing = specMissing(admin ? st : {...st, checked:new Set([...st.checked].filter(id => !st.initial.has(id)))}, shared), changedSpec = [...st.checked].filter(id => st.initial.has(id) && JSON.stringify(st.spec?.[id]||{})!==JSON.stringify(st.initialSpec?.[id]||{})).length;
  const count = [...st.checked].length, added = [...st.checked].filter(x => !st.initial.has(x)).length, removed = [...st.initial].filter(x => !st.checked.has(x)).length;
- const box = (m, sub = false) => `<div class="gm-item"><label class="gm-row${sub?' sub':''}"><input type="checkbox" data-gm-pick="${h(m.id)}" ${st.checked.has(m.id)?'checked':''}><span>${h(m.name)}${!sub&&m.exercise?`<small>${h(m.exercise)}</small>`:''}${sub&&cnt.get(m.id)?`<small>마이로그 헬스장 ${cnt.get(m.id)}곳</small>`:''}</span></label>${st.checked.has(m.id)?specHTML(st, models, m.id):''}</div>`;
+ const box = (m, sub = false) => `<div class="gm-item"><label class="gm-row${sub?' sub':''}${!admin&&st.initial.has(m.id)?' locked':''}"><input type="checkbox" data-gm-pick="${h(m.id)}" ${st.checked.has(m.id)?'checked':''} ${!admin&&st.initial.has(m.id)?'disabled title="이미 등록된 머신이에요"':''}><span>${h(m.name)}${!sub&&m.exercise?`<small>${h(m.exercise)}</small>`:''}${sub&&cnt.get(m.id)?`<small>마이로그 헬스장 ${cnt.get(m.id)}곳</small>`:''}</span></label>${st.checked.has(m.id)&&(admin||!st.initial.has(m.id))?specHTML(st, models, m.id):!admin&&st.initial.has(m.id)?'<small class="gm-done">등록됨</small>':''}</div>`;
  return `<div class="gm gap"><p class="hint"><b>${h(st.gymName)}</b>에 있는 머신을 골라요. ${admin?'관리자라 저장하면 바로 이 헬스장을 쓰는 모든 사람에게 보여요.':'보내면 관리자가 확인한 뒤 이 헬스장을 쓰는 모든 사람에게 보여요.'} 제조사를 모르면 머신 종류만 골라도 돼요.</p>
- <p class="gm-key">${st.key.startsWith('kakao:')?'지도에서 찾은 장소라 같은 곳을 등록한 사람과 함께 써요.':'이름만 적은 장소예요. 지도에서 찾아 등록하면 다른 사람과 더 잘 맞춰져요.'}</p>
+ ${admin?'':`<p class="gm-key">이미 등록된 머신은 '등록됨'으로 보여요. 다른 분이 먼저 요청한 머신은 자동으로 건너뛰고, 한 번에 ${MAX_PER_SEND}개·하루 ${MAX_PER_DAY}개까지 보낼 수 있어요. 방식이 틀린 머신은 운영진에게 알려 주세요.</p>`}<p class="gm-key">${st.key.startsWith('kakao:')?'지도에서 찾은 장소라 같은 곳을 등록한 사람과 함께 써요.':'이름만 적은 장소예요. 지도에서 찾아 등록하면 다른 사람과 더 잘 맞춰져요.'}</p>
  <div class="chip-row gm-parts" role="tablist">${PARTS.map(p => `<button type="button" class="chip ${p===st.part?'active':''}" data-gm-part="${p}">${p}</button>`).join('')}</div>
  <div class="gm-list">${gens.map(g => { const bs = (brandsBy.get(g.id)||[]).sort((a, b) => (cnt.get(b.id)||0) - (cnt.get(a.id)||0) || a.name.localeCompare(b.name)), on = st.open[g.id] || bs.some(b => st.checked.has(b.id)); return `<div class="gm-group">${box(g)}${bs.length?`<button type="button" class="gm-toggle" data-gm-open="${h(g.id)}" aria-expanded="${on}">제조사 모델 ${bs.length}개 ${on?'접기':'펼치기'}</button>${on?`<div class="gm-brands">${bs.map(b => box(b, true)).join('')}</div>`:''}`:''}</div>`; }).join('') || '<p class="hint">이 부위의 머신 종류가 없어요.</p>'}</div>
  <details class="gm-add" ${st.adding?'open':''}><summary>목록에 없는 제조사 모델 더하기</summary><div class="form-grid"><label class="field">제조사<input id="gm-new-maker" maxlength="60" list="gm-makers" placeholder="예: Hammer Strength" autocomplete="off"><datalist id="gm-makers">${makers.map(x => `<option value="${h(x.name)}">${x.n?`헬스장 ${x.n}곳`:''}</option>`).join('')}</datalist></label><label class="field">모델<input id="gm-new-model" maxlength="80" placeholder="예: Iso-Lateral Row"></label><label class="field wide">어떤 머신 종류인가요<select id="gm-new-base">${GENERIC_MACHINES.map(g => `<option value="${h(g.id)}">${h(partOf(g))} · ${h(g.name)}</option>`).join('')}</select></label><button type="button" class="button secondary wide" id="gm-new-add">이 모델 더하고 고르기</button></div></details>
- <div class="gm-foot"><span>${count}개 선택${added?` · 새로 ${added}`:''}${removed?` · 뺌 ${removed}`:''}${changedSpec?` · 방식 바꿈 ${changedSpec}`:''}${missing?` · <b class="gm-need">방식 고를 것 ${missing}개</b>`:''}</span><button type="button" class="button" id="gm-save" ${(added||removed||changedSpec)&&!missing?'':'disabled'}>${admin?'저장':'등록 요청 보내기'}</button></div></div>`;
+ <div class="gm-foot"><span>${count}개 선택${added?` · 새로 ${added}`:''}${removed?` · 뺌 ${removed}`:''}${changedSpec?` · 방식 바꿈 ${changedSpec}`:''}${missing?` · <b class="gm-need">방식 고를 것 ${missing}개</b>`:''}${!admin&&added>MAX_PER_SEND?` · <b class="gm-need">한 번에 ${MAX_PER_SEND}개까지</b>`:''}</span><button type="button" class="button" id="gm-save" ${(added||removed||changedSpec)&&!missing&&(admin||added<=MAX_PER_SEND)?'':'disabled'}>${admin?'저장':'등록 요청 보내기'}</button></div></div>`;
 }
 // 목록에 없는 모델: 관리자는 공용 machineModels로, 일반 사용자는 요청에 담을 임시 모델로
 export function newModel(maker, model, baseId){
@@ -119,3 +119,17 @@ export function gymRequests(st, shared = {}){
 export function parseGymRequest(note = ''){
  const m = /\[헬스장 머신\] modelId=(\S+) gymKey=(\S+)(?: spec=(\S*))?(?: base=(\S+))?/.exec(String(note)); const d = v => { try{ return decodeURIComponent(v||''); }catch{ return v||''; } }; if(!m) return null; const [load, sided, unit] = String(m[3]||'').split('.'); return {modelId:d(m[1]), gymKey:d(m[2]), baseId:d(m[4]), spec:load||sided||unit ? {load, sided, unit} : null};
 }
+
+// 4.7.0 중복 방지(대표님: 한 헬스장 머신을 여러 사람이 중복 등록하거나 관리자에게 무분별한 요청이 오면 안 됨)
+// 1) 요청 문서 ID를 '헬스장+머신'으로 고정한다 → 같은 요청은 서버에 한 건만 생긴다(이미 있으면 Firestore 규칙상 덮어쓰기 불가 → 건너뜀).
+// 2) 이미 등록된 머신은 일반 사용자 화면에서 체크 해제·재요청이 안 된다(빼기는 관리자만).
+// 3) 한 번에 보낼 수 있는 수와 하루에 보낼 수 있는 수를 제한한다(이 기기 기준).
+const fnv = str => { let h = 0x811c9dc5; for(const ch of String(str)){ h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };
+export const gymRequestId = (gymKey, modelId) => `gymreq_${fnv(gymKey)}_${fnv(modelId)}`;
+export const MAX_PER_SEND = 40, MAX_PER_DAY = 80;
+export function requestQuota(now = new Date()){
+ const day = now.toISOString().slice(0,10); let st = {day, n:0};
+ try{ const v = JSON.parse(globalThis.localStorage?.getItem('mylogue.gymReqQuota')||'null'); if(v?.day===day) st = v; }catch{}
+ return {...st, left:Math.max(0, MAX_PER_DAY - st.n)};
+}
+export function useQuota(n, now = new Date()){ const q = requestQuota(now); try{ globalThis.localStorage?.setItem('mylogue.gymReqQuota', JSON.stringify({day:q.day, n:q.n + n})); }catch{} }
