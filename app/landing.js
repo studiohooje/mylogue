@@ -18,43 +18,77 @@ export const skipLanding = () => ls.set(SKIP_KEY, '1');
 export const hasRecords = db => !!((db.body||[]).length || (db.meals||[]).length || (db.workouts||[]).length);
 export const showLanding = ({user, db, demo}) => !user && !demo && !landingSkipped() && !hasRecords(db);
 
-// ---- 둘러보기 예시 기록(최근 14일). 숫자는 화면을 보여 주기 위한 예시다. g 단위는 100g당 값(도메인 계약), 개·공기·그릇·인분은 1단위당 값. ----
+// ---- 둘러보기 예시 기록: 8주 동안 꾸준히 기록한 가상의 사람 '마이'. 숫자는 화면을 보여 주기 위한 예시다. ----
+// g 단위는 100g당 값(도메인 계약), 개·공기·그릇·인분·스쿱은 1단위당 값.
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const at = (date, hh, mm=0) => new Date(`${date}T${pad(hh)}:${pad(mm)}:00`).toISOString();
-export function demoRecords(todayStr){
- const base = new Date(`${todayStr}T12:00:00`), days = [];
- for(let i=13; i>=0; i--){ const d = new Date(base); d.setDate(base.getDate()-i); days.push(ymd(d)); }
- const body = [], meals = [], workouts = [];
- const meal = (date, h, name, qty, unit, kcal, c, p, f, slot) => meals.push({date, loggedAt:at(date, h, 10), name, servingQty:qty, servingUnit:unit, calories:kcal, carbs:c, protein:p, fat:f, slot, source:'demo'});
- days.forEach((date, i) => {
-  const w = Math.round((76.8 - i*0.11 + (i%3===0 ? 0.25 : 0)) * 10) / 10;
-  body.push({date, weight:w, measure:'scale', source:'demo', createdAt:at(date, 7, 40), updatedAt:at(date, 7, 40)});
-  if(i===0 || i===13) body.push({date, weight:i ? w : 76.8, bodyFatPct:i ? 24.1 : 25.6, skeletalMuscle:i ? 31.2 : 30.6, bodyFatMass:i ? 18.3 : 19.7, bmi:i ? 24.7 : 25.1, measure:'inbody', source:'demo', createdAt:at(date, 8, 5), updatedAt:at(date, 8, 5)});
-  meal(date, 8, '그릭요거트 (플레인)', 150, 'g', 97, 4, 10, 4, '아침');
-  meal(date, 8, '바나나', 1, '개', 105, 27, 1, 0, '아침');
-  if(i%2){ meal(date, 12, '닭가슴살 (익힌 것)', 130, 'g', 165, 0, 31, 4, '점심'); meal(date, 12, '현미밥', 1, '공기', 315, 68, 7, 2, '점심'); }
-  else { meal(date, 12, '비빔밥', 1, '그릇', 600, 90, 20, 16, '점심'); }
-  if(i===13){ meal(date, 19, '샐러드 채소', 120, 'g', 20, 4, 1, 0, '저녁'); meal(date, 19, '두부', 150, 'g', 84, 2, 9, 5, '저녁'); }
-  else if(i%3===0){ meal(date, 19, '김치찌개', 1, '인분', 250, 10, 18, 15, '저녁'); meal(date, 19, '쌀밥 (백미)', 1, '공기', 300, 66, 5, 1, '저녁'); }
-  else if(i<13){ meal(date, 19, '연어 구이', 150, 'g', 206, 0, 22, 12, '저녁'); meal(date, 19, '고구마 (찐 것)', 150, 'g', 130, 31, 1, 0, '저녁'); }
-  if(i%2===0 && i<13){
-   const lower = i%4===0;
-   workouts.push({date, title:lower ? '하체 데이' : '등·가슴', gymName:'우리 동네 헬스장', loggedAtTime:'19:30', exercises:lower ? [
-    {name:'스쿼트', part:'하체', kind:'strength', sets:[0,1,2].map(k => ({weight:60+k*5+Math.floor(i/4)*2.5, unit:'kg', reps:8, completed:true}))},
-    {name:'레그프레스', part:'하체', kind:'strength', sets:[0,1,2].map(() => ({weight:140, unit:'kg', reps:12, completed:true}))}
-   ] : [
-    {name:'랫풀다운', part:'등', kind:'strength', sets:[0,1,2].map(() => ({weight:50+Math.floor(i/4)*2.5, unit:'kg', reps:10, completed:true}))},
-    {name:'벤치프레스', part:'가슴', kind:'strength', sets:[0,1,2].map(k => ({weight:45+k*2.5, unit:'kg', reps:8, completed:true}))}
-   ]});
+const r1 = v => Math.round(v*10)/10;
+export const DEMO_DAYS = 56;
+export const DEMO_SETTINGS = {calorieGoal:1900, carbsGoal:200, proteinGoal:140, fatGoal:55, goalWeight:73};
+// 같은 날짜면 늘 같은 값(새로고침해도 그래프가 흔들리지 않게)
+const noise = (i, k=1) => { const x = Math.sin(i*12.9898 + k*78.233) * 43758.5453; return (x - Math.floor(x)) - 0.5; };
+const BREAKFAST = [
+ [['그릭요거트 (플레인)',150,'g',97,4,10,4],['바나나',1,'개',105,27,1,0],['아메리카노',1,'잔',10,2,0,0]],
+ [['오트밀 (마른 것)',40,'g',379,68,13,7],['우유',200,'ml',60,5,3,3],['블루베리',80,'g',57,14,1,0]],
+ [['삶은 달걀',2,'개',78,1,6,5],['식빵',1,'장',80,14,3,1],['사과',1,'개',95,25,0,0]]
+];
+const LUNCH = [
+ [['닭가슴살 (익힌 것)',130,'g',165,0,31,4],['현미밥',1,'공기',315,68,7,2],['샐러드 채소',100,'g',20,4,1,0]],
+ [['비빔밥',1,'그릇',600,90,20,16]],
+ [['연어 포케',1,'그릇',560,62,32,18]],
+ [['제육볶음 정식',1,'인분',720,85,34,24]],
+ [['닭가슴살 샐러드',1,'그릇',380,22,38,14],['고구마 (찐 것)',150,'g',130,31,1,0]]
+];
+const SNACK = [['프로틴 쉐이크',1,'스쿱',120,3,24,1],['아몬드',1,'줌',165,6,6,14]];
+const DINNER = [
+ [['닭가슴살 (익힌 것)',150,'g',165,0,31,4],['고구마 (찐 것)',150,'g',130,31,1,0],['브로콜리 (데친 것)',100,'g',35,7,3,0]],
+ [['두부',200,'g',84,2,9,5],['현미밥',1,'공기',315,68,7,2],['배추김치',50,'g',18,4,1,0]],
+ [['소고기 우둔 구이',150,'g',180,0,30,6],['쌀밥 (백미)',1,'공기',300,66,5,1],['양배추',100,'g',25,6,1,0]],
+ [['연어 구이',150,'g',206,0,22,12],['잡곡밥',1,'공기',320,68,8,2]]
+];
+const ROUTINE = {
+ 1:{title:'하체 데이', ex:[['스쿼트','하체',60,2.5,8],['레그프레스','하체',140,5,12],['루마니안 데드리프트','하체',50,2.5,10]]},
+ 2:{title:'등 데이', ex:[['랫풀다운','등',45,2.5,10],['시티드 로우 머신','등',40,2.5,12],['덤벨 로우','등',16,1,10]]},
+ 4:{title:'가슴·어깨', ex:[['벤치프레스','가슴',40,2.5,8],['인클라인 덤벨 프레스','가슴',14,1,10],['덤벨 숄더 프레스','어깨',10,1,10]]}
+};
+export function demoRecords(todayStr, now=new Date()){
+ const base = new Date(`${todayStr}T12:00:00`), body = [], meals = [], workouts = [];
+ const nowMin = now.getHours()*60 + now.getMinutes();
+ // 오늘 기록은 지금 시각보다 앞에 오도록 당긴다(홈 헤일로가 오늘도 완성돼 보이게)
+ const when = (date, h, m=0) => { let min = h*60 + m; if(date===todayStr){ const end = Math.max(nowMin - 10, 60); const start = Math.min(6*60+30, end - 120); min = start + Math.round((min - 6*60) / (16*60) * Math.max(end - start, 30)); min = Math.max(0, Math.min(min, end)); } return {iso:new Date(`${date}T${pad(Math.floor(min/60))}:${pad(min%60)}:00`).toISOString(), hm:`${pad(Math.floor(min/60))}:${pad(min%60)}`}; };
+ const addMeal = (date, h, m, slot, items) => { const t = when(date, h, m); for(const [name, qty, unit, kcal, c, p, f] of items) meals.push({date, loggedAt:t.iso, name, servingQty:qty, servingUnit:unit, calories:kcal, carbs:c, protein:p, fat:f, slot, source:'demo'}); };
+ for(let k=DEMO_DAYS-1; k>=0; k--){
+  const d = new Date(base); d.setDate(base.getDate()-k); const date = ymd(d), i = DEMO_DAYS-1-k, dow = d.getDay(), prog = i/(DEMO_DAYS-1);
+  // 체중: 78.6 → 74.9kg, 주말에 살짝 오르고 다시 내려가는 자연스러운 흔들림
+  const w = r1(78.6 - 3.7*prog + noise(i)*0.5 + ((dow===0||dow===1) ? 0.25 : 0));
+  const tb = when(date, 7, 20 + Math.round(noise(i, 2)*10));
+  body.push({date, weight:w, measure:'scale', source:'demo', createdAt:tb.iso, updatedAt:tb.iso});
+  if(i%14===0 || k===0){ const t = when(date, 8, 30); body.push({date, weight:w, bodyFatPct:r1(26.8 - 3.6*prog), skeletalMuscle:r1(30.4 + 1.2*prog), bodyFatMass:r1(w*(26.8 - 3.6*prog)/100), bmi:r1(w/(1.76*1.76)), visceralFatLevel:Math.round(9 - 2*prog), bmr:Math.round(1640 + 30*prog), measure:'inbody', source:'demo', createdAt:t.iso, updatedAt:t.iso}); }
+  if(i%14===3) body.push({date, waistCm:r1(88 - 4*prog), source:'demo', createdAt:tb.iso, updatedAt:tb.iso});
+  if(k===0){   // 오늘은 목표선에 고르게 닿는 하루(둘러보기 첫 화면)
+   addMeal(date, 7, 50, '아침', BREAKFAST[0]);
+   addMeal(date, 12, 20, '점심', LUNCH[4]);
+   addMeal(date, 16, 0, '간식', SNACK);
+   addMeal(date, 19, 0, '저녁', [['소고기 우둔 구이',150,'g',180,0,30,6],['현미밥',1,'공기',315,68,7,2],['브로콜리 (데친 것)',100,'g',35,7,3,0]]);
+  } else {
+   addMeal(date, 7, 50, '아침', BREAKFAST[i%BREAKFAST.length]);
+   addMeal(date, 12, 20, '점심', LUNCH[(i*3)%LUNCH.length]);
+   if(dow!==0) addMeal(date, 16, 0, '간식', [SNACK[i%2]]);
+   addMeal(date, 19, 0, '저녁', DINNER[(i*5)%DINNER.length]);
   }
-  if(i===7 || i===13) workouts.push({date, title:'필라테스 리포머', gymName:'필라테스 스튜디오', loggedAtTime:'10:00', exercises:[{name:'필라테스 리포머', part:'필라테스', kind:'cardio', durationMin:50, sessionType:'개인', sets:[], moves:[
-   {name:'풋워크', apparatus:'리포머', springs:[{c:'빨강', n:i===13 ? 2 : 3}], reps:10, level:2, setup:'풋바 2'},
-   {name:'헌드레드', apparatus:'리포머', springs:[{c:'파랑', n:1}], reps:100, level:2},
-   {name:'엘리펀트', apparatus:'리포머', springs:[{c:'빨강', n:1}], reps:8, level:i===13 ? 3 : 2}
-  ]}]});
- });
- return {body, meals, workouts};
+  const r = ROUTINE[dow] || (k===0 && dow!==6 ? ROUTINE[1] : null);   // 오늘은 늘 운동이 있게(헤일로 완성)
+  if(r){ const t = when(date, 20, 0); const week = Math.floor(i/7);
+   workouts.push({date, title:r.title, gymName:'우리 동네 헬스장', loggedAtTime:t.hm, exercises:r.ex.map(([name, part, w0, step, reps]) => ({name, part, kind:'strength', sets:[0,1,2,3].map(s => ({weight:r1(w0 + step*week + (s===3 ? -step : 0)), unit:'kg', reps:s===3 ? reps+2 : reps, completed:true}))}))}); }
+  if(dow===6){ const t = when(date, 10, 0), lv = Math.min(5, 2 + Math.floor(i/21));
+   workouts.push({date, title:'필라테스 리포머', gymName:'필라테스 스튜디오', loggedAtTime:t.hm, exercises:[{name:'필라테스 리포머', part:'필라테스', kind:'cardio', durationMin:50, sessionType:'개인', sets:[], moves:[
+    {name:'풋워크', apparatus:'리포머', springs:i<28 ? [{c:'빨강', n:3}] : [{c:'빨강', n:2},{c:'파랑', n:1}], reps:10, level:lv, setup:'풋바 2'},
+    {name:'헌드레드', apparatus:'리포머', springs:[{c:'파랑', n:1}], reps:100, level:lv},
+    {name:'엘리펀트', apparatus:'리포머', springs:[{c:'빨강', n:1}], reps:8, level:lv},
+    {name:'머메이드', apparatus:'리포머', springs:[{c:'파랑', n:1}], reps:6, side:'양쪽', level:lv}
+   ]}]}); }
+  if(dow===3 && k>0){ const t = when(date, 7, 0); workouts.push({date, title:'아침 러닝', loggedAtTime:t.hm, exercises:[{name:'러닝', part:'유산소', kind:'cardio', durationMin:30, distanceKm:r1(4.6 + 0.6*prog), sets:[]}]}); }
+ }
+ return {body, meals, workouts, settings:DEMO_SETTINGS};
 }
 
 // ---- 화면 ----
@@ -127,6 +161,7 @@ export function landingHTML({installHTML=''}={}){
   </div>
   ${installHTML}
   <p class="ld-fine">가입하면 기록이 여러 기기에 이어져요. 가입 없이 쓰면 이 기기에만 저장돼요.</p>
+  <p class="legal-foot"><a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a><br>© 2026 Studio Hooje. All rights reserved.</p>
  </section>
  </div>`;
 }

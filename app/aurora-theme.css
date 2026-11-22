@@ -1361,3 +1361,24 @@ a.story-link.card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;ali
 .demo-actions{display:flex;gap:8px;flex-wrap:wrap}
 .demo-banner button{min-height:40px;padding:0 14px;border-radius:999px;border:0;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .demo-signup{background:#0b1020;color:#edf4f8}.demo-exit{background:rgba(11,16,32,.12);color:#0b1020}
+/* 4.10.0 가입 동의·법적 고지 */
+.consent-page{min-height:100svh;display:flex;align-items:flex-start;justify-content:center;padding:calc(24px + env(safe-area-inset-top)) 16px 40px;background:radial-gradient(60% 40% at 30% 0%,rgba(140,228,224,.14),transparent 70%),radial-gradient(50% 40% at 80% 0%,rgba(180,140,255,.16),transparent 70%),#0b1020;color:#edf4f8;word-break:keep-all}
+.consent-card{width:100%;max-width:520px;background:rgba(22,32,58,.92);border:1px solid #2c3a5c;border-radius:24px;padding:28px 22px}
+.consent-icon{width:56px;height:56px;border-radius:16px}
+.consent-card h1{font-size:24px;line-height:1.35;margin:14px 0 0}
+.consent-lead{font-size:15px;line-height:1.7;color:#a9bbce;margin:8px 0 0}
+.consent-all{display:flex;align-items:center;gap:10px;min-height:52px;margin-top:20px;padding:0 14px;border-radius:14px;background:rgba(140,228,224,.1);border:1px solid rgba(140,228,224,.4);font-size:16px;cursor:pointer}
+.consent-list{display:grid;gap:8px;margin-top:12px}
+.consent-item{padding:12px 14px;border-radius:14px;border:1px solid #2c3a5c}
+.consent-item label{display:flex;align-items:flex-start;gap:10px;min-height:28px;font-size:15px;cursor:pointer}
+.consent-item em{font-style:normal;font-size:12px;font-weight:700;color:#8ce4e0;margin-right:4px}
+.consent-item p{margin:6px 0 0 30px;font-size:13px;line-height:1.6;color:#7f91aa}
+.consent-item a{display:inline-flex;align-items:center;min-height:36px;margin-left:30px;font-size:13px;color:#b8aaf2}
+.consent-page input[type=checkbox]{width:20px;height:20px;flex:none;margin-top:2px;accent-color:#8ce4e0}
+.consent-error{margin:12px 0 0;color:#f0a2a6;font-size:14px}
+.consent-go{width:100%;min-height:52px;margin-top:18px;border:0;border-radius:999px;background:linear-gradient(100deg,#8ce4e0,#b48cff);color:#0b1020;font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.consent-go[aria-disabled=true]{opacity:.45}
+.consent-no{width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#7f91aa;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.consent-fine{font-size:12px;line-height:1.6;color:#7f91aa;margin:10px 0 0;text-align:center}
+.legal-foot{text-align:center;font-size:13px;line-height:1.8;color:#7f91aa;margin:28px 0 8px}
+.legal-foot a{color:#a9bbce;display:inline-block;min-height:32px;padding:4px 2px}
