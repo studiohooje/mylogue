@@ -1501,3 +1501,5 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 /* 4.17.0 필라테스 동작 자세 그림 */
 .pm-list li>.ex-art-md{width:40px;height:40px;vertical-align:middle;margin:0 8px 0 0;border-radius:10px;background:#ffffff06}
 .pm-line>.ex-art-sm{margin:0 2px 0 0;flex:none}
+.micro-line{margin:8px 0 0;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.micro-line b{color:var(--text);font-weight:700}.micro-line small{font-size:12px}
+.share-row{display:grid;gap:6px;margin:8px 0}.share-row small{color:var(--muted);font-size:12px}.share-note{color:var(--blue)!important}

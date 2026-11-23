@@ -3,9 +3,13 @@ import {round,number,cleanFoodPreset,unitFactor} from './domain.js';
 // Food values require the user's own label or verified source. No fabricated database values.
 export const FOOD_PRESETS=Object.freeze([]);
 export const NUTRIENT_KEYS=Object.freeze(['calories','carbs','protein','fat']);
+// 4.17.0 미량영양소(당류 g·식이섬유 g·포화지방 g·나트륨 mg): 값이 있을 때만 따라간다
+export const MICRO_KEYS=Object.freeze(['sugar','fiber','satFat','sodium']);
 export function scaleNutrition(perServing,servingQty=1){
  const q=number(servingQty);if(q===null||q<=0)throw Error('섭취량은 0보다 커야 합니다.');
- return Object.fromEntries(NUTRIENT_KEYS.map(k=>{const n=number(perServing?.[k]);if(n!==null&&n<0)throw Error('영양값은 음수가 될 수 없습니다.');return [k,n===null?null:round(n*q)]}));
+ const core=Object.fromEntries(NUTRIENT_KEYS.map(k=>{const n=number(perServing?.[k]);if(n!==null&&n<0)throw Error('영양값은 음수가 될 수 없습니다.');return [k,n===null?null:round(n*q)]}));
+ for(const k of MICRO_KEYS){const n=number(perServing?.[k]);if(n!==null&&n>=0)core[k]=round(n*q)}
+ return core;
 }
 export function scaleEstimate(estimate,servingQty=1){
  if(!estimate?.estimated)return estimate||null;

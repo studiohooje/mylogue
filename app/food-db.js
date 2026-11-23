@@ -12,6 +12,7 @@ const TAG = {
  m:{label:'제품', rank:5, source:'식약처 식품영양성분DB(가공식품)'},
  f:{label:'외식', rank:6, source:'프랜차이즈 공개 영양정보'},
  s:{label:'공개 자료', rank:7, source:'프랜차이즈 매장 게시물·공식 발표 보도·한국소비자원 시험'},
+ h:{label:'집밥 표준', rank:3.5, source:'집밥 표준 레시피 — 재료 g로 계산(재료값: 국가표준식품성분표·식약처 가공식품 중앙값), 1인분 분량은 추정'},
  x:{label:'추정', rank:8, source:'공식 값 없음 — 비슷한 음식·브랜드 평균으로 계산한 추정'},
 };
 export const FOOD_DB_TAGS = TAG;
@@ -20,9 +21,10 @@ let rows = null, index = null, loading = null;
 
 // 행 → 음식 프리셋(앱의 db.foods 항목과 같은 모양, catalog·db 표시)
 export function rowToFood(r){
- const [name, brand, unit, grams, kcal, carbs, protein, fat, tag, aliases, doubt] = r;
+ const [name, brand, unit, grams, kcal, carbs, protein, fat, tag, aliases, doubt, mic] = r;
+ const micro = Array.isArray(mic) ? Object.fromEntries(['sugar','fiber','satFat','sodium'].map((k, i) => [k, mic[i]]).filter(([, v]) => v != null)) : {};
  const mass = !unit || MASS.has(unit);
- return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
+ return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, ...micro, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
 }
 
 const indexRow = r => { const text = [r[0], r[1], ...(String(r[9]||'').split(' '))].filter(Boolean); return {p:plain(text.join(' ')), k:text.map(t => keystrokes(t)).join('|'), c:text.map(t => choseong(t).replace(/\s/g,'')).join('|'), names:text}; };

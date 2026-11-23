@@ -29,17 +29,19 @@ export function unitName(label = '', basis = 'g'){
 // kcal은 정수(100당 값을 1단위로 바꿀 때 619.9처럼 보이지 않게), 탄단지는 소수 한 자리
 const per = (n, factor) => [n.kcal == null ? null : Math.round(n.kcal * factor), r1(n.carbs == null ? null : n.carbs * factor), r1(n.protein == null ? null : n.protein * factor), r1(n.fat == null ? null : n.fat * factor)];
 
+// 4.17.0 미량영양소: [당류 g, 식이섬유 g, 포화지방 g, 나트륨 mg]. 모두 없으면 null(행에 안 붙임). 행 12번째 칸.
+export const micro = (n, factor) => { const v = [n.sugar, n.fiber, n.satFat, n.sodium].map((x, i) => x == null || !Number.isFinite(Number(x)) ? null : i === 3 ? Math.round(Number(x) * factor) : r1(Number(x) * factor)); return v.every(x => x == null) ? null : v; };
 export const DOUBT_FLAGS = new Set(['kcalDensityLow', 'kcalDensityHigh', 'zeroKcalWithMacros', 'recheckUnresolved', 'calcCheckMismatch', 'fatPartsGtFat', 'sugarGtCarbs']);
 export const isDoubtful = p => (p.confidence === 'low' && p.source?.type !== 'estimate') || (p.flags || []).some(f => DOUBT_FLAGS.has(typeof f === 'string' ? f : f?.code));
 
-export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products = []}){
+export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products = [], recipes = []}){
   const rows = [], seen = new Set();
-  const push = (name, brand, unit, grams, vals, tag, aliases = [], doubt = false) => {
+  const push = (name, brand, unit, grams, vals, tag, aliases = [], doubt = false, mic = null) => {
     if (!name || vals[0] == null) return;
     const key = `${brand}|${name}|${unit}`.toLocaleLowerCase('ko');
     const key2 = `${brand}|${name}|${vals[0]}`.toLocaleLowerCase('ko');
     if (seen.has(key) || (brand && seen.has(key2))) return; seen.add(key); seen.add(key2);
-    rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(doubt ? [1] : [])]);
+    rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(mic ? [doubt ? 1 : 0, mic] : doubt ? [1] : [])]);
   };
   const dishAlias = new Map(foodsDish.filter(f => !f.maker).map(f => [f.name, f.search?.aliases || []]));
   const kNames = new Set();
@@ -47,19 +49,21 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
   for (const d of dishes) {
     const u = d.defaultUnit || {}, unit = unitName(u.label) || '인분', grams = u.g || u.ml || 0;
     kNames.add(d.name); const al = [...(d.aliases || []), ...(dishAlias.get(d.name) || [])];
-    if (d.nutrientsPerServing) { push(d.name, '', unit, grams, per(d.nutrientsPerServing, 1), 'k', al); continue; }
+    if (d.nutrientsPerServing) { push(d.name, '', unit, grams, per(d.nutrientsPerServing, 1), 'k', al, false, micro(d.nutrientsPerServing, 1)); continue; }
     const rep = [d.source?.representative, ...(d.source?.alternatives || [])].find(x => x?.per100 && x.basis === '100ml');
-    if (rep && grams) push(d.name, '', unit, grams, per(rep.per100, grams / 100), 'e', al); else kNames.delete(d.name);
+    if (rep && grams) push(d.name, '', unit, grams, per(rep.per100, grams / 100), 'e', al, false, micro(rep.per100, grams / 100)); else kNames.delete(d.name);
   }
   // 2) 식약처 음식(프랜차이즈 행 제외): 기본 단위가 g·ml이 아니면 1단위당, 아니면 100당
   for (const f of foodsDish) {
     if (f.maker || kNames.has(f.name)) continue;
     const def = (f.units || []).find(u => u.default), amount = def ? (def.g || def.ml) : 0, unit = def ? unitName(def.label, f.basis) : '';
-    if (unit && amount) push(f.name, '', unit, amount, per(f.per100 || {}, amount / 100), 'd', f.search?.aliases || []);
-    else push(f.name, '', f.basis === 'ml' ? 'ml' : 'g', 0, per(f.per100 || {}, 1), 'd', f.search?.aliases || []);
+    if (unit && amount) push(f.name, '', unit, amount, per(f.per100 || {}, amount / 100), 'd', f.search?.aliases || [], false, micro(f.per100 || {}, amount / 100));
+    else push(f.name, '', f.basis === 'ml' ? 'ml' : 'g', 0, per(f.per100 || {}, 1), 'd', f.search?.aliases || [], false, micro(f.per100 || {}, 1));
   }
+  // 2-1) 4.17.0 집밥 표준 레시피(recipes/recipes.json): 1인분 단위, 'h'
+  for (const r of recipes) push(r.name, '', '인분', r.grams, [r.kcal, r.carbs, r.protein, r.fat], 'h', r.aliases || [], false, r.micro);
   // 3) 원재료: 100g당
-  for (const f of foodsRaw) push(f.name, '', 'g', 0, per(f.per100 || {}, 1), 'r', f.search?.aliases || []);
+  for (const f of foodsRaw) push(f.name, '', 'g', 0, per(f.per100 || {}, 1), 'r', f.search?.aliases || [], false, micro(f.per100 || {}, 1));
   // 4) 제품: 기본 단위(1팩 100g 등)가 있으면 1단위당, 없으면 100당. 브랜드는 표기 규칙(brandDisplay)이 있으면 그것.
   for (const p of products) {
     // 중량 없이 1회(1개) 값만 공개된 메뉴(한솥 열량 등): 100당으로 바꿀 수 없으니 라벨 1회 값을 '1개당'으로 넣는다
@@ -67,7 +71,7 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
       const lb = p.labelCorrected || p.label || {};
       if (lb.kcal != null && /serving/.test(lb.basis || 'per serving')) {
         const st = p.source?.type || '', tag1 = st === 'estimate' ? 'x' : (st === 'store-post' || st === 'press-report' || st === 'public-test') ? 's' : p.group === 'franchise' ? 'f' : 'm';
-        push(p.displayName || p.name, p.brandDisplay || p.brand || '', unitName(lb.servingLabel || '1개') || '개', 0, per(lb, 1), tag1, [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])], isDoubtful(p));
+        push(p.displayName || p.name, p.brandDisplay || p.brand || '', unitName(lb.servingLabel || '1개') || '개', 0, per(lb, 1), tag1, [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])], isDoubtful(p), micro(lb, 1));
       }
       continue;
     }
@@ -78,8 +82,8 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
     const brand = p.brandDisplay || p.brand || '', aliases = [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])];
     // '전체 3360g'처럼 통 전체가 기본 단위면 1회분으로 쓰기엔 커서 100당으로 둔다
     const whole = /^전체/.test(def?.label || '') && amount > 600, doubt = isDoubtful(p);
-    if (unit && amount && amount !== 1 && !whole) push(p.displayName || p.name, brand, unit, amount, per(base, amount / 100), tag, aliases, doubt);
-    else push(p.displayName || p.name, brand, ml ? 'ml' : 'g', 0, per(base, 1), tag, aliases, doubt);
+    if (unit && amount && amount !== 1 && !whole) push(p.displayName || p.name, brand, unit, amount, per(base, amount / 100), tag, aliases, doubt, micro(base, amount / 100));
+    else push(p.displayName || p.name, brand, ml ? 'ml' : 'g', 0, per(base, 1), tag, aliases, doubt, micro(base, 1));
   }
   return rows;
 }
@@ -91,6 +95,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     foodsDish: read('mfds/out/foods-dish.json'),
     foodsRaw: read('mfds/out/foods-raw.json'),
     products: read('products_merged/products.json').products,
+    recipes: fs.existsSync(path.join(BASE, 'recipes/recipes.json')) ? read('recipes/recipes.json').rows : [],
   });
   const flagged = flagDoubts(rows); console.log(`품질 검사: 확인 필요 표시 ${flagged}행 추가`);
   const out = {v: 1, builtAt: new Date().toISOString().slice(0, 10), source: '식품의약품안전처 식품영양성분 데이터베이스(공공데이터포털)·농촌진흥청 국가표준식품성분표·제조사 라벨', rows};

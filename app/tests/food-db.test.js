@@ -62,7 +62,8 @@ test('음식 DB 검색: 초성·한영 자판·정확도, 프리셋 계약', () 
 test('앱 번들 food-db.json이 있으면 형식 확인', {skip:!existsSync(new URL('../food-db.json', import.meta.url))}, () => {
  const j = JSON.parse(readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
  assert.ok(j.rows.length > 30000);
- for (const r of j.rows.slice(0, 2000)) { assert.ok(r.length === 10 || (r.length === 11 && r[10] === 1)); assert.ok(typeof r[0] === 'string' && r[0]); assert.ok(r[4] !== null); }
+ for (const r of j.rows.slice(0, 2000)) { assert.ok(r.length === 10 || (r.length === 11 && r[10] === 1) || (r.length === 12 && (r[10] === 0 || r[10] === 1) && Array.isArray(r[11]) && r[11].length === 4)); assert.ok(typeof r[0] === 'string' && r[0]); assert.ok(r[4] !== null); }
  setFoodRows(j.rows);
+ const kimchi = searchFoodDB('김치찌개')[0]; assert.ok(kimchi.sodium > 0, '미량영양소(나트륨)가 음식 객체로 나온다');
  for (const q of ['비빔밥', '김치찌개', '닭가슴살', '쌀밥', '아메리카노', '제육볶음']) assert.ok(searchFoodDB(q).length > 0, q);
 });
