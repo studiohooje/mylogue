@@ -1562,3 +1562,6 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .ex-opts>summary::-webkit-details-marker{display:none}.ex-opts>summary small{color:var(--muted);font-size:13px}
 .ex-opts>.form-grid{padding:10px 14px 14px}
 .ex-head-art .ex-art{width:64px;height:64px;border-radius:12px;background:#ffffff0d;object-fit:contain}
+/* 4.17.0 끝나고 한 번에·계획 안내: 폰 폭에서 칸이 좁아지지 않게 3칸 + 2칸 */
+@media (max-width:519px){.after-row,.guide-row{grid-template-columns:repeat(6,minmax(0,1fr))!important}.after-row .after-name{grid-column:1/-1}.after-row>.field:not(.after-name){grid-column:span 2}.guide-row>.field:nth-of-type(5),.guide-row>.field:nth-of-type(6){grid-column:span 3}.after-row:not(.guide-row)>.field:nth-of-type(5){grid-column:span 2}}
+@media (max-width:519px){.after-row:not(.guide-row)>.field:not(.after-name){grid-column:span 3!important}}
