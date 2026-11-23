@@ -25,7 +25,8 @@ export function unitName(label = '', basis = 'g'){
   if (!s || /^(g|ml|mL)$/.test(s)) return '';
   return s.replace(/제공량$/, '') || '회';
 }
-const per = (n, factor) => [r1(n.kcal == null ? null : n.kcal * factor), r1(n.carbs == null ? null : n.carbs * factor), r1(n.protein == null ? null : n.protein * factor), r1(n.fat == null ? null : n.fat * factor)];
+// kcal은 정수(100당 값을 1단위로 바꿀 때 619.9처럼 보이지 않게), 탄단지는 소수 한 자리
+const per = (n, factor) => [n.kcal == null ? null : Math.round(n.kcal * factor), r1(n.carbs == null ? null : n.carbs * factor), r1(n.protein == null ? null : n.protein * factor), r1(n.fat == null ? null : n.fat * factor)];
 
 export const DOUBT_FLAGS = new Set(['kcalDensityLow', 'kcalDensityHigh', 'zeroKcalWithMacros', 'recheckUnresolved', 'calcCheckMismatch', 'fatPartsGtFat', 'sugarGtCarbs']);
 export const isDoubtful = p => (p.flags || []).some(f => DOUBT_FLAGS.has(typeof f === 'string' ? f : f?.code));
