@@ -5,3 +5,20 @@ CREATE TABLE IF NOT EXISTS usage (
   n INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (uid, day)
 );
+
+-- 4.17.0 기능별 하루 사용 횟수(사진·리뷰·묻기·레시피). 기록 내용은 저장하지 않는다.
+CREATE TABLE IF NOT EXISTS usage_feature (
+  uid TEXT NOT NULL,
+  day TEXT NOT NULL,
+  feature TEXT NOT NULL,
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (uid, day, feature)
+);
+-- 같은 사진 재시도 감지(사진 내용이 아니라 SHA-256 해시만, 하루 단위)
+CREATE TABLE IF NOT EXISTS photo_seen (
+  uid TEXT NOT NULL,
+  day TEXT NOT NULL,
+  hash TEXT NOT NULL,
+  tries INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (uid, day, hash)
+);

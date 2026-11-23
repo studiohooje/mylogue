@@ -84,32 +84,4 @@ export function corsHeaders(origin, allowed){
  return {'access-control-allow-origin': ok ? origin : allowed[0]||'null', 'access-control-allow-methods':'POST, OPTIONS', 'access-control-allow-headers':'authorization, content-type', 'access-control-max-age':'86400', vary:'origin'};
 }
 
-// deps: {env, fetchImpl, callClaude(messages,{model,system}) → {text, stopReason, model}, now}
-export async function handle(request, deps){
- const {env} = deps, allowed = String(env.ALLOWED_ORIGINS||'').split(',').map(s => s.trim()).filter(Boolean);
- const origin = request.headers.get('origin')||'', cors = corsHeaders(origin, allowed);
- const reply = (status, body) => new Response(JSON.stringify(body), {status, headers:{...cors, 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store'}});
- if(request.method==='OPTIONS') return new Response(null, {status:204, headers:cors});
- const url = new URL(request.url);
- if(request.method==='GET' && url.pathname==='/health') return reply(200, {ok:true});
- if(request.method!=='POST' || url.pathname!=='/parse') return reply(404, {error:'없는 주소예요.'});
- try{
-  if(origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
-  const token = (request.headers.get('authorization')||'').replace(/^Bearer\s+/i, '');
-  const now = deps.now ? deps.now() : Date.now();
-  const user = await verifyIdToken(token, {projectId:env.FIREBASE_PROJECT_ID, keys:await googleKeys(deps.fetchImpl, now), now});
-  if(!await isApproved(user, token, {projectId:env.FIREBASE_PROJECT_ID, fetchImpl:deps.fetchImpl})) throw new HttpError(403, '이용 승인 후 쓸 수 있어요.');
-  let body; try{ body = await request.json(); }catch{ throw new HttpError(400, '요청 형식이 올바르지 않아요.'); }
-  const input = readInput(body);
-  const day = new Date(now + 9*3600_000).toISOString().slice(0, 10); // 한국 날짜 기준
-  const quota = await useQuota(env.DB, user.uid, day, Number(env.DAILY_LIMIT||30));
-  const out = await deps.callClaude(buildMessages(input), {model:env.MODEL||'claude-opus-5-5', system:SYSTEM});
-  if(out.stopReason==='refusal') throw new HttpError(422, 'AI가 이 내용을 정리하지 못했어요. 표현을 바꿔 다시 해 주세요.');
-  if(out.stopReason==='max_tokens') throw new HttpError(422, '내용이 너무 길어요. 나눠서 보내 주세요.');
-  return reply(200, {text:out.text, model:out.model, left:quota.left});
- }catch(error){
-  if(error instanceof HttpError) return reply(error.status, {error:error.message});
-  console.error(error);
-  return reply(502, {error:'AI 정리에 실패했어요. 잠시 뒤 다시 해 주세요.'});
- }
-}
+// 4.17.0 요청 처리는 routes.js(route)로 옮겼다. 여기에는 공통 부품만 둔다.

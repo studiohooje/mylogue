@@ -8,7 +8,18 @@ compatibility_flags = ["nodejs_compat"]
 FIREBASE_PROJECT_ID = "mylogue-1eedb"
 ALLOWED_ORIGINS = "https://studiohooje.github.io,https://localhost,http://localhost:4173"
 DAILY_LIMIT = "30"
-MODEL = "claude-opus-5-5"
+# 4.17.0 기본 모델은 저렴한 Haiku 5.5, 주간 리뷰는 Sonnet 5.5(원가 계산 기준과 같게)
+MODEL = "claude-haiku-5-5"
+REVIEW_MODEL = "claude-sonnet-5-5"
+# 베타 동안 승인된 모든 계정을 플러스로(결제가 붙으면 "0"으로 바꾸고 계정별 plan을 쓴다)
+PLUS_ALL = "1"
+# 기능별 하루 한도: 무료/플러스
+LIMIT_PHOTO = "1/20"
+LIMIT_REVIEW = "0/3"
+LIMIT_CHAT = "0/20"
+LIMIT_RECIPE = "0/10"
+# "1"이면 Claude 대신 정해진 답(시험·개발용). 실제 배포에서는 꼭 "0"
+FAKE_AI = "0"
 
 # 사용자별 하루 사용 횟수. `wrangler d1 create mylogue-ai`로 만든 뒤 나온 database_id를 아래에 넣는다.
 [[d1_databases]]

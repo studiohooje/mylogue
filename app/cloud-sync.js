@@ -5,7 +5,7 @@ import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
 import {isAdminUser} from './admin.js';
-export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[]};
+export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[],plan:'free'};
 const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
 export async function refreshApproval(){
   const user=auth?.currentUser;
@@ -14,6 +14,7 @@ export async function refreshApproval(){
   try{
     const snapshot=await fsSDK.getDocFromServer(profileRef(user.uid));
     cloudState.approval=snapshot.exists()?snapshot.data().status:'not_applied';
+    cloudState.plan=snapshot.exists()&&snapshot.data().plan==='plus'?'plus':'free';
     cloudState.approvalError='';
   }catch(error){cloudState.approval='unknown';cloudState.approvalError=error.message||'상태 확인 실패'}
   return cloudState.approval;
@@ -40,6 +41,13 @@ export async function reviewApplicant(uid,status){
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 가입을 승인할 수 있습니다.');
   if(!uid||!['pending','approved','rejected'].includes(status))throw Error('신청 상태를 확인해 주세요.');
   await fsSDK.updateDoc(profileRef(uid),{status,reviewerUid:auth.currentUser.uid,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
+  return listApplicants();
+}
+// 4.17.0 플러스 전환(관리자 전용): 계정 문서의 plan을 바꾼다. 결제가 붙으면 같은 칸을 결제 기록이 채운다.
+export async function setAccountPlan(uid,plan){
+  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 플러스를 바꿀 수 있습니다.');
+  if(!uid||!['free','plus'].includes(plan))throw Error('플랜을 확인해 주세요.');
+  await fsSDK.updateDoc(profileRef(uid),{plan,planBy:auth.currentUser.uid,planAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
   return listApplicants();
 }
 export async function initializeCloud() {

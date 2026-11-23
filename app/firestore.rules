@@ -27,6 +27,13 @@ service cloud.firestore {
         && request.resource.data.reviewerUid == request.auth.uid
         && request.resource.data.reviewedAt == request.time
         && request.resource.data.updatedAt == request.time;
+      // 4.17.0 플러스 전환: 관리자만 plan을 바꾼다(본인은 못 바꿈, 결제가 붙으면 같은 칸을 씀)
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plan','planBy','planAt','updatedAt'])
+        && request.resource.data.plan in ['free','plus']
+        && request.resource.data.planBy == request.auth.uid
+        && request.resource.data.planAt == request.time
+        && request.resource.data.updatedAt == request.time;
       // 4.11.0 계정 삭제: 본인은 자기 계정 문서를 지울 수 있다(하위 기록·초안을 먼저 지운 뒤).
       allow delete: if owner(uid);
     }

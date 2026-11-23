@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import {handle, resetKeyCache, buildMessages, SYSTEM, readInput} from '../src/handler.js';
+import {resetKeyCache, buildMessages, SYSTEM, readInput} from '../src/handler.js';
+import {route as handle} from '../src/routes.js';
 import {parsePaste} from '../../app/ai-paste.js';
 
 const PROJECT = 'mylogue-1eedb';
