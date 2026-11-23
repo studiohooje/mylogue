@@ -18,9 +18,9 @@ let rows = null, index = null, loading = null;
 
 // 행 → 음식 프리셋(앱의 db.foods 항목과 같은 모양, catalog·db 표시)
 export function rowToFood(r){
- const [name, brand, unit, grams, kcal, carbs, protein, fat, tag, aliases] = r;
+ const [name, brand, unit, grams, kcal, carbs, protein, fat, tag, aliases, doubt] = r;
  const mass = !unit || MASS.has(unit);
- return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', aiEvidence:{source:TAG[tag]?.source||'', note:mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`}, db:true};
+ return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
 }
 
 export function setFoodRows(list){
@@ -48,7 +48,7 @@ export function searchFoodDB(query, {limit=30}={}){
   if((qp && x.p.includes(qp)) || (qk.length >= 2 && x.k.includes(qk)) || (qh.length >= 2 && x.k.includes(qh)) || (onlyCons && x.c.includes(qc))) hits.push(i);
  }
  return hits.map(i => ({i, s:matchScore(q, index[i].names)})).filter(h => h.s > 0)
-  .sort((a, b) => b.s - a.s || (TAG[rows[a.i][8]]?.rank ?? 9) - (TAG[rows[b.i][8]]?.rank ?? 9) || rows[a.i][0].length - rows[b.i][0].length)
+  .sort((a, b) => b.s - a.s || (rows[a.i][10] ? 1 : 0) - (rows[b.i][10] ? 1 : 0) || (TAG[rows[a.i][8]]?.rank ?? 9) - (TAG[rows[b.i][8]]?.rank ?? 9) || rows[a.i][0].length - rows[b.i][0].length)
   .slice(0, limit).map(h => rowToFood(rows[h.i]));
 }
 export function findFoodDB(id){ if(!rows) return null; const r = rows.find(r => `fooddb:${r[8]}:${r[1]}|${r[0]}|${r[2]}` === id); return r ? rowToFood(r) : null; }

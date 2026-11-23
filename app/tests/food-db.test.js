@@ -22,6 +22,7 @@ test('음식 DB 묶기: 한식 1회분, 밀도 1.0 추정, 프랜차이즈 식�
              {name:'피자', maker:'피자집', basis:'g', per100:{kcal:250}, units:[]}],
   foodsRaw:[{name:'멥쌀', per100:{kcal:441, carbs:36.81, protein:20.27, fat:26.11}}],
   products:[{name:'프로틴', brand:'오빠닭', brandDisplay:'오빠닭(허닭)', group:'protein', confidence:'high', per100g:{kcal:114, carbs:10, protein:20, fat:1}, units:[{label:'전체 3360g', g:3360, default:true}]},
+            {name:'제로 젤리', brand:'젤리집', group:'lowsugar', confidence:'medium', flags:['kcalDensityLow'], per100g:{kcal:9, carbs:0, protein:0, fat:0.9}, units:[]},
             {name:'고구마 피자 L', brand:'피자알볼로', group:'franchise', per100g:{kcal:252, carbs:null, protein:8.6, fat:null}, units:[{label:'1회 제공량 1260g', g:1260, default:true}]}],
  });
  const by = n => rows.filter(r => r[0] === n);
@@ -30,6 +31,8 @@ test('음식 DB 묶기: 한식 1회분, 밀도 1.0 추정, 프랜차이즈 식�
  assert.equal(by('흰죽')[0][2], '인분');
  assert.equal(by('피자').length, 0);
  assert.deepEqual(by('프로틴')[0].slice(1, 5), ['오빠닭(허닭)', 'g', 0, 114]);
+ assert.equal(by('제로 젤리')[0][10], 1); assert.equal(by('프로틴')[0].length, 10);
+ assert.equal(rowToFood(by('제로 젤리')[0]).dbDoubt, true); assert.match(rowToFood(by('제로 젤리')[0]).aiEvidence.note, /확인 필요/);
  const pz = by('고구마 피자 L')[0]; assert.equal(pz[5], null); assert.equal(pz[7], null); assert.equal(pz[8], 'f');
 });
 
@@ -54,7 +57,7 @@ test('음식 DB 검색: 초성·한영 자판·정확도, 프리셋 계약', () 
 test('앱 번들 food-db.json이 있으면 형식 확인', {skip:!existsSync(new URL('../food-db.json', import.meta.url))}, () => {
  const j = JSON.parse(readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
  assert.ok(j.rows.length > 30000);
- for (const r of j.rows.slice(0, 2000)) { assert.equal(r.length, 10); assert.ok(typeof r[0] === 'string' && r[0]); assert.ok(r[4] !== null); }
+ for (const r of j.rows.slice(0, 2000)) { assert.ok(r.length === 10 || (r.length === 11 && r[10] === 1)); assert.ok(typeof r[0] === 'string' && r[0]); assert.ok(r[4] !== null); }
  setFoodRows(j.rows);
  for (const q of ['비빔밥', '김치찌개', '닭가슴살', '쌀밥', '아메리카노', '제육볶음']) assert.ok(searchFoodDB(q).length > 0, q);
 });

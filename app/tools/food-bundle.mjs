@@ -2,7 +2,8 @@
 // 원천: research_notes/마이로그 음식 데이터베이스/
 //   link/dishes_linked.json(한식 대표 328, 1회분 영양) · mfds/out/foods-dish.json(식약처 음식, 프랜차이즈 행 제외 — 제품 통합본에 이미 있음)
 //   mfds/out/foods-raw.json(원재료) · products_merged/products.json(제품: 닭가슴살·프로틴·저당·프랜차이즈, 식약처 프랜차이즈 후보 포함)
-// 행 형식(배열): [이름, 브랜드표시, 단위, 단위g(0=없음), kcal, 탄, 단, 지, 출처태그, 별칭(공백 구분)]
+// 행 형식(배열): [이름, 브랜드표시, 단위, 단위g(0=없음), kcal, 탄, 단, 지, 출처태그, 별칭(공백 구분), (값 확인 필요면 1)]
+//   값 확인 필요: 병합 검수에서 100g당/1회분 혼동 의심·열량 0인데 탄단지·재확인 미해결 등 값 자체가 미심쩍은 제품(열량 검산 차이만은 알룰로스·당알코올로 흔해 제외)
 //   단위가 g·ml이면 영양값은 100g(ml)당, 그 밖의 단위는 1단위당(앱의 음식 프리셋 계약과 같음). 빈 값은 null(0 아님).
 //   출처태그: k 한식 대표(1회분) · d 식약처 음식 · r 원재료 · p 제품 라벨 확인 · m 제품 식약처 값 · f 프랜차이즈 · e 추정(밀도 1.0 등)
 // 실행: node tools/food-bundle.mjs [연구폴더]  → app/food-db.json
@@ -26,13 +27,16 @@ export function unitName(label = '', basis = 'g'){
 }
 const per = (n, factor) => [r1(n.kcal == null ? null : n.kcal * factor), r1(n.carbs == null ? null : n.carbs * factor), r1(n.protein == null ? null : n.protein * factor), r1(n.fat == null ? null : n.fat * factor)];
 
+export const DOUBT_FLAGS = new Set(['kcalDensityLow', 'kcalDensityHigh', 'zeroKcalWithMacros', 'recheckUnresolved', 'calcCheckMismatch', 'fatPartsGtFat', 'sugarGtCarbs']);
+export const isDoubtful = p => (p.flags || []).some(f => DOUBT_FLAGS.has(typeof f === 'string' ? f : f?.code));
+
 export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products = []}){
   const rows = [], seen = new Set();
-  const push = (name, brand, unit, grams, vals, tag, aliases = []) => {
+  const push = (name, brand, unit, grams, vals, tag, aliases = [], doubt = false) => {
     if (!name || vals[0] == null) return;
     const key = `${brand}|${name}|${unit}`.toLocaleLowerCase('ko');
     if (seen.has(key)) return; seen.add(key);
-    rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' ')]);
+    rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(doubt ? [1] : [])]);
   };
   const dishAlias = new Map(foodsDish.filter(f => !f.maker).map(f => [f.name, f.search?.aliases || []]));
   const kNames = new Set();
@@ -60,9 +64,9 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
     const tag = p.group === 'franchise' ? 'f' : p.confidence === 'high' ? 'p' : 'm';
     const brand = p.brandDisplay || p.brand || '', aliases = [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])];
     // '전체 3360g'처럼 통 전체가 기본 단위면 1회분으로 쓰기엔 커서 100당으로 둔다
-    const whole = /^전체/.test(def?.label || '') && amount > 600;
-    if (unit && amount && amount !== 1 && !whole) push(p.displayName || p.name, brand, unit, amount, per(base, amount / 100), tag, aliases);
-    else push(p.displayName || p.name, brand, ml ? 'ml' : 'g', 0, per(base, 1), tag, aliases);
+    const whole = /^전체/.test(def?.label || '') && amount > 600, doubt = isDoubtful(p);
+    if (unit && amount && amount !== 1 && !whole) push(p.displayName || p.name, brand, unit, amount, per(base, amount / 100), tag, aliases, doubt);
+    else push(p.displayName || p.name, brand, ml ? 'ml' : 'g', 0, per(base, 1), tag, aliases, doubt);
   }
   return rows;
 }
