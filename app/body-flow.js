@@ -38,10 +38,15 @@ export function summary(points, goal, today){
  const last = points.at(-1), t = new Date(`${today}T12:00:00`);
  const within = days => points.filter(p => (t - new Date(`${p.date}T12:00:00`))/86400000 < days);
  const w7 = within(7), w30 = within(30);
- const change30 = w30.length>1 ? r1(last.w - w30[0].w) : null;
+ // 4.17.0 백 온 트랙 2단계: 14일 넘게 비었다가 다시 잰 경우, 공백 앞 체중과 비교하지 않는다('다시 시작한 날'부터 센다).
+ let restart = null;
+ for(let i = points.length-1; i > 0; i--){ if((new Date(`${points[i].date}T12:00:00`) - new Date(`${points[i-1].date}T12:00:00`))/86400000 >= 14){ restart = points[i]; break; } }
+ const since = restart && (t - new Date(`${restart.date}T12:00:00`))/86400000 < 30 ? restart : null;
+ const base = since ? w30.filter(p => p.date >= since.date) : w30;
+ const change30 = base.length>1 ? r1(last.w - base[0].w) : null;
  let eta = null;
- if(goal && w30.length>1){ const span = Math.max(1, (new Date(`${last.date}T12:00:00`) - new Date(`${w30[0].date}T12:00:00`))/86400000), perDay = (last.w - w30[0].w)/span, left = goal - last.w; if(perDay && Math.sign(perDay)===Math.sign(left)) eta = Math.ceil(Math.abs(left/perDay)/7); }
- return {now:last.w, nowDate:last.date, avg7:w7.length ? r1(avg(w7.map(p => p.w))) : null, change30, goal:goal||null, left:goal ? r1(goal - last.w) : null, eta};
+ if(goal && base.length>1){ const span = Math.max(1, (new Date(`${last.date}T12:00:00`) - new Date(`${base[0].date}T12:00:00`))/86400000), perDay = (last.w - base[0].w)/span, left = goal - last.w; if(perDay && Math.sign(perDay)===Math.sign(left)) eta = Math.ceil(Math.abs(left/perDay)/7); }
+ return {now:last.w, nowDate:last.date, restart:since?since.date:null, avg7:w7.length ? r1(avg(w7.map(p => p.w))) : null, change30, goal:goal||null, left:goal ? r1(goal - last.w) : null, eta};
 }
 
 const BODY = '#f2b49b', DOWN = '#6fd6a3', UP = '#ff7b93';
@@ -97,7 +102,7 @@ export function bodyOverviewHTML(db, {view = 'day', today}){
  const dayAvg = view==='day' ? rows.map((r, i) => r1(avg(rows.slice(Math.max(0, i-6), i+1).map(x => x.w)))) : [];
  const goalDir = goal && s ? Math.sign(goal - s.now) || -1 : -1;
  const stat = (k, v, cls = '') => `<div><small>${k}</small><b class="${cls}">${v}</b></div>`;
- return `<section class="section card bf-top">${s ? `<div class="bf-stats">${stat('지금', `${f1(s.now)}kg`)}${stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}${stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:'—')}${goal?stat(`목표 ${goal}kg`, s.left===0?'도착!':`${Math.abs(s.left)}kg ${s.left<0?'남음':'더'}${s.eta?` · 약 ${s.eta}주`:''}`):`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}
+ return `<section class="section card bf-top">${s ? `<div class="bf-stats">${stat('지금', `${f1(s.now)}kg`)}${stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}${s.restart?stat(s.change30!=null?'다시 시작 후':'다시 시작한 날', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:md(s.restart)):stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:'—')}${goal?stat(`목표 ${goal}kg`, s.left===0?'도착!':`${Math.abs(s.left)}kg ${s.left<0?'남음':'더'}${s.eta?` · 약 ${s.eta}주`:''}`):`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}
  <form id="goal-weight-form" class="bf-goal-form" hidden><label class="field">목표 체중(kg)<input name="goalWeight" type="number" inputmode="decimal" step="0.1" min="20" max="300" value="${esc(goal||'')}"></label><button class="button small">저장</button></form>
  <div class="bf-head"><b class="bf-title">체중</b><div class="df-tools"><div class="df-period" role="group" aria-label="보기 단위">${[['day','일간'],['week','주간'],['month','월간']].map(([k, l]) => `<button type="button" class="${k===view?'on':''}" data-bf-view="${k}" aria-pressed="${k===view}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
  ${mainChart(rows, view, goal, dayAvg)}

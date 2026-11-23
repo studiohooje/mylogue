@@ -125,3 +125,60 @@ export function masteryHTML(db) {
   const byLadder = new Map(); for (const x of f) { if (!byLadder.has(x.ladder) || byLadder.get(x.ladder).step < x.step) byLadder.set(x.ladder, x); }
   return `<section class="section card mastery-card"><h3>할 수 있게 된 것</h3><ul>${[...byLadder.values()].slice(0, 5).map(x => `<li><b>${esc(x.name)}</b> <small>${esc(x.ladder)} ${x.step}/${x.of}단계 · ${esc(x.date.slice(5).replace('-', '/'))} 처음</small></li>`).join('')}</ul><p class="hint">무게보다 '할 수 있게 된 동작'을 모아 봐요.</p></section>`;
 }
+
+// 4.17.0 ⑧ 다음 목표 제안: 같은 무게·같은 횟수가 세 번 이어지면 '한 번 더'를 제안한다(점수 아님, 무게가 안 늘면 횟수·세트로).
+export function nextGoals(db, date, limit = 2) {
+  const from = addDays(date, -27), byName = new Map();
+  for (const w of [...(db.workouts || [])].filter(w => done(w) && w.date >= from && w.date <= date).sort((a, b) => a.date.localeCompare(b.date)))
+    for (const e of w.exercises || []) {
+      if (e.kind === 'cardio') continue;
+      const sets = (e.sets || []).filter(s => s.completed !== false && Number(s.reps) > 0);
+      if (!sets.length) continue;
+      const top = sets.reduce((b, s) => { const kg = setWeightKg(s) ?? 0, bk = setWeightKg(b) ?? 0; return kg > bk || (kg === bk && s.reps > b.reps) ? s : b; });
+      const list = byName.get(e.name) || []; list.push({date: w.date, kg: setWeightKg(top) ?? 0, w: top.weight, unit: top.unit || 'kg', reps: top.reps, sets: sets.length}); byName.set(e.name, list);
+    }
+  const out = [];
+  for (const [name, list] of byName) {
+    const last3 = list.slice(-3);
+    if (last3.length < 3 || !last3.every(x => x.kg === last3[0].kg && x.reps === last3[0].reps)) continue;
+    const x = last3[2], unit = x.unit === 'kg' ? 'kg' : x.unit === 'lb' ? 'lb' : '단계';
+    const text = x.kg === 0 ? `${name} ${x.reps + 2}회 해 보기 (세 번 연속 ${x.reps}회)` : x.reps < 12 ? `${name} ${fmt(x.w)}${unit} ${x.reps + 1}회 해 보기 (세 번 연속 ${x.reps}회)` : `${name} 무게를 한 칸 올려 8~10회 해 보기 (세 번 연속 ${fmt(x.w)}${unit} ${x.reps}회)`;
+    out.push({name, text, last: x.date});
+  }
+  return out.sort((a, b) => b.last.localeCompare(a.last)).slice(0, limit);
+}
+// 4.17.0 ⑨ 지난주 한 장: 월~수요일에만, 지난주에 움직인 날이 있을 때. 잘한 점 하나, 다음 주 제안 하나.
+export function lastWeek(db, date) {
+  const mon = addDays(mondayOf(date), -7), sun = addDays(mon, 6), dow = (toD(date).getDay() + 6) % 7;
+  if (dow > 2) return null;
+  const ws = (db.workouts || []).filter(w => moved(w) && w.date >= mon && w.date <= sun);
+  if (!ws.length) return null;
+  const days = new Set(ws.map(w => w.date)).size, count = new Map();
+  for (const w of ws) for (const e of w.exercises || []) count.set(e.name, (count.get(e.name) || 0) + 1);
+  const fav = [...count].sort((a, b) => b[1] - a[1])[0];
+  const prs = newRecordsIn(db, mon, sun);
+  const good = prs ? `새 기록 ${prs}개를 세웠어요.` : fav && fav[1] >= 2 ? `${objP(fav[0])} ${fav[1]}번 꾸준히 했어요.` : `${days}일 움직였어요. 그 자체로 잘했어요.`;
+  const goal = nextGoals(db, sun, 1)[0];
+  return {mon, sun, days, good, next: goal ? goal.text : days >= 3 ? '지금 리듬 그대로 이어 가요.' : '이번 주는 하루만 더 움직여 봐요. 산책도 좋아요.'};
+}
+function newRecordsIn(db, mon, sun) {
+  let n = 0; const best = new Map();
+  for (const w of [...(db.workouts || [])].filter(done).sort((a, b) => a.date.localeCompare(b.date))) for (const e of w.exercises || []) {
+    if (e.kind === 'cardio') continue;
+    const top = Math.max(0, ...(e.sets || []).filter(s => s.completed !== false && s.reps > 0).map(s => estimate1RM(setWeightKg(s) ?? 0, s.reps)));
+    if (!top) continue;
+    const prev = best.get(e.name);
+    if (prev != null && top > prev && w.date >= mon && w.date <= sun) n++;
+    if (prev == null || top > prev) best.set(e.name, top);
+  }
+  return n;
+}
+const objP = w => { const c = String(w).slice(-1).charCodeAt(0); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '을' : '를'); };
+export function lastWeekHTML(info) {
+  if (!info) return '';
+  const md = s => `${Number(s.slice(5, 7))}/${Number(s.slice(8))}`;
+  return `<section class="section card last-week" aria-label="지난주 한 장"><div class="lw-head"><b>지난주 한 장</b><small>${md(info.mon)}~${md(info.sun)}</small><button type="button" class="icon-button" data-lastweek-hide="${info.mon}" aria-label="지난주 카드 닫기">×</button></div><p>움직인 날 <strong>${info.days}일</strong> · ${esc(info.good)}</p><p class="lw-next">다음 주 제안 · ${esc(info.next)}</p></section>`;
+}
+export function nextGoalsHTML(list) {
+  return list.length ? `<section class="section card next-goals"><b>다음에 해 볼 것</b><ul>${list.map(g => `<li>${esc(g.text)}</li>`).join('')}</ul><small>무게가 그대로여도 괜찮아요. 한 번 더 하는 것도 성장이에요.</small></section>` : '';
+}

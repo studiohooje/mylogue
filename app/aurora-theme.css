@@ -1513,3 +1513,12 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .ai-chat{display:grid;gap:8px;margin-top:12px}.ai-chat label{font-size:14px;font-weight:700}.ai-chat textarea,#ai-recipe-text{width:100%;font-size:16px;line-height:1.5;resize:vertical}
 .ai-qa{margin:10px 0 0;padding:10px 12px;border-left:3px solid var(--blue);background:#ffffff06;border-radius:0 12px 12px 0}.ai-qa b{font-size:14px}.ai-qa p{margin:4px 0 0;font-size:14px;line-height:1.6;word-break:keep-all}
 #ai-recipe-form{display:grid;gap:8px}.recipe-result{margin-top:14px}.recipe-result h4{margin:0 0 8px;font-size:16px}.mini-table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}.mini-table th,.mini-table td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}.mini-table td:last-child,.mini-table th:last-child{text-align:right}.mini-table tr.unmatched td{color:var(--muted)}
+/* 4.17.0 기록이 알려 준 나 */
+.journey .jr-stage{margin:12px 0 0;padding:12px 14px;border-radius:14px;background:#ffffff08}.journey .jr-stage b{font-size:13px;color:var(--ice)}.journey .jr-stage p{margin:4px 0 0;font-size:14px;line-height:1.6;word-break:keep-all;font-variant-numeric:tabular-nums}.journey small{color:var(--muted);font-size:12px}
+.jr-found{margin-top:14px;display:grid;gap:8px}.jr-found>b{font-size:14px}.jr-card{padding:12px 14px;border-radius:14px;border:1px solid var(--line)}.jr-card strong{font-size:15px}.jr-card p{margin:4px 0;font-size:14px;line-height:1.6;word-break:keep-all}
+.jr-tag{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:999px;font-size:12px;background:#ffffff10;color:var(--muted)}.jr-tag.strong{background:#2e5c7466;color:var(--ice)}.jr-next{margin-top:12px}
+/* 4.17.0 지난주 한 장 · 다음에 해 볼 것 */
+.last-week .lw-head{display:flex;align-items:center;gap:8px}.last-week .lw-head small{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}.last-week .lw-head .icon-button{margin-left:auto;min-width:44px;min-height:44px}
+.last-week p{margin:6px 0 0;font-size:14px;line-height:1.6;word-break:keep-all}.last-week .lw-next{color:var(--ice)}
+.next-goals ul{margin:6px 0;padding-left:18px;display:grid;gap:4px}.next-goals li{font-size:14px;word-break:keep-all}.next-goals small{color:var(--muted);font-size:12px}
+.ai-day-group{margin:8px 0;border:1px solid var(--line);border-radius:14px;padding:4px 10px}.ai-day-group>summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px}.ai-day-group>summary small{color:var(--muted);font-size:12px}

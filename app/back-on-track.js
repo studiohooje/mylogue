@@ -144,3 +144,19 @@ export function botRecords(fill, makeId, nowIso) {
   }
   return {meals, body, workouts};
 }
+
+// 4.17.0 2단계 복귀 모드: 7일 이상 비었다가 다시 기록을 시작한 뒤 첫 7일. 목표를 낮추고 말투를 부드럽게.
+export function returnMode(db, today) {
+  const dates = [...recordDates(db)].filter(d => d <= today).sort();
+  for (let i = dates.length - 1; i > 0; i--) {
+    const gap = daysBetween(dates[i - 1], dates[i]);
+    if (daysBetween(dates[i], today) > 6) return null;
+    if (gap >= 8) return {since: dates[i], gap: gap - 1, dayOf: daysBetween(dates[i], today) + 1};
+  }
+  return null;
+}
+export const returnGoal = (goal, rm) => rm ? Math.min(Math.max(1, goal | 0), 2) : goal;
+export function returnNoteHTML(rm, goal) {
+  if (!rm) return '';
+  return `<p class="hint return-note">다시 시작한 지 ${rm.dayOf}일째예요. 첫 주는 몸을 다시 익히는 주라 이번 주 목표를 ${returnGoal(goal, rm)}번으로 낮춰 뒀어요. 가볍게 해도 충분해요.</p>`;
+}
