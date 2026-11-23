@@ -140,3 +140,18 @@ export const actualDB=db=>({...db,meals:(db.meals||[]).filter(m=>!m.planned),wor
 export function plannedMeals(db,date){const list=(db.meals||[]).filter(m=>m.planned&&m.date===date);return {count:new Set(list.map(m=>m.mealGroupId||m.id)).size,totals:mealTotals(list)}}
 // 4.0.0 지금보다 1분 넘게 미래 시각이면 '예정'(어느 경로로 넣든: 직접·AI 검토함·붙여넣기·수정)
 export const isFuture=(t,now=Date.now())=>{const v=new Date(t).getTime();return Number.isFinite(v)&&v>now+60000};
+// 4.16.0 고침: 4.0.0~4.15.0 빠른 기록은 times.every(isFuture)가 배열 순번을 '현재 시각'으로 넘겨, 지난 세트도 '예정'으로 저장했다.
+// 세트(또는 유산소) 완료 시각이 모두 그 기록을 저장한 시각(+1분) 이전이면 실제로 한 운동이므로 예정 표시를 푼다.
+// 정말 미래 시각으로 잡아 둔 예정 운동은 완료 시각이 저장 시각보다 뒤라서 그대로 남는다.
+export function repairQuickPlanned(db,nowIso=new Date().toISOString()){
+ let changed=false;
+ const workouts=(db.workouts||[]).map(w=>{
+  if(w.planned!==true)return w;
+  const times=(w.exercises||[]).flatMap(e=>e.kind==='cardio'?[e.completedAt]:(e.sets||[]).map(s=>s.completedAt)).filter(Boolean);
+  const saved=new Date(w.updatedAt||w.createdAt||'').getTime();
+  if(!times.length||!Number.isFinite(saved))return w;
+  if(!times.every(t=>{const v=new Date(t).getTime();return Number.isFinite(v)&&v<=saved+60000}))return w;
+  changed=true;const {planned,...rest}=w;return {...rest,updatedAt:nowIso};
+ });
+ return changed?{...db,workouts}:db;
+}
