@@ -53,9 +53,9 @@ test('그림은 별칭으로도 찾고, 없으면 부위 글자로 채운다',()
 import {repairQuickPlanned,isFuture} from '../domain.js';
 test('빠른 기록이 예정으로 잘못 저장된 것을 바로잡는다',()=>{
  assert.equal(['2020-01-01T10:00'].every(t=>isFuture(t)),false);
- const bad={id:'q',date:'2026-11-20',planned:true,updatedAt:'2026-11-20T10:31:00.000Z',exercises:[{name:'벤치프레스',sets:[{weight:50,reps:5,completedAt:'2026-11-20T19:30'}]}]};
- // 저장 시각(UTC 10:31 = 한국 19:31)보다 앞선 세트 → 실제로 한 운동
- const future={id:'f',date:'2026-11-30',planned:true,updatedAt:'2026-11-20T10:31:00.000Z',exercises:[{name:'스쿼트',sets:[{weight:60,reps:5,completedAt:'2026-11-30T19:00'}]}]};
+ const savedAt=new Date(new Date('2026-11-20T19:30').getTime()+60000).toISOString();// 시간대와 무관하게 '세트 1분 뒤 저장'
+ const bad={id:'q',date:'2026-11-20',planned:true,updatedAt:savedAt,exercises:[{name:'벤치프레스',sets:[{weight:50,reps:5,completedAt:'2026-11-20T19:30'}]}]};
+ const future={id:'f',date:'2026-11-30',planned:true,updatedAt:savedAt,exercises:[{name:'스쿼트',sets:[{weight:60,reps:5,completedAt:'2026-11-30T19:00'}]}]};
  const plan={id:'p',date:'2026-11-21',planned:true,title:'계획',exercises:[]};
  const out=repairQuickPlanned({workouts:[bad,future,plan]},'2026-11-23T00:00:00.000Z');
  assert.equal(out.workouts[0].planned,undefined);
