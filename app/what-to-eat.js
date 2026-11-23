@@ -41,6 +41,7 @@ export function suggestMeals(remain, {mood = 'balance', place = 'out', limit = 6
   const out = [];
   for (const r of rows) {
     if (placeOf(r) !== place) continue;
+    if (r[10]) continue; // 값 확인 필요로 표시된 행은 추천하지 않음
     const s = serving(r); if (!s || s.kcal < 80) continue;
     if (place === 'store' && /프로틴|단백질|뉴케어/.test(s.name) && !/도시락|닭가슴살|샐러드|볶음밥|김밥/.test(s.name)) continue;
     if (place === 'store' && (s.kcal > 650 || !STORE_NAME.test(s.name))) continue; // 편의점은 한 개 단위 끼니만(포장 전체 값 제외)

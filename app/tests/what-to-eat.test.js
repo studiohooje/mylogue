@@ -44,3 +44,8 @@ test('화면: 잠금·불러오는 중·결과 없음·결과', () => {
   const r = suggestMeals({kcal: 700, protein: 40}, {mood: 'balance', place: 'home', rows});
   assert.match(whatToEatHTML({mood: 'balance', place: 'home'}, {kcal: 700, protein: 40}, {results: r}), /data-wte-add="0"/);
 });
+test('값 확인 필요 행은 추천하지 않음', () => {
+  const rows2 = [['수상한 족발', '', '인분', 0, 528, 10, 55, 30, 'k', '', 1], ['족발', '', '인분', 0, 528, 10, 55, 30, 'k', '', 0]];
+  const r = suggestMeals({kcal: 700, protein: 40}, {mood: 'balance', place: 'delivery', rows: rows2});
+  assert.deepEqual(r.map(x => x.name), ['족발']);
+});

@@ -109,3 +109,4 @@
 .quick-palette .quick-picked-actions{display:flex;align-items:center;gap:6px}
 .chip.ghost{background:transparent;border-style:dashed;color:#aec4d9;cursor:default}
 .quick-picked-actions .qp-qty .qp-step{border:1px solid #426481!important;background:#1d3b56!important;color:#e7f4ff!important}
+.combo-offer{display:grid;gap:8px;padding:12px 14px;margin-bottom:8px;border-radius:12px;background:#2e5c7433;border:1px solid #8ce4e066;font-size:14px;line-height:1.55;word-break:keep-all}.combo-actions{display:flex;gap:8px}.combo-actions .button{min-height:40px}
