@@ -3,6 +3,7 @@
 // 빈 값은 null/빈 문자열(0이 아님). '치료·교정' 같은 의료 표현은 앱이 쓰지 않는다.
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 import {PILATES_DICT} from './pilates-moves-data.js';
+import {pilatesArtHTML} from './pilates-art.js';
 import {PILATES_TEMPLATES} from './templates-data.js';
 export const APPARATUS = ['매트','리포머','리포머 타워','캐딜락','체어','래더 배럴','스파인 코렉터','아크 배럴','기타'];
 export const SPRINGS = [['빨강','#e5484d'],['파랑','#3e7bfa'],['노랑','#f2c94c'],['초록','#30a46c'],['검정','#2b2b2b'],['회색','#9aa0a6'],['흰색','#f4f4f4'],['보라','#8e4ec6']];
@@ -89,7 +90,7 @@ export const springChipsHTML = m => m.springs?.length ? `<span class="pm-springs
 // 읽기 카드(회원 확인함·기록 보기)
 export function movesListHTML(moves=[], {cue=true}={}){
  if(!moves.length) return '';
- return `<ol class="pm-list">${moves.map(m => `<li><b>${esc(m.name)}</b> <small>${esc([m.apparatus!=='기타'?m.apparatus:'', [m.reps?`${m.reps}회`:'', m.sec?`${m.sec}초`:'', m.side&&m.side!=='양쪽'?m.side:''].filter(Boolean).join(' '), m.level?`${m.level}단계`:''].filter(Boolean).join(' · '))}</small> ${springChipsHTML(m)}${m.setup?`<small class="pm-setup">세팅 ${esc(m.setup)}</small>`:''}${m.props?.length?`<small class="pm-setup">${esc(m.props.join('·'))}</small>`:''}${cue&&m.cue?`<p class="pm-cue">“${esc(m.cue)}”</p>`:''}${m.obs?`<small class="pm-obs${m.obs==='불편감 있음'?' warn':''}">${esc(m.obs)}${m.area?.length?` · ${esc(m.area.join(', '))}`:''}</small>`:''}</li>`).join('')}</ol>`;
+ return `<ol class="pm-list">${moves.map(m => `<li>${pilatesArtHTML(m,'ex-art-md')}<b>${esc(m.name)}</b> <small>${esc([m.apparatus!=='기타'?m.apparatus:'', [m.reps?`${m.reps}회`:'', m.sec?`${m.sec}초`:'', m.side&&m.side!=='양쪽'?m.side:''].filter(Boolean).join(' '), m.level?`${m.level}단계`:''].filter(Boolean).join(' · '))}</small> ${springChipsHTML(m)}${m.setup?`<small class="pm-setup">세팅 ${esc(m.setup)}</small>`:''}${m.props?.length?`<small class="pm-setup">${esc(m.props.join('·'))}</small>`:''}${cue&&m.cue?`<p class="pm-cue">“${esc(m.cue)}”</p>`:''}${m.obs?`<small class="pm-obs${m.obs==='불편감 있음'?' warn':''}">${esc(m.obs)}${m.area?.length?` · ${esc(m.area.join(', '))}`:''}</small>`:''}</li>`).join('')}</ol>`;
 }
 
 // 코치 수업 입력의 필라테스 줄(rows[i].kind==='pilates')
@@ -99,7 +100,7 @@ export function pilatesRowHTML(r, i, {lastOf}={}){
  const mv = (m, j) => {
   const more = !!(m.setup || m.props?.length || m.cue || m.obs || m.side || m.level);
   const last = lastOf?.(m.name);
-  return `<div class="pm-move" data-pm="${i}:${j}"><div class="pm-line"><span class="pm-no">${j+1}</span><input data-m="name" list="pm-move-names" value="${esc(m.name)}" placeholder="동작(예: 풋워크)" aria-label="동작 이름" data-pm-name="${i}:${j}"><select data-m="apparatus" aria-label="기구">${APPARATUS.map(a => `<option ${m.apparatus===a?'selected':''}>${a}</option>`).join('')}</select><button type="button" class="text-button" data-pm-del="${i}:${j}" aria-label="동작 지우기">×</button></div>${moveInfoHTML(m)}
+  return `<div class="pm-move" data-pm="${i}:${j}"><div class="pm-line"><span class="pm-no">${j+1}</span>${m.name?pilatesArtHTML(m,'ex-art-sm'):''}<input data-m="name" list="pm-move-names" value="${esc(m.name)}" placeholder="동작(예: 풋워크)" aria-label="동작 이름" data-pm-name="${i}:${j}"><select data-m="apparatus" aria-label="기구">${APPARATUS.map(a => `<option ${m.apparatus===a?'selected':''}>${a}</option>`).join('')}</select><button type="button" class="text-button" data-pm-del="${i}:${j}" aria-label="동작 지우기">×</button></div>${moveInfoHTML(m)}
  ${m.apparatus==='매트'?'':`<div class="pm-springrow" role="group" aria-label="스프링(누를 때마다 개수 +1, 4개 다음은 0)">${SPRINGS.map(([c]) => { const n = (m.springs||[]).find(s => s.c===c)?.n||0; return `<button type="button" class="pm-spring${n?' on':''}" data-pm-spring="${i}:${j}:${c}" aria-label="${c} 스프링 ${n}개">${springDot(c)}${n?`<b>${n}</b>`:''}</button>`; }).join('')}<select data-m="load" aria-label="저항 정도"><option value="">저항</option>${LOADS.map(l => `<option ${m.load===l?'selected':''}>${l}</option>`).join('')}</select></div>`}
  <div class="pm-line pm-amt"><label>회<input data-m="reps" type="number" inputmode="numeric" min="1" max="500" value="${esc(m.reps??'')}"></label><label>초<input data-m="sec" type="number" inputmode="numeric" min="1" max="3600" value="${esc(m.sec??'')}"></label><label>단계<select data-m="level"><option value="">—</option>${[1,2,3,4,5].map(n => `<option ${Number(m.level)===n?'selected':''}>${n}</option>`).join('')}</select></label></div>
  ${last && !m.springs?.length && !m.setup ? `<button type="button" class="text-button pm-last" data-pm-fill="${i}:${j}">지난번 값 넣기 · ${esc(springText(last)||'')}${last.setup?` · ${esc(last.setup)}`:''}</button>` : ''}

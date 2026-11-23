@@ -1498,3 +1498,6 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 @media (max-width:420px){.wh-dot{width:24px;height:24px}}
 @media (max-width:380px){.section.card.week-hero{gap:12px}.wh-ring{width:88px;height:88px}.wh-text h3{font-size:16px}.wh-dot{width:24px;height:24px}}
 @media (max-width:650px){.diary-row{flex-wrap:wrap;row-gap:6px}.diary-art{flex-basis:100%}}
+/* 4.17.0 필라테스 동작 자세 그림 */
+.pm-list li>.ex-art-md{width:40px;height:40px;vertical-align:middle;margin:0 8px 0 0;border-radius:10px;background:#ffffff06}
+.pm-line>.ex-art-sm{margin:0 2px 0 0;flex:none}
