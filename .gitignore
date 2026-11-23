@@ -37,3 +37,4 @@ app/exercise-art/
 /GPT Source/
 /.claude/
 /.agents/
+.claude/settings.local.json
