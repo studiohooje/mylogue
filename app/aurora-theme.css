@@ -1626,3 +1626,6 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .pb-out{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:14px 0}
 .pb-sess{padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#ffffff06}.pb-sess b{font-size:15px}.pb-sess ol{margin:6px 0 0;padding-left:20px;display:grid;gap:4px}.pb-sess li{font-size:14px}.pb-sess small{color:var(--muted);font-size:12px;margin-left:4px}
 .pb #pb-save{width:100%;min-height:48px;margin-top:8px}
+/* 4.17.0 흔들림 설명기 */
+.weight-why .ww-head{margin:8px 0;font-size:16px}.ww-list{margin:4px 0 8px;padding-left:18px;display:grid;gap:6px}.ww-list li{font-size:14px;line-height:1.6;word-break:keep-all}
+.phase-badge{min-height:44px}
