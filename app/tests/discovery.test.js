@@ -66,3 +66,12 @@ test('2차 발견: 아침 거른 날·운동 다음 날 체중·단백질과 포
   const ids = discoveries(db, ymd(START2 + 59 * DAY)).map(x => x.id);
   assert.ok(ids.includes('skip-breakfast'), ids.join()); assert.ok(ids.includes('after-workout-weight'), ids.join()); assert.ok(ids.includes('protein-full'), ids.join());
 });
+import {buildReport} from '../analysis-report.js';
+import {recommendWorkout} from '../model-features.js';
+test('예정 기록은 분석에 넣지 않는다(리포트·제안), 유산소만 한 날도 꾸준함 칸을 칠한다', () => {
+  const db = {settings: {proteinGoal: 100}, meals: [{date: '2026-11-20', protein: 120, planned: true}], workouts: [{date: '2026-11-20', planned: true, exercises: [{name: '스쿼트', part: '하체', sets: [{weight: 100, reps: 5}]}]}, {date: '2026-11-21', exercises: [{name: '필라테스 리포머', kind: 'cardio', durationMin: 50, sets: []}]}], body: [], checkins: {}};
+  const r = buildReport(db, new Date('2026-11-22T12:00:00'));
+  assert.equal(r.week.sessions, 1); assert.equal(r.diet.mealDays, 0);
+  assert.ok(r.grid.find(c => c.date === '2026-11-21').sets > 0);
+  const rec = recommendWorkout(db, '2026-11-22'); assert.ok(rec);
+});

@@ -40,7 +40,7 @@ export function recommendWorkout(db,date){
  for(const k of ['sleep','energy','soreness'])if(checkin?.[k]==null)missing.push(({sleep:'수면',energy:'에너지',soreness:'근육통'})[k]);
  if(checkin?.pain==null)missing.push('통증 여부');
  const loads=new Map(),history=[];let missingRPE=0;
- for(const w of db.workouts||[]){const age=Math.round((new Date(date+'T12:00:00')-new Date(w.date+'T12:00:00'))/86400000);if(age<0||age>13)continue;
+ for(const w of db.workouts||[]){if(w.planned)continue;/* 4.17.0 예정 운동은 피로에 넣지 않는다 */const age=Math.round((new Date(date+'T12:00:00')-new Date(w.date+'T12:00:00'))/86400000);if(age<0||age>13)continue;
  for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const complete=(e.sets||[]).filter(s=>s.completed!==false&&s.type!=='워밍업');if(!complete.length)continue;history.push({w,e,complete,age});
  const primary=e.primaryMuscleIds?.length?e.primaryMuscleIds:EXERCISE_CATALOG.find(x=>x.id===e.exerciseId||x.name===e.name)?.primaryMuscleIds||[];
  for(const s of complete){if(s.rpe==null)missingRPE++;const effort=s.rpe==null?1:Math.max(.5,Math.min(1.25,s.rpe/8));for(const [ids,factor] of [[primary,1],[e.secondaryMuscleIds||[],.5]])for(const id of ids){const load=loads.get(id)||{muscleId:id,score:0,sets:0,lastDate:w.date};load.score+=factor*effort*Math.exp(-age/3);load.sets+=factor;if(w.date>load.lastDate)load.lastDate=w.date;loads.set(id,load);}}}}

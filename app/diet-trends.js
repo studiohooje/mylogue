@@ -61,16 +61,17 @@ function tile(series, k, s, big){
  const goal = k==='score' ? null : k==='calories' ? Number(s.calorieGoal)||null : Number(s[`${k}Goal`])||null;
  const lo = k==='score' ? 80 : goal ? goal*0.9 : null, hi = k==='score' ? 100 : goal ? goal*1.1 : null;
  const vals = series.map(x => x[k]), rec = vals.filter(v => v!=null), last = series.at(-1), v = last[k], n = series.length;
- const hit = lo!=null ? rec.filter(x => x>=lo && x<=hi).length : null;
+ const live = last.date===ymd(new Date()) && new Date().getHours()<21, done = live ? series.slice(0, -1).map(x => x[k]).filter(v => v!=null) : rec;
+ const hit = lo!=null ? done.filter(x => x>=lo && x<=hi).length : null;
  const tips = series.map(x => x[k]==null ? `<span class="d">${md(x.date)}</span><b>기록 없음</b>` : `<span class="d">${md(x.date)}</span><b>${n0(x[k])}${unit}</b>${lo!=null?`<span class="s">${x[k]<lo?'범위보다 아래':x[k]>hi?'범위보다 위':'범위 안'}</span>`:''}${k==='score'&&x.parts?.protein!=null?`<span class="d">칼로리 ${x.parts.calories} · 단백질 ${x.parts.protein} · 탄수 ${x.parts.carbs} · 지방 ${x.parts.fat}</span>`:goal?`<span class="d">목표의 ${Math.round(x[k]/goal*100)}%</span>`:''}`);
  const wk = Math.round(n/7), dateL = n<=7 ? md(series[0].date) : `${wk}주 전`, dateR = n<=7 ? '이 날' : '이번 주';
  const chart = rec.length ? lineChart({vals, lo, hi, color:c, h:big ? (k==='score' ? 96 : 124) : 70, tips, dateL:big?dateL:'', dateR:big?dateR:'', label:`${label} ${n}일 그래프`}) : '<p class="hint df-empty">이 기간에는 기록이 없어요.</p>';
  const head = `<div class="df-tt"><span class="df-nm"><i></i>${label}</span>${goal?`<span class="df-goal">목표 ${n0(goal)}${unit}</span>`:''}</div>`;
  const value = k==='score'
-  ? (v==null ? `<div class="df-tv"><b>—</b><small>${Number(s.calorieGoal) ? '이 날 기록이 없어요' : '목표 칼로리를 정하면 점수가 나와요'}</small></div>` : `<div class="df-tv"><b>${v}</b><small>점</small><span class="df-word">${scoreWord(v)}</span></div>`)
+  ? (v==null ? `<div class="df-tv"><b>—</b><small>${Number(s.calorieGoal) ? '이 날 기록이 없어요' : '목표 칼로리를 정하면 점수가 나와요'}</small></div>` : `<div class="df-tv"><b>${v}</b><small>점</small><span class="df-word">${last.date===ymd(new Date())&&new Date().getHours()<21?'오늘은 진행 중':scoreWord(v)}</span></div>`)
   : `<div class="df-tv"><b>${v==null?'—':n0(v)}</b><small>${unit}${v!=null&&goal?` · ${Math.round(v/goal*100)}%`:''}</small></div>`;
  const parts = k==='score' && last.parts?.protein!=null ? `<div class="df-parts" aria-label="이 날 점수 구성">${PARTS.map(([pk]) => `<i style="width:${last.parts[pk]}%;background:${color(pk)}"></i>`).join('')}</div><div class="df-pl">${PARTS.map(([pk, pl, mx]) => `<span style="--pc:${color(pk)}">${pl} ${last.parts[pk]}/${mx}</span>`).join('')}</div>` : '';
- const hitRow = hit!=null && rec.length ? `<div class="df-hit"><span>${k==='score'?'80점 이상':'범위 안'} ${hit}/${rec.length}일</span><span class="df-hbar"><i style="width:${Math.round(hit/rec.length*100)}%"></i></span></div>` : '';
+ const hitRow = hit!=null && done.length ? `<div class="df-hit"><span>${k==='score'?'80점 이상':'범위 안'} ${hit}/${done.length}일${live?' (오늘 빼고)':''}</span><span class="df-hbar"><i style="width:${Math.round(hit/done.length*100)}%"></i></span></div>` : '';
  return `<div class="df-tile${big?' big':''}" style="--c:${c}">${head}${value}${parts}${chart}${hitRow}</div>`;
 }
 

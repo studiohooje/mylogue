@@ -23,7 +23,7 @@ const best1RM = ex => Math.max(0, ...done(ex).map(s => estimate1RM(setWeightKg(s
 const exKey = e => e.exerciseId || e.name;
 
 export function buildReport(db, now=new Date(), {focus=''}={}){
- const today = ymd(now), ws = (db.workouts||[]).filter(w => w.date<=today && !w.rest);
+ const today = ymd(now), ws = (db.workouts||[]).filter(w => w.date<=today && !w.rest && !w.planned);
  const inRange = (from, to) => ws.filter(w => w.date>=ymd(from) && w.date<=ymd(to));
  const sum = list => list.reduce((s, w) => { const t = workoutTotals(w); s.sets += t.sets; s.volume += t.volume; return s; }, {sets:0, volume:0});
  // 이번 주(최근 7일)와 지난주
@@ -62,7 +62,7 @@ export function buildReport(db, now=new Date(), {focus=''}={}){
  const pts = weekly.filter(x => x.e1rm > 0);
  const growth = {name:gName, names, points:pts, change4w: pts.length>=2 ? Math.round((pts.at(-1).e1rm - (weekly.slice(0, 8).filter(x => x.e1rm).at(-1)?.e1rm ?? pts[0].e1rm))*10)/10 : null};
  // 꾸준함: 12주 × 7일
- const daySets = new Map(); for(const w of ws){ const t = workoutTotals(w); daySets.set(w.date, (daySets.get(w.date)||0) + t.sets); }
+ const daySets = new Map(); for(const w of ws){ const t = workoutTotals(w); /* 유산소·필라테스만 한 날도 '움직인 날'로 칠한다 */ daySets.set(w.date, (daySets.get(w.date)||0) + Math.max(t.sets, (w.exercises||[]).length ? 1 : 0)); }
  const grid = []; const g0 = addDays(weekStart(now), -77); for(let i = 0; i < 84; i++){ const d = ymd(addDays(g0, i)); grid.push({date:d, sets:d>today ? -1 : daySets.get(d)||0}); }
  const monthDays = new Set(ws.filter(w => w.date>=monthStart).map(w => w.date)).size;
  // 이번 달 카드
@@ -71,7 +71,7 @@ export function buildReport(db, now=new Date(), {focus=''}={}){
  const topEx = [...mFreq.entries()].sort((a, b) => b[1]-a[1])[0]?.[0] || '';
  // 식단·몸 연결(최근 30일)
  const d30 = ymd(addDays(now, -29)), goal = Number(db.settings?.proteinGoal)||0;
- const proteinByDay = new Map(); for(const m of db.meals||[]) if(m.date>=d30 && m.date<=today) proteinByDay.set(m.date, (proteinByDay.get(m.date)||0) + (Number(m.protein)||0));
+ const proteinByDay = new Map(); for(const m of db.meals||[]) if(m.date>=d30 && m.date<=today && !m.planned) proteinByDay.set(m.date, (proteinByDay.get(m.date)||0) + (Number(m.protein)||0));
  const proteinHit = goal ? [...proteinByDay.values()].filter(v => v >= goal*0.95).length : null;
  const bodyPts = (db.body||[]).filter(b => b.date>=d30 && b.date<=today && b.skeletalMuscle!=null).sort((a, b) => a.date.localeCompare(b.date));
  const smmChange = bodyPts.length>=2 ? Math.round((bodyPts.at(-1).skeletalMuscle - bodyPts[0].skeletalMuscle)*10)/10 : null;
