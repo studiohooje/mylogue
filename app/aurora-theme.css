@@ -1650,3 +1650,9 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .ex-know[open]>summary::after{transform:rotate(-135deg)}
 .ex-know-body{padding:0 14px 12px}.ex-know-body p{margin:6px 0}.ex-know-body .sub{margin-top:10px;font-size:13px;color:var(--muted)}
 .ex-know-body .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+/* 4.17.0 헬스 커넥트 가져오기 미리보기 */
+.hc-form{display:grid;gap:12px}.hc-list{display:grid;gap:8px}
+.hc-row,.hc-auto{display:flex;gap:12px;align-items:center;min-height:52px;padding:8px 14px;border-radius:14px;background:#ffffff08;border:1px solid #ffffff12;word-break:keep-all}
+.hc-row input,.hc-auto input{width:22px;height:22px;flex:none;accent-color:#8ce4e0}
+.hc-row span,.hc-auto span{display:grid;gap:2px;font-size:15px}.hc-row small,.hc-auto small{font-size:13px;color:var(--muted)}
+.hc-row:has(input:disabled){opacity:.55}

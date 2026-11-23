@@ -14,6 +14,8 @@ import android.view.WindowInsetsController;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(WidgetPlugin.class);
+        registerPlugin(HealthPlugin.class);
         super.onCreate(savedInstanceState);
         useLightStatusBarIcons(false);
         deliverShare(getIntent(), 1500);

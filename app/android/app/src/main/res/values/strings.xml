@@ -7,4 +7,5 @@
     <string name="sc_body">체중 기록</string>
     <string name="sc_meal">식사 기록</string>
     <string name="sc_workout">운동 기록</string>
+    <string name="widget_description">오늘 기록 한 줄과 체중·식단·운동 바로 기록</string>
 </resources>

@@ -23,4 +23,15 @@
         <item name="android:statusBarColor">#0b0a10</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+    <!-- 4.17.0 홈 위젯 버튼 -->
+    <style name="WidgetButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:background">@drawable/widget_btn</item>
+    </style>
 </resources>
