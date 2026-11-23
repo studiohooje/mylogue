@@ -116,3 +116,12 @@ export function resultCardHTML(db, workout, {burn = null} = {}) {
   const parts = [...new Set((workout.exercises || []).map(e => e.kind === 'cardio' ? '유산소' : e.part).filter(Boolean))];
   return `<div class="result-card"><p class="rc-eyebrow">${esc(workout.date)} · 운동 기록 완료</p><h2>오늘도 했어요. 잘했어요.</h2><div class="rc-art">${names.slice(0, 4).map(e => exArtHTML(e, 'ex-art-md', {fallback: true})).join('')}</div><ul class="rc-stats">${t.sets ? `<li><b>${t.sets}</b>세트</li>` : ''}${t.cardioMinutes ? `<li><b>${fmt(t.cardioMinutes, 0)}</b>분 유산소</li>` : ''}${burn?.kcal != null ? `<li>약 <b>${fmt(burn.kcal, 0)}</b>kcal</li>` : ''}${parts.length ? `<li>${parts.map(esc).join(' · ')}</li>` : ''}</ul>${prs.length ? `<div class="rc-pr"><p>새 기록!</p>${prs.map(p => `<p><b>${esc(p.name)}</b> ${fmt(p.before)} → <em>${fmt(p.best)}kg</em></p>`).join('')}</div>` : ''}<button type="button" class="button wide" id="close">확인</button></div>`;
 }
+
+// 4.17.0 동작 숙련: 단계 사다리 종목을 처음 해낸 날(점수·순위 없음, '할 수 있게 된 것')
+import {firstTimes} from './exercise-knowledge.js';
+export function masteryHTML(db) {
+  const f = firstTimes(db.workouts || []).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  if (!f.length) return '';
+  const byLadder = new Map(); for (const x of f) { if (!byLadder.has(x.ladder) || byLadder.get(x.ladder).step < x.step) byLadder.set(x.ladder, x); }
+  return `<section class="section card mastery-card"><h3>할 수 있게 된 것</h3><ul>${[...byLadder.values()].slice(0, 5).map(x => `<li><b>${esc(x.name)}</b> <small>${esc(x.ladder)} ${x.step}/${x.of}단계 · ${esc(x.date.slice(5).replace('-', '/'))} 처음</small></li>`).join('')}</ul><p class="hint">무게보다 '할 수 있게 된 동작'을 모아 봐요.</p></section>`;
+}

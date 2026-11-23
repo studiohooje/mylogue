@@ -1503,3 +1503,5 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .pm-line>.ex-art-sm{margin:0 2px 0 0;flex:none}
 .micro-line{margin:8px 0 0;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.micro-line b{color:var(--text);font-weight:700}.micro-line small{font-size:12px}
 .share-row{display:grid;gap:6px;margin:8px 0}.share-row small{color:var(--muted);font-size:12px}.share-note{color:var(--blue)!important}
+.ex-ladder{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:13px;margin:8px 0}.ex-ladder b{margin-right:4px}.ex-ladder span{padding:2px 8px;border-radius:999px;background:#ffffff0a;color:var(--muted)}.ex-ladder span.on{background:#8ce4e033;color:var(--text);font-weight:700}.ex-ladder i{font-style:normal;color:var(--muted)}
+.mastery-card ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:6px}.mastery-card li{font-size:14px}.mastery-card small{color:var(--muted);font-size:12px;margin-left:4px}
