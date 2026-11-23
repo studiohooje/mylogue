@@ -15,6 +15,8 @@ export const ACTIVITY = [
  ['athlete',   1.9,  '아주 많이 움직여요','몸 쓰는 일 + 매일 운동'],
 ];
 export const GOALS = [['lose','감량','체지방을 줄이고 싶어요'],['maintain','유지','지금 체중을 지키며 몸을 다듬고 싶어요'],['gain','증량','근육·체중을 늘리고 싶어요']];
+// 4.17.0 건강 상태(선택): 코칭이 감량·단백질 제안을 멈추고 의료진 안내를 먼저 하도록. 진단이 아니라 본인이 알려 주는 정보.
+export const CAUTIONS = [['pregnant','임신 중'],['breastfeeding','수유 중'],['kidney','콩팥(신장) 질환'],['diabetes-med','혈당약(인슐린 등) 사용']];
 export const DIETS = [['glp1','GLP-1 계열 약 사용 중','위고비·마운자로 등'],['keto','저탄고지·키토',''],['if','간헐적 단식',''],['vegetarian','채식',''],['highprotein','고단백 위주로 먹어요',''],['none','특별히 없어요','']];
 
 export const PRESETS = {
@@ -37,6 +39,7 @@ export function cleanProfile(p={}){
   activity: ACTIVITY.some(a=>a[0]===p.activity) ? p.activity : 'light',
   goal: GOALS.some(g=>g[0]===p.goal) ? p.goal : 'maintain',
   diets: Array.isArray(p.diets) ? [...new Set(p.diets.filter(d => DIETS.some(x=>x[0]===d) && d!=='none'))] : [],
+  cautions: Array.isArray(p.cautions) ? [...new Set(p.cautions.filter(c => CAUTIONS.some(x=>x[0]===c)))] : [],
  };
 }
 
@@ -143,7 +146,7 @@ export function goalWizardHTML(st){
  if(step==='basic') return `<div class="onb gw">${top}<p class="onb-q">유지 칼로리를 계산할게요</p><p class="onb-s">대략적인 계산에만 쓰고, 언제든 바꿀 수 있어요.</p><form id="gw-basic" class="gw-basic"><div class="pref-seg" role="radiogroup" aria-label="계산용 성별">${[['male','남성'],['female','여성'],['none','선택 안 함']].map(([v,t])=>`<button type="button" class="${p.sex===v?'on':''}" data-gw-sex="${v}" aria-pressed="${p.sex===v}">${t}</button>`).join('')}</div><div class="gw-fields"><label class="field">나이<input name="age" type="number" inputmode="numeric" min="14" max="100" value="${h(p.age??'')}" placeholder="예: 32" required></label><label class="field">키 cm<input name="heightCm" type="number" inputmode="decimal" min="120" max="230" step="0.1" value="${h(p.heightCm??'')}" placeholder="예: 170" required></label><label class="field">체중 kg<input name="weightKg" type="number" inputmode="decimal" min="30" max="300" step="0.1" value="${h(p.weightKg??'')}" placeholder="예: 68" required></label></div><p class="hint">성별은 칼로리 계산에만 써요. ‘선택 안 함’이면 남녀 중간값으로 계산해요.</p></form>${nav(st)}</div>`;
  if(step==='activity') return `<div class="onb gw">${top}<p class="onb-q">평소에 얼마나 움직여요?</p><div class="onb-opts">${ACTIVITY.map(([v,,t,d])=>opt('data-gw-activity',v,p.activity===v,t,d)).join('')}</div>${nav(st)}</div>`;
  if(step==='goal') return `<div class="onb gw">${top}<p class="onb-q">목표가 뭐예요?</p><div class="onb-opts">${GOALS.map(([v,t,d])=>opt('data-gw-goal',v,p.goal===v,t,d)).join('')}</div>${nav(st)}</div>`;
- if(step==='diet') return `<div class="onb gw">${top}<p class="onb-q">해당되는 게 있나요?</p><p class="onb-s">여러 개 골라도 돼요. 제안할 때 참고해요.</p><div class="onb-chips">${DIETS.map(([v,t,d])=>`<button type="button" class="onb-chip ${(v==='none'?!p.diets.length:p.diets.includes(v))?'on':''}" data-gw-diet="${v}" aria-pressed="${v==='none'?!p.diets.length:p.diets.includes(v)}">${t}${d?` <small>${d}</small>`:''}</button>`).join('')}</div>${p.diets.includes('glp1')?'<p class="gw-care">약을 쓰는 중이라면 식단·체중 목표는 처방한 의료진의 안내가 먼저예요. 마이로그의 제안은 참고용이에요.</p>':''}${nav(st)}</div>`;
+ if(step==='diet') return `<div class="onb gw">${top}<p class="onb-q">해당되는 게 있나요?</p><p class="onb-s">여러 개 골라도 돼요. 제안할 때 참고해요.</p><div class="onb-chips">${DIETS.map(([v,t,d])=>`<button type="button" class="onb-chip ${(v==='none'?!p.diets.length:p.diets.includes(v))?'on':''}" data-gw-diet="${v}" aria-pressed="${v==='none'?!p.diets.length:p.diets.includes(v)}">${t}${d?` <small>${d}</small>`:''}</button>`).join('')}</div><p class="onb-s gw-caut-q">건강 상태(선택) · 해당되면 감량 제안 대신 안전한 안내를 먼저 드려요</p><div class="onb-chips">${CAUTIONS.map(([v,t])=>`<button type="button" class="onb-chip ${(p.cautions||[]).includes(v)?'on':''}" data-gw-caution="${v}" aria-pressed="${(p.cautions||[]).includes(v)}">${t}</button>`).join('')}</div>${p.diets.includes('glp1')?'<p class="gw-care">약을 쓰는 중이라면 식단·체중 목표는 처방한 의료진의 안내가 먼저예요. 마이로그의 제안은 참고용이에요.</p>':''}${nav(st)}</div>`;
  if(step==='calories'){
   const list = calorieOptions(p);
   return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p><p class="onb-s">추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal</p><p class="onb-s gw-basis">2025 한국인 영양소 섭취기준의 에너지필요추정량 식으로 계산한 대략값이에요. 2~3주 체중 변화를 보고 조정하세요.</p><div class="onb-opts">${list.map(o=>opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',)).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
