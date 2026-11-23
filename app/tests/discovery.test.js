@@ -75,3 +75,10 @@ test('예정 기록은 분석에 넣지 않는다(리포트·제안), 유산소�
   assert.ok(r.grid.find(c => c.date === '2026-11-21').sets > 0);
   const rec = recommendWorkout(db, '2026-11-22'); assert.ok(rec);
 });
+import {bodyOverviewHTML} from '../body-flow.js';
+test('수치 화면 목표는 진행 중인 페이즈 목표와 같다', () => {
+  const body = [{date: '2026-11-20', weight: 79}, {date: '2026-11-22', weight: 78.2}];
+  const html = bodyOverviewHTML({body, settings: {goalWeight: 76.5, phase: {type: 'diet', startWeight: 82.3, target: {loseKg: 7.5}}}}, {today: '2026-11-22'});
+  assert.match(html, /페이즈 목표 74.8kg/);
+  assert.match(bodyOverviewHTML({body, settings: {goalWeight: 76.5}}, {today: '2026-11-22'}), /목표 76.5kg/);
+});
