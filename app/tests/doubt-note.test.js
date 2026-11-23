@@ -13,3 +13,6 @@ test('제로·무설탕 제품은 계산 버튼 대신 설명', () => {
   const h = doubtNoteHTML({dbDoubt: true, name: '제로 애플망고', calories: 0, carbs: 20});
   assert.match(h, /당알코올/); assert.doesNotMatch(h, /q-doubt-calc/);
 });
+test("이름에 '0kcal'이 들어간 제품도 라벨 값 안내", () => {
+  assert.doesNotMatch(doubtNoteHTML({dbDoubt: true, name: '죠스바 0kcal', calories: 0, carbs: 18}), /q-doubt-calc/);
+});
