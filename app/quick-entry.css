@@ -94,3 +94,10 @@
 .quick-palette .quick-set-line button{min-height:40px;padding:0 12px;font-size:12px;white-space:nowrap}
 .quick-palette .quick-check{white-space:nowrap}
 .quick-palette .quick-set-line{grid-template-columns:52px minmax(0,1fr) auto!important}.quick-palette .quick-set-line button{grid-column:auto!important;justify-self:end!important}
+.quick-palette .qa-all{background:#2e5c74;border-color:#8ce4e0;color:#fff;font-weight:700}
+.q-switch{display:grid;gap:8px}.q-next-ex{width:100%;min-height:52px;font-size:15px}.q-next-ex small{opacity:.8;margin-left:4px}
+@media (max-width:519px){.quick-palette .qs-steppers{grid-template-columns:1fr}.quick-palette .qs-row{grid-template-columns:56px minmax(0,1fr) 56px}.quick-palette .qs-btn{width:56px}}
+.quick-palette .quick-timed{display:grid;gap:14px}
+.qt-field{display:grid;gap:8px}.qt-field input{min-height:48px;font-size:16px}
+.qt-mins{display:flex;flex-wrap:wrap;gap:8px}.qt-mins .chip{min-height:44px;padding:0 16px}.qt-mins .chip.active{background:#2e5c74;border-color:#8ce4e0;color:#fff}
+.qt-effort{display:grid;gap:6px}

@@ -90,6 +90,7 @@ export function demoRecords(todayStr, now=new Date()){
     {name:'엘리펀트', apparatus:'리포머', springs:[{c:'빨강', n:1}], reps:8, level:lv},
     {name:'머메이드', apparatus:'리포머', springs:[{c:'파랑', n:1}], reps:6, side:'양쪽', level:lv}
    ]}]}); }
+  if(dow===0 && k>0) workouts.push({date, rest:true, title:'의도적 휴식', loggedAtTime:'09:00', exercises:[]}); // 4.17.0 쉰 날도 '의도적 휴식'으로(빈칸이 아니게)
   if(dow===3 && k>0){ const t = when(date, 7, 0); workouts.push({date, title:'아침 러닝', loggedAtTime:t.hm, exercises:[{name:'러닝', part:'유산소', kind:'cardio', durationMin:30, distanceKm:r1(4.6 + 0.6*prog), sets:[]}]}); }
  }
  return {body, meals, workouts, settings:DEMO_SETTINGS};
