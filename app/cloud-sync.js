@@ -5,7 +5,7 @@ import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
 import {isAdminUser} from './admin.js';
-export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[],plan:'free'};
+export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[],plan:'free',consent:null,consentLoaded:false};
 const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
 export async function refreshApproval(){
   const user=auth?.currentUser;
@@ -18,6 +18,19 @@ export async function refreshApproval(){
     cloudState.approvalError='';
   }catch(error){cloudState.approval='unknown';cloudState.approvalError=error.message||'상태 확인 실패'}
   return cloudState.approval;
+}
+// 4.17.0 동의는 계정 단위(대표님: 다른 기기에서 로그인할 때마다 다시 뜸). users/{uid}/meta/consent에 본인만 쓰고 읽는다.
+const consentRef=uid=>fsSDK.doc(firestore,'users',uid,'meta','consent');
+export async function loadAccountConsent(){
+  const user=auth?.currentUser;cloudState.consent=null;cloudState.consentLoaded=false;
+  if(!user)return null;
+  try{const snap=await fsSDK.getDocFromServer(consentRef(user.uid));if(snap.exists()){const d=snap.data();cloudState.consent={version:String(d.version||''),items:d.items||{},at:d.at?.toDate?d.at.toDate().toISOString():''}}}catch(error){console.warn('동의 기록을 읽지 못했어요',error?.code||error)}
+  cloudState.consentLoaded=true;return cloudState.consent;
+}
+export async function saveAccountConsent(record){
+  const user=auth?.currentUser;if(!user||!record?.version)return false;
+  await fsSDK.setDoc(consentRef(user.uid),{version:String(record.version),items:Object.fromEntries(Object.entries(record.items||{}).map(([k,v])=>[k,v===true])),at:fsSDK.serverTimestamp()});
+  cloudState.consent={version:record.version,items:record.items,at:new Date().toISOString()};return true;
 }
 export async function applyForAccess(consent){
   const user=auth?.currentUser;
@@ -71,6 +84,7 @@ export async function initializeCloud() {
     setStorageAccount(auth.currentUser?.uid || '');
     firestore=fsSDK.getFirestore(app);
     await refreshApproval();
+    await loadAccountConsent();
     // Cross-tab auth changes never leave a previous user's records on the screen.
     authSDK.onAuthStateChanged(auth,user=>{if((user?.uid||'')!==storageAccount())location.reload();});
   } catch {
@@ -100,7 +114,7 @@ export async function deleteAccount({onStep=()=>{}}={}){
     else{const p=new authSDK.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account',login_hint:user.email||''});await authSDK.reauthenticateWithPopup(user,p)}
   }catch(e){if(String(e?.code||'').includes('user-mismatch'))throw Error('지금 로그인한 계정과 다른 Google 계정을 골랐어요. 같은 계정으로 다시 해 주세요.');if(String(e?.code||'').includes('popup-closed')||String(e?.code||'').includes('cancelled'))throw Error('본인 확인을 취소해서 삭제하지 않았어요.');throw e}
   const uid=user.uid;
-  for(const sub of ['records','aiDrafts','accessLog']){
+  for(const sub of ['records','aiDrafts','accessLog','meta']){
     onStep(sub==='records'?'서버 기록 삭제':'검토함 초안 삭제');
     let snap;try{snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,sub))}catch(e){if(String(e?.code||'').includes('permission'))throw Error('서버가 아직 앱 안 삭제를 받을 준비가 안 됐어요. studiohooje@gmail.com으로 삭제를 요청해 주시면 바로 지워 드릴게요.');throw e}
     for(let i=0;i<snap.docs.length;i+=400){const b=fsSDK.writeBatch(firestore);snap.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}

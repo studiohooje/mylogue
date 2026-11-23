@@ -50,6 +50,17 @@ service cloud.firestore {
         && log.get('revision', -1) == request.resource.data.revision && log.get('after', null) == request.resource.data.payload
         && log.action in ['create','update','delete'];
     }
+    // 4.17.0 동의 기록(계정 단위): 본인만 읽고 쓰며, 칸과 크기를 좁게 제한한다.
+    match /users/{uid}/meta/{docId} {
+      allow get: if owner(uid);
+      allow create, update: if owner(uid) && docId == 'consent'
+        && request.resource.data.keys().hasOnly(['version','items','at'])
+        && request.resource.data.version is string && request.resource.data.version.size() <= 40
+        && request.resource.data.items is map && request.resource.data.items.size() <= 20
+        && request.resource.data.at == request.time;
+      allow list: if owner(uid);
+      allow delete: if owner(uid);
+    }
     match /users/{uid}/accessLog/{logId} {
       allow get, list: if owner(uid) || admin();
       allow create: if admin()
