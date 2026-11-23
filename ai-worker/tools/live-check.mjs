@@ -26,7 +26,7 @@ for (const [name, run, judge] of checks) {
   const t0 = Date.now();
   try {
     const out = await run();
-    const problem = out.stopReason === 'refusal' ? '거절됨' : judge(out) || (hasBanned(out.text) ? '금지어 포함' : '');
+    const problem = out.stopReason === 'refusal' ? '거절됨' : judge(out) || (hasBanned(out.text).length ? `금지어 포함: ${hasBanned(out.text).join(', ')}` : '');
     if (problem) bad++;
     console.log(`${problem ? '✗' : '✓'} ${name} · ${out.model} · ${Date.now() - t0}ms${problem ? ` · ${problem}` : ''}\n  ${out.text.replace(/\s+/g, ' ').slice(0, 160)}`);
   } catch (e) { bad++; console.log(`✗ ${name} · 오류: ${String(e.status || '')} ${String(e.message || e).slice(0, 200)}`); }
