@@ -113,7 +113,7 @@ export function progressLine(s) {
   const t = s.type, tg = s.phase.target || {};
   if (t.id === 'diet') return s.weightChange == null ? `목표 -${tg.loseKg}kg` : `${sign(s.weightChange)}kg / 목표 -${tg.loseKg}kg`;
   if (t.id === 'leanbulk' || t.id === 'bulk') return s.weightChange == null ? `목표 +${tg.gainKg}kg` : `${sign(s.weightChange)}kg / 목표 +${tg.gainKg}kg`;
-  if (t.id === 'recomp') return s.fatNow ? `체지방률 ${s.fatNow.v}% → 목표 ${tg.fatPct}%` : `목표 체지방률 ${tg.fatPct}%`;
+  if (t.id === 'recomp') return s.fatNow ? `체지방률 ${s.fatNow.v}% · 목표 ${tg.fatPct}%` : `목표 체지방률 ${tg.fatPct}%`;
   return s.weightChange == null ? `±${tg.rangeKg}kg 유지` : `${sign(s.weightChange)}kg · ±${tg.rangeKg}kg 안${s.inRange ? '' : '을 벗어났어요'}`;
 }
 export function phaseBadgeHTML(s) {

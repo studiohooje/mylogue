@@ -1614,3 +1614,10 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .sim-out{margin:14px 0 6px;padding:14px 16px;border-radius:14px;background:#ffffff08}.sim-out p{margin:0}.sim-out b{font-size:17px;font-variant-numeric:tabular-nums}.sim-out .hint{margin-top:6px}
 .sit-step{margin-top:12px}.sit-step b{font-size:14px;color:var(--ice,#8ce4e0)}.sit-step ul{margin:6px 0 0;padding-left:18px;display:grid;gap:6px}.sit-step li{font-size:14px;line-height:1.6;word-break:keep-all}
 .better-list{list-style:none;margin:10px 0;padding:0;display:grid;gap:8px}.better-list li{display:grid;gap:2px;padding:12px 14px;border:1px solid var(--line);border-radius:12px}.better-list b{font-size:15px}.better-list span{font-size:13px;color:#9fe6dc;font-variant-numeric:tabular-nums}.better-list small{font-size:13px;color:var(--muted)}
+/* 4.17.0 2주 실험 */
+.exp-card{margin-top:12px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);display:grid;gap:8px}.exp-card.done{border-color:#8ce4e0}
+.exp-head{display:flex;justify-content:space-between;gap:8px}.exp-head b{font-size:15px}.exp-head span{font-size:13px;color:#9fe6dc;font-variant-numeric:tabular-nums}
+.exp-metrics{list-style:none;margin:0;padding:0;display:grid;gap:6px}.exp-metrics li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:14px}.exp-metrics li b{font-variant-numeric:tabular-nums}.exp-metrics li small{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.exp-metrics li.v-better small{color:#6fd6a3}.exp-metrics li.v-worse small{color:#f3c27a}
+.exp-new{margin-top:12px}.exp-new>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:14px;font-weight:700}
+.exp-picks{display:grid;gap:8px;margin-top:8px}.exp-pick{display:grid;gap:2px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#ffffff06;color:inherit;font:inherit;cursor:pointer;min-height:44px}.exp-pick b{font-size:15px}.exp-pick small{font-size:13px;color:var(--muted);line-height:1.5;word-break:keep-all}

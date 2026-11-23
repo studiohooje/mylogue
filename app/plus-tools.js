@@ -19,7 +19,7 @@ export function simulatorHTML(st, sim) {
   if (!sim) return head + '<p class="hint">체중 기록이 몇 번 쌓이면 계산할 수 있어요.</p></section>';
   const seg = (key, list, cur, fmt) => `<div class="chip-row sim-seg">${list.map(v => `<button type="button" class="chip ${cur === v ? 'active' : ''}" data-sim-${key}="${v}" aria-pressed="${cur === v}">${fmt(v)}</button>`).join('')}</div>`;
   return `${head}<p class="hint">하루 칼로리</p>${seg('kcal', [-500, -300, -150, 0, 150, 300], st.kcal, v => v > 0 ? `+${v}` : v === 0 ? '지금대로' : `${v}`)}<p class="hint">운동 횟수(주)</p>${seg('workouts', [-1, 0, 1, 2, 3], st.workouts, v => v > 0 ? `+${v}번` : v === 0 ? '지금대로' : `${v}번`)}<p class="hint">기간</p>${seg('weeks', [4, 8, 12, 16, 24], st.weeks, v => `${v}주`)}
-  <div class="sim-out"><p><b>${sim.weeks}주 뒤 체중은 대략 ${sim.low}~${sim.high}kg</b></p><p class="hint">지금 ${sim.now}kg · ${sim.hasTrend ? `지금 흐름 주 ${sim.base > 0 ? '+' : ''}${sim.base}kg` : '흐름 계산 전(체중 기록이 더 쌓이면 정확해져요)'} → 바꾸면 주 ${sim.perWeek > 0 ? '+' : ''}${sim.perWeek}kg</p>${sim.warn ? `<p class="hint warn">${esc(sim.warn)}</p>` : ''}</div>
+  <div class="sim-out"><p><b>${sim.weeks}주 뒤 체중은 대략 ${sim.low}~${sim.high}kg</b></p><p class="hint">지금 ${sim.now}kg · ${sim.hasTrend ? `지금 흐름 주 ${sim.base > 0 ? '+' : ''}${sim.base}kg` : '흐름 계산 전(체중 기록이 더 쌓이면 정확해져요)'} · 바꾸면 주 ${sim.perWeek > 0 ? '+' : ''}${sim.perWeek}kg</p>${sim.warn ? `<p class="hint warn">${esc(sim.warn)}</p>` : ''}</div>
   <p class="hint">예측이 아니라 범위예요. 몸은 계산보다 천천히, 들쑥날쑥 반응해요.</p></section>`;
 }
 
