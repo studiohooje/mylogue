@@ -1603,3 +1603,9 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .persona-card.on{border-color:#8ce4e0;background:#2e5c7433}
 .ld-personas{margin-top:24px}.ld-personas p{line-height:1.6;word-break:keep-all}
 .demo-persona{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #ffffff55;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+/* 4.17.0 영양 심화 리포트 */
+.micro-report .mr-row{padding:12px 0;border-top:1px solid var(--line);display:grid;gap:6px}
+.mr-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.mr-head b{font-size:15px}.mr-head span{font-size:14px;font-variant-numeric:tabular-nums}.mr-head small{color:var(--muted);font-size:12px}
+.mr-bar{position:relative;height:10px;border-radius:99px;background:#ffffff12}.mr-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#8ce4e0}.mr-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ffffffaa}
+.s-high .mr-bar i{background:#f3c27a}.s-low .mr-bar i{background:#8fb8ff}.s-unknown .mr-bar i{background:#ffffff33}
+.mr-status{margin:0;font-size:13px}.mr-status small{color:var(--muted)}.mr-top{margin:0;font-size:13px;color:var(--muted);word-break:keep-all}.mr-today{font-size:14px;margin:8px 0}

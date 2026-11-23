@@ -6,6 +6,8 @@ const noise = (i, k = 1) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 437
 export const PERSONA_DAYS = 120;
 // 나트륨(mg) 대략: 국물·배달 음식은 높게, 손질한 재료는 낮게(예시 기록용 추정)
 const SODIUM = [[/치킨|피자|짜장|족발|떡볶이|순대/, 1500], [/찌개|국밥|칼국수|국|탕|볶음 정식|김치/, 1400], [/불고기|제육|볶음|비빔밥|김밥/, 900], [/라면|과자/, 800], [/토스트|빵|버터/, 350]];
+// 식이섬유·당류·포화지방 대략(예시 기록용 추정): 채소·잡곡·과일은 섬유, 단 음식은 당류, 튀김·고기는 포화지방
+const microOf = (name, carbs, fat, scale) => ({fiber: Math.round((/샐러드|채소|브로콜리|양배추|현미|잡곡|고구마|오트|블루베리|사과|바나나|김치|된장|비빔밥|나물/.test(name) ? 4 : /밥|빵|면|국수|떡/.test(name) ? 1.2 : 0.6) * scale * 10) / 10, sugar: Math.round((/과자|라떼|바나나|사과|블루베리|떡볶이|짜장|요거트|우유|토스트|땅콩버터|불고기/.test(name) ? Math.max(6, carbs * 0.35) : carbs * 0.06) * scale * 10) / 10, satFat: Math.round(fat * (/치킨|피자|삼겹|족발|버터|소고기|돼지|제육|불고기|국밥/.test(name) ? 0.38 : 0.25) * scale * 10) / 10});
 const sodiumOf = (name, scale) => Math.round((SODIUM.find(([re]) => re.test(name))?.[1] ?? 120) * scale);
 
 // [이름, 양, 단위, kcal, 탄, 단, 지]
@@ -52,7 +54,7 @@ export function personaRecords(id, todayStr, now = new Date()) {
   const base = new Date(`${todayStr}T12:00:00`), body = [], meals = [], workouts = [];
   const seed = [...P.id].reduce((a, c) => a + c.charCodeAt(0), 0);
   const at = (date, h, m = 0) => { const d = new Date(`${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`); if (date === todayStr && d > now) d.setTime(now.getTime() - 3600e3 * (22 - h) / 4); return d; };
-  const addMeal = (date, h, slot, items, scale = 1) => { const t = at(date, h); const gid = `p-${date}-${slot}`; for (const [name, qty, unit, kcal, c, p, f] of items) meals.push({date, loggedAt: t.toISOString(), slot, mealGroupId: gid, name, servingQty: r1(qty * scale), servingUnit: unit, calories: Math.round(kcal * scale), carbs: r1(c * scale), protein: r1(p * scale), fat: r1(f * scale), sodium: sodiumOf(name, scale), source: 'demo'}); };
+  const addMeal = (date, h, slot, items, scale = 1) => { const t = at(date, h); const gid = `p-${date}-${slot}`; for (const [name, qty, unit, kcal, c, p, f] of items) meals.push({date, loggedAt: t.toISOString(), slot, mealGroupId: gid, name, servingQty: r1(qty * scale), servingUnit: unit, calories: Math.round(kcal * scale), carbs: r1(c * scale), protein: r1(p * scale), fat: r1(f * scale), sodium: sodiumOf(name, scale), ...microOf(name, c, f, scale), source: 'demo'}); };
   const N = PERSONA_DAYS, checkins = {};
   let bump = 0;
   for (let k = N - 1; k >= 0; k--) {
