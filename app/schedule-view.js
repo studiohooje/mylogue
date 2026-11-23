@@ -6,7 +6,7 @@ import {mealTotals} from './domain.js';
 
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2, '0');
-const n1 = v => (Math.round(v*10)/10).toString();
+const n1 = v => (Math.round(v*10)/10).toFixed(1); // 4.17.0 79 → 79.0(옆 칸과 자릿수 맞춤)
 export const PLAN_CATS = WORK_CATS.filter(c => c!=='전체');
 export const PLAN_PARTS = WEIGHT_PARTS.filter(p => p!=='전체');
 

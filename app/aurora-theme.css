@@ -1656,3 +1656,19 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .hc-row input,.hc-auto input{width:22px;height:22px;flex:none;accent-color:#8ce4e0}
 .hc-row span,.hc-auto span{display:grid;gap:2px;font-size:15px}.hc-row small,.hc-auto small{font-size:13px;color:var(--muted)}
 .hc-row:has(input:disabled){opacity:.55}
+/* 4.17.0 전수검사: 홈 '운동' 카드 요일 목록이 좁은 화면에서 '러닝…'처럼 잘리던 것
+   좁은 화면(≤650): 요일 글자 + 점(운동 = 청록, 휴식 = 보라 점선, 오늘 = 흰 테두리)
+   넓은 화면: 카드 그림 칸을 128px로 늘려 줄 간격을 1.35로 */
+@media(min-width:651px){
+  .home-stat .stat-vis,.home-stat-work .stat-vis.work-vis{height:128px}
+  .wl-row{line-height:1.35}
+}
+@media(max-width:650px){
+  .home-stat-work .wv-week{flex:none;width:auto}
+  .wl-row{grid-template-columns:12px 8px;gap:4px;justify-content:start}
+  .wl-row em,.wl-row.done em{display:block;width:8px;height:8px;border-radius:50%;font-size:0;line-height:0;overflow:hidden;background:#ffffff14}
+  .wl-row.done em{background:#8ce4e0}
+  .wl-row.rest em{background:transparent;border:1px dashed #c9b8ff;box-sizing:border-box}
+  .wl-row.rest em svg{display:none}
+  .wl-row.today em{box-shadow:0 0 0 2px #0c1220,0 0 0 3px #fff}
+}
