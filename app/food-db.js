@@ -41,13 +41,15 @@ export function loadFoodDB({url='food-db.json', fetcher=globalThis.fetch}={}){
 export function searchFoodDB(query, {limit=30}={}){
  const q = String(query||'').trim(); if(!rows || !q) return [];
  const qp = plain(q), qk = keystrokes(q), qh = /[a-z]/i.test(q) ? keystrokes(q, {latinAsHangul:true}) : '', qc = q.replace(/\s/g,'');
- const onlyCons = /^[ㄱ-ㅎ]+$/.test(qc);
+ const onlyCons = /^[ㄱ-ㅎ]+$/.test(qc), words = q.split(/\s+/).map(plain).filter(Boolean);
  const hits = [];
  for(let i = 0; i < rows.length && hits.length < 300; i++){
   const x = index[i];
-  if((qp && x.p.includes(qp)) || (qk.length >= 2 && x.k.includes(qk)) || (qh.length >= 2 && x.k.includes(qh)) || (onlyCons && x.c.includes(qc))) hits.push(i);
+  if((qp && x.p.includes(qp)) || (qk.length >= 2 && x.k.includes(qk)) || (qh.length >= 2 && x.k.includes(qh)) || (onlyCons && x.c.includes(qc)) || (words.length > 1 && words.every(w => x.p.includes(w)))) hits.push(i);
  }
- return hits.map(i => ({i, s:matchScore(q, index[i].names)})).filter(h => h.s > 0)
+ // 여러 낱말('bhc 뿌링클', '기영이 저당 양념')은 순서와 상관없이 낱말마다 맞으면 찾는다(가장 약한 낱말 점수 × 0.9)
+ const score = i => { const s = matchScore(q, index[i].names); if(s > 0 || words.length < 2) return s; const each = words.map(w => matchScore(w, index[i].names)); return Math.min(...each) > 0 ? Math.round(Math.min(...each) * 0.9) : 0; };
+ return hits.map(i => ({i, s:score(i)})).filter(h => h.s > 0)
   .sort((a, b) => b.s - a.s || (rows[a.i][10] ? 1 : 0) - (rows[b.i][10] ? 1 : 0) || (TAG[rows[a.i][8]]?.rank ?? 9) - (TAG[rows[b.i][8]]?.rank ?? 9) || rows[a.i][0].length - rows[b.i][0].length)
   .slice(0, limit).map(h => rowToFood(rows[h.i]));
 }

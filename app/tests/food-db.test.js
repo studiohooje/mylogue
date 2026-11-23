@@ -52,6 +52,7 @@ test('음식 DB 검색: 초성·한영 자판·정확도, 프리셋 계약', () 
  const rice = rowToFood(['멥쌀', '', 'g', 0, 441, 36.8, 20.3, 26.1, 'r', '']);
  assert.equal(rice.servingQty, 100); assert.equal(rice.servingUnit, 'g');
  assert.equal(findFoodDB(chicken.id).calories, 130);
+ assert.equal(searchFoodDB('오빠닭 스테이크')[0].name, '닭가슴살 스테이크 · 오빠닭(허닭)'); // 낱말 순서 상관없이
 });
 
 test('앱 번들 food-db.json이 있으면 형식 확인', {skip:!existsSync(new URL('../food-db.json', import.meta.url))}, () => {
