@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<meta name="description" content="기록(log)이 쌓이면 이야기(logue)가 됩니다. 마이로그라는 이름과 마이·로그, 하루의 세 장에 담긴 이야기.">
+<meta name="description" content="기록(log)이 쌓이면 이야기(logue)가 됩니다. 마이로그라는 이름과 구두점(이음·따옴), 하루의 세 장에 담긴 이야기.">
 <link rel="icon" href="icon.svg">
 <title>마이로그 이야기</title>
 <style>
@@ -90,6 +90,10 @@ em.k{font-style:normal;color:var(--text);font-weight:600}
 .g.mai{background:radial-gradient(80% 60% at 20% 0%,rgba(140,228,224,.18),transparent 70%),var(--card)}
 .g.logue{background:radial-gradient(80% 60% at 80% 0%,rgba(180,140,255,.2),transparent 70%),var(--card)}
 .g svg{width:112px;height:112px;display:block}
+.pm{font-family:Georgia,"Times New Roman",serif;font-size:96px;line-height:1;font-weight:700;color:#dde7f0;text-shadow:0 0 28px rgba(140,228,224,.35)}
+.pm.sm{display:block;font-size:44px;margin-bottom:6px}
+.pmrow{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+@media (min-width:650px){.pmrow{grid-template-columns:repeat(4,1fr)}}
 .g h3{font-size:30px;margin-top:14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .g h3 span{font-size:12px;letter-spacing:.16em;color:var(--mute);font-weight:700}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
@@ -141,7 +145,7 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
 <body>
 <header class="top"><div class="wrap">
  <a class="back" href="./" aria-label="마이로그로 돌아가기"><img src="icon.svg" alt="">마이로그</a>
- <nav class="toc" aria-label="이야기 목차"><a href="#name">이름</a><a href="#dialogue">대화</a><a href="#day">하루</a><a href="#guardians">마이와 로그</a><a href="#world">세계</a><a href="#promise">약속</a></nav>
+ <nav class="toc" aria-label="이야기 목차"><a href="#name">이름</a><a href="#dialogue">대화</a><a href="#day">하루</a><a href="#guardians">구두점</a><a href="#world">세계</a><a href="#promise">약속</a></nav>
 </div></header>
 
 <main>
@@ -207,26 +211,33 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
 </div></section>
 
 <section id="guardians"><div class="wrap">
- <p class="eb reveal">04 · Guardians</p>
- <h2 class="reveal">이름을 둘로 나누면, 마이와 로그</h2>
- <p class="lead reveal">마이로그라는 이름을 둘로 나누면 두 존재가 태어납니다. 둘의 관계가 곧 마이로그의 첫 번째 원칙입니다. <em class="k">“AI는 초안만 쓰고, 확정은 사람이 한다.”</em></p>
+ <p class="eb reveal">04 · Punctuation</p>
+ <h2 class="reveal">숨 쉴 자리를 찍는 이들, 구두점</h2>
+ <p class="lead reveal">하루하루의 기록이 문장이라면, 그 문장을 읽을 수 있게 만드는 건 단어가 아니라 <em class="k">문장부호</em>입니다. 옛 한문에는 띄어쓰기도 마침표도 없어서, 읽는 사람이 “여기서 끊고(句), 여기서 숨 쉰다(讀)”고 점을 찍었습니다. 그 점을 <em class="k">구두(句讀)</em>라고 불렀습니다.</p>
+ <p class="lead reveal">그리고 한국어의 문장부호 이름은 모두 <em class="k">하는 일의 이름</em>입니다. 쉼표는 쉼, 마침표는 마침, 물음표는 물음, 따옴표는 따옴. 그래서 마이로그의 조력자들에게는 이름을 지어 줄 필요가 없었습니다. 한국어 문법이 이미 지어 두었으니까요.</p>
  <div class="duo">
   <article class="g mai reveal">
-   <svg viewBox="0 0 120 120" aria-hidden="true"><defs><radialGradient id="mg" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#e9fffd"/><stop offset=".45" stop-color="#8ce4e0"/><stop offset="1" stop-color="#8ce4e0" stop-opacity="0"/></radialGradient></defs><circle cx="60" cy="62" r="52" fill="url(#mg)" opacity=".55"/><circle cx="60" cy="62" r="30" fill="#8ce4e0"/><circle cx="51" cy="60" r="3.2" fill="#0b1020"/><circle cx="69" cy="60" r="3.2" fill="#0b1020"/><path d="M53 70 Q60 75 67 70" fill="none" stroke="#0b1020" stroke-width="2.6" stroke-linecap="round"/><path d="M82 28 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#e9fffd"/></svg>
-   <h3>마이 <span>MY · THE DAWN</span></h3>
-   <p class="sub">새벽 오로라가 처음 번질 때 태어난 작은 빛. 아침마다 “오늘은 이렇게 해 볼래”라고 다짐을 말합니다. 로그가 적어 온 초안을 보고 “응, 맞아”라고 말하는 순간, 그 기록은 비로소 이야기가 됩니다. <em class="k">기록의 주인은 언제나 마이입니다.</em></p>
-   <div class="tags"><span>다짐</span><span>시작</span><span>선택</span><span>확정</span></div>
+   <div class="pm" aria-hidden="true">;</div>
+   <h3>이음 <span>SEMICOLON · THE ONE WHO CONTINUES</span></h3>
+   <p class="sub">세미콜론은 <em class="k">마침표를 찍을 수 있었던 자리</em>에 찍는 부호입니다. 앞 문장이 끝나도 괜찮았지만, 작가는 끝내지 않고 다음 문장을 잇기로 합니다. 며칠 비우고 돌아온 날, 이음이 맞아 줍니다. “여기서 끝낼 수도 있었는데, 이어 쓰기로 했네요.”</p>
+   <div class="tags"><span>잇기</span><span>복귀</span><span>다정함</span></div>
   </article>
   <article class="g logue reveal">
-   <svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="og" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9bcff"/><stop offset="1" stop-color="#7d63d9"/></linearGradient></defs><path d="M30 34 L40 20 L48 33 Q60 28 72 33 L80 20 L90 34 Q98 48 96 70 Q93 102 60 104 Q27 102 24 70 Q22 48 30 34Z" fill="url(#og)"/><circle cx="46" cy="54" r="12" fill="#0b1020"/><circle cx="74" cy="54" r="12" fill="#0b1020"/><circle cx="46" cy="54" r="6.5" fill="#edf4f8"/><circle cx="74" cy="54" r="6.5" fill="#edf4f8"/><path d="M60 62 l5 6 -5 6 -5 -6z" fill="#f2b49b"/><g stroke="#edf4f8" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"><path d="M44 82h32"/><path d="M42 90h36"/><path d="M46 98h28"/></g></svg>
-   <h3>로그 <span>LOGUE · THE NIGHT</span></h3>
-   <p class="sub">밤에 깨어 있는 부엉이. 마이가 하루 동안 한 일을 조용히 받아 적고, 오래된 장을 기억합니다. 배에 그어진 줄은 기록장의 줄입니다. 사진과 말을 받아 적고 지난주와 비교해 들려주지만, <em class="k">혼자 확정하지는 않습니다.</em> 언제나 마이에게 먼저 보여 줍니다.</p>
-   <div class="tags"><span>기억</span><span>관찰</span><span>정리</span><span>초안</span></div>
+   <div class="pm" aria-hidden="true">“ ”</div>
+   <h3>따옴 <span>QUOTATION · THE HONEST SCRIBE</span></h3>
+   <p class="sub">따옴표 안의 말은 <em class="k">남의 말</em>입니다. AI가 사진과 말로 받아 적은 초안은 따옴표 안에 머뭅니다. 내가 “맞아”라고 확정하는 순간 따옴표가 벗겨지고, 그 문장은 비로소 <em class="k">내 문장</em>이 됩니다. AI는 초안만, 확정은 나 — 이 원칙은 문법 한 줄이었습니다.</p>
+   <div class="tags"><span>AI 초안</span><span>인용</span><span>확정 전</span></div>
   </article>
  </div>
- <p class="poem reveal">해가 뜨면 <span class="m">마이</span>가 오늘을 말하고,<br>해가 지면 <span class="l">로그</span>가 오늘을 적습니다.<br><span class="m">마이</span>가 “맞아”라고 할 때,<br>하루가 이야기가 됩니다.</p>
- <div class="card guest reveal"><small>THE GUEST WRITER</small><h3 style="margin-top:6px">세 번째 목소리, 코치</h3><p class="sub">강사와 코치는 이 이야기에 초대받은 <em class="k">손님 작가</em>입니다. 수업을 써서 보내지만, 마이가 확인해야 마이의 이야기가 됩니다. 코치가 바뀌어도, 센터를 옮겨도, 이야기는 마이에게 남습니다.</p></div>
- <p class="small reveal" style="margin-top:18px">마이와 로그의 그림은 지금 보이는 간단한 표식에서 시작해 차례로 다듬어 갑니다.</p>
+ <div class="pmrow reveal">
+  <div class="card"><b class="pm sm">,</b><h3>쉼</h3><p class="sub">쉬는 날. 쉼표는 문장을 끊지 않습니다.</p></div>
+  <div class="card"><b class="pm sm">.</b><h3>마침</h3><p class="sub">몸·식사·운동 세 점이 켜지면 찍히는 하루의 끝.</p></div>
+  <div class="card"><b class="pm sm">?</b><h3>물음</h3><p class="sub">모르는 숫자는 0 대신 물음표로 남깁니다.</p></div>
+  <div class="card"><b class="pm sm">!</b><h3>느낌</h3><p class="sub">최고 기록, 처음 해낸 날에만. 드물어서 반갑습니다.</p></div>
+ </div>
+ <p class="poem reveal">빈 날은 실패가 아니라 <span class="l">말줄임표(…)</span>입니다.<br>쉬는 날은 끊김이 아니라 <span class="m">쉼표(,)</span>입니다.<br>그리고 다시 펼친 날, <span class="m">이음(;)</span>이 말합니다.<br>처음부터가 아니라, 이어서예요.</p>
+ <div class="card guest reveal"><small>THE GUEST WRITER</small><h3 style="margin-top:6px">손님 작가, 코치</h3><p class="sub">강사와 코치는 이 이야기에 초대받은 <em class="k">손님 작가</em>입니다. 수업을 써서 보내지만, 그 수업도 따옴표 안에 있습니다. 내가 확인해야 내 이야기가 됩니다. 코치가 바뀌어도, 센터를 옮겨도, 이야기는 나에게 남습니다.</p></div>
+ <p class="small reveal" style="margin-top:18px">이음과 친구들의 그림은 지금 보이는 활자 모양에서 시작해 차례로 다듬어 갑니다.</p>
 </div></section>
 
 <section id="world"><div class="wrap">
@@ -250,7 +261,7 @@ footer{text-align:center;color:var(--mute);font-size:13px;padding:0 20px 48px}
   <div class="card reveal"><span class="n">01</span><h3>AI는 초안만, 확정은 나</h3><p>AI가 쓴 기록은 검토함에 먼저 들어옵니다. 내가 확정하기 전에는 내 기록이 되지 않습니다.</p></div>
   <div class="card reveal"><span class="n">02</span><h3>기록의 주인은 나</h3><p>코치와 연결해도, 수업 밖의 기록은 내가 켠 것만 요약으로 보여집니다. 언제든 끄고, 언제든 끊을 수 있습니다.</p></div>
   <div class="card reveal"><span class="n">03</span><h3>재촉하지 않습니다</h3><p>먹으라고, 운동하라고 조르는 알림을 보내지 않습니다. 기록이 비어도 탓하지 않고, 다시 쓰고 싶을 때 다시 열면 됩니다.</p></div>
-  <div class="card reveal"><span class="n">04</span><h3>모르는 숫자는 비워 둡니다</h3><p>확인되지 않은 값을 0이나 짐작으로 채우지 않습니다. 근거가 있는 숫자만, 출처와 함께.</p></div>
+  <div class="card reveal"><span class="n">04</span><h3>모르는 숫자는 모른다고 적습니다</h3><p>확인되지 않은 값을 0으로 채우지 않습니다. 확인된 숫자는 출처와 함께, 공식 값이 없어 계산한 숫자는 <em class="k">추정</em>이라고 분명히 표시합니다.</p></div>
  </div>
 </div></section>
 
