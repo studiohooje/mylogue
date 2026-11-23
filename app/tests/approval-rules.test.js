@@ -55,7 +55,7 @@ test('approval gates server health records and shared catalogs', {skip:!host}, a
     await assertSucceeds(setDoc(record(pending,pendingUid),{revision:1,payload:'{}',updatedAt:serverTimestamp()}));
     await assertSucceeds(getDoc(record(pending,pendingUid)));
     await assertFails(getDoc(record(member,pendingUid)));
-    await assertFails(getDoc(record(admin,pendingUid)));
+    await assertSucceeds(getDoc(record(admin,pendingUid))); // 4.15.0 관리로그: 베타 동안 관리자 전체 열람(대표님 결정)
     const requestId='machine-photo-request';
     const requestRef=(db)=>doc(db,'catalogRequests',requestId);
     const image='data:image/jpeg;base64,AA==';

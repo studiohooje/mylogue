@@ -92,7 +92,7 @@ export async function deleteAccount({onStep=()=>{}}={}){
     else{const p=new authSDK.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account',login_hint:user.email||''});await authSDK.reauthenticateWithPopup(user,p)}
   }catch(e){if(String(e?.code||'').includes('user-mismatch'))throw Error('지금 로그인한 계정과 다른 Google 계정을 골랐어요. 같은 계정으로 다시 해 주세요.');if(String(e?.code||'').includes('popup-closed')||String(e?.code||'').includes('cancelled'))throw Error('본인 확인을 취소해서 삭제하지 않았어요.');throw e}
   const uid=user.uid;
-  for(const sub of ['records','aiDrafts']){
+  for(const sub of ['records','aiDrafts','accessLog']){
     onStep(sub==='records'?'서버 기록 삭제':'검토함 초안 삭제');
     let snap;try{snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,sub))}catch(e){if(String(e?.code||'').includes('permission'))throw Error('서버가 아직 앱 안 삭제를 받을 준비가 안 됐어요. studiohooje@gmail.com으로 삭제를 요청해 주시면 바로 지워 드릴게요.');throw e}
     for(let i=0;i<snap.docs.length;i+=400){const b=fsSDK.writeBatch(firestore);snap.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}
@@ -168,4 +168,42 @@ export async function synchronize(db, save, choices={}) {
   localStorage.setItem(scopedKey('mylogue.cloud.last-sync'),new Date().toISOString());
   cloudState.conflicts=[];
   return {db:next,conflicts:[]};
+}
+// 4.15.0 관리로그(베타 동안 관리자 전체 열람·수정 — 대표님 결정 2026-11-23, 정식 서비스 때 '허락받은 동안만'으로 전환 예정)
+// 모든 수정은 같은 트랜잭션 안에서 users/{uid}/accessLog/{기록키}__r{리비전}을 남긴다(보안 규칙이 강제). 고치기 전 내용도 함께 저장해 되돌릴 수 있다.
+const adminUser=()=>{const u=auth?.currentUser;if(!isAdminUser(u))throw Error('관리자만 관리로그를 쓸 수 있습니다.');return u};
+export async function adminLoadUser(uid){
+  adminUser();
+  if(!uid)throw Error('계정을 골라 주세요.');
+  const snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,'records')),records={},payloads={};
+  snap.forEach(doc=>{const v=doc.data();if(!validRecordKey(doc.id))return;records[doc.id]={revision:v.revision,payload:v.payload??null};payloads[doc.id]=v.payload??null});
+  return {records,db:recordsToDB(payloads)};
+}
+export async function adminLogView(uid,reason){
+  const u=adminUser();
+  await fsSDK.setDoc(fsSDK.doc(firestore,'users',uid,'accessLog',`view_${u.uid}_${Date.now()}`),{adminUid:u.uid,adminEmail:u.email||'',action:'view',reason:String(reason||'').slice(0,300),at:fsSDK.serverTimestamp()});
+}
+export async function adminWriteRecord(uid,key,payload,action,reason){
+  const u=adminUser();
+  if(!validRecordKey(key))throw Error('기록 키를 확인해 주세요.');
+  if(!String(reason||'').trim())throw Error('수정 사유를 적어 주세요.');
+  if(payload!==null&&typeof payload!=='string')throw Error('기록 내용을 확인해 주세요.');
+  const ref=fsSDK.doc(firestore,'users',uid,'records',key);
+  try{
+    return await fsSDK.runTransaction(firestore,async tx=>{
+      const cur=await tx.get(ref),rev=cur.exists()?cur.data().revision:0,next=rev+1,before=cur.exists()?(cur.data().payload??null):null;
+      if(action==='create'&&cur.exists()&&before!==null)throw Error('이미 있는 기록입니다. 수정으로 바꿔 주세요.');
+      tx.set(fsSDK.doc(firestore,'users',uid,'accessLog',`${key}__r${next}`),{adminUid:u.uid,adminEmail:u.email||'',action,recordId:key,revision:next,reason:String(reason).slice(0,300),before,after:payload,at:fsSDK.serverTimestamp()});
+      tx.set(ref,{revision:next,payload,updatedAt:fsSDK.serverTimestamp()});
+      return next;
+    });
+  }catch(e){
+    if(String(e?.code||e?.message||'').includes('permission'))throw Error('보안을 위해 다시 로그인한 뒤(최근 60분 안) 저장할 수 있어요. 오른쪽 위 계정에서 로그아웃 후 다시 로그인해 주세요.');
+    throw e;
+  }
+}
+export async function adminAccessLog(uid){
+  adminUser();
+  const snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,'accessLog'));
+  return snap.docs.map(d=>({id:d.id,...d.data(),at:d.data().at?.toDate?.()?.toISOString?.()||''})).sort((a,b)=>b.at.localeCompare(a.at));
 }

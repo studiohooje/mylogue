@@ -30,14 +30,43 @@ service cloud.firestore {
       // 4.11.0 계정 삭제: 본인은 자기 계정 문서를 지울 수 있다(하위 기록·초안을 먼저 지운 뒤).
       allow delete: if owner(uid);
     }
+    // 4.15.0 관리로그(대표님 결정 2026-11-23: 베타 기간 동안 관리자 전체 열람·수정, 정식 서비스 때 '허락받은 동안만'으로 전환)
+    // 관리자 쓰기는 같은 일괄 저장 안에 접근 기록(accessLog/{recordId}__r{revision})이 함께 생겨야 하고, 최근 60분 안에 로그인한 상태여야 한다.
+    function recentLogin() { return request.auth.token.auth_time > request.time.toMillis() / 1000 - 3600; }
+    function auditedAdminWrite(uid, recordId) {
+      return admin() && recentLogin()
+        && existsAfter(/databases/$(database)/documents/users/$(uid)/accessLog/$(recordId + '__r' + string(request.resource.data.revision)))
+        && auditLogMatches(getAfter(/databases/$(database)/documents/users/$(uid)/accessLog/$(recordId + '__r' + string(request.resource.data.revision))).data, recordId);
+    }
+    function auditLogMatches(log, recordId) {
+      return log.adminUid == request.auth.uid && log.get('recordId', '') == recordId
+        && log.get('revision', -1) == request.resource.data.revision && log.get('after', null) == request.resource.data.payload
+        && log.action in ['create','update','delete'];
+    }
+    match /users/{uid}/accessLog/{logId} {
+      allow get, list: if owner(uid) || admin();
+      allow create: if admin()
+        && request.resource.data.keys().hasOnly(['adminUid','adminEmail','action','recordId','revision','reason','before','after','at'])
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.adminEmail == request.auth.token.email
+        && request.resource.data.action in ['create','update','delete','view']
+        && request.resource.data.reason is string && request.resource.data.reason.size() <= 300
+        && (request.resource.data.get('before', null) == null || (request.resource.data.before is string && request.resource.data.before.size() < 800000))
+        && (request.resource.data.get('after', null) == null || (request.resource.data.after is string && request.resource.data.after.size() < 800000))
+        && request.resource.data.at == request.time;
+      allow update: if false;
+      // 계정 삭제 때 본인이 자기 접근 기록도 지운다.
+      allow delete: if owner(uid);
+    }
     match /users/{uid}/records/{recordId} {
-      allow read: if owner(uid) && approved();
-      allow create: if owner(uid) && approved() && validRecord() && request.resource.data.revision == 1;
-      allow update: if owner(uid) && approved() && validRecord()
-        && request.resource.data.revision == resource.data.revision + 1;
+      allow read: if (owner(uid) && approved()) || admin();
+      allow create: if validRecord() && request.resource.data.revision == 1
+        && ((owner(uid) && approved()) || auditedAdminWrite(uid, recordId));
+      allow update: if validRecord() && request.resource.data.revision == resource.data.revision + 1
+        && ((owner(uid) && approved()) || auditedAdminWrite(uid, recordId));
       // Deletions use versioned null payloads, never remove tombstones.
       // 4.11.0 예외: 계정 삭제 때 본인은 자기 기록 문서를 실제로 지운다(승인이 취소된 뒤에도 지울 수 있게 approved는 묻지 않음).
-      allow list: if owner(uid);
+      allow list: if owner(uid) || admin();
       allow delete: if owner(uid);
       function validRecord() {
         return request.resource.data.keys().hasOnly(['revision','payload','updatedAt'])

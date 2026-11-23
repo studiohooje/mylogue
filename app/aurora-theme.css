@@ -1434,3 +1434,12 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .bot-done{font-size:12px;padding:2px 8px;border-radius:999px;background:#1d3a48;color:#8ce4e0}
 .bot-weight>summary,.bot-recall>summary{cursor:pointer;min-height:36px;display:flex;align-items:center;gap:6px}
 .bot-more{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+/* 4.15.0 관리로그 */
+.alog-band{position:sticky;top:0;z-index:20;margin:0 0 10px;padding:10px 14px;border-radius:12px;background:#4a1f26;color:#ffd7d2;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.alog-band .text-button{margin-left:auto;color:#ffd7d2}
+.alog-chip{min-height:32px;padding:0 12px;border-radius:999px;border:1px solid #f3b0a855;background:#3a2626;color:#f3b0a8;font-size:13px;font-weight:700;cursor:pointer}
+.alog-chip.active{background:#f3b0a8;color:#1a1020}
+.alog-user{width:100%;text-align:left;background:none;border:0;color:inherit;cursor:pointer}
+.alog-datebar{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin:8px 0}
+.alog-edit{border:1px dashed #ffffff33;border-radius:12px;padding:10px;margin:6px 0 12px}
+.alog-edit textarea{font-family:ui-monospace,Consolas,monospace;font-size:13px}

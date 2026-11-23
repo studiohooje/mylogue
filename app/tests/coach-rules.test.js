@@ -52,7 +52,8 @@ test('4.0.0 코치 모드 규칙: 마스터끼리만, 연동·범위·초안·�
   await assertFails(setDoc(doc(c,'users',B,'aiDrafts','t-4'),draft('t-4',{evidence:{trainerUid:C}})));
   await assertFails(updateDoc(doc(a,'users',B,'aiDrafts','t-1'),{status:'confirmed',updatedAt:serverTimestamp()}));
   await assertFails(getDocs(collection(a,'users',B,'aiDrafts')));
-  await assertFails(getDoc(doc(a,'users',B,'records','workouts~x')));
+  await assertSucceeds(getDoc(doc(a,'users',B,'records','workouts~x'))); // 4.15.0: A는 관리자라 베타 동안 전체 열람(코치 권한과 별개)
+  await assertFails(getDoc(doc(c,'users',B,'records','workouts~x'))); // 관리자 아닌 계정은 여전히 못 읽음
   // 회신: 회원만 만들고, 그 코치만 읽는다
   const ackId=`${A}_s1_${B}`;
   await assertSucceeds(setDoc(doc(b,'sessionAcks',ackId),{trainerUid:A,memberUid:B,memberName:'문',sessionId:'s1',draftId:'t-1',result:'edited',edits:'세트 수',feedback:{effort:7,pain:[],note:''},ptDeduct:true,createdAt:serverTimestamp()}));

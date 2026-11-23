@@ -9,7 +9,7 @@ test('가입 동의: 필수 항목을 모두 동의해야 통과', () => {
  assert.equal(consentOK({consent:consentRecord({...all, health:false})}), false, '건강정보 별도 동의 없으면 안 됨');
  assert.equal(consentOK({consent:{...consentRecord(all), version:'old'}}), false, '방침이 바뀌면 다시 동의');
  assert.equal(consentRecord(all).version, CONSENT_VERSION);
- assert.deepEqual(CONSENT_ITEMS.map(x => x[0]), ['age','terms','privacy','health','overseas']);
+ assert.deepEqual(CONSENT_ITEMS.map(x => x[0]), ['age','terms','privacy','health','operator','overseas']);
 });
 
 test('동의 화면·하단 고지', () => {

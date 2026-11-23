@@ -3,13 +3,14 @@
 // 법률 검토 전 초안이다. 운영자 정보(OPERATOR)는 대표님 확정 후 채운다.
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const OPERATOR = {name:'스튜디오 후제(Studio Hooje)', email:'studiohooje@gmail.com'};
-export const CONSENT_VERSION = '2026-11-23';
+export const CONSENT_VERSION = '2026-11-23b'; // 4.15.0 베타 운영자 열람 동의 추가(바뀌면 로그인 이용자에게 동의 화면이 다시 뜬다)
 export const COPYRIGHT = '© 2026 Studio Hooje. All rights reserved.';
 export const CONSENT_ITEMS = [
  ['age', '만 14세 이상이에요', '', ''],
  ['terms', '이용약관에 동의해요', 'terms.html', '서비스 이용 규칙'],
  ['privacy', '개인정보 수집·이용에 동의해요', 'privacy.html#collect', 'Google 계정 정보(이름·이메일·프로필 사진·계정 번호)와 내가 남긴 기록을 기록 보관·여러 기기 동기화에 써요. 계정을 지우면 함께 지워요.'],
  ['health', '건강정보(민감정보) 수집·이용에 따로 동의해요', 'privacy.html#health', '체중·체성분·허리둘레·식단·운동 기록과 GLP-1 사용 여부 같은 맞춤 시작 응답은 건강에 관한 정보라 따로 동의를 받아요. 내 기록 보관과 내가 보는 분석에만 써요.'],
+ ['operator', '베타 기간 운영자의 기록 열람·수정에 동의해요', 'privacy.html#operator', '베타 기간에는 문의 해결과 오류 확인을 위해 운영자가 서버에 동기화된 내 기록을 열람·수정할 수 있어요. 모든 수정은 접근 기록에 남고, 고치기 전 내용도 저장돼요. 정식 서비스로 바뀌면 내가 허락한 기간에만 열람하도록 바꿔요.'],
  ['overseas', '개인정보 국외 이전에 동의해요', 'privacy.html#overseas', '로그인과 기록 저장에 Google Firebase를 써요. 기록은 서울 리전에 저장되지만, 로그인 처리 과정에서 Google LLC(미국)로 정보가 이전될 수 있어요.']
 ];
 export const consentOK = settings => settings?.consent?.version===CONSENT_VERSION && CONSENT_ITEMS.every(([k]) => settings.consent.items?.[k]===true);
