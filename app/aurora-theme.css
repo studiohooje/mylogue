@@ -1634,3 +1634,6 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .year-recap ul{margin:8px 0;padding-left:18px;display:grid;gap:6px}.year-recap li{font-size:14px;line-height:1.6;word-break:keep-all}
 .wf-legend span{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:12px}
 @media (min-width:650px){.sc-cell{padding:10px!important}}
+/* 4.17.0 사진 기록 */
+.ai-photo-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}.ai-photo-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.ai-photo-tip{margin-top:8px}.ai-uncertain{margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid #f3c27a88;background:#f3c27a14}.ai-uncertain b{font-size:14px}.ai-uncertain ul{margin:6px 0;padding-left:18px}.ai-uncertain li{font-size:14px}.ai-uncertain small{color:var(--muted)}

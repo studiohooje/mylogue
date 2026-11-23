@@ -28,7 +28,11 @@ export function fakeReply(path, body = {}) {
     return {recipe: {name: (t.split('\n')[0] || '가짜 레시피').slice(0, 30), servings: Number(t.match(/(\d+)\s*인분/)?.[1]) || 1, ingredients: found.length ? found : [{name: '배추김치', g: 200, amount: '2컵'}, {name: '돼지고기', g: 150, amount: '150g'}, {name: '두부', g: 150, amount: '반 모'}]}, left: 9, fake: true};
   }
   const now = body.now || '12:00', day = body.today || new Date().toISOString().slice(0, 10);
-  return {text: '```json\n' + JSON.stringify({mylogue: 1, said: '가짜 AI', records: [{type: 'meal', date: day, time: now, items: [{name: '가짜 AI 비빔밥', qty: 1, unit: '그릇', kcal: 560, carbs: 85, protein: 18, fat: 14}]}]}) + '\n```', left: 29, fake: true};
+  // 사진이 있으면 사진 예시(양이 애매한 음식은 추정 범위를 넓게), 없으면 말 예시
+  const items = (body.images || []).length
+    ? [{name: '비빔밥', qty: 1, unit: '그릇', kcal: 620, carbs: 92, protein: 21, fat: 17, estimate: {kcal: [450, 850], basis: '사진 예시: 그릇 크기로 추정'}}, {name: '된장국', qty: 1, unit: '그릇', kcal: 80, carbs: 8, protein: 6, fat: 3, estimate: {kcal: [70, 100], basis: '사진 예시'}}]
+    : [{name: '가짜 AI 비빔밥', qty: 1, unit: '그릇', kcal: 560, carbs: 85, protein: 18, fat: 14}];
+  return {text: '```json\n' + JSON.stringify({mylogue: 1, said: '가짜 AI(예시 답)', records: [{type: 'meal', date: day, time: now, items}]}) + '\n```', left: 29, fake: true};
 }
 
 export async function aiRequest(path, body = {}, {fetchImpl = globalThis.fetch, token = null} = {}) {

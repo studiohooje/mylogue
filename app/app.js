@@ -169,7 +169,7 @@ function confirmPlanned(ref){const [kind,...rest]=String(ref).split(':'),key=res
 function haloProgress(){const tracks=prefsOf(db).tracks.filter(k=>['body','meal','workout'].includes(k));const kinds=new Set(dayRecords(actualDB(db),today()).map(r=>r.kind));return {done:tracks.filter(k=>kinds.has(k)).length,total:tracks.length||3}}
 function brandMarkHTML({done,total}){const C=2*Math.PI*21,seg=C/total,gap=total>1?4:0,arcs=Array.from({length:total},(_,i)=>`<circle cx="24" cy="24" r="21" pathLength="${C.toFixed(2)}" stroke-dasharray="${(seg-gap).toFixed(2)} ${(C-seg+gap).toFixed(2)}" stroke-dashoffset="${(-i*seg).toFixed(2)}" class="${i<done?'on':''}"/>`).join('');return `<span class="brand-mark${done>=total?' full':''}" aria-hidden="true"><svg viewBox="0 0 48 48"><defs><linearGradient id="brand-ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ce4e0"/><stop offset="1" stop-color="#b48cff"/></linearGradient></defs><g transform="rotate(-90 24 24)">${arcs}</g></svg><img src="icon.svg" alt=""></span>`}
 function homePlanOpts(date=today()){const p=plannedMeals(db,date);return {planned:p.totals,plannedCount:p.count,showPlanned}}
-const aiReady=()=>!!cloudState.user&&cloudState.approval==='approved';
+const aiReady=()=>(!!cloudState.user&&cloudState.approval==='approved')||DEMO; // 둘러보기는 예시 AI로 체험
 // 3.16.0 다른 앱에서 공유받은 글(Android 공유·PWA 공유 대상)은 AI 입력 창에 바로 채운다.
 function openAIInput(text=''){aiInput={text:String(text||'').slice(0,20000),msg:'',busy:false};modal='ai-input';render()}
 // 4.7.0 앱 바로가기(아이콘 길게 누르기)·웹 바로가기(?record=)·사진 공유(인바디 결과지)

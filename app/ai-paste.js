@@ -118,11 +118,15 @@ export function aiPreviewHTML(text){
  try{ const d = parsePaste(text); return `<p class="ai-in-ok">✓ ${d.length}개 기록을 찾았어요</p><ul class="ai-in-list">${d.map(x => `<li><span class="ai-tag">${KIND[x.type]}</span>${h(x.summary)}</li>`).join('')}</ul>`; }
  catch(error){ return `<p class="ai-in-err">${h(error.message)}</p>`; }
 }
+// 4.17.0 사진 기록: AI 추정 범위가 넓은(최대가 최소의 1.6배 이상) 음식은 양을 꼭 확인하도록 이름을 짚어 준다
+export function uncertainItems(text){let ds=[];try{ds=parsePaste(text)}catch{return []}const out=[];for(const d of ds)for(const it of d.parsedData?.items||[]){const e=it.aiEstimate||{};if(e.estimated&&e.caloriesMin>0&&e.caloriesMax/e.caloriesMin>=1.6)out.push({name:it.name,min:e.caloriesMin,max:e.caloriesMax})}return out}
+export function uncertainHTML(text){const u=uncertainItems(text);return u.length?`<div class="ai-uncertain" role="note"><b>양을 확인해 주세요</b><ul>${u.map(x=>`<li>${h(x.name)} <small>AI 추정 ${Math.round(x.min)}~${Math.round(x.max)}kcal</small></li>`).join('')}</ul><p class="hint">사진만으로는 양이 애매해요. 검토함에서 '반 공기', '1.5인분'처럼 고친 뒤 확정하면 돼요.</p></div>`:''}
 export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  const photos = state.photos||[];
  const say = server ? `<section class="ai-say" aria-label="말로 입력">
   <label class="field ai-say-field">말하듯 적어 주세요<textarea id="ai-say" rows="3" placeholder="예: 점심에 제육덮밥 먹고 콜라 한 캔 / 하체 했어, 레그프레스 100키로 12개 3세트 / 아침 체중 72.4">${h(state.say||'')}</textarea></label>
   <div class="ai-say-tools"><label class="button secondary small ai-photo-btn">사진 넣기<input id="ai-photo" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label>${photos.length?`<span class="ai-photo-count">사진 ${photos.length}장</span><button type="button" class="text-button" id="ai-photo-clear">사진 빼기</button>`:''}</div>
+  ${photos.length?`<div class="ai-photo-thumbs">${photos.slice(0,4).map((d,i)=>`<img src="data:image/jpeg;base64,${h(d)}" alt="넣은 사진 ${i+1}">`).join('')}</div><p class="hint">사진만 보내도 되지만, '반 공기', '둘이 나눠 먹음'처럼 한 줄 적어 주면 양을 훨씬 잘 맞혀요.</p>`:`<p class="hint ai-photo-tip">음식 사진은 <b>위에서 한 장</b>, 밝은 곳에서, 수저나 손이 같이 나오면 양을 더 잘 맞혀요. 여럿이 먹은 상이면 '몇 명이서'를 적어 주세요.</p>`}
   <button type="button" class="button ai-ask" id="ai-ask" ${ready&&!state.asking?'':'disabled'}>${state.asking?'AI가 정리하는 중…':'✦ AI에게 정리 맡기'}</button>
   ${state.left!=null?`<p class="hint">오늘 AI 정리 ${state.left}번 남았어요.</p>`:''}
   ${ready?'':'<p class="hint">앱 안 AI 정리는 계정 이용 승인 후 쓸 수 있어요. 그 전에는 아래 ‘다른 AI의 답 붙여넣기’로 기록할 수 있고, 이 기기 검토함에 모여요.</p>'}
@@ -137,7 +141,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  <label class="field ai-in-field">AI가 준 코드 붙여넣기<textarea id="ai-code" rows="6" placeholder="여기에 AI 답을 붙여넣어요 (설명 글이 같이 붙어도 괜찮아요)" spellcheck="false" autocomplete="off">${h(state.text||'')}</textarea></label>
  <div class="ai-in-tools"><button type="button" class="button secondary small" id="ai-paste-clip">클립보드에서 붙여넣기</button>${state.text?'<button type="button" class="text-button" id="ai-code-clear">지우기</button>':''}</div>
  ${server?'</details>':''}
- <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}</div>
+ <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}${uncertainHTML(state.text)}</div>
  ${state.msg?`<p class="ai-in-msg">${h(state.msg)}</p>`:''}
  ${ready?'':'<p class="ai-in-err">AI 입력은 로그인하고 이용 승인된 계정에서 쓸 수 있어요.</p>'}
  <div class="actions ai-in-actions"><button type="button" class="button" id="ai-send" ${ready&&!state.busy?'':'disabled'}>${state.busy?'넣는 중…':'검토함에 넣기'}</button><button type="button" class="button secondary" id="ai-go-inbox" data-page="ai-inbox">AI 검토함 열기${pending?` <span class="ai-in-count">${pending}</span>`:''}</button></div>

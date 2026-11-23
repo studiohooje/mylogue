@@ -68,3 +68,11 @@ test('주간 요약: 계획된 기록은 빼고 숫자는 앱이 계산', () => 
   assert.match(chatContext(db, '2026-11-21'), /2026-11-21: 샐러드 \(약 400kcal\)/);
 });
 test('fakeReply parse는 마이로그 코드 형식', () => { assert.match(fakeReply('parse', {}).text, /"mylogue":1/); });
+test('사진 예시 답: 양이 애매한 음식을 짚어 줌', async () => {
+  const {uncertainItems, uncertainHTML} = await import('../ai-paste.js');
+  const r = fakeReply('parse', {images: [{data: 'x'}], today: '2026-11-23', now: '12:00'});
+  const u = uncertainItems(r.text);
+  assert.equal(u.length, 1); assert.equal(u[0].name, '비빔밥');
+  assert.match(uncertainHTML(r.text), /양을 확인해 주세요/);
+  assert.equal(uncertainHTML(fakeReply('parse', {}).text), '');
+});
