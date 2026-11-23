@@ -1642,3 +1642,11 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .help-cat{margin-top:16px}.help-cat h4{margin:0 0 6px;font-size:14px;color:var(--ice,#8ce4e0)}
 .help-item{border-top:1px solid var(--line)}.help-item>summary{min-height:48px;display:flex;align-items:center;cursor:pointer;font-size:15px;line-height:1.5;padding:6px 0;word-break:keep-all}.help-item p{margin:0 0 12px;font-size:14px;line-height:1.7;color:var(--muted);word-break:keep-all}
 .share-row-btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.share-row-btns .button{min-height:44px}
+/* 4.17.0 입력 화면 운동 지식(요령·바꿔 할 운동·주의) */
+.ex-know{margin:8px 0 4px;border:1px solid #ffffff14;border-radius:14px;background:#ffffff06;font-size:14px;line-height:1.55;word-break:keep-all}
+.ex-know>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;padding:0 14px;color:#8ce4e0;font-weight:600;list-style:none}
+.ex-know>summary::-webkit-details-marker{display:none}
+.ex-know>summary::after{content:'';margin-left:auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .2s}
+.ex-know[open]>summary::after{transform:rotate(-135deg)}
+.ex-know-body{padding:0 14px 12px}.ex-know-body p{margin:6px 0}.ex-know-body .sub{margin-top:10px;font-size:13px;color:var(--muted)}
+.ex-know-body .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}

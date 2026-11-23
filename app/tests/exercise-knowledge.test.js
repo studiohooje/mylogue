@@ -16,3 +16,12 @@ test('처음 해낸 단계(계획·미완료 제외)', () => {
  const w=[{date:'2026-11-01',exercises:[{name:'니 푸시업',sets:[{completed:true}]}]},{date:'2026-11-10',exercises:[{name:'푸시업',sets:[{completed:true}]}]},{date:'2026-11-20',planned:true,exercises:[{name:'디클라인 푸시업',sets:[{completed:true}]}]}];
  const f=firstTimes(w);assert.deepEqual(f.map(x=>x.name).sort(),['니 푸시업','푸시업']);
 });
+import {EXERCISE_CATALOG as ALL_EX} from '../catalog.js';
+import {knowledgeOf as kOf, knowHTML, LADDERS as LAD, tipOf} from '../exercise-knowledge.js';
+test('모든 운동에 요령 한 줄과 바꿔 할 운동이 있다', () => {
+  for (const e of ALL_EX) { const k = kOf(e); assert.ok(k.tip, e.name); assert.ok(k.alternatives.length >= 1, e.name); assert.ok(!k.alternatives.includes(e.name)); }
+  const names = new Set(ALL_EX.map(e => e.name)); for (const l of LAD) for (const s of l.steps) assert.ok(names.has(s), `${l.id}:${s}`);
+  assert.match(tipOf('필라테스 리포머'), /숨/); assert.ok(kOf('필라테스 리포머').alternatives.every(n => /필라테스/.test(n)));
+  assert.ok(kOf('달리기').cautions.includes('발목'));
+  const html = knowHTML('랫풀다운', s => String(s).replace(/</g, '&lt;')); assert.match(html, /data-q-ex="exercise:/); assert.match(html, /<details class="ex-know">/);
+});
