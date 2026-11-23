@@ -3,6 +3,7 @@
 import {coachAllowed, coachData, withCoach, cid, emptySend, readSendForm, rowsToExercises, exercisesToRows, sessionSummary, applyAcks, clientStatus,
  coachNav, coachToggleHTML, coachClientsHTML, coachSendHTML, coachDashHTML, coachScheduleHTML, coachTemplatesHTML, coachSettingsHTML, memberCoachHTML, sharedSummary, COACH_PAGES} from './coach.js';
 import {newMove, bumpSpring, lastMove, readAssessment} from './pilates.js';
+import {PILATES_TEMPLATES} from './templates-data.js';
 import * as cloud from './coach-cloud.js';
 
 const MODE_KEY = 'mylogue.coachMode';
@@ -87,7 +88,7 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
   if(ds.coachDelTpl){ if(!confirmInline(t, '다시 누르면 삭제돼요')) return true; put({templates:d.templates.filter(x => x.id!==ds.coachDelTpl)}); render(); return true; }
   // 수업 입력 화면
   const form = document.getElementById('coach-send-form');
-  if(ds.csClient || ds.csGroup || ds.csLoad || ds.csAdd || ds.csDel!==undefined || ds.pmAdd!==undefined || ds.pmDel || ds.pmSpring || ds.pmFill || ds.csFromLast || t.id==='cs-save-group' || t.id==='cs-save-tpl' || ds.coachStep){
+  if(ds.csClient || ds.csGroup || ds.csLoad || ds.csAdd || ds.csDel!==undefined || ds.pmAdd!==undefined || ds.pmTpl || ds.pmDel || ds.pmSpring || ds.pmFill || ds.csFromLast || t.id==='cs-save-group' || t.id==='cs-save-tpl' || ds.coachStep){
    if(ds.csFromLast && !form) st.send = emptySend(today(), [ds.csFromLast]);
    let s = st.send = readSendForm(form, sendState());
    if(ds.csClient){ const ids = new Set(s.clientIds); ids.has(ds.csClient) ? ids.delete(ds.csClient) : ids.add(ds.csClient); s.clientIds = [...ids]; }
@@ -95,6 +96,8 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
    if(t.id==='cs-save-group'){ const name = prompt?.('그룹 이름', '그룹 수업') || ''; if(name.trim()) { put({groups:[...d.groups, {id:cid('g'), name:name.trim().slice(0,30), clientIds:s.clientIds}]}); toast('그룹을 저장했어요.'); } }
    if(ds.csLoad){ const [k, id] = ds.csLoad.split(':'); const src = k==='tpl' ? d.templates.find(x => x.id===id) : d.sessions.find(x => x.id===id); if(src){ s.rows = exercisesToRows(src.exercises); s.title = src.title||s.title; if(k==='tpl') put({templates:d.templates.map(x => x.id===id ? {...x, lastUsedAt:new Date().toISOString()} : x)}); } }
    if(ds.csAdd){ const blank = s.rows.length===1 && !String(s.rows[0].name||'').trim() && s.rows[0].kind==='strength'; const nr = ds.csAdd==='timed' ? {kind:'timed', name:'', min:'', type:'', note:''} : ds.csAdd==='pilates' ? {kind:'pilates', name:'필라테스 리포머', min:'50', type:s.clientIds.length===2?'듀엣':s.clientIds.length===3?'트리오':s.clientIds.length>3?'그룹':'개인', note:'', moves:[newMove('필라테스 리포머')]} : {kind:'strength', name:'', weight:'', reps:'', sets:3}; s.rows = blank ? [nr] : [...s.rows, nr]; }
+   // 4.12 수업안 템플릿 불러오기: 동작 목록을 채운다(스프링·세팅은 비워 둠 — 기구·회원마다 다르니 강사가 입력)
+   if(ds.pmTpl){ const [i, id] = ds.pmTpl.split('|'); const r = s.rows[Number(i)], tp = PILATES_TEMPLATES.find(x => x.id===id); if(r && tp){ const moves = tp.blocks.flatMap(([, , mv]) => mv.map(([name, app, reps]) => ({...newMove(r.name), name, apparatus:app||newMove(r.name).apparatus, reps:/^\d+$/.test(reps) ? Number(reps) : '', cue:/^\d+$/.test(reps) ? '' : reps}))); r.moves = [...(r.moves||[]).filter(m => String(m.name||'').trim()), ...moves].slice(0, 60); if(tp.cls) r.name = tp.cls; if(tp.min && !r.min) r.min = String(tp.min); toast(`‘${tp.title}’ 동작 ${moves.length}개를 넣었어요. 스프링·세팅은 회원에 맞게 적어 주세요.`); } }
    if(ds.pmAdd!==undefined){ const r = s.rows[Number(ds.pmAdd)]; if(r) r.moves = [...(r.moves||[]), newMove(r.name, (r.moves||[]).at(-1))]; }
    if(ds.pmDel){ const [i, j] = ds.pmDel.split(':').map(Number); const r = s.rows[i]; if(r) r.moves = (r.moves||[]).filter((_, k) => k!==j); }
    if(ds.pmSpring){ const [i, j, c] = ds.pmSpring.split(':'); const r = s.rows[Number(i)]; if(r?.moves?.[Number(j)]) r.moves[Number(j)] = bumpSpring(r.moves[Number(j)], c); }

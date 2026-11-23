@@ -36,7 +36,7 @@ test('운동 카탈로그는 자체 종목과 유산소를 검색한다',()=>{
 });
 
 test('자체 프로그램 템플릿과 바벨 중량 계산',()=>{
- assert.equal(PROGRAM_TEMPLATES.length,3);
+ assert.equal(PROGRAM_TEMPLATES.filter(p=>p.basic).length,3);assert.equal(PROGRAM_TEMPLATES.length,13);const t=createRoutineFromProgram(PROGRAM_TEMPLATES[3].id,0);assert.ok(t.exercises.every(e=>e.exerciseId&&e.sets.every(s=>s.weight===0)));
  const routine=createRoutineFromProgram('full-body',0);assert.equal(routine.exercises.length,3);assert.equal(routine.exercises[0].sets[0].weight,0);
  assert.equal(plateLoadPerSide(80,20),30);assert.equal(plateLoadPerSide(80,15),32.5);
  assert.throws(()=>plateLoadPerSide(10,20),/작습니다/);

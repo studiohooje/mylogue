@@ -4,27 +4,27 @@ import {estimate, calorieOptions, presetOrder, grams, PRESETS, applyGoalWizard, 
 
 const base = {sex:'male', age:32, heightCm:175, weightKg:75, activity:'moderate', goal:'lose', diets:[]};
 
-test('유지 칼로리: Mifflin-St Jeor × 활동 계수, 50 단위', () => {
+test('유지 칼로리: 2025 KDRI 에너지필요추정량 식, 50 단위 (기초대사량은 Mifflin)', () => {
  const e = estimate(base);
  assert.equal(e.bmr, 1689); // 750+1093.75-160+5
- assert.equal(e.tdee, 2600); // 1689*1.55=2618 → 2600
+ assert.equal(e.tdee, 3050); // 662-9.53×32 + 1.25×(15.91×75 + 539.6×1.75) = 3029 → 3050
  assert.equal(estimate({...base, age:null}), null);
  assert.equal(estimate({...base, sex:'none'}).bmr, 1606);
 });
 
 test('칼로리 제안: 목표별 여러 개, 추천 하나, 바닥 아래는 경고', () => {
  const lose = calorieOptions(base);
- assert.deepEqual(lose.map(o=>o.kcal), [2300, 2100, 1850, 2600]);
+ assert.deepEqual(lose.map(o=>o.kcal), [2750, 2550, 2300, 3050]);
  assert.equal(lose.filter(o=>o.rec).length, 1);
- assert.equal(lose.find(o=>o.rec).kcal, 2100);
+ assert.equal(lose.find(o=>o.rec).kcal, 2550);
  const glp = calorieOptions({...base, diets:['glp1']});
  assert.equal(glp.some(o=>o.label==='빠른 감량'), false, 'GLP-1이면 빠른 감량 제외');
  assert.equal(glp.find(o=>o.rec).label, '완만한 감량');
  const small = calorieOptions({sex:'female', age:60, heightCm:150, weightKg:45, activity:'sedentary', goal:'lose', diets:[]});
  assert.ok(small.some(o=>o.below), '기초대사량 아래는 표시');
  assert.ok(small.filter(o=>o.below).every(o=>!o.rec));
- assert.equal(calorieOptions({...base, goal:'gain'}).find(o=>o.rec).kcal, 2850);
- assert.equal(calorieOptions({...base, goal:'maintain'}).find(o=>o.rec).kcal, 2600);
+ assert.equal(calorieOptions({...base, goal:'gain'}).find(o=>o.rec).kcal, 3300);
+ assert.equal(calorieOptions({...base, goal:'maintain'}).find(o=>o.rec).kcal, 3050);
 });
 
 test('탄단지 제안: 성향·목표별 추천, 모든 비율 합 100, g 계산', () => {
@@ -58,11 +58,20 @@ test('문답 화면: 단계별 내용과 주의 문구', () => {
  assert.match(goalWizardHTML(st), /유지 칼로리를 계산할게요/);
  Object.assign(st.profile, base, {diets:['glp1','if']});
  st.step = WIZ_STEPS.indexOf('diet'); assert.match(goalWizardHTML(st), /의료진/);
- st.step = WIZ_STEPS.indexOf('calories'); assert.match(goalWizardHTML(st), /추정 유지 칼로리 <b>2,600kcal/);
+ st.step = WIZ_STEPS.indexOf('calories'); assert.match(goalWizardHTML(st), /추정 유지 칼로리 <b>3,050kcal/);
  st.kcal = 2350; st.step = WIZ_STEPS.indexOf('macros');
  const html = goalWizardHTML(st);
  assert.match(html, /단백질 우선\(GLP-1 사용 중\)<\/b><em class="gw-rec">추천/);
  assert.match(html, /효과 · /); assert.match(html, /주의 · /);
  assert.match(html, /직접 비율 입력/);
  assert.ok(dietNotes(st.profile).some(x=>/간헐적 단식/.test(x)));
+});
+
+test('4.12 KDRI 기준 확인: 여 50대 저활동 1,850(KDRI 산출 1,785) / 남 40세 저활동 2,600, 균형1·2·3', () => {
+ assert.equal(estimate({sex:'female', age:57, heightCm:156, weightKg:57, activity:'light'}).tdee, 1850);
+ assert.equal(estimate({sex:'male', age:40, heightCm:172, weightKg:72, activity:'light'}).tdee, 2600);
+ assert.deepEqual([PRESETS.balance.c, PRESETS.balance.p, PRESETS.balance.f], [40,30,30]);
+ assert.deepEqual([PRESETS.balance2.c, PRESETS.balance2.p, PRESETS.balance2.f], [50,20,30]);
+ assert.deepEqual([PRESETS.balance3.c, PRESETS.balance3.p, PRESETS.balance3.f], [45,25,30]);
+ assert.deepEqual(presetOrder({...base, goal:'maintain'}).order.slice(0,3), ['balance','balance2','balance3']);
 });

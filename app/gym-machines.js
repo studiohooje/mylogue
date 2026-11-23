@@ -1,3 +1,4 @@
+import {MACHINE_SPEC_BY_ID} from './machine-brands.js';
 // 4.7.0 헬스장 머신 한꺼번에 등록(대표님: 다니는 헬스장 머신을 싹 다 등록하고 싶다).
 // - 헬스장마다 '어떤 머신이 있는지'를 공용 도감(gymMachines)에 둔다. 머신은 일반 머신 종류(gm:…)·앱 기본 제조사 모델(bm:…)·
 //   관리자가 더한 제조사 모델(mm:…) 중에서 고른다.
@@ -84,8 +85,10 @@ const specHTML = (st, models, id) => { const sp = st.spec?.[id]||{}, o = specOpt
  if(o.load.length+o.sided.length+o.unit.length===3) return '<small class="gm-auto">기본값으로 등록돼요</small>';
  const grp = (k, label, opts, names) => opts.length<2 ? '' : `<div class="gm-spec-row"><span>${label}</span><div class="gm-seg">${opts.map(v => `<button type="button" class="${sp[k]===v?'on':''}" data-gm-spec="${h(id)}|${k}|${v}" aria-pressed="${sp[k]===v}">${h(names[v]||v)}</button>`).join('')}</div></div>`;
  const sug = sp.unit==='level' ? levelSuggest(st._shared||{}, id) : null;
- const lvl = sp.unit==='level' ? `<div class="gm-spec-row gm-level"><span>숫자 → kg</span><div class="gm-lv"><label>첫 칸<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelFirst" value="${h(sp.levelFirst??'')}" placeholder="5">kg</label><label>한 칸마다<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelStep" value="${h(sp.levelStep??'')}" placeholder="5">kg</label>${sug?`<button type="button" class="gm-sug" data-gm-spec="${h(id)}|levelPreset|${sug.first}/${sug.step}">다른 헬스장 ${sug.n}곳: 첫 칸 ${sug.first} · 한 칸 ${sug.step}kg</button>`:''}<small>머신 옆 라벨에 적혀 있어요. 모르면 비워 두세요. 첫 칸 5kg · 한 칸 5kg으로 추정해 계산하고, 나중에 고칠 수 있어요.</small></div></div>` : '';
+ const lvl = sp.unit==='level' ? `<div class="gm-spec-row gm-level"><span>숫자 → kg</span><div class="gm-lv"><label>첫 칸<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelFirst" value="${h(sp.levelFirst??'')}" placeholder="5">kg</label><label>한 칸마다<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelStep" value="${h(sp.levelStep??'')}" placeholder="5">kg</label>${sug?`<button type="button" class="gm-sug" data-gm-spec="${h(id)}|levelPreset|${sug.first}/${sug.step}">${sug.maker?`제조사 사양: 한 칸 ${sug.step}kg${sug.total?` · 스택 ${sug.total}kg`:''}`:`다른 헬스장 ${sug.n}곳: 첫 칸 ${sug.first} · 한 칸 ${sug.step}kg`}</button>`:''}<small>머신 옆 라벨에 적혀 있어요. 모르면 비워 두세요. 첫 칸 5kg · 한 칸 5kg으로 추정해 계산하고, 나중에 고칠 수 있어요.</small></div></div>` : '';
  return `<div class="gm-spec${miss?' miss':''}">${miss?'<small class="gm-need">이 헬스장 머신을 보고 골라 주세요</small>':''}${grp('load','무게 방식',o.load,LOAD_LABEL)}${grp('sided','움직임',o.sided,SIDED_SHORT)}${grp('unit','무게 표시',o.unit,UNIT_LABEL)}${lvl}</div>`; };
+// 4.12 제조사 사양 한 줄(근거 있는 값만)
+const specLine = id => { const sp = MACHINE_SPEC_BY_ID.get(id); if(!sp) return ''; const t = [sp.load==='stack'?'핀식':sp.load==='plate'?'원판식':sp.load==='cable'?'케이블':'', sp.sided==='iso'?'좌우 따로':'', sp.totalKg?`스택 ${sp.totalKg}kg`:'', sp.stepKg?`한 칸 ${sp.stepKg}kg`:'', sp.unit==='lb'?'lb 표시':''].filter(Boolean); return t.length ? `<small class="gm-specline">${h(t.join(' · '))}</small>` : ''; };
 export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
  st._shared = shared;
  const models = allModels(shared), brandsBy = new Map(), cnt = gymCounts(shared), makers = makerCounts(shared);
@@ -95,7 +98,7 @@ export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
  const gens = GENERIC_MACHINES.filter(g => partOf(g)===st.part).sort((a, b) => score(b) - score(a));
  const missing = specMissing(admin ? st : {...st, checked:new Set([...st.checked].filter(id => !st.initial.has(id)))}, shared), changedSpec = [...st.checked].filter(id => st.initial.has(id) && JSON.stringify(st.spec?.[id]||{})!==JSON.stringify(st.initialSpec?.[id]||{})).length;
  const count = [...st.checked].length, added = [...st.checked].filter(x => !st.initial.has(x)).length, removed = [...st.initial].filter(x => !st.checked.has(x)).length;
- const box = (m, sub = false) => `<div class="gm-item"><label class="gm-row${sub?' sub':''}${!admin&&st.initial.has(m.id)?' locked':''}"><input type="checkbox" data-gm-pick="${h(m.id)}" ${st.checked.has(m.id)?'checked':''} ${!admin&&st.initial.has(m.id)?'disabled title="이미 등록된 머신이에요"':''}><span>${h(m.name)}${!sub&&m.exercise?`<small>${h(m.exercise)}</small>`:''}${sub&&cnt.get(m.id)?`<small>마이로그 헬스장 ${cnt.get(m.id)}곳</small>`:''}</span></label>${st.checked.has(m.id)&&(admin||!st.initial.has(m.id))?specHTML(st, models, m.id):!admin&&st.initial.has(m.id)?'<small class="gm-done">등록됨</small>':''}</div>`;
+ const box = (m, sub = false) => `<div class="gm-item"><label class="gm-row${sub?' sub':''}${!admin&&st.initial.has(m.id)?' locked':''}"><input type="checkbox" data-gm-pick="${h(m.id)}" ${st.checked.has(m.id)?'checked':''} ${!admin&&st.initial.has(m.id)?'disabled title="이미 등록된 머신이에요"':''}><span>${h(m.name)}${!sub&&m.exercise?`<small>${h(m.exercise)}</small>`:''}${sub&&cnt.get(m.id)?`<small>마이로그 헬스장 ${cnt.get(m.id)}곳</small>`:''}${sub?specLine(m.id):''}</span></label>${st.checked.has(m.id)&&(admin||!st.initial.has(m.id))?specHTML(st, models, m.id):!admin&&st.initial.has(m.id)?'<small class="gm-done">등록됨</small>':''}</div>`;
  return `<div class="gm gap"><p class="hint"><b>${h(st.gymName)}</b>에 있는 머신을 골라요. ${admin?'관리자라 저장하면 바로 이 헬스장을 쓰는 모든 사람에게 보여요.':'보내면 관리자가 확인한 뒤 이 헬스장을 쓰는 모든 사람에게 보여요.'} 제조사를 모르면 머신 종류만 골라도 돼요.</p>
  ${admin?'':`<p class="gm-key">이미 등록된 머신은 '등록됨'으로 보여요. 다른 분이 먼저 요청한 머신은 자동으로 건너뛰고, 한 번에 ${MAX_PER_SEND}개·하루 ${MAX_PER_DAY}개까지 보낼 수 있어요. 방식이 틀린 머신은 운영진에게 알려 주세요.</p>`}<p class="gm-key">${st.key.startsWith('kakao:')?'지도에서 찾은 장소라 같은 곳을 등록한 사람과 함께 써요.':'이름만 적은 장소예요. 지도에서 찾아 등록하면 다른 사람과 더 잘 맞춰져요.'}</p>
  <div class="chip-row gm-parts" role="tablist">${PARTS.map(p => `<button type="button" class="chip ${p===st.part?'active':''}" data-gm-part="${p}">${p}</button>`).join('')}</div>
@@ -149,5 +152,8 @@ export function levelToKg(spec, n){ const v = Number(n); if(!(v>0)) return {kg:0
 export function levelSuggest(shared = {}, modelId = ''){
  if(String(modelId).startsWith('gm:')) return null;
  const c = new Map(); for(const g of shared.gymMachines||[]) if(!g.removed && g.modelId===modelId && g.spec?.unit==='level' && g.spec.levelFirst!=null && g.spec.levelStep!=null){ const k = `${g.spec.levelFirst}/${g.spec.levelStep}`; c.set(k, (c.get(k)||0) + 1); }
- const best = [...c.entries()].sort((a, b) => b[1]-a[1])[0]; if(!best) return null; const [f, s] = best[0].split('/').map(Number); return {first:f, step:s, n:best[1]};
+ const best = [...c.entries()].sort((a, b) => b[1]-a[1])[0];
+ // 4.12 다른 헬스장 값이 없으면 제조사 사양(한 칸 kg)으로 제안 — 첫 칸은 사양에 있으면 그 값, 없으면 한 칸과 같게(추정)
+ if(!best){ const sp = MACHINE_SPEC_BY_ID.get(modelId); if(sp?.stepKg > 0) return {first:sp.firstKg ?? sp.stepKg, step:sp.stepKg, n:0, maker:true, total:sp.totalKg}; return null; }
+ const [f, s] = best[0].split('/').map(Number); return {first:f, step:s, n:best[1]};
 }

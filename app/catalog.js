@@ -1,5 +1,7 @@
 // General exercise names only. No third-party media or proprietary programs.
 import {MORE_EXERCISES,MORE_CARDIO,NAME_RULES,SOURCES,MORE_TIMED} from './exercise-data.js';
+import {EXERCISE_ENRICH} from './exercise-enrich.js';
+import {STRENGTH_TEMPLATES} from './templates-data.js';
 const strength={
  '가슴':['벤치프레스','인클라인 벤치프레스','덤벨 벤치프레스','클로즈그립 벤치프레스','원암 덤벨 체스트프레스','체스트 프레스','케이블 플라이','푸시업','딥스'],
  '등':['데드리프트','랫풀다운','풀업','바벨 로우','시티드 케이블 로우','원암 덤벨 로우','페이스 풀'],
@@ -89,7 +91,9 @@ const taken=new Set(BASE.map(x=>x.name));
 const MORE=MORE_EXERCISES.filter(([name])=>!taken.has(name)).map(([name,part,equipment,p,s,o={}])=>{const dumbbell=equipment==='덤벨'||equipment==='케틀벨',hands=o.h1?1:dumbbell?2:0;return {name,part,kind:'strength',id:'exercise:'+name,aliases:o.aliases||[],equipment,weightBasis:dumbbell?'per-hand':'total',handCount:hands,repBasis:o.u?'per-side':'total',defaultWeight:0,weightDisplay:dumbbell?(hands===1?'한 손 기준':'한 손 기준 · 양손 각각'):'총중량',primaryMuscleIds:p,secondaryMuscleIds:s.filter(x=>!p.includes(x)),anatomyMapVersion:2,sourceUrl:SOURCES[0]}});
 const CARDIO=MORE_CARDIO.filter(n=>!taken.has(n)).map(name=>({name,part:'유산소',kind:'cardio',id:'exercise:'+name,aliases:[],equipment:'유산소',weightBasis:'total',handCount:0,repBasis:'total',defaultWeight:0,weightDisplay:'총중량',primaryMuscleIds:[],secondaryMuscleIds:[],anatomyMapVersion:2,sourceUrl:''}));
 const TIMED=MORE_TIMED.filter(([n])=>!taken.has(n)&&!MORE_CARDIO.includes(n)).map(([name,part])=>({name,part,kind:'cardio',id:'exercise:'+name,aliases:[],equipment:part==='유산소'?'유산소':part,weightBasis:'total',handCount:0,repBasis:'total',defaultWeight:0,weightDisplay:'시간',primaryMuscleIds:[],secondaryMuscleIds:[],anatomyMapVersion:2,sourceUrl:''}));
-export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO,...TIMED]);
+// 4.12 종목 보강(별칭·근육 조정·요령)을 합친다
+const enrich=x=>{const e=EXERCISE_ENRICH[x.id];if(!e)return x;return {...x,aliases:[...new Set([...(x.aliases||[]),...(e.a||[])])],...(e.p&&!muscleOverrides[x.name]?{primaryMuscleIds:e.p,secondaryMuscleIds:e.s||[]}:{}),...(e.c?{cues:e.c}:{}),...(e.m?{mistake:e.m}:{}),...(e.d?{level:e.d}:{}),...(e.u&&!x.sourceUrl?{sourceUrl:e.u}:{})}};
+export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO,...TIMED].map(enrich));
 const norm=v=>String(v||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/]/g,'');
 // 이름(또는 별칭)으로 도감 종목을 찾는다. 띄어쓰기·괄호 차이는 무시.
 export function findExercise(name){const n=norm(name);if(!n)return null;return EXERCISE_CATALOG.find(x=>norm(x.name)===n||(x.aliases||[]).some(a=>norm(a)===n))||null}
@@ -101,11 +105,14 @@ export function searchExercises(query='',part=''){
 }
 const session=(title,names)=>({title,exercises:names.map(name=>{const x=EXERCISE_CATALOG.find(e=>e.name===name);return {exerciseId:x?.id,primaryMuscleIds:x?.primaryMuscleIds,secondaryMuscleIds:x?.secondaryMuscleIds,name,part:x?.part||'기타',kind:x?.kind||'strength',sets:[{weight:0,reps:8,type:'본세트',completed:true},{weight:0,reps:8,type:'본세트',completed:true},{weight:0,reps:8,type:'본세트',completed:true}]}})});
 // Generic original templates. Zero weight explicitly means the user must choose a safe working load.
-export const PROGRAM_TEMPLATES=Object.freeze([
+const BASIC_PROGRAMS=[
  {id:'full-body',title:'전신 3회',description:'전신을 번갈아 기록하는 시작용 구성. 중량은 직접 결정하세요.',sessions:[session('전신 A',['스쿼트','벤치프레스','바벨 로우']),session('전신 B',['루마니안 데드리프트','오버헤드 프레스','랫풀다운']),session('전신 C',['레그 프레스','덤벨 벤치프레스','시티드 케이블 로우'])]},
  {id:'upper-lower',title:'상·하체 4회',description:'상체와 하체를 나누는 기록 틀입니다.',sessions:[session('상체 A',['벤치프레스','바벨 로우','오버헤드 프레스']),session('하체 A',['스쿼트','레그 컬','카프 레이즈']),session('상체 B',['덤벨 벤치프레스','랫풀다운','사이드 레터럴 레이즈']),session('하체 B',['루마니안 데드리프트','레그 프레스','런지'])]},
  {id:'push-pull-legs',title:'밀기·당기기·하체',description:'부위별 세션을 자유롭게 반복할 수 있는 기록 틀입니다.',sessions:[session('밀기',['벤치프레스','오버헤드 프레스','케이블 푸시다운']),session('당기기',['랫풀다운','시티드 케이블 로우','바벨 컬']),session('하체',['스쿼트','루마니안 데드리프트','레그 컬'])]}
-]);
+];
+// 4.12 근거 있는 프로그램 10개(초급 전신·상하체·밀당다리·가정용 등): 세트·반복은 템플릿 값, 무게는 0(직접)
+const session2=(title,rows)=>({title,exercises:rows.map(([name,sets,reps])=>{const x=EXERCISE_CATALOG.find(e=>e.name===name);return {exerciseId:x?.id,primaryMuscleIds:x?.primaryMuscleIds,secondaryMuscleIds:x?.secondaryMuscleIds,name,part:x?.part||'기타',kind:x?.kind||'strength',sets:Array.from({length:Math.max(1,Math.min(6,Number(sets)||3))},()=>({weight:0,reps:Number(reps)||8,type:'본세트',completed:true}))}})});
+export const PROGRAM_TEMPLATES=Object.freeze([...BASIC_PROGRAMS.map(p=>({...p,basic:true})),...STRENGTH_TEMPLATES.map(t=>({id:t.id,title:t.title,level:t.level,description:`${t.goal}${t.days?` · 주 ${t.days.join('~')}회`:''}${t.min?` · ${t.min.join('~')}분`:''}`,note:t.note,sessions:t.sessions.map(([title,focus,rows])=>({...session2(title,rows),focus}))}))]);
 export function createRoutineFromProgram(programId,sessionIndex=0){
  const template=PROGRAM_TEMPLATES.find(x=>x.id===programId),selected=template?.sessions?.[sessionIndex];
  if(!selected)throw Error('프로그램 구성을 찾을 수 없습니다.');

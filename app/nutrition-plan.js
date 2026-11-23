@@ -18,8 +18,10 @@ export const GOALS = [['lose','감량','체지방을 줄이고 싶어요'],['mai
 export const DIETS = [['glp1','GLP-1 계열 약 사용 중','위고비·마운자로 등'],['keto','저탄고지·키토',''],['if','간헐적 단식',''],['vegetarian','채식',''],['highprotein','고단백 위주로 먹어요',''],['none','특별히 없어요','']];
 
 export const PRESETS = {
- balance:  {name:'균형형', c:50, p:20, f:30, what:'한국인 영양섭취기준 범위 안의 무난한 비율이에요.', good:'오래 지키기 쉽고 외식·한식과 잘 맞아요.', care:'운동을 많이 하거나 감량 중이면 단백질이 모자랄 수 있어요.'},
- protein:  {name:'고단백 균형', c:40, p:30, f:30, what:'단백질을 넉넉히, 탄수화물과 지방은 고르게.', good:'감량 중 근육을 지키고 포만감이 오래가요.', care:'신장 질환이 있으면 단백질 양을 의료진과 정하세요.'},
+ balance:  {name:'균형1 · 40:30:30', c:40, p:30, f:30, what:'탄수 4 : 단백질 3 : 지방 3. 마이로그 기본 균형이에요.', good:'단백질을 넉넉히 챙기면서 탄수·지방도 고르게 먹어요. 운동하는 분께 무난해요.', care:'2025 한국인 영양소 섭취기준 적정비율(탄 50~65·단 7~20·지 15~30%)보다 단백질이 높아요. 신장 질환이 있으면 의료진과 정하세요.'},
+ balance2: {name:'균형2 · 50:20:30', c:50, p:20, f:30, what:'2025 한국인 영양소 섭취기준 적정비율 안의 비율이에요.', good:'한식·외식과 잘 맞고 오래 지키기 쉬워요.', care:'운동을 많이 하거나 감량 중이면 단백질이 모자랄 수 있어요.'},
+ balance3: {name:'균형3 · 45:25:30', c:45, p:25, f:30, what:'균형1과 균형2의 중간이에요.', good:'밥을 너무 줄이지 않으면서 단백질도 챙겨요.', care:'처음엔 단백질 25%를 채우기 어렵다면 균형2부터 시작해도 좋아요.'},
+ protein:  {name:'고단백', c:35, p:35, f:30, what:'단백질을 넉넉히, 탄수화물과 지방은 고르게.', good:'감량 중 근육을 지키고 포만감이 오래가요.', care:'신장 질환이 있으면 단백질 양을 의료진과 정하세요.'},
  cut:      {name:'고단백 감량 4:4:2', c:40, p:40, f:20, what:'탄수화물 4 : 단백질 4 : 지방 2. 근력운동하며 감량할 때 많이 쓰는 비율이에요.', good:'근육 손실을 줄이며 체지방을 빼는 데 유리해요.', care:'지방이 낮아 오래 하면 허기·피로가 올 수 있어요. 견과·생선 같은 좋은 지방은 챙기세요.'},
  perform:  {name:'운동 퍼포먼스', c:55, p:25, f:20, what:'탄수화물을 넉넉히 둬서 운동 에너지를 채워요.', good:'고강도 운동·증량 때 힘이 잘 나요.', care:'활동량이 적은 날엔 남는 탄수화물이 체지방이 될 수 있어요.'},
  lowcarb:  {name:'저탄수', c:25, p:35, f:40, what:'탄수화물을 줄이고 단백질·지방으로 채워요.', good:'혈당 변동과 식후 졸림이 줄 수 있어요.', care:'고강도 운동 수행이 떨어질 수 있어요. 당뇨약을 먹고 있다면 의료진과 상의하세요.'},
@@ -38,13 +40,25 @@ export function cleanProfile(p={}){
  };
 }
 
+// 4.12 유지 칼로리 = 2025 한국인 영양소 섭취기준(KDRI) 에너지필요추정량 식(2005 미국·캐나다 DRI 식, KDRI 2025 1권 표 7).
+//  남 662 − 9.53×나이 + PA×(15.91×체중kg + 539.6×키m), 여 354 − 6.91×나이 + PA×(9.36×체중kg + 726×키m)
+//  PA(신체활동계수) 남 1.0/1.11/1.25/1.48, 여 1.0/1.12/1.27/1.45 = 비활동/저활동/활동/매우 활동.
+//  앱 활동 단계: 거의 안 움직임=비활동, 가볍게=저활동, 꾸준히=활동, 많이·아주 많이=매우 활동('아주 많이'는 +10% 추정).
+//  성별 '선택 안 함'은 남녀 평균. 기초대사량(바닥 계산용)은 Mifflin-St Jeor 그대로.
+//  이전(4.11까지)은 Mifflin × 1.2~1.9 관행 계수 → KDRI보다 14~21% 낮았음(docs/reviews/2026-11-23_유지칼로리_전후비교.md).
+export const PA = {male:{sedentary:1.0, light:1.11, moderate:1.25, active:1.48, athlete:1.48}, female:{sedentary:1.0, light:1.12, moderate:1.27, active:1.45, athlete:1.45}};
+export function eer(sex, age, heightCm, weightKg, activity){
+ const H = heightCm/100, extra = activity==='athlete' ? 1.1 : 1;
+ const m = (662 - 9.53*age + PA.male[activity]*(15.91*weightKg + 539.6*H))*extra;
+ const f = (354 - 6.91*age + PA.female[activity]*(9.36*weightKg + 726*H))*extra;
+ return sex==='male' ? m : sex==='female' ? f : (m+f)/2;
+}
 export function estimate(profile){
  const p = cleanProfile(profile);
  if(p.age===null || p.heightCm===null || p.weightKg===null) return null;
  const base = 10*p.weightKg + 6.25*p.heightCm - 5*p.age;
  const bmr = base + (p.sex==='male' ? 5 : p.sex==='female' ? -161 : -78);
- const factor = ACTIVITY.find(a=>a[0]===p.activity)[1];
- return {bmr:Math.round(bmr), tdee:r50(bmr*factor), floor:Math.max(Math.round(bmr), p.sex==='male'?1500:p.sex==='female'?1200:1350)};
+ return {bmr:Math.round(bmr), tdee:r50(eer(p.sex, p.age, p.heightCm, p.weightKg, p.activity)), floor:Math.max(Math.round(bmr), p.sex==='male'?1500:p.sex==='female'?1200:1350), basis:'KDRI2025-EER'};
 }
 
 // 칼로리 제안: 목표별 2~3개 + 추천 표시. 바닥(기초대사량·최소 섭취) 아래는 빼고 이유를 남긴다.
@@ -74,7 +88,7 @@ export function calorieOptions(profile){
 export function presetOrder(profile){
  const p = cleanProfile(profile);
  const rec = p.diets.includes('keto') ? 'keto' : p.diets.includes('glp1') ? 'glp1' : p.goal==='lose' ? 'cut' : p.goal==='gain' ? 'perform' : p.diets.includes('highprotein') ? 'protein' : 'balance';
- const order = ['balance','protein','cut','perform','lowcarb','keto','glp1'];
+ const order = ['balance','balance2','balance3','protein','cut','perform','lowcarb','keto','glp1'];
  return {rec, order:[rec, ...order.filter(k=>k!==rec)]};
 }
 
@@ -126,13 +140,13 @@ const opt = (attr, v, on, title, sub='', extra='') => `<button type="button" cla
 export function goalWizardHTML(st){
  const p = st.profile, step = WIZ_STEPS[st.step], e = estimate(p);
  const top = `<div class="onb-top">${dots(st)}<button type="button" class="text-button" id="gw-skip">나중에 할게요</button></div>`;
- if(step==='basic') return `<div class="onb gw">${top}<p class="onb-q">유지 칼로리를 계산할게요</p><p class="onb-s">대략적인 계산에만 쓰고, 언제든 바꿀 수 있어요.</p><form id="gw-basic" class="gw-basic"><div class="pref-seg" role="radiogroup" aria-label="계산용 성별">${[['male','남성'],['female','여성'],['none','선택 안 함']].map(([v,t])=>`<button type="button" class="${p.sex===v?'on':''}" data-gw-sex="${v}" aria-pressed="${p.sex===v}">${t}</button>`).join('')}</div><div class="gw-fields"><label class="field">나이<input name="age" type="number" inputmode="numeric" min="14" max="100" value="${h(p.age??'')}" placeholder="예: 32" required></label><label class="field">키 cm<input name="heightCm" type="number" inputmode="decimal" min="120" max="230" step="0.1" value="${h(p.heightCm??'')}" placeholder="예: 170" required></label><label class="field">체중 kg<input name="weightKg" type="number" inputmode="decimal" min="30" max="300" step="0.1" value="${h(p.weightKg??'')}" placeholder="예: 68" required></label></div><p class="hint">성별은 기초대사량 공식에만 써요. ‘선택 안 함’이면 중간값으로 계산해요.</p></form>${nav(st)}</div>`;
+ if(step==='basic') return `<div class="onb gw">${top}<p class="onb-q">유지 칼로리를 계산할게요</p><p class="onb-s">대략적인 계산에만 쓰고, 언제든 바꿀 수 있어요.</p><form id="gw-basic" class="gw-basic"><div class="pref-seg" role="radiogroup" aria-label="계산용 성별">${[['male','남성'],['female','여성'],['none','선택 안 함']].map(([v,t])=>`<button type="button" class="${p.sex===v?'on':''}" data-gw-sex="${v}" aria-pressed="${p.sex===v}">${t}</button>`).join('')}</div><div class="gw-fields"><label class="field">나이<input name="age" type="number" inputmode="numeric" min="14" max="100" value="${h(p.age??'')}" placeholder="예: 32" required></label><label class="field">키 cm<input name="heightCm" type="number" inputmode="decimal" min="120" max="230" step="0.1" value="${h(p.heightCm??'')}" placeholder="예: 170" required></label><label class="field">체중 kg<input name="weightKg" type="number" inputmode="decimal" min="30" max="300" step="0.1" value="${h(p.weightKg??'')}" placeholder="예: 68" required></label></div><p class="hint">성별은 칼로리 계산에만 써요. ‘선택 안 함’이면 남녀 중간값으로 계산해요.</p></form>${nav(st)}</div>`;
  if(step==='activity') return `<div class="onb gw">${top}<p class="onb-q">평소에 얼마나 움직여요?</p><div class="onb-opts">${ACTIVITY.map(([v,,t,d])=>opt('data-gw-activity',v,p.activity===v,t,d)).join('')}</div>${nav(st)}</div>`;
  if(step==='goal') return `<div class="onb gw">${top}<p class="onb-q">목표가 뭐예요?</p><div class="onb-opts">${GOALS.map(([v,t,d])=>opt('data-gw-goal',v,p.goal===v,t,d)).join('')}</div>${nav(st)}</div>`;
  if(step==='diet') return `<div class="onb gw">${top}<p class="onb-q">해당되는 게 있나요?</p><p class="onb-s">여러 개 골라도 돼요. 제안할 때 참고해요.</p><div class="onb-chips">${DIETS.map(([v,t,d])=>`<button type="button" class="onb-chip ${(v==='none'?!p.diets.length:p.diets.includes(v))?'on':''}" data-gw-diet="${v}" aria-pressed="${v==='none'?!p.diets.length:p.diets.includes(v)}">${t}${d?` <small>${d}</small>`:''}</button>`).join('')}</div>${p.diets.includes('glp1')?'<p class="gw-care">약을 쓰는 중이라면 식단·체중 목표는 처방한 의료진의 안내가 먼저예요. 마이로그의 제안은 참고용이에요.</p>':''}${nav(st)}</div>`;
  if(step==='calories'){
   const list = calorieOptions(p);
-  return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p><p class="onb-s">추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal</p><div class="onb-opts">${list.map(o=>opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',)).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
+  return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p><p class="onb-s">추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal</p><p class="onb-s gw-basis">2025 한국인 영양소 섭취기준의 에너지필요추정량 식으로 계산한 대략값이에요. 2~3주 체중 변화를 보고 조정하세요.</p><div class="onb-opts">${list.map(o=>opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',)).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
  }
  if(step==='macros'){
   const kcal = st.kcal, {rec, order} = presetOrder(p);

@@ -1,3 +1,4 @@
+import {MACHINE_SPECS} from './machine-models-data.js';
 // 3.15.0 제조사 머신 도감(앱 기본 제공). 각 모델은 일반 머신 종류(base)에 연결되고, 부하 방식·좌우·근육 부하를 그 종류에서 물려받는다.
 // 모델 이름은 각 제조사 공식 카탈로그(2026-11-21 확인)를 따랐다. 지역·연식에 따라 이름이나 구성이 다를 수 있다.
 // 근거: research_notes/gym_machines/brands.md
@@ -66,5 +67,9 @@ export const BRAND_LINES = Object.freeze([
 ]);
 const slug = t => String(t).toLocaleLowerCase('en').replace(/[^a-z0-9°]+/g, '-').replace(/^-|-$/g, '');
 // 평평한 목록: {id, builtin, manufacturer, line, model, baseId, unit}
-export const BRAND_MODELS = Object.freeze(BRAND_LINES.flatMap(l => l.models.map(([model, base]) => ({id:`bm:${slug(l.maker)}:${slug(l.line)}:${slug(model)}`, builtin:true, manufacturer:l.maker, line:l.line, model, baseId:`gm:${base}`, unit:l.unit}))));
-export const BRAND_MAKERS = Object.freeze([...new Set(BRAND_LINES.map(l => l.maker))]);
+const BASE_MODELS = BRAND_LINES.flatMap(l => l.models.map(([model, base]) => ({id:`bm:${slug(l.maker)}:${slug(l.line)}:${slug(model)}`, builtin:true, manufacturer:l.maker, line:l.line, model, baseId:`gm:${base}`, unit:l.unit})));
+// 4.12 모델 대장에서 앱 목록에 없던 모델을 더하고, 모든 모델에 사양(spec)을 붙인다
+export const MACHINE_SPEC_BY_ID = new Map(MACHINE_SPECS.map(([id, maker, line, model, base, load, sided, unit, stepKg, totalKg, firstKg, url, code, conf]) => [id, {id, maker, line, model, base, load, sided, unit, stepKg, totalKg, firstKg, url, code, conf}]));
+const baseIds = new Set(BASE_MODELS.map(b => b.id));
+export const BRAND_MODELS = Object.freeze([...BASE_MODELS, ...MACHINE_SPECS.filter(r => !baseIds.has(r[0])).map(([id, maker, line, model, base, , , unit]) => ({id, builtin:true, manufacturer:maker, line, model, baseId:base, unit:unit==='lb'?'lb':'kg', fromSpec:true}))].map(b => MACHINE_SPEC_BY_ID.has(b.id) ? {...b, spec:MACHINE_SPEC_BY_ID.get(b.id)} : b));
+export const BRAND_MAKERS = Object.freeze([...new Set(BRAND_MODELS.map(b => b.manufacturer))]);

@@ -2,6 +2,8 @@
 // 필라테스 수업 = 시간 종목(kind:'cardio') 하나 + moves(동작 목록). 무게 대신 스프링, 세팅·큐잉이 기록의 절반.
 // 빈 값은 null/빈 문자열(0이 아님). '치료·교정' 같은 의료 표현은 앱이 쓰지 않는다.
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+import {PILATES_DICT} from './pilates-moves-data.js';
+import {PILATES_TEMPLATES} from './templates-data.js';
 export const APPARATUS = ['매트','리포머','리포머 타워','캐딜락','체어','래더 배럴','스파인 코렉터','아크 배럴','기타'];
 export const SPRINGS = [['빨강','#e5484d'],['파랑','#3e7bfa'],['노랑','#f2c94c'],['초록','#30a46c'],['검정','#2b2b2b'],['회색','#9aa0a6'],['흰색','#f4f4f4'],['보라','#8e4ec6']];
 export const LOADS = ['가볍게','중간','무겁게'];
@@ -21,7 +23,13 @@ export const MOVES = {
  '스파인 코렉터':['스완','브릿지','사이드 리프트','시저스'],
  '아크 배럴':['헌드레드','브릿지','스트레칭']
 };
+// 4.12 동작 사전을 기구별 목록에 합친다(기존 순서 먼저, 사전 동작은 뒤에)
+for(const [name, app] of PILATES_DICT){ const k = MOVES[app] ? app : null; if(k && !MOVES[k].includes(name)) MOVES[k].push(name); }
 export const ALL_MOVES = [...new Set(Object.values(MOVES).flat())];
+const DICT_BY = new Map(); for(const r of PILATES_DICT){ for(const n of [r[0], r[2], ...(r[3]||[])]) if(n){ const k = `${String(n).replace(/\s/g,'')}|${r[1]}`; if(!DICT_BY.has(k)) DICT_BY.set(k, r); const k2 = String(n).replace(/\s/g,''); if(!DICT_BY.has(k2)) DICT_BY.set(k2, r); } }
+// 이름(+기구)으로 사전 항목 찾기
+export function moveInfo(name, apparatus=''){ const n = String(name||'').replace(/\s/g,''); if(!n) return null; const r = DICT_BY.get(`${n}|${apparatus}`) || DICT_BY.get(n); return r ? {name:r[0], apparatus:r[1], en:r[2], level:r[4], focus:r[5], cues:r[6], spring:r[7], setup:r[8]} : null; }
+export const moveInfoHTML = m => { const x = moveInfo(m.name, m.apparatus); if(!x) return ''; const bits = [x.level, (x.focus||[]).join('·'), x.en].filter(Boolean); return `<p class="pm-ref"><small>${esc(bits.join(' · '))}${x.spring?` · 스프링 참고 ${esc(x.spring)}`:''}${x.setup?` · 세팅 참고 ${esc(x.setup)}`:''}${x.cues?.length?`<br>큐 예시: ${esc(x.cues.slice(0,2).join(' / '))}`:''}</small></p>`; };
 const apparatusOf = cls => ({'필라테스 매트':'매트','필라테스 캐딜락':'캐딜락','필라테스 체어':'체어','필라테스 바렐':'래더 배럴'})[cls] || '리포머';
 export const isPilates = e => /필라테스/.test(String(e?.name||'')) || e?.part==='필라테스' || Array.isArray(e?.moves);
 const num = (v, lo, hi, int=true) => { if(v===''||v==null) return null; const n = Number(v); if(!Number.isFinite(n)) return null; const x = int ? Math.round(n) : n; return x<lo||x>hi ? null : x; };
@@ -91,7 +99,7 @@ export function pilatesRowHTML(r, i, {lastOf}={}){
  const mv = (m, j) => {
   const more = !!(m.setup || m.props?.length || m.cue || m.obs || m.side || m.level);
   const last = lastOf?.(m.name);
-  return `<div class="pm-move" data-pm="${i}:${j}"><div class="pm-line"><span class="pm-no">${j+1}</span><input data-m="name" list="pm-move-names" value="${esc(m.name)}" placeholder="동작(예: 풋워크)" aria-label="동작 이름" data-pm-name="${i}:${j}"><select data-m="apparatus" aria-label="기구">${APPARATUS.map(a => `<option ${m.apparatus===a?'selected':''}>${a}</option>`).join('')}</select><button type="button" class="text-button" data-pm-del="${i}:${j}" aria-label="동작 지우기">×</button></div>
+  return `<div class="pm-move" data-pm="${i}:${j}"><div class="pm-line"><span class="pm-no">${j+1}</span><input data-m="name" list="pm-move-names" value="${esc(m.name)}" placeholder="동작(예: 풋워크)" aria-label="동작 이름" data-pm-name="${i}:${j}"><select data-m="apparatus" aria-label="기구">${APPARATUS.map(a => `<option ${m.apparatus===a?'selected':''}>${a}</option>`).join('')}</select><button type="button" class="text-button" data-pm-del="${i}:${j}" aria-label="동작 지우기">×</button></div>${moveInfoHTML(m)}
  ${m.apparatus==='매트'?'':`<div class="pm-springrow" role="group" aria-label="스프링(누를 때마다 개수 +1, 4개 다음은 0)">${SPRINGS.map(([c]) => { const n = (m.springs||[]).find(s => s.c===c)?.n||0; return `<button type="button" class="pm-spring${n?' on':''}" data-pm-spring="${i}:${j}:${c}" aria-label="${c} 스프링 ${n}개">${springDot(c)}${n?`<b>${n}</b>`:''}</button>`; }).join('')}<select data-m="load" aria-label="저항 정도"><option value="">저항</option>${LOADS.map(l => `<option ${m.load===l?'selected':''}>${l}</option>`).join('')}</select></div>`}
  <div class="pm-line pm-amt"><label>회<input data-m="reps" type="number" inputmode="numeric" min="1" max="500" value="${esc(m.reps??'')}"></label><label>초<input data-m="sec" type="number" inputmode="numeric" min="1" max="3600" value="${esc(m.sec??'')}"></label><label>단계<select data-m="level"><option value="">—</option>${[1,2,3,4,5].map(n => `<option ${Number(m.level)===n?'selected':''}>${n}</option>`).join('')}</select></label></div>
  ${last && !m.springs?.length && !m.setup ? `<button type="button" class="text-button pm-last" data-pm-fill="${i}:${j}">지난번 값 넣기 · ${esc(springText(last)||'')}${last.setup?` · ${esc(last.setup)}`:''}</button>` : ''}
@@ -107,10 +115,11 @@ export function pilatesRowHTML(r, i, {lastOf}={}){
  };
  return `<div class="cs-row pilates" data-row="${i}"><div class="pm-head"><span class="pm-tag">필라테스</span><select data-r="name" aria-label="수업 종류">${[...new Set([...PILATES_CLASSES, ...(r.name&&!PILATES_CLASSES.includes(r.name)?[r.name]:[])])].map(c => `<option value="${esc(c)}" ${r.name===c?'selected':''}>${esc(c.replace(/^필라테스 /,''))}</option>`).join('')}</select><input data-r="min" type="number" inputmode="numeric" min="0" value="${esc(r.min)}" placeholder="분" aria-label="수업 시간(분)"><select data-r="type" aria-label="수업 형태">${['', ...CLASS_TYPES].map(t => `<option ${r.type===t?'selected':''} value="${t}">${t||'형태'}</option>`).join('')}</select><button type="button" class="text-button" data-cs-del="${i}" aria-label="수업 지우기">×</button></div>
  <div class="pm-moves">${moves.map(mv).join('')||'<p class="hint">동작을 추가하면 기구·스프링·세팅을 기록할 수 있어요. 동작 없이 시간만 보내도 돼요.</p>'}</div>
+ ${moves.length<2?`<details class="pm-tpl"><summary>수업안 불러오기</summary><div class="chip-row">${PILATES_TEMPLATES.map(t => `<button type="button" class="chip" data-pm-tpl="${i}|${esc(t.id)}">${esc(t.title)}</button>`).join('')}</div><p class="hint">동작 순서만 채워요. 스프링·세팅은 회원과 기구에 맞게 적어 주세요.</p></details>`:''}
  <div class="actions"><button type="button" class="button secondary small" data-pm-add="${i}">＋ 동작</button>${moves.length>1?`<small class="pm-flow">기구 바꿈 ${fs.swaps}번 · 스프링 바꿈 ${fs.changes}번${fs.estMin?` · 동작 약 ${fs.estMin}분`:''}</small>`:''}</div>
  <input type="hidden" data-r="note" value="${esc(r.note||'')}"></div>`;
 }
-export const moveNamesDatalist = () => `<datalist id="pm-move-names">${ALL_MOVES.map(m => `<option value="${esc(m)}">`).join('')}</datalist>`;
+export const moveNamesDatalist = () => `<datalist id="pm-move-names">${[...new Set([...ALL_MOVES, ...PILATES_DICT.map(r => r[0])])].map(m => `<option value="${esc(m)}">`).join('')}</datalist>`;
 // 줄 요소 → 동작 목록(화면에서 읽기)
 export function readMoves(rowEl, prev=[]){
  return [...rowEl.querySelectorAll('.pm-move')].map((el, j) => {

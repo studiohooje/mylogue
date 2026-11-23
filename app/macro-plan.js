@@ -19,7 +19,9 @@ export function planFromSettings(s={}){
 
 // 빠른 선택(초보자도 고르기 쉽게)
 export const PRESETS = [
- {id:'balance', label:'균형 40·30·30', rules:{carbs:{mode:'ratio', value:40}, protein:{mode:'ratio', value:30}, fat:{mode:'ratio', value:30}}},
+ {id:'balance', label:'균형1 40·30·30', rules:{carbs:{mode:'ratio', value:40}, protein:{mode:'ratio', value:30}, fat:{mode:'ratio', value:30}}},
+ {id:'balance2', label:'균형2 50·20·30', rules:{carbs:{mode:'ratio', value:50}, protein:{mode:'ratio', value:20}, fat:{mode:'ratio', value:30}}},
+ {id:'balance3', label:'균형3 45·25·30', rules:{carbs:{mode:'ratio', value:45}, protein:{mode:'ratio', value:25}, fat:{mode:'ratio', value:30}}},
  {id:'protein', label:'단백질 체중×2 · 지방 25% · 나머지 탄수', rules:{protein:{mode:'perKg', value:2}, fat:{mode:'ratio', value:25}, carbs:{mode:'rest', value:1}}},
  {id:'muscle', label:'단백질 체중×1.8 · 탄수 체중×4 · 나머지 지방', rules:{protein:{mode:'perKg', value:1.8}, carbs:{mode:'perKg', value:4}, fat:{mode:'rest', value:1}}},
  {id:'lowcarb', label:'저탄수 · 탄수 체중×1 · 단백질 체중×1.6 · 나머지 지방', rules:{carbs:{mode:'perKg', value:1}, protein:{mode:'perKg', value:1.6}, fat:{mode:'rest', value:1}}},
