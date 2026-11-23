@@ -1621,3 +1621,8 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .exp-metrics li.v-better small{color:#6fd6a3}.exp-metrics li.v-worse small{color:#f3c27a}
 .exp-new{margin-top:12px}.exp-new>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:14px;font-weight:700}
 .exp-picks{display:grid;gap:8px;margin-top:8px}.exp-pick{display:grid;gap:2px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#ffffff06;color:inherit;font:inherit;cursor:pointer;min-height:44px}.exp-pick b{font-size:15px}.exp-pick small{font-size:13px;color:var(--muted);line-height:1.5;word-break:keep-all}
+/* 4.17.0 프로그램 자동 설계 */
+.pb-seg{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}.pb>.hint{margin:10px 0 0;font-size:13px}
+.pb-out{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:14px 0}
+.pb-sess{padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#ffffff06}.pb-sess b{font-size:15px}.pb-sess ol{margin:6px 0 0;padding-left:20px;display:grid;gap:4px}.pb-sess li{font-size:14px}.pb-sess small{color:var(--muted);font-size:12px;margin-left:4px}
+.pb #pb-save{width:100%;min-height:48px;margin-top:8px}
