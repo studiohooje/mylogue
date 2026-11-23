@@ -53,3 +53,16 @@ test('무료는 발견 개수 제한 + 잠금 한 줄, 글자는 이스케이프
   assert.equal((html.match(/class="jr-card"/g) || []).length, 1); assert.match(html, /잠금/); assert.doesNotMatch(html, /<strong><b>/);
 });
 test('차이 강도', () => { assert.equal(strengthOf([10, 11, 10, 11, 10], [20, 21, 20, 21, 20]), 'strong'); assert.equal(strengthOf([10, 30, 10, 30], [15, 25, 20, 20]), null); });
+test('2차 발견: 아침 거른 날·운동 다음 날 체중·단백질과 포만감', () => {
+  const db = {meals: [], body: [], workouts: [], checkins: {}};
+  const START2 = new Date('2026-08-01T12:00:00').getTime(); let w = 70;
+  for (let i = 0; i < 60; i++) {
+    const date = ymd(START2 + i * DAY), skip = i % 3 === 0, hiP = i % 3 === 1, gym = i % 2 === 0;
+    if (!skip) db.meals.push({date, name: '아침', calories: 400, protein: hiP ? 40 : 10, loggedAt: at(date, 8)});
+    db.meals.push({date, name: '점심', calories: skip ? 1100 : 700, protein: hiP ? 50 : 20, loggedAt: at(date, 12)}, {date, name: '저녁', calories: hiP ? 500 : skip ? 1100 : 800, protein: hiP ? 50 : 20, loggedAt: at(date, 19)});
+    if (gym) db.workouts.push({date, exercises: [{name: '스쿼트'}]});
+    db.body.push({date, weight: Math.round((w + (i > 0 && (i - 1) % 2 === 0 ? 0.4 : 0)) * 10) / 10});
+  }
+  const ids = discoveries(db, ymd(START2 + 59 * DAY)).map(x => x.id);
+  assert.ok(ids.includes('skip-breakfast'), ids.join()); assert.ok(ids.includes('after-workout-weight'), ids.join()); assert.ok(ids.includes('protein-full'), ids.join());
+});

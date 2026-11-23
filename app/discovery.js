@@ -60,6 +60,28 @@ export function discoveries(db, today) {
   // 6) 운동 요일(빈도 패턴: 통계 검정 대신 비율이 뚜렷할 때만)
   const wdays = daily.filter(x => x.workout).map(x => toDate(x.date).getDay());
   if (wdays.length >= 8) { const cnt = WD.map((_, i) => wdays.filter(d => d === i).length), top = cnt.map((c, i) => [c, i]).sort((a, b) => b[0] - a[0]).slice(0, 2), share = (top[0][0] + top[1][0]) / wdays.length; if (share >= 0.5 && top[1][0] >= 2) out.push({id: 'workout-weekday', strength: share >= 0.65 ? 'strong' : 'weak', title: '나의 운동 요일', text: `운동은 주로 ${WD[top[0][1]]}·${WD[top[1][1]]}요일에 했어요.`, basis: `운동한 ${wdays.length}일 중 ${top[0][0] + top[1][0]}일`}); }
+  // 4.17.0 2차 ─────────────────────────────
+  // 7) 아침을 거른 날(첫 끼 11시 이후)의 하루 칼로리
+  const skip = full.filter(x => x.firstMeal != null && x.firstMeal >= 11).map(x => x.kcal), ate = full.filter(x => x.firstMeal != null && x.firstMeal < 10).map(x => x.kcal);
+  if (skip.length >= 4 && ate.length >= 6 && Math.abs(mean(skip) - mean(ate)) >= 150) add('skip-breakfast', skip, ate, (a, b) => ({title: '아침을 거른 날', text: `아침을 거른 날은 하루 전체로 ${fmt(Math.abs(a - b))}kcal ${a > b ? '더' : '덜'} 먹었어요.`, basis: `거른 날 ${skip.length}일 · 먹은 날 ${ate.length}일`}));
+  // 8) 근력 운동 다음 날 아침 체중(근육 회복 중 물)
+  const afterW = deltas.filter(x => x.day.workout).map(x => x.delta), afterR = deltas.filter(x => !x.day.workout).map(x => x.delta);
+  if (afterW.length >= 5 && afterR.length >= 5 && mean(afterW) - mean(afterR) >= 0.15) add('after-workout-weight', afterW, afterR, (a, b) => ({title: '운동 다음 날 체중', text: `운동한 다음 날 아침 체중이 평균 ${r1(a - b)}kg 더 올라 있었어요. 근육이 회복하며 물을 머금는 거라 걱정하지 않아도 돼요.`, basis: `운동 다음 날 ${afterW.length}번 · 쉰 다음 날 ${afterR.length}번`}));
+  // 9) 단백질 비중이 높은 날의 칼로리(포만감)
+  const ratio = full.filter(x => x.kcal > 0).map(x => ({k: x.kcal, r: x.protein * 4 / x.kcal})).sort((a, b) => a.r - b.r);
+  if (ratio.length >= 18) { const third = Math.floor(ratio.length / 3), lo = ratio.slice(0, third).map(x => x.k), hi = ratio.slice(-third).map(x => x.k); if (mean(lo) - mean(hi) >= 150) add('protein-full', hi, lo, (a, b) => ({title: '단백질과 포만감', text: `단백질 비중이 높은 날은 낮은 날보다 하루 ${fmt(b - a)}kcal 덜 먹었어요.`, basis: `높은 날 ${hi.length}일 · 낮은 날 ${lo.length}일`})); }
+  // 10) 잘 잔 날의 운동
+  const slept = daily.filter(x => x.sleep != null);
+  const goodW = slept.filter(x => x.sleep >= 4).map(x => x.workout ? 1 : 0), badW = slept.filter(x => x.sleep <= 2).map(x => x.workout ? 1 : 0);
+  if (goodW.length >= 8 && badW.length >= 5 && mean(goodW) - mean(badW) >= 0.2) out.push({id: 'sleep-move', strength: mean(goodW) - mean(badW) >= 0.35 ? 'strong' : 'weak', title: '잠과 운동', text: `잘 잔 날은 ${Math.round(mean(goodW) * 100)}%, 설친 날은 ${Math.round(mean(badW) * 100)}% 운동했어요.`, basis: `잘 잔 날 ${goodW.length}일 · 설친 날 ${badW.length}일`});
+  // 11) 주말 사이 체중(금 → 월)과 평일 사이(월 → 목)
+  const wmap = new Map(daily.filter(x => x.weight != null).map(x => [x.date, x.weight])), addD = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const wkd = [], wd2 = [];
+  for (const [d, w] of wmap) { const dow = toDate(d).getDay(); if (dow === 5 && wmap.has(addD(d, 3))) wkd.push(wmap.get(addD(d, 3)) - w); if (dow === 1 && wmap.has(addD(d, 3))) wd2.push(wmap.get(addD(d, 3)) - w); }
+  if (wkd.length >= 4 && wd2.length >= 4 && mean(wkd) >= 0.15 && mean(wkd) - mean(wd2) >= 0.2) add('weekend-weight', wkd, wd2, (a, b) => ({title: '주말 사이 체중', text: `월요일 체중이 금요일보다 평균 ${r1(a)}kg 높았어요. 같은 사흘이라도 평일 사이엔 ${r1(b) > 0 ? '+' : ''}${r1(b)}kg였어요. 주말 무게는 대개 주중에 다시 빠져요.`, basis: `주말 ${wkd.length}번 · 평일 ${wd2.length}번`}));
+  // 12) 운동한 날의 단백질
+  const pW = full.filter(x => x.workout).map(x => x.protein), pR = full.filter(x => !x.workout).map(x => x.protein);
+  if (pW.length >= 5 && pR.length >= 5 && Math.abs(mean(pW) - mean(pR)) >= 10) add('workout-protein', pW, pR, (a, b) => ({title: '운동한 날의 단백질', text: `운동한 날은 쉰 날보다 단백질을 ${Math.round(Math.abs(a - b))}g ${a > b ? '더' : '덜'} 먹었어요.${a < b ? ' 운동한 날 한 끼에 단백질 반찬 하나를 더해 보면 회복에 좋아요.' : ''}`, basis: `운동한 날 ${pW.length}일 · 쉰 날 ${pR.length}일`}));
   return out.sort((a, b) => (a.strength === 'strong' ? 0 : 1) - (b.strength === 'strong' ? 0 : 1));
 }
 
