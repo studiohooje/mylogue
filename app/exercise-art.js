@@ -77,6 +77,7 @@ export const EXERCISE_ART = {
  "워킹 런지":"dumbbell-walking-lunge",
  "일립티컬":"elliptical-cross-trainer",
  "EZ바 컬":"ez-bar-curl",
+ "프리처 컬":"ez-bar-preacher-curl-on-a-preacher-bench",
  "EZ바 스컬 크러셔":"ez-bar-skull-crusher-on-a-flat-bench",
  "파머스 워크":"farmer-s-walk-with-two-heavy-dumbbells",
  "덤벨 플라이":"flat-bench-dumbbell-fly",
