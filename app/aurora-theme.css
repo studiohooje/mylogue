@@ -1609,3 +1609,8 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .mr-bar{position:relative;height:10px;border-radius:99px;background:#ffffff12}.mr-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#8ce4e0}.mr-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ffffffaa}
 .s-high .mr-bar i{background:#f3c27a}.s-low .mr-bar i{background:#8fb8ff}.s-unknown .mr-bar i{background:#ffffff33}
 .mr-status{margin:0;font-size:13px}.mr-status small{color:var(--muted)}.mr-top{margin:0;font-size:13px;color:var(--muted);word-break:keep-all}.mr-today{font-size:14px;margin:8px 0}
+/* 4.17.0 플러스 도구 */
+.sim-seg,.sit-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}.plus-sim>.hint{margin:10px 0 0;font-size:13px}
+.sim-out{margin:14px 0 6px;padding:14px 16px;border-radius:14px;background:#ffffff08}.sim-out p{margin:0}.sim-out b{font-size:17px;font-variant-numeric:tabular-nums}.sim-out .hint{margin-top:6px}
+.sit-step{margin-top:12px}.sit-step b{font-size:14px;color:var(--ice,#8ce4e0)}.sit-step ul{margin:6px 0 0;padding-left:18px;display:grid;gap:6px}.sit-step li{font-size:14px;line-height:1.6;word-break:keep-all}
+.better-list{list-style:none;margin:10px 0;padding:0;display:grid;gap:8px}.better-list li{display:grid;gap:2px;padding:12px 14px;border:1px solid var(--line);border-radius:12px}.better-list b{font-size:15px}.better-list span{font-size:13px;color:#9fe6dc;font-variant-numeric:tabular-nums}.better-list small{font-size:13px;color:var(--muted)}
