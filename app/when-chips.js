@@ -5,7 +5,7 @@ const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const WD = '일월화수목금토';
-const STEPS = [[-60,'−1시간'], [-30,'−30분'], [-15,'−15분'], [15,'+15분'], [30,'+30분'], [60,'+1시간']];
+const STEPS = [[-30,'−30분'], [-60,'−1시간'], [-120,'−2시간']]; // 4.17.0 기록은 대개 지난 일이라 뒤로 가는 것만(나머지는 시각 버튼의 고르기 판에서)
 
 export function relDate(v, now = new Date()){
  if(!v) return '';

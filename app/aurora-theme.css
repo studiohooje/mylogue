@@ -1565,3 +1565,26 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 /* 4.17.0 끝나고 한 번에·계획 안내: 폰 폭에서 칸이 좁아지지 않게 3칸 + 2칸 */
 @media (max-width:519px){.after-row,.guide-row{grid-template-columns:repeat(6,minmax(0,1fr))!important}.after-row .after-name{grid-column:1/-1}.after-row>.field:not(.after-name){grid-column:span 2}.guide-row>.field:nth-of-type(5),.guide-row>.field:nth-of-type(6){grid-column:span 3}.after-row:not(.guide-row)>.field:nth-of-type(5){grid-column:span 2}}
 @media (max-width:519px){.after-row:not(.guide-row)>.field:not(.after-name){grid-column:span 3!important}}
+/* 4.17.0 '언제'(날짜·시각) 줄 맞춤: 두 칸 높이·윗선 같게, 라벨-칸 8px, 카드 안쪽 16px */
+.when-block{padding:16px!important;gap:12px!important;border-radius:16px}
+.when-title{font-size:14px;font-weight:700;color:var(--text)}
+.when-main{align-items:start!important;gap:12px!important}
+.when-pill{gap:8px!important;font-size:13px}
+.when-pill input:not(.when-native),.when-timebtn{height:52px!important;min-height:52px!important;box-sizing:border-box;padding:0 14px!important;border-radius:12px!important;font-size:17px!important;line-height:52px}
+.when-pill input[type=date]:not(.when-native){line-height:normal}
+.when-cap{margin-top:-2px}
+.when-chip{min-height:40px!important;padding:0 14px!important}
+.when-block .when-chips{gap:8px!important}.when-row{gap:8px!important}
+/* 입력 화면 공통 리듬: 칸과 칸 사이 18px, 라벨-칸 8px, 칸 안쪽 좌우 14px */
+.sheet .form-grid{row-gap:18px;column-gap:12px}
+.sheet .field{gap:8px}
+.sheet input:not([type=checkbox]):not([type=radio]):not([type=range]):not(.when-native),.sheet select,.sheet textarea{padding-left:14px;padding-right:14px}
+.sheet .qs-row input,.sheet .step-input input,.sheet input.center{padding-left:4px;padding-right:4px}
+.sheet .hint{margin-top:6px;line-height:1.55}
+.when-pill input[type=date]:not(.when-native){font-size:16px!important;padding-right:10px!important}
+/* 4.17.0 칩·탭 터치 높이 40px 이상(측정기 기준) */
+.chip,.seg button,.df-tab,.pref-seg button,.mode-chip,.db-mid{min-height:40px}
+.chip{display:inline-flex;align-items:center;justify-content:center}
+.chip,.when-chip,.seg button,.df-tab,.pref-seg button,.mode-chip,.db-mid,.body-tabs button,.bf-tabs button{min-height:40px!important;height:auto!important}
+.quick-again .chip,.chip{white-space:nowrap;overflow:visible;padding-left:14px;padding-right:14px}
+.tabs button{min-height:44px!important}
