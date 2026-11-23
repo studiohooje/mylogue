@@ -3,6 +3,7 @@ import {cleanBody,cleanMeal,cleanWorkout,cleanFoodPreset,cleanMachine,cleanCusto
 import {stableJSON} from './cloud-model.js';
 import {cloudState} from './cloud-sync.js';
 import {scopedKey} from './storage-scope.js';
+import {deriveKey,proof,newNonce,sameHex} from './bridge-proof.js';
 // 4.11.0 승인 전·로그인 전에도 AI 입력(붙여넣기)을 쓸 수 있게: 초안을 이 기기의 검토함에 두고, 확정하면 이 기기 기록에 넣는다.
 // 승인된 계정은 예전처럼 서버 검토함을 쓴다. 이 기기 초안은 id가 'l-'로 시작한다.
 const LOCAL_KEY=()=>scopedKey('mylogue.localDrafts');
@@ -48,23 +49,52 @@ async function context(){
 }
 export const BRIDGE_PORT=43127;
 const bridgeURL=(port,path)=>{const n=Number(port||BRIDGE_PORT);if(!Number.isInteger(n)||n<1024||n>65535)throw Error('포트는 1024~65535 사이 숫자예요.');return `http://127.0.0.1:${n}${path}`};
-export async function bridgeStatus(port=BRIDGE_PORT,{timeout=1500}={}){
+// 4.17.0 보안: 연결 코드로 서로 확인한다(bridge-proof.js). 코드에서 만든 키만 이 기기·이 계정 공간에 저장한다.
+const BRIDGE_KEY=()=>scopedKey('mylogue.bridgeKey');
+const loadBridgeKey=()=>{try{const v=globalThis.localStorage?.getItem(BRIDGE_KEY())||'';return /^[0-9a-f]{64}$/.test(v)?v:''}catch{return ''}};
+const saveBridgeKey=v=>{try{v?globalThis.localStorage?.setItem(BRIDGE_KEY(),v):globalThis.localStorage?.removeItem(BRIDGE_KEY())}catch{}};
+async function bridgeFetch(port,path,body,{timeout=4000}={}){
   const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),timeout);
-  try{const r=await fetch(bridgeURL(port,'/status'),{credentials:'omit',referrerPolicy:'no-referrer',signal:ctl.signal,cache:'no-store'});const b=await r.json().catch(()=>({}));return r.ok&&b.running?b:null}catch{return null}finally{clearTimeout(t)}
+  try{
+    const r=await fetch(bridgeURL(port,path),body===undefined?{credentials:'omit',referrerPolicy:'no-referrer',signal:ctl.signal,cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'omit',referrerPolicy:'no-referrer',signal:ctl.signal});
+    const b=await r.json().catch(()=>({}));return {ok:r.ok,status:r.status,body:b};
+  }finally{clearTimeout(t)}
 }
-// 3.8.0: 코드 없이 버튼 한 번. 같은 PC의 도구에 로그인 토큰과 갱신 토큰을 넘겨 이 PC에서 계속 연결되게 한다.
-export async function pairLocalAgent(port=BRIDGE_PORT,{remember=true}={}){
+// 도구가 먼저 코드를 아는지 증명해야 한다. 포트를 가로챈 다른 프로그램이나, 다른 포트의 도구 증명을 옮겨 오는 경우를 막는다.
+async function verifyBridge(port,key){
+  const nonce=newNonce();const r=await bridgeFetch(port,'/hello',{nonce}).catch(()=>null);
+  const expect=await proof(key,'bridge',nonce,String(Number(port||BRIDGE_PORT)));
+  if(!r?.ok||!sameHex(expect,r.body?.proof))throw Error('연결 코드가 맞지 않거나, 이 포트의 프로그램이 마이로그 도구가 아니에요. AI에게 "마이로그 연결 코드 알려줘"라고 물어 코드를 다시 확인해 주세요.');
+}
+const appProof=async(key,label)=>{const nonce=newNonce();return {nonce,proof:await proof(key,label,nonce)}};
+export async function bridgeStatus(port=BRIDGE_PORT,{timeout=1500}={}){
+  let st;try{st=await bridgeFetch(port,'/status',undefined,{timeout})}catch{return null}
+  if(!st?.ok||!st.body?.running)return null;
+  if(Number(st.body.protocol||0)<4)return {running:true,outdated:true,version:st.body.version||''};
+  const key=loadBridgeKey();if(!key)return {running:true,needsCode:true,version:st.body.version};
+  try{await verifyBridge(port,key);const info=await bridgeFetch(port,'/info',await appProof(key,'info'));if(info.ok&&info.body?.running)return {...info.body,verified:true}}catch{}
+  return {running:true,needsCode:true,version:st.body.version};
+}
+// 연결: 코드 → 키 → 도구 증명 확인 → (확인된 도구에만) 로그인 토큰 전송
+export async function pairLocalAgent(port=BRIDGE_PORT,{code='',remember=true}={}){
+  const key=code?await deriveKey(code):loadBridgeKey();
+  if(!key)throw Error('AI 도구가 알려 준 연결 코드를 넣어 주세요.');
+  const st=await bridgeFetch(port,'/status').catch(()=>null);
+  if(!st?.ok)throw Error('이 PC에서 AI 도구가 켜져 있지 않아요. AI 앱(Codex·Claude 등)을 열어 마이로그 도구를 켠 뒤 다시 눌러 주세요.');
+  if(Number(st.body?.protocol||0)<4)throw Error('이 PC의 마이로그 도구가 예전 버전이에요. 보안을 위해 도구를 새 버전으로 바꾼 뒤 연결해 주세요.');
+  await verifyBridge(port,key);
   const ctx=await context(),idToken=await ctx.auth.getIdToken(ctx.user,true);
-  let response;
-  try{response=await fetch(bridgeURL(port,'/pair'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:ctx.user.uid,email:ctx.user.email||'',idToken,refreshToken:remember?ctx.user.refreshToken:'',remember}),credentials:'omit',referrerPolicy:'no-referrer'})}
-  catch{throw Error('이 PC에서 AI 도구가 켜져 있지 않아요. AI 앱(Codex·Claude 등)을 열어 마이로그 도구를 켠 뒤 다시 눌러 주세요.')}
-  const result=await response.json().catch(()=>({}));
-  if(!response.ok||result.ok!==true)throw Error(result.error||'AI 도구 연결에 실패했어요. 도구가 켜져 있는지 확인해 주세요.');
-  return result;
+  const r=await bridgeFetch(port,'/pair',{...await appProof(key,'pair'),uid:ctx.user.uid,idToken,refreshToken:remember?ctx.user.refreshToken:'',remember},{timeout:15000}).catch(()=>null);
+  if(!r?.ok||r.body?.ok!==true)throw Error(r?.body?.error||'AI 도구 연결에 실패했어요. 도구가 켜져 있는지 확인해 주세요.');
+  saveBridgeKey(key);
+  return r.body;
 }
 export async function unpairLocalAgent(port=BRIDGE_PORT){
-  const r=await fetch(bridgeURL(port,'/unpair'),{method:'POST',credentials:'omit',referrerPolicy:'no-referrer'}).catch(()=>null);
-  if(!r?.ok)throw Error('AI 도구에 닿지 않았어요. 도구가 켜져 있을 때 다시 해제해 주세요.');
+  const key=loadBridgeKey();if(!key)throw Error('이 기기에는 연결 코드 정보가 없어요. AI 도구에서 직접 연결을 끊거나, 연결 코드로 다시 연결한 뒤 해제해 주세요.');
+  await verifyBridge(port,key);
+  const r=await bridgeFetch(port,'/unpair',await appProof(key,'unpair')).catch(()=>null);
+  if(!r?.ok)throw Error(r?.body?.error||'AI 도구에 닿지 않았어요. 도구가 켜져 있을 때 다시 해제해 주세요.');
+  saveBridgeKey('');
   return true;
 }
 export async function listAIDrafts(){

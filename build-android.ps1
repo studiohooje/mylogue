@@ -27,15 +27,17 @@ try {
     if ($LASTEXITCODE -ne 0) { throw '웹 빌드 실패' }
     node verify-build.mjs
     if ($LASTEXITCODE -ne 0) { throw '웹 빌드 검증 실패' }
+    # 4.17.0: 웹 배포용 다운로드 폴더(APK·ZIP)가 앱 안에 들어가지 않게 뺀다
+    if (Test-Path 'dist\downloads') { Remove-Item -Recurse -Force 'dist\downloads' }
     npx cap sync android
     if ($LASTEXITCODE -ne 0) { throw 'Android 동기화 실패' }
     Push-Location 'android'
     try {
-        .\gradlew.bat assembleDebug --no-daemon
+        .\gradlew.bat assembleRelease --no-daemon
         if ($LASTEXITCODE -ne 0) { throw 'APK 빌드 실패' }
     } finally { Pop-Location }
 } finally { Pop-Location }
 
-$apk = Join-Path $app 'android\app\build\outputs\apk\debug\app-debug.apk'
+$apk = Join-Path $app 'android\app\build\outputs\apk\release\app-release.apk'
 Get-Item $apk | Select-Object FullName, Length, LastWriteTime
 Get-FileHash $apk -Algorithm SHA256 | Select-Object Hash

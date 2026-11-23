@@ -47,7 +47,7 @@ export async function validateBackup(raw){
  if(JSON.stringify(actual)!==JSON.stringify(raw.manifest.counts)||raw.photos.length!==raw.manifest.photos)throw Error('백업 건수가 일치하지 않습니다.');
  const photos=[],ids=new Set();
  for(const p of raw.photos){
-  if(typeof p.id!=='string'||!p.id||ids.has(p.id)||!validDate(p.date)||!/^image\/[a-z0-9.+-]+$/i.test(p.type))throw Error('사진 메타데이터가 올바르지 않습니다.');
+  if(typeof p.id!=='string'||!/^[A-Za-z0-9_-]{1,80}$/.test(p.id)||ids.has(p.id)||!validDate(p.date)||!/^image\/[a-z0-9.+-]+$/i.test(p.type))throw Error('사진 메타데이터가 올바르지 않습니다.');
   ids.add(p.id);const bytes=decode(p.data);if(!bytes.length||bytes.length!==p.size||await hash(bytes)!==p.sha256)throw Error('사진 크기 또는 해시가 맞지 않습니다.');
   photos.push({id:p.id,date:p.date,blob:new Blob([bytes],{type:p.type})});
  }

@@ -18,6 +18,10 @@ android {
     }
     buildTypes {
         release {
+            // 4.17.0 보안 점검 후속: 배포 APK는 디버깅이 꺼진 release 빌드. 서명은 지금까지와 같은 이 PC의 디버그 키라
+            // 기존 설치본 위에 그대로 업데이트되고 Google 로그인(SHA-1)도 그대로다. 정식 출시 때 전용 서명 키로 바꾼다.
+            signingConfig signingConfigs.debug
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -18,7 +18,7 @@ export async function verifyUserToken(token,uid,{fetcher=fetch}={}){
  const segment=token.split('.')[1];
  let claims;try{claims=JSON.parse(Buffer.from(segment,'base64url').toString('utf8'))}catch{throw Error('로그인 토큰 형식이 올바르지 않습니다.')}
  if(claims.aud!==PROJECT||Number(claims.exp)*1000<Date.now()+30000)throw Error('마이로그 로그인 시간이 만료됐습니다. 다시 연결해 주세요.');
- return {uid,expiresAt:new Date(Number(claims.exp)*1000).toISOString()};
+ return {uid,email:String(data.users[0].email||''),expiresAt:new Date(Number(claims.exp)*1000).toISOString()};
 }
 
 export async function exchangeRefreshToken(refreshToken,{fetcher=fetch}={}){

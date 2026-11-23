@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {flagDoubts} from './food-db-check.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.resolve(HERE, '..');
@@ -91,6 +92,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     foodsRaw: read('mfds/out/foods-raw.json'),
     products: read('products_merged/products.json').products,
   });
+  const flagged = flagDoubts(rows); console.log(`품질 검사: 확인 필요 표시 ${flagged}행 추가`);
   const out = {v: 1, builtAt: new Date().toISOString().slice(0, 10), source: '식품의약품안전처 식품영양성분 데이터베이스(공공데이터포털)·농촌진흥청 국가표준식품성분표·제조사 라벨', rows};
   const json = JSON.stringify(out);
   fs.writeFileSync(path.join(APP, 'food-db.json'), json);

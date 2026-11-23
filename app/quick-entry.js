@@ -65,7 +65,7 @@ export function timedEditorHTML(selected,s){
  <label class="field">${cat==='필라테스'?'수업 시간(분)':'시간(분)'}<input id="q-t-min" type="number" inputmode="decimal" min="1" max="600" placeholder="예: 50"></label>
  ${cat==='러닝·유산소'?'<label class="field">거리(km)<input id="q-t-km" type="number" inputmode="decimal" min="0" step="0.01" placeholder="예: 5.2"></label><label class="field">평균 심박(선택)<input id="q-t-hr" type="number" inputmode="numeric" min="30" max="250" placeholder="예: 150"></label>':''}
  ${cat==='필라테스'?'<label class="field">수업 형태<select id="q-t-type"><option value="">선택 안 함</option><option>개인</option><option>듀엣</option><option>그룹</option></select></label>':''}
- <label class="field">느낀 강도 <small>1 아주 쉬움 · 10 최대</small><input id="q-t-effort" type="range" min="1" max="10" value="5" oninput="this.nextElementSibling.textContent=this.value"><output>5</output></label>
+ <label class="field">느낀 강도 <small>1 아주 쉬움 · 10 최대</small><input id="q-t-effort" type="range" min="1" max="10" value="5" data-range-out><output>5</output></label>
  <label class="field wide">끝난 시각<input id="q-t-time" type="datetime-local" value="${esc(now)}"></label>
  <label class="field wide">메모(선택)<input id="q-t-note" maxlength="300" placeholder="${cat==='필라테스'?'예: 코어 위주, 리포머 점프보드':'예: 공원 한 바퀴'}"></label>
  </div>${cat==='러닝·유산소'?'<p class="hint" id="q-t-pace"></p>':''}<button type="button" class="button quick-primary" id="q-timed-save">완료 기록</button></section>`;

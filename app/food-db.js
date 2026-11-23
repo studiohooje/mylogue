@@ -25,17 +25,37 @@ export function rowToFood(r){
  return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
 }
 
+const indexRow = r => { const text = [r[0], r[1], ...(String(r[9]||'').split(' '))].filter(Boolean); return {p:plain(text.join(' ')), k:text.map(t => keystrokes(t)).join('|'), c:text.map(t => choseong(t).replace(/\s/g,'')).join('|'), names:text}; };
 export function setFoodRows(list){
  rows = Array.isArray(list) ? list : [];
- index = rows.map(r => { const text = [r[0], r[1], ...(String(r[9]||'').split(' '))].filter(Boolean); return {p:plain(text.join(' ')), k:text.map(t => keystrokes(t)).join('|'), c:text.map(t => choseong(t).replace(/\s/g,'')).join('|'), names:text}; });
+ index = rows.map(indexRow);
  return rows.length;
 }
+// 4.17.0 첫 검색을 빠르게: 기본 음식(한식·식약처 음식·원재료, 약 6천 행)을 먼저 받고, 브랜드 메뉴는 뒤이어 덧붙인다.
+export function addFoodRows(list){
+ if(!Array.isArray(list) || !list.length) return rows?.length || 0;
+ if(!rows) return setFoodRows(list);
+ rows = rows.concat(list); index = index.concat(list.map(indexRow));
+ return rows.length;
+}
+let fullLoaded = false;
+export const foodDBFull = () => fullLoaded;
 export const foodDBReady = () => !!rows;
 export const foodDBSize = () => rows?.length || 0;
 
-export function loadFoodDB({url='food-db.json', fetcher=globalThis.fetch}={}){
+// 빌드본(dist)에는 food-db-core.json·food-db-more.json이 있고, 원본 폴더에서는 food-db.json 하나로 받는다.
+// onMore: 브랜드 메뉴까지 다 붙었을 때 한 번 부른다(검색 결과 다시 그리기용).
+export function loadFoodDB({url='food-db.json', fetcher=globalThis.fetch, onMore=null}={}){
  if(rows) return Promise.resolve(rows.length);
- if(!loading) loading = fetcher(url).then(r => { if(!r.ok) throw Error(`음식 DB를 받지 못했어요(${r.status}).`); return r.json(); }).then(j => setFoodRows(j.rows)).catch(e => { loading = null; throw e; });
+ const get = u => fetcher(u).then(r => { if(!r.ok) throw Object.assign(Error(`음식 DB를 받지 못했어요(${r.status}).`), {status:r.status}); return r.json(); });
+ if(!loading) loading = (url === 'food-db.json'
+  ? get('food-db-core.json').then(core => {
+     setFoodRows(core.rows);
+     get('food-db-more.json').then(more => { addFoodRows(more.rows); fullLoaded = true; try{ onMore?.(); }catch{} try{ globalThis.dispatchEvent?.(new Event('mylogue-fooddb-more')); }catch{} }).catch(() => {});
+     return rows.length;
+    }, () => get(url).then(j => { fullLoaded = true; return setFoodRows(j.rows); }))
+  : get(url).then(j => { fullLoaded = true; return setFoodRows(j.rows); })
+ ).catch(e => { loading = null; throw e; });
  return loading;
 }
 
@@ -56,3 +76,11 @@ export function searchFoodDB(query, {limit=30}={}){
   .slice(0, limit).map(h => rowToFood(rows[h.i]));
 }
 export function findFoodDB(id){ if(!rows) return null; const r = rows.find(r => `fooddb:${r[8]}:${r[1]}|${r[0]}|${r[2]}` === id); return r ? rowToFood(r) : null; }
+
+// 4.17.0 보안 점검 후속: 인기 집계에는 공개 DB에 있는 음식 이름만 올린다(자유 입력 이름은 개인 내용일 수 있음).
+let nameSet = null, nameRows = null;
+export function isPublicFoodName(name){
+ if(!rows) return false;
+ if(nameRows !== rows){ nameSet = new Set(); for(const r of rows){ nameSet.add(r[0]); if(r[1]) nameSet.add(`${r[0]} · ${r[1]}`); } nameRows = rows; }
+ return nameSet.has(String(name||'').trim());
+}

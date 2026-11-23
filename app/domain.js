@@ -11,7 +11,7 @@ export function cleanBody(raw){const date=String(raw.date??'').trim();if(!validD
 export function cleanMeal(raw){
  const date=String(raw.date??'');if(!validDate(date))throw Error('식사 날짜를 확인해 주세요.');
  const name=String(raw.name??'').trim();if(!name)throw Error('음식 이름을 입력해 주세요.');
- const nu=normalizeUnit(number(raw.servingQty)??1,String(raw.servingUnit||'회').trim()),servingQty=nu.qty,servingUnit=nu.unit;
+ const nu=normalizeUnit(number(raw.servingQty)??1,safeUnit(raw.servingUnit||'회')),servingQty=nu.qty,servingUnit=safeUnit(nu.unit);
  if(servingQty<=0||!servingUnit)throw Error('섭취량과 단위를 확인해 주세요.');
  const estimate=raw.aiEstimate&&typeof raw.aiEstimate==='object'?raw.aiEstimate:{};
  const caloriesMin=number(estimate.caloriesMin),caloriesMax=number(estimate.caloriesMax);
@@ -22,7 +22,7 @@ export function cleanMeal(raw){
  for(const k of ['calories','carbs','protein','fat'])if(out[k]!==null&&out[k]<0)throw Error(`${k} 값은 음수가 될 수 없습니다.`);return out
 }
 export function cleanFoodPreset(raw){
- const name=String(raw.name??'').trim(),servingUnit=String(raw.servingUnit||'회').trim();
+ const name=String(raw.name??'').trim(),servingUnit=safeUnit(raw.servingUnit||'회');
  if(!name||!servingUnit)throw Error('음식 이름과 단위를 입력해 주세요.');
  const servingQty=number(raw.servingQty)??1;if(servingQty<=0)throw Error('음식 기준량을 확인해 주세요.');
  const out={id:raw.id||uid(),name,servingQty,servingUnit,...(number(raw.unitGrams)>0&&!MASS.has(servingUnit)?{unitGrams:number(raw.unitGrams)}:{}),source:String(raw.source||'manual'),calories:number(raw.calories),carbs:number(raw.carbs),protein:number(raw.protein),fat:number(raw.fat)};
@@ -58,6 +58,8 @@ export const MASS=new Set(['g','ml','mL']);
 // 4.4.1 점검 C-16: 100당/1단위당 판단은 이 두 함수로만. L·kg·cc·대문자는 저장할 때 g·ml로 바꾼다.
 export const unitFactor=(qty,unit)=>MASS.has(unit)?(Number(qty)||0)/100:(Number(qty)||0);
 // 4.11.0 점검 R-11: 식사 단위 목록은 여기 하나만 둔다(상세 입력·식사 수정이 같은 목록을 쓴다)
+// 4.17.0 보안: 단위는 화면에 그대로 찍히므로 HTML 특수문자를 빼고 16자로 자른다(DB 단위가 다양해 목록 제한 대신).
+export const safeUnit=u=>String(u??'').replace(/[<>"'&`=\\]/g,'').replace(/\s+/g,' ').trim().slice(0,16);
 export const MEAL_UNITS=['g','ml','개','회','인분','공기','그릇','컵','잔','팩','봉','캔','병','조각','큰술','작은술','스쿱'];
 export function normalizeUnit(qty,unit){const u=String(unit||'').trim(),q=Number(qty);if(/^(l|ℓ|리터)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'ml'};if(/^(kg|킬로그램)$/i.test(u))return {qty:Math.round(q*1000*100)/100,unit:'g'};if(/^(ml|cc|밀리리터)$/i.test(u))return {qty:q,unit:'ml'};if(/^(g|그램)$/i.test(u))return {qty:q,unit:'g'};if(/^(mg|밀리그램)$/i.test(u))return {qty:Math.round(q/1000*1000)/1000,unit:'g'};if(/^(oz|온스)$/i.test(u))return {qty:Math.round(q*28.35*10)/10,unit:'g'};return {qty:q,unit:u}}
 export const unitLabel=(qty,unit,unitGrams)=>`${qty??''}${unit||''}${unitGrams&&!MASS.has(unit)?`(${Math.round(unitGrams*Number(qty||1))}${unit==='병'||unit==='캔'||unit==='잔'?'ml':'g'})`:''}`;
