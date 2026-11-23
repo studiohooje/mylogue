@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {MORE_INGREDIENTS, MORE_RECIPES} from './recipe-more.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BASE = path.resolve(HERE, '..', '..', 'research_notes', '마이로그 음식 데이터베이스');
@@ -146,6 +147,9 @@ export const RECIPES = [
   ['소고기미역국', '국', [['미역', 5], ['소양지', 40], ['참기름', 3], ['간장', 5], ['마늘', 3], ['물', 250]], ''],
 ];
 
+// 4.17.0 2차 레시피·재료 합치기
+Object.assign(INGREDIENTS, MORE_INGREDIENTS);
+RECIPES.push(...MORE_RECIPES);
 const median = a => { const s = [...a].sort((x, y) => x - y); const n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
 export function resolveIngredients({raw, dish, processed}) {
   const out = {}, report = {};
