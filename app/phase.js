@@ -1,6 +1,7 @@
 // 4.17.0 목표 페이즈(대표님 2026-11-23): 다이어트·린매스업·바디 리컴포지션·벌크업·유지.
 // 유형마다 다른 질문으로 목표치와 기간을 정하고, 매일의 체중·인바디 변화에 맞춰 조용히 제안한다. 끝나면 '페이즈 회고'.
 // 저장: settings.phase(진행 중 하나), settings.phaseHistory(끝난 것). 설정 동기화 칸을 그대로 쓴다.
+import {shareButtonsHTML} from './share-cards.js';
 const DAY = 86400000;
 const toD = s => new Date(String(s).slice(0, 10) + 'T12:00:00');
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -186,7 +187,7 @@ export function phaseWizardHTML(st, db, today) {
     ${adv.length ? `<ul class="ph-advice">${adv.map(a => `<li class="k-${a.kind}">${esc(a.text)}</li>`).join('')}</ul>` : '<p class="hint">2주쯤 지나면 흐름을 보고 제안해 드려요.</p>'}
     <div class="onb-btns"><button type="button" class="button secondary" id="ph-new">다른 페이즈로 바꾸기</button><button type="button" class="button" id="ph-end">이 페이즈 마치기</button></div></div>`;
   }
-  if (st.step === 'recap') return `${recapHTML(st.recap)}<div class="onb-btns"><button type="button" class="button" id="ph-after-recap">다음 페이즈 정하기</button><button type="button" class="button secondary" id="ph-close">닫기</button></div>`;
+  if (st.step === 'recap') return `${recapHTML(st.recap)}${shareButtonsHTML('phase')}<div class="onb-btns"><button type="button" class="button" id="ph-after-recap">다음 페이즈 정하기</button><button type="button" class="button secondary" id="ph-close">닫기</button></div>`;
   if (st.step === 'type') return `<div class="onb gw"><p class="onb-q">지금 어떤 페이즈예요?</p><p class="onb-s">페이즈마다 목표와 기간을 정하고, 기록에 맞춰 제안해 드려요.</p>${err}<div class="onb-opts">${PHASE_TYPES.map(t => `<button type="button" class="onb-opt ${st.type === t.id ? 'on' : ''}" data-ph-type="${t.id}"><span><b>${t.name}</b><small>${t.short}</small></span></button>`).join('')}</div></div>`;
   const t = typeOf(st.type), n = st.now, chk = planCheck(st);
   if (st.step === 'target') return `<form id="ph-form" class="onb gw"><p class="onb-q">${t.name} 목표</p><p class="onb-s">지금 ${n.weight ? `체중 ${n.weight}kg` : '체중 기록 없음'}${n.fatPct ? ` · 체지방률 ${n.fatPct}%` : ''}${n.muscle ? ` · 골격근량 ${n.muscle}kg` : ''}</p>${err}

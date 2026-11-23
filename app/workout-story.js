@@ -2,6 +2,7 @@
 // 원칙: 무게·세트로 점수를 매기지 않는다. 링은 '이번 주 운동한 날 / 주간 횟수' 하나. 재촉·비교 없음. 과하게 하면 쉬라고 말한다.
 import {workoutTotals, setWeightKg, estimate1RM} from './domain.js';
 import {exArtHTML} from './exercise-art-ui.js';
+import {shareButtonsHTML} from './share-cards.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const DAY = 86400000;
@@ -206,5 +207,5 @@ export function yearRecapHTML(r, {open = false} = {}) {
   if (r.prs) lines.push(`새 기록을 세운 날이 <b>${r.prs}일</b>이에요.`);
   if (r.firsts.length) lines.push(`처음 해낸 것: ${r.firsts.slice(0, 4).map(f => `<b>${esc(f.name)}</b>`).join(', ')}.`);
   if (r.km >= 1) lines.push(`달리고 걸은 거리 <b>${fmt(r.km, 1)}km</b>.`);
-  return `<details class="section card year-recap"${open ? ' open' : ''}><summary><b>${r.year}년 돌아보기</b><small>움직인 날 ${r.days}일</small></summary><ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul><p class="hint">숫자보다, 이만큼 이어 온 게 대단해요.</p></details>`;
+  return `<details class="section card year-recap"${open ? ' open' : ''}><summary><b>${r.year}년 돌아보기</b><small>움직인 날 ${r.days}일</small></summary><ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul><p class="hint">숫자보다, 이만큼 이어 온 게 대단해요.</p>${shareButtonsHTML('year')}</details>`;
 }
