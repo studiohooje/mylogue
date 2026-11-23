@@ -55,3 +55,42 @@
 .pm-picked{display:grid;gap:8px}.pm-chips{display:flex;flex-wrap:wrap;gap:6px}
 .pm-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 6px;border-radius:999px;background:#ffffff10;font-size:13px}.pm-chip button{min-width:36px;min-height:36px;border:0;background:transparent;color:inherit;font-size:16px;cursor:pointer}
 .pm-chip .ex-art-xs{width:26px;height:26px;flex-basis:26px}
+/* 4.17.0 운동 입력 순서 새로(종목 → 세트 → 나머지는 접어서) */
+.q-meta{margin-top:16px;border:1px solid #365876;border-radius:14px;background:#13283e}
+.q-meta>summary{list-style:none;cursor:pointer;display:grid;gap:2px;min-height:56px;padding:12px 16px;align-content:center}
+.q-meta>summary::-webkit-details-marker{display:none}
+.q-meta>summary span{font-size:14px;font-weight:700}.q-meta>summary small{font-size:13px;color:#aec4d9}
+.q-meta[open]>summary{border-bottom:1px solid #365876}
+.q-meta>.quick-time,.q-meta>label,.q-meta>.chip-row,.q-meta>.text-button{margin-left:16px;margin-right:16px}
+.q-meta>.quick-time{margin-top:12px}.q-meta>*:last-child{margin-bottom:16px}
+.q-switch{margin:16px 0 0}.q-switch .button{width:100%;min-height:48px}
+.qp-rows{display:grid;gap:8px;margin:8px 0}
+.qp-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px;border:1px solid #365876;border-radius:12px;background:#18334d;color:#e7f4ff;text-align:left;font:inherit;cursor:pointer}
+.qp-row span{display:grid;gap:2px;min-width:0}.qp-row b{font-size:14px}.qp-row small{font-size:12px;color:#aec4d9;font-variant-numeric:tabular-nums}
+.quick-muscles{margin-top:14px}.quick-muscles>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:14px;color:#aec4d9}
+.q-draft{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;padding:12px 14px;border-radius:12px;background:#2a2412;border:1px solid #6b5a2a;font-size:14px}.q-draft span{flex:1 1 100%}.q-draft .button{min-height:40px}
+/* 4.17.0 예전 order 강제 배치 해제: 코드 순서 그대로(종목 → 세트 → 접힌 설정 → 휴식) */
+.quick-palette .quick-flow>*{order:0!important}
+.quick-palette .q-draft{margin:0 0 4px}
+.quick-palette .quick-choice-list{max-height:none!important;overflow:visible!important}
+.quick-palette .quick-choice{min-height:56px}
+/* 4.17.0 세트 입력: 무게·횟수 −/+ 크게, 저장 바로 아래, 나머지는 접기 */
+.quick-palette .quick-overlay{position:static;display:grid;gap:14px;padding:16px;border-radius:16px}
+.quick-overlay-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.quick-overlay-head h3{margin:0;font-size:17px}
+.quick-overlay-head .close{min-width:44px;min-height:44px}
+.qs-steppers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.qs-field{display:grid;gap:8px;min-width:0}.qs-label{font-size:14px;font-weight:700}.qs-label small{font-weight:400;color:#aec4d9;margin-left:4px}
+.qs-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:6px}
+.qs-row input{min-width:0;height:52px;padding:0 8px;text-align:center;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;border-radius:12px}
+.qs-btn{width:44px;height:52px;border-radius:12px;border:1px solid #4477a0;background:#1a3b58;color:#e7f4ff;font-size:22px;line-height:1;cursor:pointer}
+.qs-field .q-conv{font-size:12px;color:#aec4d9;min-height:16px}
+.qs-units{gap:6px}.qs-save{width:100%;min-height:52px;font-size:16px}
+.qs-more{border-top:1px solid #31506c;padding-top:8px}.qs-more>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:14px;color:#aec4d9}
+.qs-more-body{display:grid;gap:12px;padding-top:8px}
+@media (max-width:380px){.qs-steppers{grid-template-columns:1fr}}
+.qs-field{align-content:start}
+.quick-palette .quick-set-line{display:grid!important;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:52px;padding:6px 0;border-top:1px solid #31506c}
+.quick-palette .quick-set-line strong{font-size:14px;color:#8ce4e0}.quick-palette .quick-set-line span{font-size:15px;font-variant-numeric:tabular-nums;min-width:0}
+.quick-palette .quick-set-line button{min-height:40px;padding:0 12px;font-size:12px;white-space:nowrap}
+.quick-palette .quick-check{white-space:nowrap}
+.quick-palette .quick-set-line{grid-template-columns:52px minmax(0,1fr) auto!important}.quick-palette .quick-set-line button{grid-column:auto!important;justify-self:end!important}

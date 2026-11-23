@@ -38,7 +38,7 @@ async function appFixture(initial=[]){
 test('app resumes durable workout and cancellation protects it from program replacement',async()=>{
  const original=draft();original.timerEnds=0;const fixture=await appFixture([[KEY,JSON.stringify({...original,version:1})]]);
  try{
-  await fixture.click({modal:'workout'});assert.match(fixture.root.innerHTML,/이어할 운동/);assert.match(fixture.root.innerHTML,/100\.125/);const before=fixture.disk.get(KEY);
+  await fixture.click({modal:'workout'});assert.match(fixture.root.innerHTML,/작성하던 상세 운동 기록이 있어요/);await fixture.click({},'q-draft-resume');assert.match(fixture.root.innerHTML,/이어할 운동/);assert.match(fixture.root.innerHTML,/100\.125/);const before=fixture.disk.get(KEY);
   await fixture.click({program:'full-body:0'});assert.equal(fixture.disk.get(KEY),before);assert.match(fixture.root.innerHTML,/이어할 운동/);
   globalThis.confirm=()=>true;await fixture.click({program:'full-body:0'});const replaced=JSON.parse(fixture.disk.get(KEY));assert.notEqual(replaced.meta.title,'이어할 운동');assert.equal(replaced.editId,null);
  }finally{fixture.close()}
@@ -63,7 +63,7 @@ test('committed draft cannot be resumed as a duplicate when draft removal fails'
   await fixture.submit('workout-form',{date:'2026-11-02',title:'정리 실패에도 한 번만 저장',duration:'10'});
   const db=JSON.parse(fixture.disk.get('mylogue.v1'));
   assert.equal(db.workouts.length,1);assert.equal(db.workouts[0].sourceDraftId,readSession().id);
-  await fixture.click({modal:'workout'});
+  await fixture.click({modal:'workout'});await fixture.click({},'q-draft-resume');
   assert.equal(JSON.parse(fixture.disk.get('mylogue.v1')).workouts.length,1);
   assert.match(fixture.toasts.join(' '),/이미 저장된 운동/);
  }finally{fixture.close()}

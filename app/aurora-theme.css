@@ -1542,3 +1542,23 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .ph-bar::after{content:"";grid-column:2;grid-row:1;height:10px;border-radius:99px;background:#ffffff12;z-index:-1}.ph-bar i{grid-column:2;grid-row:1}
 .ph-line{font-size:16px;font-weight:700;margin:6px 0}.ph-advice{margin:10px 0;padding:0;list-style:none;display:grid;gap:8px}.ph-advice li{padding:12px 14px;border-radius:12px;background:#ffffff08;font-size:14px;line-height:1.6;word-break:keep-all}.ph-advice li.k-fast,.ph-advice li.k-cap,.ph-advice li.k-muscle{border-left:3px solid #f3c27a}.ph-advice li.k-on{border-left:3px solid #6fd6a3}
 .phase-recap .onb-sum{margin:12px 0}
+/* 4.17.0 상세 운동 기록: 날짜·컨디션은 접어서 위 한 줄, 종목 카드에 운동 그림, 이름 잘림 없음 */
+.wf-meta,.wf-plate{border:1px solid var(--line);border-radius:14px;background:#ffffff06}
+.wf-meta>summary,.wf-plate>summary{list-style:none;cursor:pointer;display:grid;gap:2px;min-height:52px;padding:10px 16px;align-content:center;font-size:14px}
+.wf-meta>summary::-webkit-details-marker,.wf-plate>summary::-webkit-details-marker{display:none}
+.wf-meta>summary span{font-weight:700}.wf-meta>summary small{color:var(--muted);font-size:13px}
+.wf-meta[open]>summary,.wf-plate[open]>summary{border-bottom:1px solid var(--line)}
+.wf-meta>.form-grid,.wf-plate>.plate-calc{padding:12px 16px 16px}
+.exercise-cards .exercise-choice{align-items:stretch;overflow:visible;min-height:60px}
+.exercise-cards .exercise-pick{padding:8px 10px;align-items:center}
+.exercise-cards .exercise-pick strong{font-size:14px;line-height:1.35;word-break:keep-all}
+.exercise-cards .exercise-pick .ex-art{flex:0 0 44px;width:44px;height:44px;border-radius:10px;background:#ffffff0d;object-fit:contain}
+.exercise-cards .favorite-toggle{min-width:44px}
+.exercise-cards{max-height:none!important;overflow:visible!important}
+@media (max-width:649px){.exercise-cards{grid-template-columns:minmax(0,1fr)!important}}
+.exercise-cards .exercise-pick span{display:grid;gap:2px;min-width:0}
+.ex-opts{grid-column:1/-1;margin:8px 0;border:1px solid var(--line);border-radius:12px}
+.ex-opts>summary{list-style:none;cursor:pointer;min-height:48px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:14px}
+.ex-opts>summary::-webkit-details-marker{display:none}.ex-opts>summary small{color:var(--muted);font-size:13px}
+.ex-opts>.form-grid{padding:10px 14px 14px}
+.ex-head-art .ex-art{width:64px;height:64px;border-radius:12px;background:#ffffff0d;object-fit:contain}
