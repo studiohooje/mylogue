@@ -101,3 +101,11 @@
 .qt-field{display:grid;gap:8px}.qt-field input{min-height:48px;font-size:16px}
 .qt-mins{display:flex;flex-wrap:wrap;gap:8px}.qt-mins .chip{min-height:44px;padding:0 16px}.qt-mins .chip.active{background:#2e5c74;border-color:#8ce4e0;color:#fff}
 .qt-effort{display:grid;gap:6px}
+/* 4.17.0 식사: 줄마다 양 −/+ */
+.qp-qty{display:inline-flex;align-items:center;gap:4px}
+.qp-qty .qp-step{width:40px;height:40px;border-radius:10px;border:1px solid #426481;background:#1d3b56;color:#e7f4ff;font-size:18px;line-height:1;cursor:pointer}
+.qp-qty .qp-val{min-width:64px;height:40px;padding:0 8px!important;border-radius:10px;border:1px solid #60a5dc;background:#0f2338;color:#fff;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer}
+.quick-palette .quick-picked-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
+.quick-palette .quick-picked-actions{display:flex;align-items:center;gap:6px}
+.chip.ghost{background:transparent;border-style:dashed;color:#aec4d9;cursor:default}
+.quick-picked-actions .qp-qty .qp-step{border:1px solid #426481!important;background:#1d3b56!important;color:#e7f4ff!important}

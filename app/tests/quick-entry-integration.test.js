@@ -16,7 +16,7 @@ test('실제 앱 버튼에서 빠른 식사와 연속 운동 세트를 같은 �
  try{
   await import('../app.js?quick-integration');
   const click=async(dataset={},id='')=>events.get('click')({target:{closest:()=>({dataset,id})}});
-  await click({modal:'batch'});assert.match(root.innerHTML,/빠른 식사 기록/);assert.match(root.innerHTML,/modal-backdrop quick-palette/);assert.match(root.innerHTML,/음식 빠른 검색/);
+  await click({modal:'batch'});assert.match(root.innerHTML,/음식 고르기/);assert.match(root.innerHTML,/modal-backdrop quick-palette/);assert.match(root.innerHTML,/음식 빠른 검색/);
   const search={id:'q-food-search',value:'제로핵',selectionStart:3};const beforeComposition=root.innerHTML;
   events.get('compositionstart')({target:search});events.get('input')({target:search});assert.equal(root.innerHTML,beforeComposition);
   events.get('compositionend')({target:search});assert.match(root.innerHTML,/제로핵/);
