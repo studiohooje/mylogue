@@ -27,7 +27,7 @@ export function checkRow(r){
     const calc = carbs * 4 + protein * 4 + fat * 9;
     const diff = kcal - calc, tol = Math.max(30, kcal * 0.25);
     if (Math.abs(diff) > tol) {
-      const why = ALCOHOL.test(name) ? 'alcohol' : SUGAR_ALCOHOL.test(name) ? 'sugar-alcohol' : 'mismatch';
+      const why = ALCOHOL.test(`${name} ${r[9] || ''}`) ? 'alcohol' : SUGAR_ALCOHOL.test(name) ? 'sugar-alcohol' : 'mismatch';
       issues.push({code: `kcal-${why}`, msg: `표시 ${kcal}kcal · 검산 ${Math.round(calc)}kcal`});
     }
   }
@@ -77,7 +77,8 @@ export function flagDoubts(rows){
     const [kcal, carbs, protein, fat] = r.slice(4, 8);
     let doubt = codes.includes('negative') || codes.includes('macro-sum-over-100');
     if (!doubt && tag !== 'r' && tag !== 'x' && codes.includes('kcal-mismatch')) { const calc = carbs * 4 + protein * 4 + fat * 9; doubt = Math.abs(kcal - calc) > Math.max(40, kcal * 0.4); }
-    if (!doubt && tag !== 'r' && codes.includes('kcal-zero-with-macros')) doubt = (carbs || 0) + (protein || 0) + (fat || 0) > 2;
+    // 4.17.1 제로·무설탕 이름이고 단백질·지방이 거의 없으면 탄수화물은 감미료(열량 0 표시 가능) — 의심하지 않는다
+    if (!doubt && tag !== 'r' && codes.includes('kcal-zero-with-macros')) doubt = (carbs || 0) + (protein || 0) + (fat || 0) > 2 && !(SUGAR_ALCOHOL.test(r[0]) && (protein || 0) <= 1.5 && (fat || 0) <= 1.5);
     if (doubt) { while (r.length < 10) r.push(''); r[10] = 1; n++; }
   }
   return n;
