@@ -32,7 +32,25 @@ const per = (n, factor) => [n.kcal == null ? null : Math.round(n.kcal * factor),
 // 4.17.0 미량영양소: [당류 g, 식이섬유 g, 포화지방 g, 나트륨 mg]. 모두 없으면 null(행에 안 붙임). 행 12번째 칸.
 export const micro = (n, factor) => { const v = [n.sugar, n.fiber, n.satFat, n.sodium].map((x, i) => x == null || !Number.isFinite(Number(x)) ? null : i === 3 ? Math.round(Number(x) * factor) : r1(Number(x) * factor)); return v.every(x => x == null) ? null : v; };
 export const DOUBT_FLAGS = new Set(['kcalDensityLow', 'kcalDensityHigh', 'zeroKcalWithMacros', 'recheckUnresolved', 'calcCheckMismatch', 'fatPartsGtFat', 'sugarGtCarbs']);
-export const isDoubtful = p => (p.confidence === 'low' && p.source?.type !== 'estimate') || (p.flags || []).some(f => DOUBT_FLAGS.has(typeof f === 'string' ? f : f?.code));
+// 4.17.0 값 의심(1)과 '단종됐을 수 있는 메뉴'(2)를 나눈다. 2는 식약처 DB의 업체 제공 공식 값이라 값 자체는 의심하지 않는다.
+const GONE_ONLY = new Set(['mfdsCandidate', 'sizeVariant']);
+// 4.17.0 오탐 줄이기(값은 그대로): ① 공식 페이지로 다시 확인한 값(recheckConfirmed)의 검산 차이 ② 30kcal 이하 음료의 반올림 차이
+// ③ 원래 열량 밀도가 낮은 음료·샐러드·국물·소스·토핑의 '밀도 낮음'은 의심하지 않는다. 피자·빵·케이크의 밀도 낮음은 그대로 의심.
+const LOW_DENSITY_OK = /우유|커피|콜드 ?브루|라떼|아메리카노|티$|티 |차$|차 |에이드|주스|스무디|음료|워터|샐러드|스프|수프|탕$|국$|소스|케첩|토핑|할라피뇨|피클|치킨무|코울슬로|잼|요거트|두유|밀크|어묵/;
+const softDoubt = (c, p) => {
+  const kcal = p.label?.kcal ?? p.per100g?.kcal ?? p.per100ml?.kcal;
+  if (c === 'calcCheckMismatch') return (p.flags || []).includes('recheckConfirmed') || (kcal != null && kcal <= 30);
+  if (c === 'kcalDensityLow') return LOW_DENSITY_OK.test(`${p.name || ''} ${p.displayName || ''}`);
+  return false;
+};
+export const isDoubtful = p => {
+  const codes = (p.flags || []).map(f => typeof f === 'string' ? f : f?.code);
+  if (codes.some(c => DOUBT_FLAGS.has(c) && !softDoubt(c, p))) return 1;
+  const hard = codes.filter(c => DOUBT_FLAGS.has(c));
+  if (hard.length && p.confidence !== 'low') return 0;
+  if (p.confidence === 'low' && p.source?.type !== 'estimate') return codes.length && codes.every(c => GONE_ONLY.has(c)) ? 2 : 1;
+  return 0;
+};
 
 export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products = [], recipes = []}){
   const rows = [], seen = new Set();
@@ -41,7 +59,7 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
     const key = `${brand}|${name}|${unit}`.toLocaleLowerCase('ko');
     const key2 = `${brand}|${name}|${vals[0]}`.toLocaleLowerCase('ko');
     if (seen.has(key) || (brand && seen.has(key2))) return; seen.add(key); seen.add(key2);
-    rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(mic ? [doubt ? 1 : 0, mic] : doubt ? [1] : [])]);
+    rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(mic ? [doubt ? Number(doubt) : 0, mic] : doubt ? [Number(doubt)] : [])]);
   };
   const dishAlias = new Map(foodsDish.filter(f => !f.maker).map(f => [f.name, f.search?.aliases || []]));
   const kNames = new Set();

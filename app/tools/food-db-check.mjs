@@ -66,9 +66,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 export function flagDoubts(rows){
   let n = 0;
   // 출처 표의 열 순서 해석이 확인되지 않은 브랜드(종합보고 2026-11-23): 값 전체를 '확인 필요'로
-  const UNVERIFIED_BRANDS = new Set(['피자알볼로']);
+  // 2026-11-24 피자알볼로는 해제: 식약처 행(175)은 칸 순서가 고정이고, 공식 앱 표(61)는 콜라 1.25L 550kcal·당 138g, 스프라이트 1.5L 660kcal이
+  // 실제 라벨(100ml당 약 43~44kcal)과 맞아 '중량·열량·당류·단백질·포화지방·나트륨' 해석이 맞다고 판단.
+  const UNVERIFIED_BRANDS = new Set([]);
   for (const r of rows) {
-    if (UNVERIFIED_BRANDS.has(r[1]) && r[2] === 'L') r[2] = '회';
+    if (r[1] === '피자알볼로' && r[2] === 'L') r[2] = '회';
     if (r[10]) continue;
     if (UNVERIFIED_BRANDS.has(r[1])) { while (r.length < 10) r.push(''); r[10] = 1; n++; continue; }
     const codes = checkRow(r).map(x => x.code), tag = r[8];
