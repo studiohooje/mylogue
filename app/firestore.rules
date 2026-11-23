@@ -58,8 +58,21 @@ service cloud.firestore {
         && request.resource.data.version is string && request.resource.data.version.size() <= 40
         && request.resource.data.items is map && request.resource.data.items.size() <= 20
         && request.resource.data.at == request.time;
+      // 4.17.0 보안 2차: 카탈로그 요청 하루 개수(요청 문서와 같은 일괄 저장에서 1씩만 늘고, 하루 20건까지)
+      allow create, update: if owner(uid) && docId == 'requestQuota' && validQuota();
       allow list: if owner(uid);
       allow delete: if owner(uid);
+    }
+    function utcDay() { return math.floor(request.time.toMillis() / 86400000); }
+    function validQuota() {
+      let d = request.resource.data;
+      let fresh = resource == null || resource.data.day != d.day;
+      return d.keys().hasOnly(['day','n','lastId','updatedAt'])
+        && d.day == utcDay() && d.updatedAt == request.time
+        && d.lastId is string && d.lastId.size() > 0 && d.lastId.size() <= 128
+        && d.n == (fresh ? 1 : resource.data.n + 1) && d.n <= 20
+        && !exists(/databases/$(database)/documents/catalogRequests/$(d.lastId))
+        && existsAfter(/databases/$(database)/documents/catalogRequests/$(d.lastId));
     }
     match /users/{uid}/accessLog/{logId} {
       allow get, list: if owner(uid) || admin();
@@ -308,7 +321,8 @@ service cloud.firestore {
       }
       allow get, list: if approved()
         && (resource.data.requesterUid == request.auth.uid || admin());
-      allow create: if approved() && validNewRequest();
+      allow create: if approved() && validNewRequest()
+        && (admin() || getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/meta/requestQuota).data.lastId == requestId);
       allow update: if admin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminNote','reviewerUid','updatedAt'])
         && request.resource.data.status in ['in_review','approved','rejected','needs_info']

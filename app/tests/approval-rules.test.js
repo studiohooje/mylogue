@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {initializeTestEnvironment, assertFails, assertSucceeds} from '@firebase/rules-unit-testing';
-import {collection,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,serverTimestamp,runTransaction} from 'firebase/firestore';
+import {collection,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,serverTimestamp,runTransaction,writeBatch} from 'firebase/firestore';
 
 const projectId='mylogue-approval-rules-test';
 const adminUid='bulbnZbmC4PgH8tUAOjfPPLE7pA3';
@@ -62,7 +62,7 @@ test('approval gates server health records and shared catalogs', {skip:!host}, a
     const requestData={type:'machine',mode:'photo',name:'레그프레스',manufacturer:'예시 제조사',model:'LP-1',gymName:'예시 지점',targetIds:[],note:'',servingQty:null,servingUnit:'',calories:null,carbs:null,protein:null,fat:null,requesterUid:memberUid,photoPath:'',wholePhotoDataUrl:image,nameplatePhotoDataUrl:image,status:'pending',adminNote:'',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
     await assertFails(setDoc(requestRef(member),{...requestData,nameplatePhotoDataUrl:''}));
     await assertFails(setDoc(requestRef(member),{...requestData,nameplatePhotoDataUrl:'data:text/html;base64,AA=='}));
-    await assertSucceeds(setDoc(requestRef(member),requestData));
+    {const bt=writeBatch(member);bt.set(requestRef(member),requestData);bt.set(doc(member,'users',memberUid,'meta','requestQuota'),{day:Math.floor(Date.now()/86400000),n:1,lastId:requestId,updatedAt:serverTimestamp()});await assertSucceeds(bt.commit());}
     await assertSucceeds(getDoc(requestRef(member)));
     await assertSucceeds(getDoc(requestRef(admin)));
     await assertFails(getDoc(requestRef(pending)));

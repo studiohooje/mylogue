@@ -122,7 +122,15 @@ export async function submitCatalogRequest(input,photos={},{id:fixedId=''}={}){
  // 4.7.0 헬스장 머신 요청은 '헬스장+머신'으로 ID를 고정 → 같은 요청은 한 건만(이미 있으면 규칙상 덮어쓰기 불가)
  const id=fixedId||globalThis.crypto?.randomUUID?.()||`request-${Date.now()}`;
  const ref=ctx.db.doc(ctx.firestore,'catalogRequests',id);
- await ctx.db.setDoc(ref,{...request,requesterUid:ctx.user.uid,photoPath:'',wholePhotoDataUrl,nameplatePhotoDataUrl,status:'pending',adminNote:'',createdAt:ctx.db.serverTimestamp(),updatedAt:ctx.db.serverTimestamp()});
+ // 4.17.0 보안 2차: 요청 문서와 하루 개수 기록을 한 번에(규칙이 짝을 확인하고 하루 20건에서 막음)
+ const qref=ctx.db.doc(ctx.firestore,'users',ctx.user.uid,'meta','requestQuota'),day=Math.floor(Date.now()/86400000);
+ let prev=null;try{const snap=await ctx.db.getDoc(qref);prev=snap.exists()?snap.data():null}catch{}
+ const n=prev&&prev.day===day?Number(prev.n||0)+1:1;
+ if(n>20)throw Error('오늘은 요청을 20건까지 보낼 수 있어요. 내일 다시 보내 주세요.');
+ const batch=ctx.db.writeBatch(ctx.firestore);
+ batch.set(ref,{...request,requesterUid:ctx.user.uid,photoPath:'',wholePhotoDataUrl,nameplatePhotoDataUrl,status:'pending',adminNote:'',createdAt:ctx.db.serverTimestamp(),updatedAt:ctx.db.serverTimestamp()});
+ batch.set(qref,{day,n,lastId:id,updatedAt:ctx.db.serverTimestamp()});
+ await batch.commit();
  return id;
 }
 
