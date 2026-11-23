@@ -44,6 +44,7 @@ let fullLoaded = false;
 export const foodDBFull = () => fullLoaded;
 export const foodDBReady = () => !!rows;
 export const foodDBSize = () => rows?.length || 0;
+export const foodRows = () => rows || []; // 4.17.0 '오늘 뭐 먹지' 후보 탐색용(읽기 전용)
 
 // 빌드본(dist)에는 food-db-core.json·food-db-more.json이 있고, 원본 폴더에서는 food-db.json 하나로 받는다.
 // onMore: 브랜드 메뉴까지 다 붙었을 때 한 번 부른다(검색 결과 다시 그리기용).

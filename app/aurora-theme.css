@@ -1588,3 +1588,10 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .chip,.when-chip,.seg button,.df-tab,.pref-seg button,.mode-chip,.db-mid,.body-tabs button,.bf-tabs button{min-height:40px!important;height:auto!important}
 .quick-again .chip,.chip{white-space:nowrap;overflow:visible;padding-left:14px;padding-right:14px}
 .tabs button{min-height:44px!important}
+/* 4.17.0 오늘 남은 걸로 뭐 먹지 */
+.wte .wte-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}.wte>.hint{margin:10px 0 0;font-size:13px}
+.wte-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
+.wte-list li{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#ffffff06}
+.wte-main{display:grid;gap:2px;min-width:0}.wte-main b{font-size:15px;word-break:keep-all}.wte-main small{font-size:12px;color:var(--muted)}
+.wte-amt{font-size:13px;color:#9fe6dc;font-variant-numeric:tabular-nums}.wte-main p{margin:4px 0 0;font-size:13px;line-height:1.55;color:var(--muted);word-break:keep-all}
+.wte-list .button{flex:0 0 auto;min-height:44px}.wte-note{font-size:12px!important}

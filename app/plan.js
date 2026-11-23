@@ -5,7 +5,7 @@
 // 원칙: 손 기록·전체 그래프·DB 검색·백 온 트랙·안전 안내는 언제나 무료.
 import {cloudState} from './cloud-sync.js';
 import {isAdminUser} from './admin.js';
-import {scopedKey} from './storage-scope.js';
+import {scopedKey,storageAccount} from './storage-scope.js';
 
 export const BETA_ALL_PLUS = true; // 베타 동안 승인된 모든 계정을 플러스로(AI 서버의 PLUS_ALL과 함께 바꾼다)
 export const PRICE = {monthly: 4900};
@@ -29,8 +29,10 @@ const put = (k, v) => { try { v ? globalThis.localStorage?.setItem(scopedKey(k),
 export const isSuperAdmin = () => isAdminUser(cloudState.user);
 export const adminView = () => { if (!isSuperAdmin()) return null; const v = store('mylogue.viewPlan'); return v === 'free' || v === 'plus' ? v : null; };
 export const setAdminView = v => { if (isSuperAdmin()) put('mylogue.viewPlan', v === 'free' || v === 'plus' ? v : ''); };
+export const isDemo = () => storageAccount() === 'demo-tour'; // 둘러보기(예시 기록): 대표님 지시로 분석·플러스를 모두 보여 준다
 export function planOf() {
   const v = adminView(); if (v) return v;
+  if (isDemo()) return 'plus';
   if (isSuperAdmin()) return 'plus';
   if (cloudState.approval !== 'approved') return 'free';
   return BETA_ALL_PLUS || cloudState.plan === 'plus' ? 'plus' : 'free';
