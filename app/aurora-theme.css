@@ -1629,3 +1629,7 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 /* 4.17.0 흔들림 설명기 */
 .weight-why .ww-head{margin:8px 0;font-size:16px}.ww-list{margin:4px 0 8px;padding-left:18px;display:grid;gap:6px}.ww-list li{font-size:14px;line-height:1.6;word-break:keep-all}
 .phase-badge{min-height:44px}
+/* 4.17.0 운동 달력·올해 돌아보기 */
+.year-recap>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:48px;gap:8px}.year-recap>summary::-webkit-details-marker{display:none}.year-recap>summary b{font-size:16px}.year-recap>summary small{color:var(--muted);font-size:13px}
+.year-recap ul{margin:8px 0;padding-left:18px;display:grid;gap:6px}.year-recap li{font-size:14px;line-height:1.6;word-break:keep-all}
+.wf-legend span{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:12px}

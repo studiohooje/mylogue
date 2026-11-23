@@ -22,12 +22,22 @@ function weekStats(db, k){
 }
 export function weeks(db, end, n = 8){ const out = []; let k = monday(end); for(let i=0; i<n; i++){ out.unshift(weekStats(db, k)); k = addDays(k, -7); } return out; }
 
+// 4.17.0 운동 달력(대표님 방침: 양이 아니라 '움직였는지'): 근력·유산소·필라테스·의도적 휴식·새 기록 날을 색과 표시로
+const isTimed = w => (w.exercises || []).length && (w.exercises || []).every(e => e.kind === 'cardio');
 export function grassHTML(db, end){
- const start = addDays(monday(end), -77), cells = [];
- const byDay = new Map(); for(const w of real(db)){ if(w.date<start || w.date>end) continue; byDay.set(w.date, (byDay.get(w.date)||0) + workoutTotals(w).sets + Math.round(workoutTotals(w).cardioMinutes/10)); }
- const vals = [...byDay.values()], max = Math.max(1, ...vals);
- for(let wk=0; wk<12; wk++) for(let d=0; d<7; d++){ const date = addDays(start, wk*7+d); if(date>end) continue; const v = byDay.get(date)||0, lv = v ? Math.min(4, Math.ceil(v/max*4)) : 0; cells.push(`<rect x="${4+wk*26}" y="${4+d*14}" width="22" height="12" rx="3" fill="${lv?['','#8ce4e040','#8ce4e080','#8ce4e0c0','#8ce4e0'][lv]:'#ffffff0d'}"><title>${md(date)} ${v?`${v}세트`:'쉼'}</title></rect>`); }
- return `<div class="wf-sub"><b>12주 운동 잔디</b><small>진할수록 많이 한 날</small></div><svg class="wf-grass" viewBox="0 0 320 104" role="img" aria-label="12주 동안 운동한 날">${cells.join('')}</svg><div class="wf-legend"><span>적음</span><i style="background:#8ce4e040"></i><i style="background:#8ce4e080"></i><i style="background:#8ce4e0c0"></i><i style="background:#8ce4e0"></i><span>많음</span></div>`;
+ const start = addDays(monday(end), -77), cells = [], kind = new Map(), prBest = new Map(), prDays = new Set();
+ for(const w of [...(db.workouts||[])].filter(w => !w.planned).sort((a, b) => String(a.date).localeCompare(String(b.date)))){
+  if(w.rest){ if(w.date>=start && w.date<=end && !kind.has(w.date)) kind.set(w.date, 'rest'); continue; }
+  for(const e of w.exercises||[]){ if(e.kind==='cardio') continue; const k = e.exerciseId || e.name, best = Math.max(0, ...(e.sets||[]).filter(s => s.completed!==false).map(s => setWeightKg(s) || 0)); if(!best) continue; const prev = prBest.get(k); if(prev != null && best > prev && w.date>=start && w.date<=end) prDays.add(w.date); if(prev == null || best > prev) prBest.set(k, best); }
+  if(w.date<start || w.date>end) continue;
+  const k = isTimed(w) ? 'timed' : 'strength', cur = kind.get(w.date); kind.set(w.date, cur && cur !== 'rest' && cur !== k ? 'both' : k);
+ }
+ const FILL = {strength:'#8ce4e0', timed:'#b8aaf2', both:'#9cc8ed', rest:'#f7c27033'};
+ const LABEL = {strength:'근력', timed:'유산소·필라테스', both:'근력+유산소', rest:'의도적 휴식'};
+ let moved = 0;
+ for(let wk=0; wk<12; wk++) for(let d=0; d<7; d++){ const date = addDays(start, wk*7+d); if(date>end) continue; const k = kind.get(date), x = 4+wk*26, y = 4+d*14; if(k && k!=='rest') moved++;
+  cells.push(`<rect x="${x}" y="${y}" width="22" height="12" rx="3" fill="${k?FILL[k]:'#ffffff0d'}"${k==='rest'?' stroke="#f7c270" stroke-dasharray="2 2"':''}${date===end?' stroke="#fff" stroke-width="1.4"':''}><title>${md(date)} ${k?LABEL[k]:'기록 없음'}${prDays.has(date)?' · 새 기록':''}</title></rect>${prDays.has(date)?`<circle cx="${x+11}" cy="${y+6}" r="2.6" fill="#120f24"/>`:''}`); }
+ return `<div class="wf-sub"><b>12주 운동 달력</b><small>움직인 날 ${moved}일</small></div><svg class="wf-grass" viewBox="0 0 320 104" role="img" aria-label="12주 동안 움직인 날 ${moved}일">${cells.join('')}</svg><div class="wf-legend"><span><i style="background:#8ce4e0"></i>근력</span><span><i style="background:#b8aaf2"></i>유산소·필라테스</span><span><i style="background:#f7c27033;outline:1px dashed #f7c270"></i>의도적 휴식</span><span><i style="background:#8ce4e0;box-shadow:inset 0 0 0 3px #8ce4e0,inset 0 0 0 6px #120f24"></i>새 기록</span></div>`;
 }
 
 function flowChart(ws, metric){

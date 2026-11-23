@@ -182,3 +182,29 @@ export function lastWeekHTML(info) {
 export function nextGoalsHTML(list) {
   return list.length ? `<section class="section card next-goals"><b>다음에 해 볼 것</b><ul>${list.map(g => `<li>${esc(g.text)}</li>`).join('')}</ul><small>무게가 그대로여도 괜찮아요. 한 번 더 하는 것도 성장이에요.</small></section>` : '';
 }
+
+// 4.17.0 ⑩ 올해 돌아보기: 움직인 날·가장 꾸준한 달·많이 한 종목·새 기록·처음 해낸 것(점수 없이 이야기로)
+export function yearRecap(db, date, firstFn = null) {
+  const y = date.slice(0, 4), from = `${y}-01-01`, ws = (db.workouts || []).filter(w => moved(w) && w.date >= from && w.date <= date);
+  if (!ws.length) return null;
+  const days = new Set(ws.map(w => w.date)), byMonth = new Map(), count = new Map();
+  for (const d of days) byMonth.set(d.slice(5, 7), (byMonth.get(d.slice(5, 7)) || 0) + 1);
+  for (const w of ws) for (const e of w.exercises || []) count.set(e.name, (count.get(e.name) || 0) + 1);
+  const best = [...byMonth].sort((a, b) => b[1] - a[1])[0], fav = [...count].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const prDays = new Set(), bestKg = new Map();
+  for (const w of [...(db.workouts || [])].filter(done).sort((a, b) => a.date.localeCompare(b.date))) for (const e of w.exercises || []) { if (e.kind === 'cardio') continue; const k = e.exerciseId || e.name, top = Math.max(0, ...(e.sets || []).filter(s => s.completed !== false).map(s => setWeightKg(s) || 0)); if (!top) continue; const prev = bestKg.get(k); if (prev != null && top > prev && w.date >= from && w.date <= date) prDays.add(w.date); if (prev == null || top > prev) bestKg.set(k, top); }
+  const prs = prDays.size;
+  const firsts = firstFn ? firstFn(db.workouts || []).filter(f => f.date >= from && f.date <= date) : [];
+  let km = 0, min = 0; for (const w of ws) for (const e of w.exercises || []) if (e.kind === 'cardio') { km += Number(e.distanceKm) || 0; min += Number(e.durationMin) || 0; }
+  return {year: y, days: days.size, bestMonth: best ? {m: Number(best[0]), n: best[1]} : null, fav, prs, firsts, km: Math.round(km * 10) / 10, hours: Math.round(min / 6) / 10};
+}
+export function yearRecapHTML(r, {open = false} = {}) {
+  if (!r || r.days < 10) return '';
+  const lines = [`${r.year}년에 <b>${r.days}일</b> 움직였어요.`];
+  if (r.bestMonth) lines.push(`가장 꾸준했던 달은 <b>${r.bestMonth.m}월</b>(${r.bestMonth.n}일)이에요.`);
+  if (r.fav.length) lines.push(`가장 많이 한 운동은 ${r.fav.map(([n, c]) => `<b>${esc(n)}</b>(${c}번)`).join(', ')}.`);
+  if (r.prs) lines.push(`새 기록을 세운 날이 <b>${r.prs}일</b>이에요.`);
+  if (r.firsts.length) lines.push(`처음 해낸 것: ${r.firsts.slice(0, 4).map(f => `<b>${esc(f.name)}</b>`).join(', ')}.`);
+  if (r.km >= 1) lines.push(`달리고 걸은 거리 <b>${fmt(r.km, 1)}km</b>.`);
+  return `<details class="section card year-recap"${open ? ' open' : ''}><summary><b>${r.year}년 돌아보기</b><small>움직인 날 ${r.days}일</small></summary><ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul><p class="hint">숫자보다, 이만큼 이어 온 게 대단해요.</p></details>`;
+}

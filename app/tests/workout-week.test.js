@@ -26,3 +26,17 @@ test('지난주 한 장: 월~수에만, 지난주 운동이 있을 때, 새 기�
   assert.equal(lastWeek(steady, '2026-11-24').good, '런지를 2번 꾸준히 했어요.');
   const html = lastWeekHTML(lw); assert.match(html, /11\/16~11\/22/); assert.match(html, /data-lastweek-hide="2026-11-16"/); assert.doesNotMatch(html, /점수/);
 });
+import {yearRecap, yearRecapHTML} from '../workout-story.js';
+import {grassHTML} from '../workout-flow.js';
+test('운동 달력: 양이 아니라 움직인 날, 휴식·새 기록 표시', () => {
+  const db = {workouts: [w('2026-11-20', '스쿼트', 50, 5), {date: '2026-11-22', rest: true, exercises: []}, w('2026-11-23', '스쿼트', 55, 5), {date: '2026-11-21', exercises: [{name: '러닝', kind: 'cardio', durationMin: 30}]}]};
+  const h = grassHTML(db, '2026-11-23');
+  assert.match(h, /움직인 날 3일/); assert.match(h, /의도적 휴식/); assert.match(h, /11\/23 근력 · 새 기록/);
+});
+test('올해 돌아보기: 움직인 날·꾸준한 달·새 기록 날', () => {
+  const db = {workouts: [w('2026-03-02', '스쿼트', 50, 5), w('2026-03-05', '스쿼트', 55, 5), w('2026-04-01', '벤치프레스', 40, 8)]};
+  const r = yearRecap(db, '2026-11-23');
+  assert.equal(r.days, 3); assert.equal(r.bestMonth.m, 3); assert.equal(r.prs, 1); assert.equal(r.fav[0][0], '스쿼트');
+  assert.equal(yearRecapHTML(r), ''); // 10일 미만이면 보이지 않음
+  assert.match(yearRecapHTML({...r, days: 12}), /2026년 돌아보기/);
+});
