@@ -1,0 +1,77 @@
+// 4.17.0 app.js에서 옮김(1개 함수). 화면 상태는 $s, 다른 app 함수는 $f로 부른다.
+import {$s,$f} from './app-state.js';
+import {installModalBody} from './install.js';
+import {prefsOf,onboardingHTML,newOnboarding,prefsSettingsHTML,emptyAfterWorkout,afterWorkoutHTML,simpleMealHTML} from './prefs.js';
+import {emptyPlan,planHTML,runHTML} from './guide.js';
+import {gymMapHTML} from './places.js';
+import {cloudState} from './cloud-sync.js';
+import {resultCardHTML} from './workout-story.js';
+import {botFillHTML} from './back-on-track.js';
+import {gymPickerHTML} from './gym-machines.js';
+import {workoutTotals,actualDB} from './domain.js';
+import {isCatalogAdmin} from './catalog-cloud.js';
+import {recentFoods} from './nutrition.js';
+import {isInbody} from './body-series.js';
+import {quickMealHTML as qmHTML,quickWorkoutHTML as qwHTML} from './quick-edit.js';
+import {profileEditHTML} from './profile.js';
+import {goalWizardHTML} from './nutrition-plan.js';
+import {setGap} from './workout-times.js';
+import {mealFormHTML,workoutFormHTML} from './ui-helpers.js';
+import {aiUsable} from './ai-client.js';
+import {helpHTML} from './help.js';
+import {newPhaseWizard,phaseWizardHTML} from './phase.js';
+import {recipeModalHTML} from './ai-coach-ui.js';
+import {planFromSettings,macroPlanFormHTML} from './macro-plan.js';
+import {aiInputHTML,fullPrompt} from './ai-paste.js';
+import {readSession} from './session.js';
+import {machineFormHTML,exerciseFormHTML} from './profile-forms.js';
+import {muscleMapHTML} from './exercise-ui.js';
+import {batchHTML} from './meal-batch.js';
+import {workoutTitle} from './timeline-view.js';
+import {movesListHTML} from './pilates.js';
+import {workoutBurn,BURN_NOTE} from './exercise-burn.js';
+import {personaCardsHTML} from './personas.js';
+import {demoPersona} from './landing.js';
+import {quickMealHTML,quickWorkoutHTML} from './quick-entry.js';
+export function modalHTML(){if(!$s.modal)return '';const wrap=(title,content,kind='')=>`<div class="modal-backdrop ${kind}" id="backdrop"><div class="sheet" role="dialog" aria-modal="true" aria-label="${$s.esc(title)}"><div class="sheet-head"><h2>${$s.esc(title)}</h2><button class="close" id="close" aria-label="닫기">×</button></div>${content}</div></div>`;
+ if($s.modal==='install')return wrap('마이로그 앱 설치',installModalBody());
+ if($s.modal==='onboarding')return wrap($s.onb&&$s.onb.step>=5?'나에게 맞춘 마이로그':'나에게 맞추기',onboardingHTML($s.onb||newOnboarding($s.db)));
+ if($s.modal==='after-workout')return wrap('오늘 한 운동 · 한 번에 입력',afterWorkoutHTML($s.afterWorkout||emptyAfterWorkout($f.today()),$f.allExercises().map(x=>x.name),$s.db.settings.gyms||[]));
+ if($s.modal==='quick-meal-edit'&&$s.qm)return wrap('식사 수정',qmHTML($s.qm));
+ if($s.modal==='quick-work-edit'&&$s.qw)return wrap('운동 수정',qwHTML($s.qw));
+ if($s.modal==='profile-edit'&&$s.pfEdit)return wrap('내 프로필',profileEditHTML($s.pfEdit,{prefsHTML:prefsSettingsHTML($s.db),email:cloudState.user?.email||'',statusText:cloudState.approval==='approved'?'':({pending:'승인 대기',not_applied:'신청 필요',rejected:'반려됨'}[cloudState.approval]||'')}));
+ if($s.modal==='goal-wizard'&&$s.goalWiz)return wrap('식단 목표 정하기',goalWizardHTML($s.goalWiz));
+ if($s.modal==='gym-map')return wrap('지도에서 운동 장소 고르기',gymMapHTML($s.gymMap||{}),'gym-map-sheet');
+ if($s.modal==='guide-plan')return wrap('운동 계획 · 안내 받기',planHTML($s.guidePlan||emptyPlan($f.today(),'',prefsOf($s.db).restSec),{names:$f.allExercises().map(x=>x.name),gyms:$s.db.settings.gyms||[],routines:$s.db.routines||[],hasLast:$s.db.workouts.length>0}));
+ if($s.modal==='guide-run'&&$s.guideRun)return wrap('운동 안내',runHTML($s.guideRun),'guide-sheet');
+ if($s.modal==='simple-meal')return wrap('식사 · 간단히',simpleMealHTML($s.selectedDate,new Date().toTimeString().slice(0,5)));
+ if($s.modal==='body'){const b=$s.db.body.find(x=>x.id===$s.bodyEditId)||{};return wrap($s.bodyEditId?'수치 기록 수정':'체중·체성분 기록',`<form id="body-form" class="form-grid"><fieldset class="field wide measure-pick"><legend>어디서 쟀나요?</legend>${[['scale','평소 체중계'],['inbody','인바디']].map(([v,l])=>`<label class="measure-opt"><input type="radio" name="measure" value="${v}" ${(b.measure||(b.id&&isInbody(b)?'inbody':$s.bodyPreset||'scale'))===v?'checked':''}><span>${l}</span></label>`).join('')}<small class="hint">평소 체중계 체중과 인바디 체중은 그래프를 따로 그려요(기계가 달라 비교가 흔들리지 않게).</small></fieldset>${!$s.bodyEditId&&$s.bodyPreset!=='inbody'&&$s.lastScaleW()?`<div class="w-pad wide" role="group" aria-label="체중 한 손 입력"><button type="button" data-wstep="-1">−1</button><button type="button" data-wstep="-0.1">−0.1</button><output id="w-pad-val">${Number($s.lastScaleW()).toFixed(1)}</output><button type="button" data-wstep="0.1">+0.1</button><button type="button" data-wstep="1">+1</button><small>지난번 ${Number($s.lastScaleW()).toFixed(1)}kg에서 시작해요. 눌러서 맞춘 뒤 저장하세요.</small></div>`:''}${[['date','측정일','date'],['weight','체중 kg','number'],['bodyFatPct','체지방률 %','number'],['skeletalMuscle','골격근량 kg','number'],['waistCm','허리둘레 cm','number'],['bodyFatMass','체지방량 kg','number'],['bmi','BMI','number'],['score','인바디 점수','number'],['visceralFatLevel','내장지방 레벨','number'],['bmr','기초대사량 kcal','number'],['note','메모','text']].map(([k,label,type])=>`<label class="field">${label}<input name="${k}" type="${type}" ${type==='number'?'min="0" step="any"':''} ${k==='date'?'required':''} value="${$s.esc(b[k]??(k==='date'?$s.selectedDate:k==='weight'&&!$s.bodyEditId&&$s.bodyPreset!=='inbody'&&$s.lastScaleW()?$s.lastScaleW():''))}"></label>`).join('')}<p class="hint wide waist-guide">허리둘레: 마지막 갈비뼈 아래와 골반뼈 위의 중간 높이에서 줄자를 수평으로 두고 자연스럽게 숨을 내쉰 뒤 측정하세요. 같은 위치에서 반복 측정하면 비교하기 쉽습니다.</p><p class="hint wide">출처: ${$s.esc(({manual:'직접 입력',inbody:'인바디 사진',import:'파일 가져오기',ai:'AI 초안',health:'헬스 연동',demo:'둘러보기 예시'})[b.source||'manual']||b.source)}${b.updatedAt?` · 최근 수정 ${$s.esc(b.updatedAt)}`:''}</p><button class="button wide">기록 저장</button></form>`)}
+ if($s.modal==='machine')return wrap('머신 프로필',machineFormHTML($s.machineEdit||{},$s.workDraft[$s.machineIndex]?.exerciseId||''));
+ if($s.modal==='custom-exercise')return wrap('나만의 종목',exerciseFormHTML($s.customEdit||{}));
+ if($s.modal==='catalog-request')return wrap('공용 도감 등록 요청',$f.catalogRequestHTML());
+ if($s.modal==='catalog-photo')return wrap('머신 전체·명판 사진',`<div class="gap"><p class="hint">요청자가 보낸 압축 사진입니다. 제조사와 모델이 분명한지 확인한 뒤 요청 상태를 정하세요.</p><figure><figcaption>머신 전체</figcaption><img class="preview" src="${$s.esc($s.catalogPhotoView?.whole||'')}" alt="머신 전체 사진"></figure><figure><figcaption>제조사·모델 명판</figcaption><img class="preview" src="${$s.esc($s.catalogPhotoView?.nameplate||'')}" alt="머신 명판 사진"></figure></div>`);
+ if($s.modal==='catalog-admin-food')return wrap('공용 음식 도감',$f.catalogAdminFoodHTML());
+  if($s.modal==='help')return wrap('도움말',helpHTML(''),'help-sheet');if($s.modal==='persona')return wrap('다른 사람의 기록으로 보기',`<p class="hint">누르면 그 사람의 120일 예시 기록으로 바뀌어요. 지금 둘러본 예시는 지워져요.</p>${personaCardsHTML({current:demoPersona(),compact:true})}`,'persona-sheet');if($s.modal==='phase')return wrap('목표 페이즈',phaseWizardHTML($s.phaseWiz||newPhaseWizard($s.db),$s.db,$f.today()),'phase-sheet');if($s.modal==='macro-plan'){if(!$s.mpPlan)$s.mpPlan=planFromSettings($s.db.settings||{});return wrap('탄단지 목표 정하기',macroPlanFormHTML($s.mpPlan,$s.latestWeight()),'macro-plan-sheet')}if($s.modal==='ai-recipe')return wrap('레시피 글로 음식 만들기',recipeModalHTML($s.aiRecipe,$s.esc),'ai-recipe-sheet');if($s.modal==='ai-input')return wrap('AI로 입력',aiInputHTML({...$s.aiInput,fullPrompt:fullPrompt($s.db)},{pending:$s.aiDrafts.filter(d=>d.status==='pending').length,ready:$s.aiReady(),server:aiUsable()}),'ai-input-sheet');if($s.modal==='quick-meal')return wrap($s.quickMeal?.joinLabel?'이 식사에 음식 더하기':'음식 빠른 검색',quickMealHTML($f.foodChoices(),$s.quickMeal,{meals:$s.db.meals,pop:$s.popularity}),'quick-palette');
+ if($s.modal==='quick-workout')return wrap('운동 기록',`${(()=>{try{return readSession()}catch{return null}})()?'<div class="q-draft" role="status"><span>작성하던 상세 운동 기록이 있어요.</span><button type="button" class="button small secondary" id="q-draft-resume">이어서 쓰기</button><button type="button" class="button small secondary" id="q-draft-drop">버리기</button></div>':''}${quickWorkoutHTML($s.db,$s.quickWorkout,$f.allExercises(),$s.sharedCatalog,$s.popularity)}`,'quick-palette');
+  if($s.modal==='batch')return wrap('식사 상세 입력',batchHTML($s.batchRows,$s.batchDate,$s.batchSlot,$f.foodChoices().foods,$s.db.recipes||[],{time:$s.batchTime,gramOptions:$s.db.settings.gramOptions||{}}));
+ if($s.modal==='workout-result'&&$s.resultWorkout)return wrap('운동 완료',resultCardHTML(actualDB($s.db),$s.resultWorkout,{burn:workoutBurn($s.resultWorkout,$s.latestWeight())}));
+ if($s.modal==='bot-fill'&&$s.bot)return wrap('백 온 트랙 · 비워 둔 날',botFillHTML($s.bot));
+ if($s.modal==='checkin')return wrap('오늘 상태',$f.checkinHTML());
+ if($s.modal==='meal'){
+  const meal=$s.db.meals.find(x=>x.id===$s.mealEditId);
+  const recent=recentFoods($s.db.meals).slice(0,8);
+  return wrap(meal?'식단 기록 수정':'식단 기록',mealFormHTML({meal,date:meal||$s.page==='calendar'?$s.selectedDate:$f.today(),recent,presets:$f.foodChoices().foods}));
+ }
+ if($s.modal==='workout'||$s.modal==='routine'){
+  if(!$s.workDraft.length)$s.workDraft=[{name:'',part:'가슴',kind:'strength',sets:[{weight:0,reps:10,type:'본세트',rpe:null,completed:false}]}];
+  const last=(name,current)=>{if(!name)return '';for(const w of $s.recent($s.db.workouts))for(const e of w.exercises||[])if((current?.exerciseId?e.exerciseId===current.exerciseId:e.name===name)&&(e.machineId||null)===(current?.machineId||null)){const s=e.sets?.at(-1);return s?`${s.weight??0} ${s.unit||'kg'} × ${s.reps??0}회 · ${w.date}`:`${w.date} · ${e.durationMin||0}분`;}return ''};
+  return wrap($s.modal==='routine'?'루틴 저장':'운동 기록',`<button type="button" class="text-button" id="undo-draft" ${$s.undoDraft?'':'disabled'}>최근 종목·세트 변경 되돌리기</button>`+workoutFormHTML({draft:$s.workDraft,meta:$s.workMeta,routine:$s.modal==='routine',latest:last,estimate:(name,ex)=>$f.estimateFor(ex||{name}),catalog:$f.allExercises(),machines:$s.db.machines||[],favorites:$s.db.favorites||[],recentExercises:$f.recentExercises(),selection:$s.selection,routines:$s.db.routines,checkin:{...$s.db.checkins?.[$s.workMeta.date||$f.today()],...$s.workMeta},barbellWeightKg:$s.db.settings.barbellWeightKg??20,workoutTitles:$s.db.settings.workoutTitles||[],gyms:$s.db.settings.gyms||[]}));
+ }
+ if($s.modal==='gym-machines'&&$s.gymPick)return wrap(`${$s.gymPick.gymName} 머신 등록`,gymPickerHTML($s.gymPick,$s.sharedCatalog,{admin:isCatalogAdmin(cloudState.user)}));
+ if($s.modal==='copy-meals'){const y=new Date(`${$s.selectedDate}T12:00:00`);y.setDate(y.getDate()-1);const yd=`${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;return wrap('다른 날 식사 복사',`<div class="gap"><p class="hint">고른 날의 식사를 끼니·시각 그대로 <b>${$s.selectedDate.slice(5).replace('-','/')}</b>에 복사해요. 예정 식사는 빼요.</p><label class="field">복사해 올 날<input id="copy-from" type="date" value="${yd}" max="${$f.today()}"></label><button type="button" class="button" id="copy-meals-go">복사하기</button></div>`)}
+ if($s.modal==='inbody')return wrap('인바디 사진 읽기',`<div class="gap"><div class="inbody-guide"><p><b>이렇게 찍어 주세요</b></p><ul><li>지금은 <b>InBody270 결과지</b>에 맞춰져 있어요. 다른 기종은 숫자를 못 읽을 수 있어요.</li><li>종이를 평평하게 두고 <b>정면에서</b>, 결과지 네 모서리가 모두 들어오게.</li><li>그림자·빛 반사가 숫자를 가리지 않게.</li></ul><p class="hint">읽은 숫자는 꼭 결과지와 비교해 주세요. 잘 안 읽히면 <button type="button" class="text-button" data-modal="body">직접 입력</button>이 더 빨라요.</p></div><input id="inbody-photo" type="file" accept="image/*"><img id="photo-preview" class="preview hidden" alt="선택한 검사표"><div id="ocr-status" class="alert">사진을 선택해 주세요. 글자 인식 도구를 불러오지 못하면 직접 입력하거나 AI가 만든 숫자 파일을 가져올 수 있어요.</div><button class="button" id="ocr-run" disabled>사진에서 숫자 읽기</button><label class="field">인식된 문자 수정<textarea id="ocr-text" rows="7" placeholder="인바디 결과지에서 읽은 글자가 여기에 표시됩니다."></textarea></label><button class="button secondary" id="ocr-parse">문자에서 수치 추출</button><div id="ocr-fields"></div></div>`);
+ if($s.modal==='body-import')return wrap('마이로그 숫자 파일 가져오기',`<div class="gap"><p class="small muted">Codex가 만든 mylogue.body JSON 파일을 선택하세요.</p><input id="body-file" type="file" accept=".json,application/json"><div id="import-preview" class="alert">파일을 선택하면 수치를 미리 보여줍니다.</div><button class="button" id="body-confirm" disabled>확인한 수치 저장</button></div>`);
+ if($s.modal==='codex-import')return wrap('식단·운동 숫자 파일 가져오기',`<div class="gap"><p class="small muted">Codex가 만든 mylogue.meal 또는 mylogue.workout JSON 파일을 선택하세요. 값을 확인한 다음 입력 화면에서 저장합니다.</p><input id="codex-file" type="file" accept=".json,application/json"><button class="button secondary" id="codex-parse">파일 읽기</button><div id="codex-preview" class="alert">파일의 주요 값을 미리 보여줍니다.</div><button class="button" id="codex-confirm" disabled>입력 화면에서 검토</button></div>`);
+ if($s.modal==='progress-photo')return wrap('눈바디 사진 보관',`<div class="gap"><p class="hint">사진은 이 기기에 저장되며 설정의 통합 백업에 포함됩니다.</p><label class="field">촬영일<input id="progress-date" type="date" value="${$f.today()}"></label><input id="progress-file" type="file" accept="image/*"><button class="button" id="progress-save">사진 저장</button></div>`);
+ if($s.modal==='restore')return wrap('백업 파일 복원',`<div class="gap"><p class="alert">현재 기록 전체를 백업 파일의 내용으로 교체합니다. 먼저 현재 기록을 백업해 주세요.</p><input id="restore-file" type="file" accept=".json,application/json"><button class="button secondary" id="restore-preview">검증 및 미리보기</button><div id="restore-summary" class="hint"></div><button class="button danger" id="restore-confirm" disabled>검증한 백업으로 교체</button></div>`);
+ if($s.modal.startsWith('detail:')){const w=$s.db.workouts.find(x=>x.id===$s.modal.slice(7));if(!w)return '';const t=workoutTotals(w);return wrap(workoutTitle(w),`<div class="gap"><p class="sub">${w.date} · 실제 완료 ${t.sets}세트</p><div class="grid"><div class="card"><span class="sub">총 볼륨</span><h3>${$s.fmt(t.volume,0)} kg</h3></div><div class="card"><span class="sub">세트 / 반복</span><h3>${t.sets} / ${t.reps}</h3></div></div>${(b=>b?.kcal!=null?`<div class="card burn-card"><span class="sub">대략 소모 칼로리</span><h3>약 ${$s.fmt(b.kcal,0)} kcal</h3><p class="hint">운동으로 더 쓴 몫 약 ${$s.fmt(b.net,0)} kcal · ${b.minutes}분 기준. ${BURN_NOTE}</p></div>`:$s.latestWeight()?'':'<p class="hint">체중을 기록하면 대략 소모 칼로리를 보여 드려요.</p>')(workoutBurn(w,$s.latestWeight()))}${w.exercises.map(e=>`<div class="card">${muscleMapHTML(e.primaryMuscleIds||[],e.secondaryMuscleIds||[],{key:'detail-'+e.id})}<h3>${$s.esc(e.name)} <small class="muted">${$s.esc(e.part)}</small></h3>${$s.cueHTML(e)}${e.sets.map((s,si)=>`<div class="record"><span>${$s.esc(s.type)} · ${s.completed===false?'미완료':'완료'}${s.completedAt?` · ${$s.esc(s.completedAt.slice(11,16))}${$s.esc(setGap(e.sets,si))}`:''}</span><strong class="${s.completed===false?'muted':''}">${$s.fmt(s.weight)} ${$s.esc(s.unit||'kg')}${e.weightBasis==='per-hand'?'씩':''} × ${s.reps}회${e.repBasis==='per-side'?'/쪽':''}</strong></div>`).join('')}${e.kind==='cardio'?`<p class="sub">${[e.durationMin?`${$s.fmt(e.durationMin)}분`:'',e.sessionType||'',e.note||''].filter(Boolean).map($s.esc).join(' · ')}</p>`:''}${e.moves?.length?movesListHTML(e.moves):''}</div>`).join('')}${w.exercises.some(e=>e.moves?.length)?$s.pilatesProgressHTML($s.db.workouts):''}<p class="hint">${$s.esc(w.note)}</p><div class="actions"><button class="button secondary" id="share-workout">결과 이미지 저장</button><button class="button danger" data-delete="workouts:${$s.esc(w.id)}">운동 삭제</button></div></div>`)}return ''}
