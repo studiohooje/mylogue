@@ -34,7 +34,7 @@ test('가짜 AI 모드: 서버 없이 기능별 답, 꺼지면 연결 전 안내
   await assert.rejects(aiRequest('chat', {question: '안녕'}), /연결되지 않았어요/);
   plan.setFakeAI(true); assert.equal(aiUsable(), true);
   assert.match((await aiRequest('chat', {question: '단백질?'})).text, /가짜 AI/);
-  assert.match((await aiRequest('review', {summary: 'x'})).text, /가짜 AI/);
+  assert.match((await aiRequest('review', {summary: 'x'})).text, /예시 답/);
   const rc = await aiRequest('recipe', {text: '된장찌개 2인분\n두부 150g\n애호박 100g'});
   assert.equal(rc.recipe.servings, 2); assert.equal(rc.recipe.ingredients.length, 2);
   assert.match((await aiRequest('parse', {today: '2026-11-23', now: '12:30'})).text, /2026-11-23/);

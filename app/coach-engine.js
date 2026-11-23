@@ -77,7 +77,9 @@ export function analyze(db, today) {
   }
   // 큰 식사 다음 날 안심(회식·명절)
   const y = intake[addDays(today, -1)];
-  if (y && y.kcal >= 3000 && !out.some(x => x.id === 'safety.ed-pattern')) add('info.after-feast', 'info', '어제 푸짐하게 드셨네요. 오늘은 평소대로 드시면 돼요. 끼니를 거르며 메우지 않아도 괜찮아요.', 'water-swing');
+  // 4.17.0 목표 칼로리의 115%(증량 페이즈는 125%) 안이면 '푸짐하게' 말을 하지 않는다(가상 인물 점검에서 발견: 벌크업 3,100kcal 목표에 3,244kcal)
+  const gainPhase = ['bulk', 'leanbulk'].includes(db.settings?.phase?.type) || db.settings?.nutritionProfile?.goal === 'gain', kcalGoal = Number(db.settings?.calorieGoal) || 0;
+  if (y && y.kcal >= Math.max(3000, kcalGoal * 1.15) && !(gainPhase && kcalGoal && y.kcal <= kcalGoal * 1.25) && !out.some(x => x.id === 'safety.ed-pattern')) add('info.after-feast', 'info', '어제 푸짐하게 드셨네요. 오늘은 평소대로 드시면 돼요. 끼니를 거르며 메우지 않아도 괜찮아요.', 'water-swing');
 
   // ── 칭찬(운동한 사실, 기록한 사실). 안전 신호가 있어도 '움직였다'는 칭찬은 한다 ──
   const moved = new Set((db.workouts || []).filter(w => !w.planned && !w.rest && w.date > addDays(today, -7)).map(w => w.date)).size;

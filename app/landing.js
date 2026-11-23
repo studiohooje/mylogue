@@ -2,15 +2,19 @@
 // - 랜딩: 로그인하지 않았고, 이 기기에 기록이 없고, '로그인 없이 시작'을 고르지 않았을 때만 보인다(기존 게스트 기록은 그대로).
 // - 둘러보기: 예시 기록을 'demo-tour' 저장 칸에 따로 만들어 실제 앱 화면을 써 보게 한다. 진짜 기록과 섞이지 않고, 끝내면 지운다.
 // 문구 원칙: 기록만으로도 이미 절반을 해낸 거라고 말해 준다. 프리미엄은 '필요하면' 정도로만.
+import {personaCardsHTML} from './personas.js';
 export const DEMO_ACCOUNT = 'demo-tour';
 const SKIP_KEY = 'mylogue.landing.skip', DEMO_FLAG = 'mylogue.demo', VIEW_FLAG = 'mylogue.landing.view';
 const ls = {get:k => { try{ return localStorage.getItem(k); }catch{ return null; } }, set:(k, v) => { try{ localStorage.setItem(k, v); }catch{} }, del:k => { try{ localStorage.removeItem(k); }catch{} }};
 const ss = {get:k => { try{ return sessionStorage.getItem(k); }catch{ return null; } }, set:(k, v) => { try{ sessionStorage.setItem(k, v); }catch{} }, del:k => { try{ sessionStorage.removeItem(k); }catch{} }};
 
 export const demoRequested = () => ss.get(DEMO_FLAG)==='1';
-export const startDemo = () => ss.set(DEMO_FLAG, '1');
+export const startDemo = (persona = '') => { ss.set(DEMO_FLAG, '1'); if (persona) ss.set('mylogue.demo.persona', persona); };
+export const demoPersona = () => ss.get('mylogue.demo.persona') || '';
+// 둘러보기 중 인물 바꾸기: 예시 기록만 지우고 새 인물로(둘러보기는 유지)
+export function switchDemoPersona(persona){ ss.set('mylogue.demo.persona', persona); try{ for(const k of Object.keys(localStorage)) if(k.includes(`.user.${DEMO_ACCOUNT}`)) localStorage.removeItem(k); }catch{} }
 export function endDemo(){
- ss.del(DEMO_FLAG);
+ ss.del(DEMO_FLAG); ss.del('mylogue.demo.persona');
  try{ for(const k of Object.keys(localStorage)) if(k.includes(`.user.${DEMO_ACCOUNT}`)) localStorage.removeItem(k); }catch{}
 }
 export const landingSkipped = () => ls.get(SKIP_KEY)==='1';
@@ -143,6 +147,10 @@ export function landingHTML({installHTML='', returning=false}={}){
    <p><b>말보다 직접 보는 게 빠르죠.</b><br>예시 기록이 담긴 실제 화면을 마음껏 눌러 보세요. 둘러본 기록은 저장되지 않아요.</p>
    <button type="button" class="ld-btn primary" id="landing-demo2">예시 기록으로 둘러보기 →</button>
   </div>
+  <div class="ld-personas">
+   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>성별·나이·체중·목표가 다른 여덟 명의 120일 예시예요. 누르면 그 사람의 기록으로 앱 전체를 둘러봐요. 분석과 플러스 기능도 모두 열려 있어요.</p>
+   ${personaCardsHTML()}
+  </div>
  </section>
 
  <section class="ld-sec ld-story">
@@ -173,5 +181,5 @@ export function landingHTML({installHTML='', returning=false}={}){
 }
 
 export function demoBannerHTML(){
- return `<div class="demo-banner" role="status"><span><b>둘러보는 중</b> · 예시 기록이에요. <span class="demo-more">마음껏 눌러 보세요. 내 기록에는 남지 않아요.</span></span><span class="demo-actions"><button type="button" class="demo-signup" id="demo-signup">시작하기</button><button type="button" class="demo-exit" id="demo-exit">끝내기</button></span></div>`;
+ return `<div class="demo-banner" role="status"><span><b>둘러보는 중</b> · 예시 기록이에요. <span class="demo-more">마음껏 눌러 보세요. 내 기록에는 남지 않아요.</span></span><span class="demo-actions"><button type="button" class="demo-persona" data-modal="persona">인물 바꾸기</button><button type="button" class="demo-signup" id="demo-signup">시작하기</button><button type="button" class="demo-exit" id="demo-exit">끝내기</button></span></div>`;
 }

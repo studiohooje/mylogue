@@ -1595,3 +1595,11 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .wte-main{display:grid;gap:2px;min-width:0}.wte-main b{font-size:15px;word-break:keep-all}.wte-main small{font-size:12px;color:var(--muted)}
 .wte-amt{font-size:13px;color:#9fe6dc;font-variant-numeric:tabular-nums}.wte-main p{margin:4px 0 0;font-size:13px;line-height:1.55;color:var(--muted);word-break:keep-all}
 .wte-list .button{flex:0 0 auto;min-height:44px}.wte-note{font-size:12px!important}
+/* 4.17.0 예시 인물 */
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+.persona-card{display:grid;gap:4px;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#33506d);background:#ffffff08;color:inherit;font:inherit;cursor:pointer;min-height:44px}
+.persona-card b{font-size:16px}.persona-card b small{font-weight:400;font-size:12px;color:#a9bbce;margin-left:4px}
+.persona-card span{font-size:13px;line-height:1.5;word-break:keep-all}.persona-card .pc-num{color:#9fe6dc;font-variant-numeric:tabular-nums}
+.persona-card.on{border-color:#8ce4e0;background:#2e5c7433}
+.ld-personas{margin-top:24px}.ld-personas p{line-height:1.6;word-break:keep-all}
+.demo-persona{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #ffffff55;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}

@@ -26,7 +26,7 @@ export function dailyOf(db, today) {
     const at = m.loggedAt ? new Date(m.loggedAt) : null;
     if (at && !Number.isNaN(at.getTime()) && ymd(at) === m.date) { const h = at.getHours() + at.getMinutes() / 60; if (h >= 21) x.late = true; if (h >= 4 && (x.firstMeal == null || h < x.firstMeal)) x.firstMeal = h; }
   }
-  for (const w of db.workouts || []) if (!w.planned && w.date && w.date <= today) get(w.date).workout = true;
+  for (const w of db.workouts || []) if (!w.planned && !w.rest && w.date && w.date <= today) get(w.date).workout = true;
   for (const b of [...(db.body || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)))) if (b.date && b.date <= today && Number(b.weight) > 0) { const x = get(b.date); if (x.weight == null) x.weight = Number(b.weight); }
   for (const [d, c] of Object.entries(db.checkins || {})) if (d <= today && Number(c?.sleep) > 0) get(d).sleep = Number(c.sleep);
   for (const x of days.values()) x.complete = x.kcal >= 800 || x.meals >= 3;
