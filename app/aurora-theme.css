@@ -1420,3 +1420,4 @@ button.sc-cell small,button.sc-cell span{display:block;max-width:100%;overflow:h
 /* 4.12 밝은 화면(시험): 어두운 테마를 반전해 밝게 보여 준다. 사진·그림·색 칩은 다시 반전해 원래 색 유지 */
 html[data-theme="light"]{filter:invert(1) hue-rotate(180deg);background:#fff}
 html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="light"] picture,html[data-theme="light"] .preview,html[data-theme="light"] .pm-spring,html[data-theme="light"] .avatar img,html[data-theme="light"] canvas,html[data-theme="light"] .exart,html[data-theme="light"] [style*="background-image"]{filter:invert(1) hue-rotate(180deg)}
+.batch-db{margin-bottom:12px}.chip-row.wrap{flex-wrap:wrap;overflow:visible}
