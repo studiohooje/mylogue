@@ -1633,3 +1633,4 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .year-recap>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:48px;gap:8px}.year-recap>summary::-webkit-details-marker{display:none}.year-recap>summary b{font-size:16px}.year-recap>summary small{color:var(--muted);font-size:13px}
 .year-recap ul{margin:8px 0;padding-left:18px;display:grid;gap:6px}.year-recap li{font-size:14px;line-height:1.6;word-break:keep-all}
 .wf-legend span{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:12px}
+@media (min-width:650px){.sc-cell{padding:10px!important}}
