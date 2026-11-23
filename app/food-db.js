@@ -11,6 +11,8 @@ const TAG = {
  r:{label:'원재료', rank:4, source:'국가표준식품성분표(원재료)'},
  m:{label:'제품', rank:5, source:'식약처 식품영양성분DB(가공식품)'},
  f:{label:'외식', rank:6, source:'프랜차이즈 공개 영양정보'},
+ s:{label:'매장 게시', rank:7, source:'프랜차이즈 매장 게시물(사진 판독)'},
+ x:{label:'추정', rank:8, source:'공식 값 없음 — 비슷한 음식·브랜드 평균으로 계산한 추정'},
 };
 export const FOOD_DB_TAGS = TAG;
 const plain = t => String(t||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/.,[\]]/g,'');

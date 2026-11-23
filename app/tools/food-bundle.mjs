@@ -36,7 +36,8 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
   const push = (name, brand, unit, grams, vals, tag, aliases = [], doubt = false) => {
     if (!name || vals[0] == null) return;
     const key = `${brand}|${name}|${unit}`.toLocaleLowerCase('ko');
-    if (seen.has(key)) return; seen.add(key);
+    const key2 = `${brand}|${name}|${vals[0]}`.toLocaleLowerCase('ko');
+    if (seen.has(key) || (brand && seen.has(key2))) return; seen.add(key); seen.add(key2);
     rows.push([name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(doubt ? [1] : [])]);
   };
   const dishAlias = new Map(foodsDish.filter(f => !f.maker).map(f => [f.name, f.search?.aliases || []]));
@@ -60,9 +61,19 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
   for (const f of foodsRaw) push(f.name, '', 'g', 0, per(f.per100 || {}, 1), 'r', f.search?.aliases || []);
   // 4) 제품: 기본 단위(1팩 100g 등)가 있으면 1단위당, 없으면 100당. 브랜드는 표기 규칙(brandDisplay)이 있으면 그것.
   for (const p of products) {
+    // 중량 없이 1회(1개) 값만 공개된 메뉴(한솥 열량 등): 100당으로 바꿀 수 없으니 라벨 1회 값을 '1개당'으로 넣는다
+    if (!p.per100g && !p.per100ml) {
+      const lb = p.labelCorrected || p.label || {};
+      if (lb.kcal != null && /serving/.test(lb.basis || 'per serving')) {
+        const st = p.source?.type || '', tag1 = st === 'estimate' ? 'x' : st === 'store-post' ? 's' : p.group === 'franchise' ? 'f' : 'm';
+        push(p.displayName || p.name, p.brandDisplay || p.brand || '', unitName(lb.servingLabel || '1개') || '개', 0, per(lb, 1), tag1, [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])], isDoubtful(p));
+      }
+      continue;
+    }
     const base = p.per100g || p.per100ml || {}, ml = !p.per100g && !!p.per100ml;
     const def = (p.units || []).find(u => u.default), amount = def ? (def.g || def.ml) : 0, unit = def ? unitName(def.label, ml ? 'ml' : 'g') : '';
-    const tag = p.group === 'franchise' ? 'f' : p.confidence === 'high' ? 'p' : 'm';
+    const st = p.source?.type || '';
+    const tag = st === 'estimate' ? 'x' : st === 'store-post' ? 's' : p.group === 'franchise' ? 'f' : p.confidence === 'high' ? 'p' : 'm';
     const brand = p.brandDisplay || p.brand || '', aliases = [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])];
     // '전체 3360g'처럼 통 전체가 기본 단위면 1회분으로 쓰기엔 커서 100당으로 둔다
     const whole = /^전체/.test(def?.label || '') && amount > 600, doubt = isDoubtful(p);

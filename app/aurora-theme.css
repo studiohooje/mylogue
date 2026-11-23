@@ -1411,6 +1411,7 @@ button.sc-cell small,button.sc-cell span{display:block;max-width:100%;overflow:h
 .db-hits-head{margin:6px 0 0;font-size:13px;font-weight:700;color:#c9d6e6}.db-hits-head small{font-weight:400;color:#9fb2c8;margin-left:6px}
 .db-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:12px;font-style:normal;font-weight:600;background:#22324d;color:#bfd0e4;vertical-align:1px}
 .db-tag.db-k,.db-tag.db-e{background:#1d3a48;color:#8ce4e0}.db-tag.db-p{background:#2a2c52;color:#c7c3ff}.db-tag.db-f{background:#3a2c3a;color:#f0c6e0}
+.db-tag.db-s{background:#3a3422;color:#f7d28a}.db-tag.db-x{background:#3a2626;color:#f3b0a8}
 .ex-cues{margin:6px 0 8px;font-size:14px;line-height:1.55;word-break:keep-all}.ex-cues summary{cursor:pointer;color:#8ce4e0;font-weight:600;min-height:32px;display:flex;align-items:center}.ex-cues ul{margin:4px 0;padding-left:18px}
 .gm-specline{display:block;color:#9fb2c8;font-size:12px}
 .pm-ref{margin:2px 0 6px;color:#9fb2c8;line-height:1.5;word-break:keep-all}

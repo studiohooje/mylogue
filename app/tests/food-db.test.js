@@ -23,6 +23,8 @@ test('음식 DB 묶기: 한식 1회분, 밀도 1.0 추정, 프랜차이즈 식�
   foodsRaw:[{name:'멥쌀', per100:{kcal:441, carbs:36.81, protein:20.27, fat:26.11}}],
   products:[{name:'프로틴', brand:'오빠닭', brandDisplay:'오빠닭(허닭)', group:'protein', confidence:'high', per100g:{kcal:114, carbs:10, protein:20, fat:1}, units:[{label:'전체 3360g', g:3360, default:true}]},
             {name:'제로 젤리', brand:'젤리집', group:'lowsugar', confidence:'medium', flags:['kcalDensityLow'], per100g:{kcal:9, carbs:0, protein:0, fat:0.9}, units:[]},
+            {name:'치킨마요', brand:'한솥', group:'franchise', per100g:null, label:{basis:'per serving', servingLabel:'1개', kcal:647}, units:[]},
+            {name:'양념치킨', brand:'기영이', group:'franchise', source:{type:'estimate'}, per100g:{kcal:278, carbs:20, protein:18, fat:15}, units:[]},
             {name:'고구마 피자 L', brand:'피자알볼로', group:'franchise', per100g:{kcal:252, carbs:null, protein:8.6, fat:null}, units:[{label:'1회 제공량 1260g', g:1260, default:true}]}],
  });
  const by = n => rows.filter(r => r[0] === n);
@@ -33,6 +35,8 @@ test('음식 DB 묶기: 한식 1회분, 밀도 1.0 추정, 프랜차이즈 식�
  assert.deepEqual(by('프로틴')[0].slice(1, 5), ['오빠닭(허닭)', 'g', 0, 114]);
  assert.equal(by('제로 젤리')[0][10], 1); assert.equal(by('프로틴')[0].length, 10);
  assert.equal(rowToFood(by('제로 젤리')[0]).dbDoubt, true); assert.match(rowToFood(by('제로 젤리')[0]).aiEvidence.note, /확인 필요/);
+ assert.deepEqual(by('치킨마요')[0].slice(1, 5), ['한솥', '개', 0, 647]); // 중량 없이 1개 값만
+ assert.equal(by('양념치킨')[0][8], 'x'); // 추정 꼬리표
  const pz = by('고구마 피자 L')[0]; assert.equal(pz[5], null); assert.equal(pz[7], null); assert.equal(pz[8], 'f');
 });
 
