@@ -1522,3 +1522,23 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .last-week p{margin:6px 0 0;font-size:14px;line-height:1.6;word-break:keep-all}.last-week .lw-next{color:var(--ice)}
 .next-goals ul{margin:6px 0;padding-left:18px;display:grid;gap:4px}.next-goals li{font-size:14px;word-break:keep-all}.next-goals small{color:var(--muted);font-size:12px}
 .ai-day-group{margin:8px 0;border:1px solid var(--line);border-radius:14px;padding:4px 10px}.ai-day-group>summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px}.ai-day-group>summary small{color:var(--muted);font-size:12px}
+/* 4.17.0 홈 한마디 · 목표 페이즈 */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.home-voice{position:relative;z-index:1;display:grid;gap:8px;margin:4px 0 12px;max-width:34em}
+.home-voice .hv-title{margin:0;font-size:clamp(22px,5.6vw,30px);line-height:1.3;font-weight:700;letter-spacing:-.02em;color:#fff;word-break:keep-all;text-wrap:balance}
+.home-voice .hv-sub{margin:0;font-size:15px;line-height:1.6;color:#dbe6f0;word-break:keep-all}
+.home-voice .hv-act{justify-self:start;min-height:44px;padding:0 18px;margin-top:4px}
+.hero-msg.small{font-size:13px;opacity:.85}
+.phase-badge{justify-self:start;display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:40px;padding:8px 14px;border-radius:999px;border:1px solid #ffffff30;background:#0b142acc;color:#e8f1fa;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.phase-badge b{font-size:14px;color:#fff}.phase-badge span{font-variant-numeric:tabular-nums;color:#c9d6e6}.phase-badge .ph-prog{color:#9fe6dc}
+.phase-badge.empty{border-style:dashed;color:#c9d6e6}
+.phase-badge.ph-diet{border-color:#6fd6a399}.phase-badge.ph-leanbulk{border-color:#8fb8ff99}.phase-badge.ph-recomp{border-color:#c6a4ff99}.phase-badge.ph-bulk{border-color:#ffb38a99}.phase-badge.ph-maintain{border-color:#9fe6dc99}
+.phase-sheet .field-unit{display:flex;align-items:center;gap:8px}.phase-sheet .field-unit input{flex:1;min-width:0}.phase-sheet .field-unit em{font-style:normal;color:var(--muted)}
+.phase-sheet .ph-weeks{border:0;padding:0;margin:12px 0}.phase-sheet .ph-weeks legend{font-size:14px;font-weight:700;margin-bottom:8px}.phase-sheet .chip-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.phase-sheet .chip{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit}.phase-sheet .chip.on{background:#2e5c74;border-color:#2e5c74;color:#fff}
+.phase-sheet .field.inline{display:inline-flex;align-items:center;gap:6px}.phase-sheet .field.inline input{width:72px}
+.ph-check{margin:12px 0;padding:12px 14px;border-radius:12px;background:#ffffff08;display:grid;gap:4px}.ph-check p{margin:0}
+.ph-bars{display:grid;gap:8px;margin:14px 0}.ph-bar{display:grid;grid-template-columns:40px 1fr 44px;align-items:center;gap:10px;font-size:13px}.ph-bar i{display:block;height:10px;border-radius:99px;background:linear-gradient(90deg,#2e5c74,#8ce4e0);min-width:4px}.ph-bar{position:relative}.ph-bar b{text-align:right;font-variant-numeric:tabular-nums}
+.ph-bar::after{content:"";grid-column:2;grid-row:1;height:10px;border-radius:99px;background:#ffffff12;z-index:-1}.ph-bar i{grid-column:2;grid-row:1}
+.ph-line{font-size:16px;font-weight:700;margin:6px 0}.ph-advice{margin:10px 0;padding:0;list-style:none;display:grid;gap:8px}.ph-advice li{padding:12px 14px;border-radius:12px;background:#ffffff08;font-size:14px;line-height:1.6;word-break:keep-all}.ph-advice li.k-fast,.ph-advice li.k-cap,.ph-advice li.k-muscle{border-left:3px solid #f3c27a}.ph-advice li.k-on{border-left:3px solid #6fd6a3}
+.phase-recap .onb-sum{margin:12px 0}
