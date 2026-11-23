@@ -29,7 +29,7 @@ export function unitName(label = '', basis = 'g'){
 const per = (n, factor) => [n.kcal == null ? null : Math.round(n.kcal * factor), r1(n.carbs == null ? null : n.carbs * factor), r1(n.protein == null ? null : n.protein * factor), r1(n.fat == null ? null : n.fat * factor)];
 
 export const DOUBT_FLAGS = new Set(['kcalDensityLow', 'kcalDensityHigh', 'zeroKcalWithMacros', 'recheckUnresolved', 'calcCheckMismatch', 'fatPartsGtFat', 'sugarGtCarbs']);
-export const isDoubtful = p => (p.flags || []).some(f => DOUBT_FLAGS.has(typeof f === 'string' ? f : f?.code));
+export const isDoubtful = p => (p.confidence === 'low' && p.source?.type !== 'estimate') || (p.flags || []).some(f => DOUBT_FLAGS.has(typeof f === 'string' ? f : f?.code));
 
 export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products = []}){
   const rows = [], seen = new Set();
@@ -65,7 +65,7 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
     if (!p.per100g && !p.per100ml) {
       const lb = p.labelCorrected || p.label || {};
       if (lb.kcal != null && /serving/.test(lb.basis || 'per serving')) {
-        const st = p.source?.type || '', tag1 = st === 'estimate' ? 'x' : st === 'store-post' ? 's' : p.group === 'franchise' ? 'f' : 'm';
+        const st = p.source?.type || '', tag1 = st === 'estimate' ? 'x' : (st === 'store-post' || st === 'press-report' || st === 'public-test') ? 's' : p.group === 'franchise' ? 'f' : 'm';
         push(p.displayName || p.name, p.brandDisplay || p.brand || '', unitName(lb.servingLabel || '1개') || '개', 0, per(lb, 1), tag1, [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])], isDoubtful(p));
       }
       continue;
@@ -73,7 +73,7 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
     const base = p.per100g || p.per100ml || {}, ml = !p.per100g && !!p.per100ml;
     const def = (p.units || []).find(u => u.default), amount = def ? (def.g || def.ml) : 0, unit = def ? unitName(def.label, ml ? 'ml' : 'g') : '';
     const st = p.source?.type || '';
-    const tag = st === 'estimate' ? 'x' : st === 'store-post' ? 's' : p.group === 'franchise' ? 'f' : p.confidence === 'high' ? 'p' : 'm';
+    const tag = st === 'estimate' ? 'x' : (st === 'store-post' || st === 'press-report' || st === 'public-test') ? 's' : p.group === 'franchise' && p.category !== 'franchise-hmr' ? 'f' : p.confidence === 'high' ? 'p' : 'm';
     const brand = p.brandDisplay || p.brand || '', aliases = [...(p.search?.aliases || []), ...(p.search?.brandAliases || [])];
     // '전체 3360g'처럼 통 전체가 기본 단위면 1회분으로 쓰기엔 커서 100당으로 둔다
     const whole = /^전체/.test(def?.label || '') && amount > 600, doubt = isDoubtful(p);
