@@ -100,7 +100,7 @@ test('F-01·F-04: 근거 없는 한식 대표값은 확인 필요로, 통째 제
  const fs = await import('node:fs');
  const db = JSON.parse(fs.readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
  const row = name => db.rows.find(r => r[0] === name && r[8] === 'k');
- assert.equal(row('라면')[10], 1); assert.equal(row('설렁탕')[10], 1); assert.ok(!row('쌀밥')[10]);
+ /* 4.28.0 A-1: 식약처 성인 1인분 근거로 바로잡은 행은 표시를 풀고, 근거가 없는 행은 그대로 확인 필요 */ assert.ok(!row('라면')[10]); assert.ok(row('라면')[4] > 400); assert.ok(row('막국수')[4] > 400); assert.ok(!row('설렁탕')[10]); assert.equal(row('비빔면')[10], 1); assert.ok(!row('쌀밥')[10]);
  assert.ok(!db.rows.some(r => r[2] === '개' && r[3] >= 250 && ['m', 'p'].includes(r[8]) && r[4] / r[3] >= 2.5));
 });
 

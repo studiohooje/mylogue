@@ -97,3 +97,17 @@ test('식단 점수 완화(대표님 2026-11-24): 칼로리 +11%·탄수 +18% �
  const ser = dietSeries({settings: s, meals: [{date: '2026-11-01', calories: 2564, carbs: 308.8, protein: 196.3, fat: 61.1}]}, {days: 3, end: '2026-11-02'});
  assert.equal(ser.find(x => x.date === '2026-11-01').score, 98);
 });
+test('밤샘 A-1: 한식 대표값 교체는 성인 1인분 근거 2행 이상·검산 통과한 것만, 앱 DB에 적용됨', async () => {
+ const fx = JSON.parse(readFileSync(new URL('../tools/kr-dish-fixes.json', import.meta.url), 'utf8')).fixes;
+ const db = JSON.parse(readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
+ let n = 0;
+ for (const [name, f] of Object.entries(fx)) {
+  if (f.verdict !== 'replace') continue; n++;
+  assert.ok(f.evidence.length >= 2, name);
+  const p = f.proposal, calc = p.carbs * 4 + p.protein * 4 + p.fat * 9;
+  assert.ok(Math.abs(calc - p.kcal) / p.kcal <= 0.2, name);
+  const row = db.rows.find(r => r[0] === name && ['k', 'e'].includes(r[8]));
+  assert.equal(row[4], p.kcal, name); assert.equal(row.length, 10, name);
+ }
+ assert.ok(n >= 30);
+});

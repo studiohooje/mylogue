@@ -14,10 +14,25 @@ import {flagDoubts} from './food-db-check.mjs';
 // 4.27.0 전수검사 F-01: 근거 없이 값을 바꾸지 않고(대표님 원칙) '값 확인 필요'로 내려 검색 뒤로.
 // 한식 대표(k·e) 중 1회 무게가 0인 그릇·인분 행과, 1회분 열량이 3~10배 낮게 들어간 것으로 확인된 행.
 export const KR_DOUBT = new Set(['라면','짜장라면','비빔면','막국수','토마토스파게티','카레라이스','동태탕','꽃게탕','설렁탕','잔치국수','바지락칼국수','쌀국수','콩나물해장국','알탕','도가니탕','버섯전골','샤브샤브']);
+// 4.28.0 밤샘 A-1: 한식 대표값을 식약처 성인 1인분 근거와 맞대 본 결과(tools/kr-dish-audit.mjs → tools/kr-dish-fixes.json).
+//   replace: 근거 2행 이상 범위 밖 → 근거 중앙값으로 교체(검산 통과), keep: 근거 2행 이상 범위 안 → '확인 필요' 해제(무게 0이면 근거 무게로)
+//   keep-1·doubt: 근거 부족 → '확인 필요' 유지. 표에 없는 k·e 행은 예전 규칙(KR_DOUBT·무게 0) 그대로.
+let KR_FIXES = {};
+try { KR_FIXES = JSON.parse(fs.readFileSync(new URL('./kr-dish-fixes.json', import.meta.url), 'utf8')).fixes || {}; } catch {}
+export function applyKrFix(r, fix = KR_FIXES[r[0]]) {
+ if (!fix || !(r[8] === 'k' || r[8] === 'e')) return null;
+ r[9] = r[9] ?? '';
+ // 행 길이 규칙: 10칸(표시 없음) · 11칸(10번=1 확인 필요) · 12칸(10번 0/1 + 미량영양소). 교체하면 옛 미량영양소는 맞지 않아 뺀다.
+ const tidy = flag => { if (r.length >= 12 && Array.isArray(r[11])) { r[10] = flag; return; } r.length = 10; if (flag) r[10] = 1; };
+ if (fix.verdict === 'replace' && fix.proposal) { const p = fix.proposal; r[2] = p.unit; r[3] = p.grams; r[4] = p.kcal; r[5] = p.carbs; r[6] = p.protein; r[7] = p.fat; r.length = 10; return 'replace'; }
+ if (fix.verdict === 'keep') { if (fix.proposal?.fillGrams && !(r[3] > 0)) r[3] = fix.proposal.fillGrams; tidy(!(r[3] > 0) && /그릇|인분/.test(r[2]) ? 1 : 0); return 'keep'; }
+ tidy(1); return 'doubt';
+}
 // F-04: 제품(p·m) 중 '1개'가 한 통 전체(250g 이상, 1g당 2.5kcal 이상 — 가루·바·과자·면 묶음)인 행은 단위를 '통'으로.
 export function fixRows(rows){
  let doubt = 0, tub = 0;
  for (const r of rows) {
+  if (applyKrFix(r)) { if (r[10] === 1) doubt++; continue; }
   if ((r[8] === 'k' || r[8] === 'e') && (KR_DOUBT.has(r[0]) || (!(r[3] > 0) && /그릇|인분/.test(r[2])))) { if (r.length < 11) r[9] = r[9] ?? ''; if (r[10] !== 1) { r[10] = 1; doubt++; } }
   if (r[2] === '개' && r[3] >= 250 && (r[8] === 'm' || r[8] === 'p') && r[4] / r[3] >= 2.5) { r[2] = '통'; tub++; }
  }
