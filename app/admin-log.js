@@ -37,7 +37,7 @@ const KIND_LABEL = {body: '수치', meals: '식사', workouts: '운동', checkin
 export function adminLogHTML(s, {today}) {
   if (!s.uid) {
     const q = s.q.trim().toLowerCase(), users = s.users.filter(u => !q || String(u.email || '').toLowerCase().includes(q) || u.uid.includes(q));
-    return `<div class="page-head"><div><span class="eyebrow">Admin</span><h2>관리로그</h2><p>계정을 골라 기록을 열람·수정해요. 모든 수정은 접근 기록에 남고, 고치기 전 내용도 저장돼요.</p></div></div>
+    return `<div class="page-head"><div><span class="eyebrow">Admin</span><h2>관리</h2><p>계정을 골라 기록을 열람·수정해요. 모든 수정은 접근 기록에 남고, 고치기 전 내용도 저장돼요.</p></div></div>
 <section class="section card"><label class="field">계정 찾기<input id="alog-q" type="search" value="${esc(s.q)}" placeholder="이메일 일부"></label>${s.error ? `<p class="error">${esc(s.error)}</p>` : ''}${s.loading ? '<p class="hint">불러오는 중…</p>' : ''}
 <div class="alog-users">${users.map(u => `<button type="button" class="record alog-user" data-alog-open="${esc(u.uid)}"><div><strong>${esc(u.email || u.uid)}</strong><small>${esc(u.status || '')} · 가입 ${esc(String(u.createdAt?.toDate?.()?.toISOString?.() || '').slice(0, 10))}</small></div><span>열기 ›</span></button>`).join('') || (s.loading ? '' : '<p class="hint">계정이 없어요.</p>')}</div>
 <button type="button" class="button secondary" data-alog-refresh>목록 새로 고침</button></section>`;

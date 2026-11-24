@@ -56,10 +56,11 @@ export function buildReport(db, now=new Date(), {focus=''}={}){
  const streak = min => { let n = 0, d = weekStart(now); if((weekCount.get(ymd(d))?.size||0) < min) d = addDays(d, -7); while((weekCount.get(ymd(d))?.size||0) >= min){ n++; d = addDays(d, -7); } return n; };
  const streak3 = streak(3), streak1 = streak(1);
  // 성장: 가장 자주 한 종목(또는 고른 종목)의 주별 최고 추정 1RM, 12주
- const freq = new Map(); for(const w of inRange(addDays(now,-83), now)) for(const e of w.exercises||[]) if(e.kind!=='cardio') freq.set(e.name, (freq.get(e.name)||0) + done(e).length);
- const names = [...freq.entries()].sort((a, b) => b[1]-a[1]).map(x => x[0]);
- const gName = names.includes(focus) ? focus : names[0] || '';
- const weekly = []; for(let i = 11; i >= 0; i--){ const s = addDays(weekStart(now), -7*i), e = addDays(s, 6); let b = 0; for(const w of inRange(s, e)) for(const x of w.exercises||[]) if(x.name===gName) b = Math.max(b, best1RM(x)); weekly.push({week:ymd(s), e1rm:b}); }
+ // 4.18.0 같은 종목(exerciseId)은 머신·이름이 달라도 하나로 센다
+ const freq = new Map(), label = new Map(); for(const w of inRange(addDays(now,-83), now)) for(const e of w.exercises||[]) if(e.kind!=='cardio'){ const k = exKey(e); if(!label.has(k)) label.set(k, EXERCISE_CATALOG.find(x => x.id && x.id===e.exerciseId)?.name || e.name); freq.set(k, (freq.get(k)||0) + done(e).length); }
+ const keys = [...freq.entries()].sort((a, b) => b[1]-a[1]).map(x => x[0]), names = [...new Set(keys.map(k => label.get(k)))];
+ const gName = names.includes(focus) ? focus : names[0] || '', gKeys = new Set(keys.filter(k => label.get(k)===gName));
+ const weekly = []; for(let i = 11; i >= 0; i--){ const s = addDays(weekStart(now), -7*i), e = addDays(s, 6); let b = 0; for(const w of inRange(s, e)) for(const x of w.exercises||[]) if(gKeys.has(exKey(x))) b = Math.max(b, best1RM(x)); weekly.push({week:ymd(s), e1rm:b}); }
  const pts = weekly.filter(x => x.e1rm > 0);
  const growth = {name:gName, names, points:pts, change4w: pts.length>=2 ? Math.round((pts.at(-1).e1rm - (weekly.slice(0, 8).filter(x => x.e1rm).at(-1)?.e1rm ?? pts[0].e1rm))*10)/10 : null};
  // 꾸준함: 12주 × 7일

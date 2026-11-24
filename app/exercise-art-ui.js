@@ -1,5 +1,8 @@
 import {EXERCISE_ART} from './exercise-art.js';
-import {EXERCISE_CATALOG, findExercise} from './catalog.js';
+import {EXERCISE_CATALOG, findExercise, resolveExercise} from './catalog.js';
+// 4.18.0 머신 기록은 머신 종류(상위 종목)의 그림으로: app이 머신 찾는 함수를 넣어 준다(공용 도감의 제조사 모델까지)
+let machineOf = () => null;
+export const setMachineResolver = fn => { machineOf = typeof fn === 'function' ? fn : () => null; };
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 4.16.0 그림 찾기: 이름이 정확히 같지 않아도(별칭·예전 이름·직접 입력) 종목 번호와 별칭으로 찾는다.
 export function artFile(x){
@@ -7,8 +10,12 @@ export function artFile(x){
  if(name && EXERCISE_ART[name]) return EXERCISE_ART[name];
  const byId = id ? EXERCISE_CATALOG.find(e => e.id === id) : null;
  if(byId && EXERCISE_ART[byId.name]) return EXERCISE_ART[byId.name];
- const hit = name ? findExercise(name) : null;
- return hit && EXERCISE_ART[hit.name] ? EXERCISE_ART[hit.name] : '';
+ const hit = name ? resolveExercise(name) : null;
+ if(hit && EXERCISE_ART[hit.name]) return EXERCISE_ART[hit.name];
+ // 머신 종류(상위 종목)의 그림
+ const mid = typeof x === 'object' ? x?.machineId : null;
+ if(mid){ let m = null; try{ m = machineOf(mid); }catch{} const ex = m?.exercise || (m?.exerciseId ? EXERCISE_CATALOG.find(e => e.id === m.exerciseId)?.name : '') || ''; if(ex && EXERCISE_ART[ex]) return EXERCISE_ART[ex]; const r = ex ? resolveExercise(ex) : null; if(r && EXERCISE_ART[r.name]) return EXERCISE_ART[r.name]; }
+ return '';
 }
 export const hasExerciseArt = x => !!artFile(x);
 const SIZE = {'ex-art-lg':96, 'ex-art-md':48, 'ex-art-sm':28};

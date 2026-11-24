@@ -8,7 +8,7 @@ const body = (date, weight, extra = {}) => ({date, weight, ...extra});
 const series = (start, n, from, perDay, extra = () => ({})) => [...Array(n)].map((_, i) => { const d = new Date(new Date(start + 'T12:00:00').getTime() + i * 86400000); const ds = d.toISOString().slice(0, 10); return body(ds, Math.round((from + perDay * i) * 10) / 10, extra(i)); });
 
 test('유형마다 다른 질문, 너무 빠른 목표는 안내', () => {
-  assert.deepEqual(PHASE_TYPES.map(t => t.id), ['diet', 'leanbulk', 'recomp', 'bulk', 'maintain']);
+  assert.deepEqual(PHASE_TYPES.map(t => t.id), ['diet', 'leanbulk', 'recomp', 'bulk', 'maintain', 'peak', 'gainweight', 'reverse', 'dietbreak']);
   const db = {body: [body('2026-11-01', 80, {bodyFatPct: 25, skeletalMuscle: 33})]};
   const st = {...newPhaseWizard(db, 'diet'), answers: {loseKg: 12}, weeks: 8};
   assert.equal(st.now.weight, 80);

@@ -24,7 +24,9 @@ const consentRef=uid=>fsSDK.doc(firestore,'users',uid,'meta','consent');
 export async function loadAccountConsent(){
   const user=auth?.currentUser;cloudState.consent=null;cloudState.consentLoaded=false;
   if(!user)return null;
-  try{const snap=await fsSDK.getDocFromServer(consentRef(user.uid));if(snap.exists()){const d=snap.data();cloudState.consent={version:String(d.version||''),items:d.items||{},at:d.at?.toDate?d.at.toDate().toISOString():''}}}catch(error){console.warn('동의 기록을 읽지 못했어요',error?.code||error)}
+  // 4.18.0 서버에서 못 읽으면 기기에 남은 사본으로(일시적인 통신 실패로 동의 화면이 다시 뜨지 않게)
+  const read=snap=>{if(snap?.exists()){const d=snap.data();cloudState.consent={version:String(d.version||''),items:d.items||{},at:d.at?.toDate?d.at.toDate().toISOString():''}}};
+  try{read(await fsSDK.getDocFromServer(consentRef(user.uid)))}catch(error){cloudState.consentError=String(error?.code||error);console.warn('동의 기록을 읽지 못했어요',error?.code||error);try{read(await fsSDK.getDoc(consentRef(user.uid)))}catch{}}
   cloudState.consentLoaded=true;return cloudState.consent;
 }
 export async function saveAccountConsent(record){
@@ -77,7 +79,8 @@ export async function initializeCloud() {
     const app=sdk[0].initializeApp(firebaseConfig);
     auth=authSDK.initializeAuth(app,cloudState.native
       ? {persistence:authSDK.indexedDBLocalPersistence}
-      : {persistence:authSDK.browserSessionPersistence,popupRedirectResolver:authSDK.browserPopupRedirectResolver});
+      // 4.18.0 대표님: 웹에서 자꾸 로그아웃됨 → 탭 세션 저장(browserSession: 브라우저를 닫으면 로그아웃)을 기기 저장으로. 로그아웃은 직접 누를 때만.
+      : {persistence:[authSDK.indexedDBLocalPersistence,authSDK.browserLocalPersistence],popupRedirectResolver:authSDK.browserPopupRedirectResolver});
     await Promise.race([auth.authStateReady(),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('auth timeout')),15000)})]);
     clearTimeout(timeout);
     cloudState.user=auth.currentUser;

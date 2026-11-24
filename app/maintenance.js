@@ -1,0 +1,106 @@
+// 4.18.0 나만의 유지칼로리(대표님 2026-11-24): 공식(남들 평균)이 아니라 내 기록으로 만든 유지칼로리.
+// 사용자에게는 '헤일로 N번'으로 쉽게 보여 주고, 안에서는 아래처럼 더 꼼꼼히 계산한다(설명할 필요는 없음).
+//  ① 최근 8주(56일)만 본다. 오래된 기록은 지금 몸과 다르다. 최근일수록 무게를 더 준다(반감기 21일).
+//  ② 섭취: '다 적은 날'만 — 그날 열량이 내 평소(중앙값)의 60% 미만이거나 800kcal 미만이면 덜 적은 날로 보고 뺀다.
+//  ③ 체중: 하루 값 대신 추세선(가중 회귀)의 기울기. 물·염분 출렁임(±1~2kg)을 걸러 낸다.
+//  ④ 내 유지칼로리 ≈ 평균 섭취 − 체중 기울기 × 7,700kcal/kg. 섭취를 매번 비슷하게 덜 적어도 그 오차는 상쇄된다.
+//  ⑤ 공식 값(KDRI)을 처음 값으로 두고, 기록이 쌓여 오차가 줄수록 내 기록 쪽으로 옮긴다(갑자기 튀지 않게).
+//  ⑥ 단계: 헤일로 21번 '가닥', 28번 '나만의 유지칼로리', 42번 '꽤 정확' — 단, 오차·체중 횟수·기간 조건을 함께 채워야 오른다.
+//  ⑦ 최근 기록이 부족하면 예전에 계산된 값을 '대략·부정확'으로 보여 준다(몇 주 전 기록인지와 함께).
+// 숫자 근거: 하루 체중 오차 약 0.6kg로 보면 기울기 오차가 3주 ±200, 4주 ±130, 6주 ±70kcal 안팎(어림, 실제 기록으로 다시 확인할 것).
+const DAY = 86400000, WINDOW = 56, HALF = 21, KCAL_PER_KG = 7700;
+export const HALO_STEPS = [21, 28, 42];
+const toT = s => new Date(String(s).slice(0, 10) + 'T12:00:00').getTime();
+const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const r50 = n => Math.round(n / 50) * 50;
+
+// 하루 섭취 합계(예정 기록 제외)
+function intakeByDay(db){ const m = new Map(); for(const x of db.meals||[]){ if(x.planned) continue; const k = Number(x.calories ?? x.kcal); if(!(k >= 0)) continue; m.set(x.date, (m.get(x.date)||0) + k); } return m; }
+function weightsByDay(db){ const m = new Map(); for(const b of db.body||[]) if(Number(b.weight) > 0) m.set(b.date, Number(b.weight)); return m; }
+// 헤일로: 몸·식사·운동(의도적 휴식 포함) 세 가지를 다 적은 날
+export function haloDays(db, from, to){
+ const has = k => new Set(k.filter(Boolean)), body = has((db.body||[]).map(b => b.date)), meal = has((db.meals||[]).filter(m => !m.planned).map(m => m.date)), work = has((db.workouts||[]).filter(w => !w.planned).map(w => w.date));
+ let n = 0; for(let t = toT(from); t <= toT(to); t += DAY){ const d = ymd(t); if(body.has(d) && meal.has(d) && work.has(d)) n++; } return n;
+}
+
+// end 날짜 기준 한 번 계산(조건이 안 되면 ok:false와 무엇이 부족한지)
+export function estimateAt(db, end, formula = null){
+ const endT = toT(end), from = ymd(endT - (WINDOW - 1) * DAY);
+ const w = t => Math.pow(0.5, (endT - t) / DAY / HALF);
+ const intake = [...intakeByDay(db)].filter(([d]) => d >= from && d <= end);
+ const med = intake.length ? [...intake.map(x => x[1])].sort((a, b) => a - b)[Math.floor(intake.length / 2)] : 0;
+ const full = intake.filter(([, k]) => k >= 800 && k >= med * 0.6);
+ const weights = [...weightsByDay(db)].filter(([d]) => d >= from && d <= end).map(([d, kg]) => ({t: toT(d), kg}));
+ const halos = haloDays(db, from, end);
+ const span = weights.length ? Math.round((weights.at(-1).t - weights[0].t) / DAY) : 0, lastGap = weights.length ? Math.round((endT - Math.max(...weights.map(x => x.t))) / DAY) : 99;
+ const facts = {halos, intakeDays: full.length, weighIns: weights.length, span, lastGap, from, end};
+ if(full.length < 14 || weights.length < 10 || span < 18 || lastGap > 10) return {ok: false, ...facts};
+ // 가중 평균 섭취
+ let sw = 0, si = 0; for(const [d, k] of full){ const x = w(toT(d)); sw += x; si += x * k; } const meanIn = si / sw;
+ let sv = 0; for(const [d, k] of full){ const x = w(toT(d)); sv += x * (k - meanIn) ** 2; } const sdIn = Math.sqrt(sv / sw), seIn = sdIn / Math.sqrt(full.length);
+ // 가중 회귀(체중 ~ 날짜)
+ let W = 0, mt = 0, mk = 0; for(const p of weights){ const x = w(p.t); W += x; mt += x * p.t; mk += x * p.kg; } mt /= W; mk /= W;
+ let sxx = 0, sxy = 0; for(const p of weights){ const x = w(p.t), dt = (p.t - mt) / DAY; sxx += x * dt * dt; sxy += x * dt * (p.kg - mk); }
+ const slope = sxy / sxx; let rss = 0; for(const p of weights){ const x = w(p.t), dt = (p.t - mt) / DAY; rss += x * (p.kg - mk - slope * dt) ** 2; }
+ const sdW = Math.max(0.35, Math.sqrt(rss / W)), neff = W * W / weights.reduce((a, p) => a + w(p.t) ** 2, 0);
+ const seSlope = sdW / Math.sqrt(sxx / W * neff);
+ const obs = meanIn - slope * KCAL_PER_KG, seObs = Math.sqrt((seSlope * KCAL_PER_KG) ** 2 + seIn ** 2);
+ // 공식 값과 합치기(공식은 ±300kcal 정도 틀릴 수 있다고 봄)
+ const prior = Number(formula) > 0 ? Number(formula) : null, sp = 300;
+ const kcal = prior ? (prior / sp ** 2 + obs / seObs ** 2) / (1 / sp ** 2 + 1 / seObs ** 2) : obs, se = prior ? Math.sqrt(1 / (1 / sp ** 2 + 1 / seObs ** 2)) : seObs;
+ const byHalo = halos >= HALO_STEPS[2] ? 3 : halos >= HALO_STEPS[1] ? 2 : halos >= HALO_STEPS[0] ? 1 : 0, byErr = seObs <= 100 ? 3 : seObs <= 160 ? 2 : seObs <= 260 ? 1 : 0;
+ const level = Math.min(byHalo, byErr);
+ return {ok: level > 0, level, kcal: r50(kcal), lo: r50(kcal - 1.28 * se), hi: r50(kcal + 1.28 * se), observed: Math.round(obs), seObs: Math.round(seObs), slopeKgWeek: Math.round(slope * 7 * 100) / 100, meanIntake: Math.round(meanIn), ...facts};
+}
+
+// 지금 보여 줄 것: 오늘 기준으로 되면 'ready', 안 되면 예전(최대 26주 전)에 됐던 값을 'stale'로, 그것도 없으면 'collecting'
+export function myMaintenance(db, today, formula = null){
+ const now = estimateAt(db, today, formula);
+ if(now.ok) return {status: 'ready', ...now, formula};
+ for(let wk = 1; wk <= 26; wk++){
+  const end = ymd(toT(today) - wk * 7 * DAY), past = estimateAt(db, end, formula);
+  if(past.ok) return {status: 'stale', ...past, weeksAgo: wk, now, formula};
+ }
+ return {status: 'collecting', ...now, formula};
+}
+
+// 진행 막대·남은 것
+export function progressOf(m){
+ const target = HALO_STEPS[1], pct = Math.min(1, (m.status === 'stale' ? m.now.halos : m.halos) / target);
+ const f = m.status === 'stale' ? m.now : m, need = [];
+ if(f.weighIns < 10) need.push(`체중 기록 ${10 - f.weighIns}번 더`);
+ if(f.intakeDays < 14) need.push(`식단을 다 적은 날 ${14 - f.intakeDays}일 더`);
+ if(f.weighIns && f.lastGap > 10) need.push('최근 열흘 안의 체중 기록');
+ return {pct, halos: f.halos, target, need};
+}
+
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const n0 = n => Number(n || 0).toLocaleString('ko-KR');
+const LEVEL = ['', '가닥이 잡혔어요', '나만의 유지칼로리', '꽤 정확해요'];
+// 물음표: PC는 마우스를 올리면, 폰은 누르면 설명(tabindex로 포커스되면 보임)
+export function helpHTML(m){
+ const p = progressOf(m);
+ return `<span class="mt-help" tabindex="0" role="button" aria-label="나만의 유지칼로리는 어떻게 계산하나요">?<span class="mt-tip" role="tooltip"><b>진짜 내 유지칼로리는 기록이 쌓여야 알 수 있어요</b>
+ <span>인바디가 제안하는 값이나 계산식으로 나온 값은 많은 사람의 평균이라, 나와는 수백 kcal씩 다를 수 있어요. 인바디 수치나 직접 정한 값을 써도 되지만,</span>
+ <span>마이로그는 내가 먹은 것과 체중 흐름을 맞춰 보고 '내 몸이 실제로 쓰는 양'을 계산해요. 완벽하진 않지만 내 진짜 기록으로 만든 값이라 비교적 정확해요.</span>
+ <span><b>헤일로 ${HALO_STEPS[0]}번</b>이면 가닥이 잡히고, <b>${HALO_STEPS[1]}번</b>이면 목표를 세울 만큼, <b>${HALO_STEPS[2]}번</b>이면 꽤 정확해져요. 헤일로는 몸·식사·운동(의도적 휴식 포함)을 다 적은 날이에요.</span>
+ <span>최근 8주 기록으로 계산해서, 기록을 오래 쉬면 정확도가 내려가요. 식단은 하루치를 다 적고, 체중은 주 3번 이상 재면 좋아요.</span>
+ <span class="mt-now">지금 최근 8주 헤일로 ${p.halos}번 / ${p.target}번</span></span></span>`;
+}
+export function progressBarHTML(m){
+ const p = progressOf(m);
+ return `<div class="mt-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${p.target}" aria-valuenow="${p.halos}" aria-label="나만의 유지칼로리까지 헤일로"><i style="width:${Math.round(p.pct * 100)}%"></i></div><p class="mt-progress-label">헤일로 <b>${p.halos}</b> / ${p.target}번${p.halos < p.target ? ` · ${p.target - p.halos}번 더 쌓으면 계산할 수 있어요` : ''}${p.need.length ? `<small>${esc(p.need.join(' · '))}</small>` : ''}</p>`;
+}
+// 분석 탭 카드
+export function maintenanceCardHTML(m){
+ const head = `<div class="section-title"><h3>나만의 유지칼로리 ${helpHTML(m)}</h3></div>`;
+ const formula = m.formula ? `<p class="hint">계산식(키·체중·나이·활동량) 기준 ${n0(m.formula)}kcal — 참고값이에요.</p>` : '';
+ if(m.status === 'ready') return `<section class="section card mt-card">${head}<p class="mt-value"><b>${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range">${n0(m.lo)}~${n0(m.hi)}kcal · ${LEVEL[m.level]} <span class="mt-dots" aria-label="정확도 ${m.level}/3">${'●'.repeat(m.level)}${'○'.repeat(3 - m.level)}</span></p><p class="hint">최근 8주 평균 ${n0(m.meanIntake)}kcal를 먹었고 체중은 주 ${m.slopeKgWeek > 0 ? '+' : ''}${m.slopeKgWeek}kg 흐름이에요. 완벽하진 않지만 내 진짜 기록으로 만든 값이에요.</p>${m.level < 3 ? progressBarHTML(m) : ''}${formula}</section>`;
+ if(m.status === 'stale') return `<section class="section card mt-card stale">${head}<p class="mt-value"><b>약 ${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range warn">${m.weeksAgo}주 전 기록으로 계산한 값이에요. 최근 기록이 부족해 지금은 부정확할 수 있어요.</p>${progressBarHTML(m)}${formula}</section>`;
+ return `<section class="section card mt-card">${head}<p class="hint">내 기록이 쌓이면 계산식이 아닌 진짜 내 유지칼로리를 알려 드려요.</p>${progressBarHTML(m)}${formula}</section>`;
+}
+// 식단 목표(칼로리 고르기)의 '내 유지칼로리를 기반으로 계산하기'
+export function useMineHTML(m, on){
+ const usable = m && (m.status === 'ready' || m.status === 'stale');
+ return `<div class="mt-use"><button type="button" class="onb-opt ${on && usable ? 'on' : ''}" id="gw-use-mine" aria-pressed="${!!(on && usable)}" ${usable ? '' : 'disabled'}><span><b>내 유지칼로리를 기반으로 계산하기</b><small>${usable ? `${m.status === 'stale' ? '약 ' : ''}${n0(m.kcal)}kcal${m.status === 'stale' ? ` · ${m.weeksAgo}주 전 기록이라 부정확할 수 있어요` : ` · ${LEVEL[m.level]}`}` : '아직 기록이 부족해요'}</small></span></button>${helpHTML(m || {status: 'collecting', halos: 0, weighIns: 0, intakeDays: 0, lastGap: 99})}${usable ? '' : progressBarHTML(m || {status: 'collecting', halos: 0, weighIns: 0, intakeDays: 0, lastGap: 99})}</div>`;
+}

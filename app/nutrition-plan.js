@@ -1,3 +1,5 @@
+import {myMaintenance, useMineHTML} from './maintenance.js';
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 // 3.9.0 식단 목표 문답: 기본 정보로 유지 칼로리를 대략 추정하고, 목표·식단 성향에 맞춰
 // 칼로리와 탄단지 비율을 '여러 개 제안'한다(추천 표시 + 설명·효과·주의). 직접 입력(고급)도 둔다.
 // 계산: Mifflin-St Jeor 기초대사량 × 활동 계수. 일반 성인 기준의 대략값이며 의료 조언이 아니다.
@@ -65,8 +67,10 @@ export function estimate(profile){
 }
 
 // 칼로리 제안: 목표별 2~3개 + 추천 표시. 바닥(기초대사량·최소 섭취) 아래는 빼고 이유를 남긴다.
-export function calorieOptions(profile){
- const p = cleanProfile(profile), e = estimate(p); if(!e) return [];
+// 4.18.0 base: 나만의 유지칼로리(있으면)로 계산
+export function calorieOptions(profile, base = null){
+ const p = cleanProfile(profile), e0 = estimate(p); if(!e0) return [];
+ const e = Number(base) > 0 ? {...e0, tdee:Number(base)} : e0;
  const glp = p.diets.includes('glp1');
  const raw = p.goal==='lose' ? [
    {d:-300, label:'완만한 감량', note:'주 0.3kg 안팎. 배고픔이 덜해 오래 가기 쉬워요.', rec:glp},
@@ -133,7 +137,8 @@ export const WIZ_STEPS = ['basic','activity','goal','diet','calories','macros','
 export function newGoalWizard(db){
  const saved = cleanProfile(db.settings?.nutritionProfile||{});
  const lastW = [...(db.body||[])].filter(b=>b.weight).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]?.weight;
- return {step:0, profile:{...saved, weightKg:saved.weightKg ?? lastW ?? null}, kcal:null, preset:null, custom:{on:false, kcal:'', c:40, p:30, f:30}};
+ const mine = myMaintenance(db, todayStr(), estimate(saved)?.tdee);
+ return {step:0, profile:{...saved, weightKg:saved.weightKg ?? lastW ?? null}, kcal:null, preset:null, custom:{on:false, kcal:'', c:40, p:30, f:30}, mine, useMine:!!db.settings?.useMyMaintenance && ['ready','stale'].includes(mine.status)};
 }
 
 const dots = st => `<div class="onb-dots" aria-label="${st.step+1} / ${WIZ_STEPS.length-1}">${WIZ_STEPS.slice(0,-1).map((_,i)=>`<i class="${i<=st.step?'on':''}"></i>`).join('')}</div>`;
@@ -148,8 +153,8 @@ export function goalWizardHTML(st){
  if(step==='goal') return `<div class="onb gw">${top}<p class="onb-q">목표가 뭐예요?</p><div class="onb-opts">${GOALS.map(([v,t,d])=>opt('data-gw-goal',v,p.goal===v,t,d)).join('')}</div>${nav(st)}</div>`;
  if(step==='diet') return `<div class="onb gw">${top}<p class="onb-q">해당되는 게 있나요?</p><p class="onb-s">여러 개 골라도 돼요. 제안할 때 참고해요.</p><div class="onb-chips">${DIETS.map(([v,t,d])=>`<button type="button" class="onb-chip ${(v==='none'?!p.diets.length:p.diets.includes(v))?'on':''}" data-gw-diet="${v}" aria-pressed="${v==='none'?!p.diets.length:p.diets.includes(v)}">${t}${d?` <small>${d}</small>`:''}</button>`).join('')}</div><p class="onb-s gw-caut-q">건강 상태(선택) · 해당되면 감량 제안 대신 안전한 안내를 먼저 드려요</p><div class="onb-chips">${CAUTIONS.map(([v,t])=>`<button type="button" class="onb-chip ${(p.cautions||[]).includes(v)?'on':''}" data-gw-caution="${v}" aria-pressed="${(p.cautions||[]).includes(v)}">${t}</button>`).join('')}</div>${p.diets.includes('glp1')?'<p class="gw-care">약을 쓰는 중이라면 식단·체중 목표는 처방한 의료진의 안내가 먼저예요. 마이로그의 제안은 참고용이에요.</p>':''}${nav(st)}</div>`;
  if(step==='calories'){
-  const list = calorieOptions(p);
-  return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p><p class="onb-s">추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal</p><p class="onb-s gw-basis">2025 한국인 영양소 섭취기준의 에너지필요추정량 식으로 계산한 대략값이에요. 2~3주 체중 변화를 보고 조정하세요.</p><div class="onb-opts">${list.map(o=>opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',)).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
+  const mineOn = st.useMine && ['ready','stale'].includes(st.mine?.status), list = calorieOptions(p, mineOn ? st.mine.kcal : null);
+  return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p>${useMineHTML(st.mine, st.useMine)}<p class="onb-s">${mineOn ? `내 유지칼로리 <b>${n0(st.mine.kcal)}kcal</b>${st.mine.status==='stale'?' (예전 기록 기준, 부정확할 수 있어요)':''} · 계산식 ${n0(e?.tdee)}kcal` : `추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal`}</p><p class="onb-s gw-basis">${mineOn ? '내가 먹은 것과 체중 흐름으로 계산한 값이에요. 기록이 쌓일수록 정확해져요.' : '2025 한국인 영양소 섭취기준의 에너지필요추정량 식으로 계산한 대략값이에요. 2~3주 체중 변화를 보고 조정하세요.'}</p><div class="onb-opts">${list.map(o=>opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',)).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
  }
  if(step==='macros'){
   const kcal = st.kcal, {rec, order} = presetOrder(p);
@@ -168,5 +173,5 @@ export function applyGoalWizard(db, st){
  if(!c) throw Error('탄단지 비율을 골라 주세요.');
  if(!st.kcal || st.kcal < 800) throw Error('목표 칼로리를 골라 주세요.');
  const settings = saveGoalSettings(db.settings, {goalMode:'ratio', calorieGoal:st.kcal, carbsPctGoal:c.c, proteinPctGoal:c.p, fatPctGoal:c.f, barbellWeightKg:db.settings?.barbellWeightKg ?? 20});
- return {...db, settings:{...settings, nutritionProfile:{...cleanProfile(st.profile), preset:st.custom.on?'custom':st.preset, savedAt:new Date().toISOString()}}};
+ return {...db, settings:{...settings, useMyMaintenance:!!st.useMine, nutritionProfile:{...cleanProfile(st.profile), preset:st.custom.on?'custom':st.preset, savedAt:new Date().toISOString()}}};
 }

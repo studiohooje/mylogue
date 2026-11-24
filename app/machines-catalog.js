@@ -3,7 +3,7 @@
 // sided: both(양쪽 함께) | iso(양팔·양다리가 따로 움직이지만 함께 밀기 — 한쪽 무게로 기록) | single(한쪽씩 번갈아)
 // 스택에 적힌 숫자는 도르래·캠 비율 때문에 실제 저항과 다를 수 있어, 다른 제조사 머신끼리 숫자 비교는 대략적이다.
 // 근거: research_notes/gym_machines/machines.md (Life Fitness·Cybex·Technogym·Matrix·Precor·Hammer Strength 사양, 2026-11-20 조사)
-import {EXERCISE_CATALOG} from './catalog.js';
+import {EXERCISE_CATALOG, resolveExercise} from './catalog.js';
 import {BRAND_MODELS} from './machine-brands.js';
 
 const M = (slug, name, exercise, load, sided='both', aliases=[], note='') => ({id:`gm:${slug}`, generic:true, name, exercise, load, sided, aliases, note});
@@ -157,3 +157,91 @@ export function brandMachinesAt(shared={}, gymName='', exerciseId='', gymKey='')
 }
 export const brandModelId = (manufacturer, model) => `mm:${String(manufacturer).trim()}:${String(model).trim()}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
 export const gymMachineId = (gymName, modelId) => `gx:${String(gymName).trim()}:${modelId}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
+
+// 4.18.0 머신 중복 막기(대표님: '뉴텍 레그프레스 머신'·'뉴텍 레그 프레스 머신'·'뉴텍레그프레스머신'이 따로 생기는 건 시스템으로 막는다).
+// 1) 같은 머신인지는 '정리한 이름'(machineKey)으로 본다: 띄어쓰기·대소문자·기호·'머신' 꼬리말 무시, 제조사 한글·영문 표기 통일,
+//    운동 이름의 한글 표기를 영문 낱말로(레그 프레스 = Leg Press).
+// 2) 새 모델 ID를 정리한 이름으로 만든다 → 누가 어떻게 적어도 공용 도감(Firestore) 문서가 하나다.
+// 3) 이미 생긴 중복은 불러올 때 하나로 합치고(dedupeMachines), 옛 ID는 새 ID로 이어 준다(기록이 끊기지 않게).
+const MAKER_ALIAS = [
+ ['hammer-strength', ['hammerstrength','해머스트렝스','해머스트랭스','햄머스트렝스','해머','hammer']],
+ ['life-fitness', ['lifefitness','라이프피트니스','라이프휘트니스']],
+ ['cybex', ['cybex','싸이벡스','사이벡스']],
+ ['technogym', ['technogym','테크노짐']],
+ ['matrix', ['matrix','매트릭스']],
+ ['panatta', ['panatta','파나타']],
+ ['gym80', ['gym80','짐80']],
+ ['drax', ['drax','드랙스','드락스']],
+ ['precor', ['precor','프리코어','프레코']],
+ ['nautilus', ['nautilus','노틸러스']],
+ ['hoist', ['hoist','호이스트']],
+ ['atlantis', ['atlantis','아틀란티스']],
+ ['prime-fitness', ['primefitness','프라임피트니스','프라임']],
+ ['watson', ['watson','왓슨']],
+ ['bh-fitness', ['bhfitness','비에이치피트니스']],
+ ['newtech', ['newtechwellness','newtech','뉴텍웰니스','뉴텍']],
+];
+const GENERIC_MAKER = new Set(['', '일반', '일반머신', '모름', '없음', '기타', 'generic', 'unknown']);
+// 한글 운동 낱말 → 영문(길게 맞는 것부터)
+const WORD = [['아이소래터럴','isolateral'],['아이소레터럴','isolateral'],['아이소라테랄','isolateral'],['백익스텐션','backextension'],['크로스오버','crossover'],['익스텐션','extension'],['인클라인','incline'],['디클라인','decline'],['리어델트','reardelt'],['트라이셉스','tricep'],['트라이셉','tricep'],['바이셉스','bicep'],['바이셉','bicep'],['어브덕션','abduction'],['업덕션','abduction'],['어덕션','adduction'],['아웃타이','abduction'],['이너타이','adduction'],['풀다운','pulldown'],['풀오버','pullover'],['스쿼트','squat'],['버티컬','vertical'],['래터럴','lateral'],['라테랄','lateral'],['레터럴','lateral'],['프레스','press'],['체스트','chest'],['숄더','shoulder'],['시티드','seated'],['로우','row'],['레그','leg'],['라잉','lying'],['펙덱','pecdeck'],['플라이','fly'],['벤치','bench'],['글루트','glute'],['카프','calf'],['레이즈','raise'],['크런치','crunch'],['케이블','cable'],['스미스','smith'],['와이드','wide'],['토르소','torso'],['로터리','rotary'],['듀얼','dual'],['딥스','dip'],['친업','chinup'],['티바','tbar'],['델트','delt'],['리어','rear'],['랫','lat'],['렛','lat'],['힙','hip'],['핵','hack'],['컬','curl'],['앱','ab']];
+const squash = s => String(s||'').toLocaleLowerCase('ko').replace(/[\s·.,_\-/°'"+&()]+/g, '');
+const squashOuter = s => squash(String(s||'').replace(/\([^)]*\)/g, ' '));
+export function makerKey(maker){
+ const outer = squashOuter(maker), full = squash(maker);
+ for(const [k, names] of MAKER_ALIAS) if(names.some(n => outer===n || outer.startsWith(n) || full.startsWith(n))) return k;
+ return GENERIC_MAKER.has(outer) ? '' : outer;
+}
+export function modelKey(model, maker=''){
+ let s = squash(model).replace(/biceps/g,'bicep').replace(/triceps/g,'tricep').replace(/dips/g,'dip');
+ const mk = makerKey(maker), names = MAKER_ALIAS.find(a => a[0]===mk)?.[1] || (mk ? [mk] : []);
+ for(const n of [...names].sort((a, b) => b.length - a.length)) if(n.length >= 2 && s.startsWith(n) && s.length > n.length){ s = s.slice(n.length); break; }
+ for(const [ko, en] of WORD) s = s.split(ko).join(en);
+ const t = s.replace(/(머신|기구|기계|machine)$/, '').replace(/^(머신|machine)/, '');
+ return t || s;
+}
+export const machineKey = (maker, model) => `${makerKey(maker)}|${modelKey(model, maker)}`;
+const keyOf = m => machineKey(m.manufacturer, m.model || m.name);
+// 같은 머신으로 이미 있는 모델들(앱 기본 모델 먼저). 기본 모델은 같은 이름이 라인별로 여럿일 수 있어(해머 Plate-Loaded·MTS) 후보를 모두 돌려준다.
+export function findSameMachines(maker, model, shared = {}){
+ const k = machineKey(maker, model); if(k.endsWith('|')) return [];
+ const lineKey = b => machineKey(b.manufacturer, `${b.line||''} ${b.model}`);
+ return [...BUILTIN_BRANDS.filter(b => keyOf(b)===k || lineKey(b)===k), ...(shared.machineModels||[]).filter(m => !m.hidden && keyOf(m)===k)];
+}
+export const canonicalModelId = (maker, model) => `mm:${makerKey(maker)||'etc'}:${modelKey(model, maker)}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
+// 불러온 공용 도감에서 이미 생긴 중복을 하나로: 앱 기본 모델 > ID 사전순 첫 번째. gymMachines의 modelId도 옮기고 같은 헬스장 같은 머신은 하나만.
+export function dedupeMachines(shared = {}){
+ // 기본 모델과 같은 키가 하나뿐일 때만 기본 모델로 잇는다(라인이 여럿이면 어느 것인지 몰라 그대로 둠)
+ const alias = {}, keep = [], byKey = new Map(), multi = new Set();
+ for(const b of BUILTIN_BRANDS){ const k = keyOf(b); if(byKey.has(k)) multi.add(k); else byKey.set(k, b.id); }
+ for(const k of multi) byKey.delete(k);
+ const models = [...(shared.machineModels||[])].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+ for(const m of models){
+  const k = keyOf(m), first = k.endsWith('|') || multi.has(k) ? null : byKey.get(k);
+  if(first && first!==m.id){ alias[m.id] = first; continue; }
+  if(!k.endsWith('|')) byKey.set(k, m.id);
+  const b = m.baseId || inferBaseId(m); keep.push(b && b!==m.baseId ? {...m, baseId:b, baseInferred:true} : m);
+ }
+ const to = id => alias[id] || id, live = new Set(), out = [];
+ for(const g of shared.gymMachines||[]) if(!g.removed) live.add(`${g.gymKey||g.gymName}|${to(g.modelId)}`);
+ const seen = new Map(), gymDupes = {};
+ for(const g of shared.gymMachines||[]){
+  const modelId = to(g.modelId), k = `${g.gymKey||g.gymName}|${modelId}`;
+  if(g.removed && live.has(k)) continue; // 같은 머신이 살아 있으면 '뺌' 표시는 무시
+  if(seen.has(k)){ if(!g.removed) (gymDupes[seen.get(k)] ??= []).push(g); continue; } seen.set(k, g.id);
+  out.push(modelId===g.modelId ? g : {...g, modelId, mergedFrom:g.modelId});
+ }
+ return {...shared, machineModels:keep, gymMachines:out, gymDupes, machineAlias:{...(shared.machineAlias||{}), ...alias}};
+}
+export const resolveMachineId = (shared = {}, id = '') => shared?.machineAlias?.[id] || id;
+
+// 4.18.0 상위 머신 종류(gm:…) 찾기: 이미 있으면 그대로, 없으면 종목 번호 → 이름(괄호·제조사 빼고)으로. 못 찾으면 ''.
+export function inferBaseId(m = {}){
+ if(GENERIC_MACHINES.some(g => g.id===m.baseId)) return m.baseId;
+ const ex = (m.exerciseId && EXERCISE_CATALOG.find(x => x.id===m.exerciseId)) || resolveExercise(m.model) || resolveExercise(m.name) || resolveExercise(`${m.manufacturer||''} ${m.model||''}`);
+ return ex ? genericMachinesFor(ex.id)[0]?.id || '' : '';
+}
+// 상위 종류가 없는 머신 목록(관리 화면·점검용)
+export function orphanMachines(shared = {}, personal = []){
+ return [...(shared.machineModels||[]).filter(m => !m.hidden && !inferBaseId(m)).map(m => ({where:'공용', id:m.id, name:m.name || `${m.manufacturer} ${m.model}`})),
+  ...personal.filter(m => !inferBaseId(m)).map(m => ({where:'내 머신', id:m.id, name:m.name}))];
+}

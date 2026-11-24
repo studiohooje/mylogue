@@ -86,10 +86,14 @@ test('운동 대분류·시간 기록 종목(러닝·필라테스·요가)', () 
  assert.ok(EXERCISE_CATALOG.filter(x => x.part==='요가').length >= 3);
 });
 
-test('운동 안 한 날: 어제까지 부하 남은 부위가 회복 펄스로', () => {
+test('4.18.0 의도적 휴식일에만 회복 펄스, 아무것도 안 적은 날·운동한 날엔 없음', () => {
  const svg = anatomySvg([], [], {side:'front', mode:'load', loads:[], recover:['quads']});
  assert.match(svg, /class="muscle recover"/);
  const y = '2026-11-20';
- const html = renderHomeTimeline({meals:[], body:[], settings:{}, workouts:[cleanWorkout({date:y, exercises:[{name:'스쿼트', sets:[{weight:60, reps:8}]}]})]}, D);
- assert.match(html, /muscle recover/);
+ const squat = cleanWorkout({date:y, exercises:[{name:'스쿼트', sets:[{weight:60, reps:8}]}]});
+ assert.doesNotMatch(renderHomeTimeline({meals:[], body:[], settings:{}, workouts:[squat]}, D), /muscle recover/);
+ const rest = cleanWorkout({date:D, rest:true, title:'의도적 휴식', exercises:[]});
+ assert.match(renderHomeTimeline({meals:[], body:[], settings:{}, workouts:[squat, rest]}, D), /muscle recover/);
+ const bench = cleanWorkout({date:D, exercises:[{name:'벤치프레스', sets:[{weight:40, reps:8}]}]});
+ assert.doesNotMatch(renderHomeTimeline({meals:[], body:[], settings:{}, workouts:[squat, bench]}, D), /muscle recover/);
 });

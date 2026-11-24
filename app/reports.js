@@ -35,3 +35,19 @@ export function comparePeriods(db,days=30,now=new Date()){
  const delta=(a,b)=>round(a-b),pct=(a,b)=>b>0?round((a-b)/b*100):null;
  return {current,previous,workoutSessionsChange:delta(current.workoutSessions,previous.workoutSessions),volumeChange:delta(current.totalVolume,previous.totalVolume),volumeChangePct:pct(current.totalVolume,previous.totalVolume),averageCaloriesChange:current.averageCalories==null||previous.averageCalories==null?null:delta(current.averageCalories,previous.averageCalories),note:'이전 같은 길이의 기간과 비교합니다. 부분·미기록 식단일은 평균에서 제외합니다.'};
 }
+
+// 4.18.0 같은 종목은 머신·제조사가 달라도 하나로 쌓고(성장·볼륨·횟수), '제조사별로 나누기'에서만 나눠 본다.
+// pick: 기록 한 줄(exercise)이 이 종목인지. group(machineId) → {key, label}: 제조사(표기 통일)·일반 머신·프리웨이트.
+export function machineBreakdown(db, pick, group, days = 84, now = new Date()){
+ const from = dayList(days, now)[0], by = new Map();
+ for(const w of db.workouts||[]){
+  if(w.date < from) continue;
+  for(const e of w.exercises||[]){
+   if(e.kind==='cardio' || !pick(e)) continue;
+   const g = group(e.machineId||''), r = by.get(g.key) || by.set(g.key, {key:g.key, label:g.label, dates:new Set(), sets:0, volume:0, best1RM:0, topKg:0, last:''}).get(g.key);
+   for(const s of e.sets||[]){ if(s.completed===false) continue; const kg = setWeightKg(s); r.sets++; r.volume += kg*(s.reps||0); r.topKg = Math.max(r.topKg, kg); r.best1RM = Math.max(r.best1RM, estimate1RM(kg, s.reps||0)); }
+   r.dates.add(w.date); if(w.date > r.last) r.last = w.date;
+  }
+ }
+ return [...by.values()].map(r => ({...r, days:r.dates.size, volume:round(r.volume), best1RM:round(r.best1RM)})).sort((a, b) => b.days - a.days || b.sets - a.sets);
+}

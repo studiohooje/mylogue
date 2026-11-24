@@ -16,10 +16,17 @@ const sign = n => `${n > 0 ? '+' : ''}${r1(n)}`;
 export const PHASE_TYPES = [
   {id: 'diet', name: '다이어트', short: '체지방을 줄여요', goal: 'lose', weeks: [8, 12, 16], fields: [['loseKg', '몇 kg 감량이 목표예요?', 'kg', 1, 40, 0.5], ['fatPct', '목표 체지방률(선택)', '%', 5, 50, 0.5, true]]},
   {id: 'leanbulk', name: '린매스업', short: '체지방은 거의 그대로, 근육을 천천히', goal: 'gain', weeks: [12, 16, 24], fields: [['gainKg', '몇 kg 늘리는 게 목표예요?', 'kg', 0.5, 15, 0.5], ['fatCap', '체지방률이 이 아래면 좋겠어요', '%', 8, 35, 0.5, true]]},
-  {id: 'recomp', name: '바디 리컴포지션', short: '체중은 비슷하게, 지방↓ 근육↑', goal: 'maintain', weeks: [12, 16, 24], fields: [['fatPct', '목표 체지방률', '%', 5, 45, 0.5], ['muscleKg', '골격근량 몇 kg 늘리기(선택)', 'kg', 0.3, 10, 0.1, true]]},
+  // 4.18.0 대표님: 한국에선 '상승 다이어트'라고도 부른다
+  {id: 'recomp', name: '상승 다이어트(리컴프)', short: '체중은 비슷하게, 지방↓ 근육↑', goal: 'maintain', weeks: [12, 16, 24], fields: [['fatPct', '목표 체지방률', '%', 5, 45, 0.5], ['muscleKg', '골격근량 몇 kg 늘리기(선택)', 'kg', 0.3, 10, 0.1, true]]},
   {id: 'bulk', name: '벌크업', short: '체중과 힘을 확실하게 늘려요', goal: 'gain', weeks: [8, 12, 16], fields: [['gainKg', '몇 kg 늘리는 게 목표예요?', 'kg', 1, 25, 0.5]]},
   {id: 'maintain', name: '유지', short: '지금 몸을 지키며 생활 리듬 만들기', goal: 'maintain', weeks: [4, 8, 12], fields: [['rangeKg', '이 범위 안이면 유지(±kg)', 'kg', 0.5, 5, 0.5]]},
+  // 4.18.0 목표 종류 더하기(대표님: 세 가지뿐이면 너무 적다)
+  {id: 'peak', name: '바디프로필·대회 준비', short: '날짜를 정해 짧고 굵게 체지방을 줄여요', goal: 'lose', weeks: [8, 12, 16], fields: [['loseKg', '몇 kg 감량이 목표예요?', 'kg', 1, 30, 0.5], ['fatPct', '목표 체지방률(선택)', '%', 5, 40, 0.5, true]]},
+  {id: 'gainweight', name: '체중 늘리기', short: '마른 체형, 먹는 양부터 늘려요', goal: 'gain', weeks: [8, 12, 16], fields: [['gainKg', '몇 kg 늘리는 게 목표예요?', 'kg', 1, 20, 0.5]]},
+  {id: 'reverse', name: '리버스 다이어트', short: '감량을 마친 뒤 칼로리를 천천히 올려요', goal: 'maintain', weeks: [4, 6, 8], fields: [['startDeficit', '지금 유지보다 하루 몇 kcal 적게 먹고 있어요?', 'kcal', 100, 1000, 50], ['rangeKg', '이만큼 늘면 속도를 늦출게요(kg)', 'kg', 0.5, 4, 0.5]]},
+  {id: 'dietbreak', name: '다이어트 휴식', short: '감량 중 1~2주 유지 칼로리로 쉬어 가요', goal: 'maintain', weeks: [1, 2], fields: [['rangeKg', '이 범위 안이면 괜찮아요(±kg)', 'kg', 0.5, 3, 0.5]]},
 ];
+const DIET_LIKE = new Set(['diet', 'peak']), GAIN_LIKE = new Set(['leanbulk', 'bulk', 'gainweight']), HOLD_LIKE = new Set(['maintain', 'dietbreak']);
 export const typeOf = id => PHASE_TYPES.find(t => t.id === id) || null;
 
 // 지금 몸 상태(최근 체중·인바디)
@@ -42,16 +49,17 @@ export function newPhaseWizard(db, type = '') {
 export function planCheck(st) {
   const t = typeOf(st.type), a = st.answers, w = st.now.weight, weeks = Number(st.weeks) || 0, out = {notes: [], warn: []};
   if (!t || !weeks) return out;
-  if (t.id === 'diet' && a.loseKg) {
+  if (DIET_LIKE.has(t.id) && a.loseKg) {
     const perWk = a.loseKg / weeks; out.perWeek = -perWk;
     out.notes.push(`주당 약 ${r1(perWk)}kg 감량 속도예요.`);
     if (w && perWk > w * 0.01) out.warn.push(`체중의 1%(주 ${r1(w * 0.01)}kg)보다 빨라요. 근육이 같이 빠지기 쉬워서 기간을 늘리는 걸 권해요.`);
     if (w && a.loseKg > w * 0.15) out.warn.push('한 페이즈에 체중의 15%가 넘는 감량은 나눠서 하는 걸 권해요.');
   }
-  if ((t.id === 'leanbulk' || t.id === 'bulk') && a.gainKg) {
+  if (GAIN_LIKE.has(t.id) && a.gainKg) {
     const perWk = a.gainKg / weeks; out.perWeek = perWk;
     out.notes.push(`주당 약 ${r1(perWk)}kg 증량 속도예요.`);
     const cap = t.id === 'leanbulk' ? 0.25 : 0.5;
+    if (t.id === 'gainweight') out.notes.push('근력운동을 같이 하면 늘어난 무게가 근육 쪽으로 더 가요.');
     if (perWk > cap) out.warn.push(t.id === 'leanbulk' ? '린매스업은 주 0.25kg 안팎이 체지방을 덜 늘려요. 기간을 늘리거나 목표를 줄여 보세요.' : '주 0.5kg보다 빠르면 늘어난 무게 중 지방 비중이 커져요.');
   }
   if (t.id === 'recomp') {
@@ -59,7 +67,10 @@ export function planCheck(st) {
     if (a.fatPct && st.now.fatPct && st.now.fatPct - a.fatPct > weeks * 0.35) out.warn.push('체중을 유지하면서 줄이기엔 체지방률 목표가 커요. 다이어트 페이즈를 먼저 해 보는 것도 방법이에요.');
     out.perWeek = 0;
   }
-  if (t.id === 'maintain') out.perWeek = 0;
+  if (HOLD_LIKE.has(t.id)) out.perWeek = 0;
+  if (t.id === 'peak') out.notes.push('끝난 뒤엔 리버스 다이어트로 칼로리를 천천히 올리면 요요가 덜해요.');
+  if (t.id === 'reverse' && a.startDeficit) { const step = Math.min(100, Math.max(50, Math.round(a.startDeficit / weeks / 25) * 25)); out.perWeek = 0; out.notes.push(`주마다 하루 ${step}kcal씩 올려 ${Math.ceil(a.startDeficit / step)}주쯤 뒤 유지 칼로리에 닿아요.`); }
+  if (t.id === 'dietbreak') out.notes.push('쉬는 동안 체중이 0.5~1kg 오르는 건 대부분 수분·글리코겐이에요. 다시 감량하면 금방 빠져요.');
   return out;
 }
 export function readPhaseAnswers(st, form) {
@@ -75,19 +86,21 @@ export function readPhaseAnswers(st, form) {
 // 저장할 페이즈
 export function buildPhase(st, today) {
   const t = typeOf(st.type); if (!t) throw Error('페이즈 종류를 골라 주세요.');
-  const weeks = Math.round(Number(st.weeks)); if (!(weeks >= 2 && weeks <= 52)) throw Error('기간은 2~52주 사이로 정해 주세요.');
+  const weeks = Math.round(Number(st.weeks)), minW = t.id === 'dietbreak' ? 1 : 2; if (!(weeks >= minW && weeks <= 52)) throw Error(`기간은 ${minW}~52주 사이로 정해 주세요.`);
   const start = st.start || today, w = st.now.weight;
   const target = {...st.answers};
   const base = st.startAvg ?? w;
-  if (t.id === 'diet' && base) target.weight = r1(base - target.loseKg);
-  if ((t.id === 'leanbulk' || t.id === 'bulk') && base) target.weight = r1(base + target.gainKg);
+  if (DIET_LIKE.has(t.id) && base) target.weight = r1(base - target.loseKg);
+  if (GAIN_LIKE.has(t.id) && base) target.weight = r1(base + target.gainKg);
   return {id: `ph-${Date.now().toString(36)}`, type: t.id, start, weeks, end: addDays(start, weeks * 7), startWeight: st.startAvg ?? w, startFatPct: st.now.fatPct, startMuscle: st.now.muscle, target, perWeek: planCheck(st).perWeek ?? 0, createdAt: new Date().toISOString()};
 }
 // 식단 목표 칼로리 차이(유지 칼로리 기준). 감량은 속도에서, 나머지는 유형 기본값
-export function kcalDelta(phase) {
+// 4.18.0 리버스 다이어트는 날짜에 따라(주마다 50~100kcal씩 올려 0에서 멈춤)
+export function kcalDelta(phase, today = '') {
   if (!phase) return 0;
-  if (phase.type === 'diet') return -Math.min(750, Math.max(200, Math.round(Math.abs(phase.perWeek || 0.5) * 7700 / 7 / 50) * 50));
-  return {leanbulk: 250, bulk: 400, recomp: -150, maintain: 0}[phase.type] ?? 0;
+  if (phase.type === 'reverse') { const d0 = phase.target?.startDeficit || 300, step = Math.min(100, Math.max(50, Math.round(d0 / (phase.weeks || 6) / 25) * 25)), wk = today ? Math.max(0, Math.floor(days(phase.start, today) / 7)) : 0; return Math.min(0, step * wk - d0) || 0; }
+  if (DIET_LIKE.has(phase.type)) return -Math.min(750, Math.max(200, Math.round(Math.abs(phase.perWeek || 0.5) * 7700 / 7 / 50) * 50));
+  return {leanbulk: 250, bulk: 400, gainweight: 350, recomp: -150, maintain: 0, dietbreak: 0}[phase.type] ?? 0;
 }
 export const nutritionGoalOf = phase => typeOf(phase?.type)?.goal || 'maintain';
 
@@ -102,18 +115,19 @@ export function phaseStatus(db, today) {
   if (now.muscle && p.startMuscle) s.muscleChange = r1(now.muscle.v - p.startMuscle);
   s.fatNow = now.fatPct; s.muscleNow = now.muscle;
   const tg = p.target || {};
-  if (t.id === 'diet' && tg.loseKg && s.weightChange != null) s.goalPct = Math.max(0, Math.min(1, -s.weightChange / tg.loseKg));
-  if ((t.id === 'leanbulk' || t.id === 'bulk') && tg.gainKg && s.weightChange != null) s.goalPct = Math.max(0, Math.min(1, s.weightChange / tg.gainKg));
+  if (DIET_LIKE.has(t.id) && tg.loseKg && s.weightChange != null) s.goalPct = Math.max(0, Math.min(1, -s.weightChange / tg.loseKg));
+  if (GAIN_LIKE.has(t.id) && tg.gainKg && s.weightChange != null) s.goalPct = Math.max(0, Math.min(1, s.weightChange / tg.gainKg));
   if (t.id === 'recomp' && tg.fatPct && p.startFatPct && now.fatPct) s.goalPct = Math.max(0, Math.min(1, (p.startFatPct - now.fatPct.v) / Math.max(0.1, p.startFatPct - tg.fatPct)));
-  if (t.id === 'maintain' && s.weightChange != null) s.inRange = Math.abs(s.weightChange) <= (tg.rangeKg || 1);
+  if ((HOLD_LIKE.has(t.id) || t.id === 'reverse') && s.weightChange != null) s.inRange = Math.abs(s.weightChange) <= (tg.rangeKg || 1);
   // 예정 대비: 지금쯤 바뀌어 있을 양(직선)
   if (p.perWeek && s.weightChange != null) s.expected = r1(p.perWeek * day / 7);
   return s;
 }
 export function progressLine(s) {
   const t = s.type, tg = s.phase.target || {};
-  if (t.id === 'diet') return s.weightChange == null ? `목표 -${tg.loseKg}kg` : `${sign(s.weightChange)}kg / 목표 -${tg.loseKg}kg`;
-  if (t.id === 'leanbulk' || t.id === 'bulk') return s.weightChange == null ? `목표 +${tg.gainKg}kg` : `${sign(s.weightChange)}kg / 목표 +${tg.gainKg}kg`;
+  if (t.id === 'reverse') return s.weightChange == null ? `하루 ${tg.startDeficit}kcal 부족 → 유지까지` : `${sign(s.weightChange)}kg · 하루 ${tg.startDeficit}kcal 부족 → 유지까지`;
+  if (DIET_LIKE.has(t.id)) return s.weightChange == null ? `목표 -${tg.loseKg}kg` : `${sign(s.weightChange)}kg / 목표 -${tg.loseKg}kg`;
+  if (GAIN_LIKE.has(t.id)) return s.weightChange == null ? `목표 +${tg.gainKg}kg` : `${sign(s.weightChange)}kg / 목표 +${tg.gainKg}kg`;
   if (t.id === 'recomp') return s.fatNow ? `체지방률 ${s.fatNow.v}% · 목표 ${tg.fatPct}%` : `목표 체지방률 ${tg.fatPct}%`;
   return s.weightChange == null ? `±${tg.rangeKg}kg 유지` : `${sign(s.weightChange)}kg · ±${tg.rangeKg}kg 안${s.inRange ? '' : '을 벗어났어요'}`;
 }
@@ -131,13 +145,13 @@ export function phaseAdvice(db, today) {
   if (['recomp', 'leanbulk'].includes(t) && (!lastInbody || days(lastInbody, today) > 35)) out.push({kind: 'inbody', text: '인바디를 잰 지 5주가 넘었어요. 이 페이즈는 체지방률·근육량으로 판단해서, 이번 주에 한 번 재 보면 좋아요.'});
   if (s.day < 14 || s.weightChange == null) return out.slice(0, 2);
   const diff = s.weightChange - (s.expected ?? 0);
-  if (t === 'diet') {
+  if (DIET_LIKE.has(t)) {
     const rate = -s.weightChange / (s.day / 7);
     if (p.startWeight && rate > p.startWeight * 0.01) out.push({kind: 'fast', text: `생각보다 빨리 빠지고 있어요(주 ${r1(rate)}kg). 근육을 지키려면 하루 100~200kcal 더 먹거나 단백질을 챙겨도 괜찮아요.`});
     else if (s.day >= 21 && diff > Math.max(0.5, Math.abs(s.expected) * 0.4)) out.push({kind: 'slow', text: `계획보다 ${r1(diff)}kg 덜 빠졌어요. 하루 100~150kcal를 줄이거나 걷기를 조금 늘려 보는 정도면 충분해요.`});
     else out.push({kind: 'on', text: `계획대로 가고 있어요. 지금 ${sign(s.weightChange)}kg.`});
     if (s.muscleChange != null && s.muscleChange <= -0.8) out.push({kind: 'muscle', text: `골격근량이 ${s.muscleChange}kg 줄었어요. 단백질(체중 1kg당 1.6g 안팎)과 근력운동을 우선해요.`});
-  } else if (t === 'leanbulk' || t === 'bulk') {
+  } else if (GAIN_LIKE.has(t)) {
     const rate = s.weightChange / (s.day / 7), cap = t === 'leanbulk' ? 0.35 : 0.6;
     if (rate > cap) out.push({kind: 'fast', text: `주 ${r1(rate)}kg씩 늘고 있어요. ${t === 'leanbulk' ? '린매스업치고 빨라서 ' : ''}하루 150kcal쯤 줄이면 지방이 덜 붙어요.`});
     else if (s.day >= 21 && rate < (p.perWeek || 0.25) * 0.4) out.push({kind: 'slow', text: '체중이 거의 그대로예요. 하루 150~250kcal(밥 반 공기~한 공기)를 더해 봐요.'});
@@ -146,7 +160,9 @@ export function phaseAdvice(db, today) {
   } else if (t === 'recomp') {
     if (Math.abs(s.weightChange) > 1.5) out.push({kind: 'drift', text: `체중이 ${sign(s.weightChange)}kg 바뀌었어요. 리컴포지션은 체중을 비슷하게 두는 게 핵심이라 칼로리를 ${s.weightChange > 0 ? '조금 줄여' : '조금 늘려'} 봐요.`});
     if (s.fatChange != null && s.muscleChange != null) out.push({kind: 'comp', text: `시작보다 체지방률 ${sign(s.fatChange)}%p, 골격근량 ${sign(s.muscleChange)}kg${s.fatChange < 0 && s.muscleChange >= 0 ? '. 리컴포지션이 되고 있어요.' : '.'}`});
-  } else if (t === 'maintain') {
+  } else if (t === 'reverse') {
+    out.push({kind: s.inRange ? 'on' : 'drift', text: s.inRange ? `체중이 안정적이에요(${sign(s.weightChange)}kg). 이번 주도 계획대로 올려요.` : `체중이 ${sign(s.weightChange)}kg 늘었어요. 이번 주는 칼로리를 올리지 말고 한 주 쉬어 가요.`});
+  } else if (HOLD_LIKE.has(t)) {
     out.push({kind: s.inRange ? 'on' : 'drift', text: s.inRange ? `유지 범위 안이에요(${sign(s.weightChange)}kg). 지금 리듬 그대로요.` : `유지 범위를 벗어났어요(${sign(s.weightChange)}kg). 한 주만 평소 식사로 돌아와 봐요.`});
   }
   return out.slice(0, 2);
@@ -200,5 +216,5 @@ export function phaseWizardHTML(st, db, today) {
 }
 export function phaseSettingsHTML(db, today) {
   const s = phaseStatus(db, today), hist = (db.settings?.phaseHistory || []).slice(-5).reverse();
-  return `<section class="section card" id="phase-settings"><h3>목표 페이즈</h3>${s ? `<p>${esc(s.type.name)} 페이즈 · ${s.over ? '기간 끝' : `${s.week}/${s.weeks}주차`} · ${esc(progressLine(s))}</p>` : '<p class="hint">다이어트·린매스업·리컴포지션·벌크업·유지 중 지금 페이즈를 정하면 목표에 맞춰 제안해요.</p>'}<button type="button" class="button ${s ? 'secondary' : ''}" data-modal="phase">${s ? '페이즈 보기' : '페이즈 정하기'}</button>${hist.length ? `<details><summary>지난 페이즈 ${hist.length}개</summary><ul class="plus-list">${hist.map(h => `<li><b>${esc(typeOf(h.type)?.name || '')}</b> <small>${esc(h.start)} ~ ${esc(h.endedAt)}${h.recap?.weightChange != null ? ` · ${sign(h.recap.weightChange)}kg` : ''}</small></li>`).join('')}</ul></details>` : ''}</section>`;
+  return `<section class="section card" id="phase-settings"><h3>목표 페이즈</h3>${s ? `<p>${esc(s.type.name)} 페이즈 · ${s.over ? '기간 끝' : `${s.week}/${s.weeks}주차`} · ${esc(progressLine(s))}</p>` : '<p class="hint">다이어트·바디프로필·유지·상승 다이어트·린매스업·벌크업·리버스 다이어트 등 지금 페이즈를 정하면 목표에 맞춰 제안해요.</p>'}<button type="button" class="button ${s ? 'secondary' : ''}" data-modal="phase">${s ? '페이즈 보기' : '페이즈 정하기'}</button>${hist.length ? `<details><summary>지난 페이즈 ${hist.length}개</summary><ul class="plus-list">${hist.map(h => `<li><b>${esc(typeOf(h.type)?.name || '')}</b> <small>${esc(h.start)} ~ ${esc(h.endedAt)}${h.recap?.weightChange != null ? ` · ${sign(h.recap.weightChange)}kg` : ''}</small></li>`).join('')}</ul></details>` : ''}</section>`;
 }

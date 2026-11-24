@@ -5,7 +5,7 @@ import {MACHINE_SPEC_BY_ID} from './machine-brands.js';
 // - 헬스장 구분: 지도(카카오)로 등록한 곳은 장소 ID로(이름을 조금 다르게 적어도 같은 곳), 이름만 적은 곳은 이름으로.
 // - 관리자: 고른 대로 바로 공용에 저장(뺀 것은 removed:true — 규칙상 지우기 대신 표시).
 // - 일반 사용자: 고른 것을 '등록 요청'으로 한 번에 보내고, 관리자가 '이 헬스장 요청 모두 승인'으로 한 번에 반영.
-import {GENERIC_MACHINES, BUILTIN_BRANDS, brandModelId, gymMachineId, LOAD_LABEL, UNIT_LABEL} from './machines-catalog.js';
+import {GENERIC_MACHINES, BUILTIN_BRANDS, gymMachineId, LOAD_LABEL, UNIT_LABEL, findSameMachines, canonicalModelId, makerKey} from './machines-catalog.js';
 import {EXERCISE_CATALOG} from './catalog.js';
 
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -107,18 +107,21 @@ export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
  <div class="gm-foot"><span>${count}개 선택${added?` · 새로 ${added}`:''}${removed?` · 뺌 ${removed}`:''}${changedSpec?` · 방식 바꿈 ${changedSpec}`:''}${missing?` · <b class="gm-need">방식 고를 것 ${missing}개</b>`:''}${!admin&&added>MAX_PER_SEND?` · <b class="gm-need">한 번에 ${MAX_PER_SEND}개까지</b>`:''}</span><button type="button" class="button" id="gm-save" ${(added||removed||changedSpec)&&!missing&&(admin||added<=MAX_PER_SEND)?'':'disabled'}>${admin?'저장':'등록 요청 보내기'}</button></div></div>`;
 }
 // 목록에 없는 모델: 관리자는 공용 machineModels로, 일반 사용자는 요청에 담을 임시 모델로
-export function newModel(maker, model, baseId){
+// 4.18.0 이미 있는 머신(띄어쓰기·표기만 다른 것 포함)이면 새로 만들지 않고 {existing:[…]}를 돌려준다. 새 ID는 정리한 이름으로(누가 적어도 같은 문서).
+export function newModel(maker, model, baseId, shared = {}){
  const m = String(maker||'').trim(), n = String(model||'').trim(); if(!m || !n) throw Error('제조사와 모델을 입력해 주세요.');
+ if(!makerKey(m)) throw Error('제조사를 모르면 새로 더하지 말고 위 목록에서 머신 종류만 골라 주세요.');
+ const same = findSameMachines(m, n, shared); if(same.length) return {existing:same};
  const base = GENERIC_MACHINES.find(g => g.id===baseId); if(!base) throw Error('머신 종류를 골라 주세요.');
  const exId = EXERCISE_CATALOG.find(x => x.name===base.exercise)?.id || '';
- return {id:brandModelId(m, n), name:`${m} ${n}`, manufacturer:m, model:n, baseId, exerciseId:exId, targetIds:[]};
+ return {id:canonicalModelId(m, n), name:`${m} ${n}`, manufacturer:m, model:n, baseId, exerciseId:exId, targetIds:[]};
 }
 // 저장할 것(관리자): 더한 것은 gymMachines 새로, 뺀 것은 removed:true
 export function gymChanges(st, shared = {}){
  const models = allModels(shared), add = [], remove = [];
  for(const id of st.checked) if(!st.initial.has(id)) add.push({id:gymMachineId(st.key, id), name:`${st.gymName} · ${models.get(id)?.name||id}`.slice(0, 160), gymName:st.gymName, gymKey:st.key, modelId:id, spec:{...(st.spec?.[id]||{})}});
  for(const id of st.checked) if(st.initial.has(id) && JSON.stringify(st.spec?.[id]||{})!==JSON.stringify(st.initialSpec?.[id]||{})){ const cur = (shared.gymMachines||[]).find(g => g.modelId===id && !g.removed && (g.gymKey ? g.gymKey===st.key : g.gymName===st.gymName)); if(cur) add.push({...cur, spec:{...st.spec[id]}}); }
- for(const id of st.initial) if(!st.checked.has(id)){ const cur = (shared.gymMachines||[]).find(g => g.modelId===id && !g.removed && (g.gymKey ? g.gymKey===st.key : g.gymName===st.gymName)); if(cur) remove.push({...cur, removed:true}); }
+ for(const id of st.initial) if(!st.checked.has(id)){ const cur = (shared.gymMachines||[]).find(g => g.modelId===id && !g.removed && (g.gymKey ? g.gymKey===st.key : g.gymName===st.gymName)); if(cur){ const {mergedFrom, ...c} = cur; remove.push({...c, removed:true}); /* 4.18.0 합쳐서 숨긴 같은 머신 등록도 함께 뺀다 */ for(const d of shared.gymDupes?.[cur.id]||[]) remove.push({...d, removed:true}); } }
  return {add, remove};
 }
 // 일반 사용자 요청: 머신 하나당 요청 하나(기존 등록 요청 형식). 메모에 모델 id·헬스장 키를 넣어 관리자가 한 번에 승인.

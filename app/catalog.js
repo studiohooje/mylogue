@@ -97,6 +97,19 @@ export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO,...TIMED]
 const norm=v=>String(v||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/]/g,'');
 // 이름(또는 별칭)으로 도감 종목을 찾는다. 띄어쓰기·괄호 차이는 무시.
 export function findExercise(name){const n=norm(name);if(!n)return null;return EXERCISE_CATALOG.find(x=>norm(x.name)===n||(x.aliases||[]).some(a=>norm(a)===n))||null}
+// 4.18.0 직접 적은 이름도 상위 종목으로: '아웃타이 (힙 어브덕션)'·'핵프레스 (양발)'처럼 괄호·꼬리말·자주 쓰는 다른 이름까지 본다.
+// 모든 머신·종목은 상위 종목 하나에 속하고, 그림·성장·볼륨은 그 상위 종목 기준으로 이어진다.
+const EXTRA_ALIAS={'핵프레스':'핵 스쿼트','핵 프레스':'핵 스쿼트','핵프레스머신':'핵 스쿼트','파워레그프레스':'레그 프레스','레그프레스':'레그 프레스','수평레그프레스':'수평 레그 프레스'};
+export function resolveExercise(name){
+ const raw=String(name||'').trim();if(!raw)return null;
+ const hit=findExercise(raw);if(hit)return hit;
+ const outer=raw.replace(/\([^)]*\)/g,' ').trim(),inner=[...raw.matchAll(/\(([^)]*)\)/g)].map(m=>m[1]);
+ const strip=t=>String(t).replace(/(머신|기구|machine)$/i,'').replace(/(양발|한발|한쪽|양쪽|좌우|와이드|내로우)$/,'').trim();
+ // 제조사 이름이 앞에 붙은 경우('뉴텍 레그프레스')는 앞 낱말을 빼고도 본다
+ const tails=outer.split(/\s+/).slice(1).map((_,i,a)=>a.slice(i).join(' ')).filter(Boolean);
+ for(const t of [outer,...inner,strip(outer),strip(raw),...tails,...tails.map(strip)]){if(!t)continue;const x=findExercise(t)||findExercise(EXTRA_ALIAS[norm(t)]||EXTRA_ALIAS[String(t).replace(/\s+/g,'')]||'');if(x)return x}
+ return null;
+}
 // 직접 만든 종목의 타깃 추정: 도감 일치 → 이름 규칙 → 부위 기본값. 사용자가 고르지 않아도 채운다.
 export function inferTargets(name,part=''){const hit=findExercise(name);if(hit&&hit.kind!=='cardio')return {primary:[...hit.primaryMuscleIds],secondary:[...hit.secondaryMuscleIds],source:'catalog'};const n=String(name||'');for(const [re,p,s] of NAME_RULES)if(re.test(n))return {primary:[...p],secondary:s.filter(x=>!p.includes(x)),source:'name'};const p=primary[part]||[];return {primary:[...p],secondary:(secondary[part]||[]).filter(x=>!p.includes(x)),source:p.length?'part':'none'}}
 export function searchExercises(query='',part=''){

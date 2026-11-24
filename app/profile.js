@@ -18,10 +18,10 @@ export function avatarHTML(pr, cls='account-avatar'){
 
 export function newProfileEdit(db, user){ const pr = profileOf(db, user); return {nickname:String(db?.settings?.profile?.nickname||''), type:pr.type, color:pr.color, photo:pr.photo, googlePhoto:pr.googlePhoto, fallback:user?.displayName||(user?.email||'').split('@')[0]||''}; }
 
-export function profileEditHTML(st, {email='', statusText='', prefsHTML=''}={}){
+export function profileEditHTML(st, {email='', statusText='', prefsHTML='', admin=false}={}){
  const preview = {name:st.nickname.trim()||st.fallback||'내 계정', type:st.type, color:st.color, photo:st.photo, googlePhoto:st.googlePhoto};
  const opt = (type, label, inner, disabled=false) => `<button type="button" class="pf-opt ${st.type===type?'on':''}" data-pf-type="${type}" aria-pressed="${st.type===type}" ${disabled?'disabled':''}>${inner}<small>${label}</small></button>`;
- return `<div class="pf"><div class="pf-preview">${avatarHTML(preview, 'pf-avatar')}<div><b>${h(preview.name)}</b><small>${h(email)}${statusText?` · ${h(statusText)}`:''}</small></div></div>
+ return `<div class="pf"><div class="pf-preview">${avatarHTML(preview, 'pf-avatar')}<div><b>${h(preview.name)}</b><small>${h(email)}${statusText?` · ${h(statusText)}`:''}</small></div>${admin?'<button type="button" class="chip pf-admin" data-page="adminlog" aria-label="관리 화면 열기">관리</button>':''}</div>
 <label class="field">표시 이름<input id="pf-name" maxlength="20" value="${h(st.nickname)}" placeholder="${h(st.fallback||'예: 문')}" autocomplete="nickname"></label>
 <p class="pf-label">아이콘</p>
 <div class="pf-opts">${opt('google','Google 사진', st.googlePhoto?`<img class="pf-mini" src="${h(st.googlePhoto)}" alt="" referrerpolicy="no-referrer">`:'<span class="pf-mini">—</span>', !st.googlePhoto)}${opt('letter','글자', `<span class="pf-mini avatar-letter" style="background:${h(st.color)}">${h([...preview.name][0]?.toUpperCase()||'나')}</span>`)}${opt('photo','내 사진', st.photo?`<img class="pf-mini" src="${h(st.photo)}" alt="">`:'<span class="pf-mini pf-plus">＋</span>')}</div>
