@@ -16,6 +16,8 @@ export function foodIssue(x, {kind = 'meal'} = {}){
   if(kind==='meal' && qty <= 5 && kcal >= 15 && per100 > 950) return {code:'tiny', text:`${qty}${unit}에 ${n0(kcal)}kcal는 이상해요. 1${unit}이 아니라 1회·1병이었나요?`};
   if(per100 > 950) return {code:'dense', text:`100${unit}에 ${n0(per100)}kcal는 불가능한 값이에요(기름도 약 900kcal). 단위를 확인해 주세요.`};
  }
+ // 4.28.0 F-06: 탄·단·지 중 하나라도 비어 있으면(업체 미제공) 검산하지 않는다
+ if(x.carbs == null || x.protein == null || x.fat == null || x.carbs === '' || x.protein === '' || x.fat === '') return null;
  const p = Number(x.carbs)||0, pr = Number(x.protein)||0, f = Number(x.fat)||0, est = p*4 + pr*4 + f*9;
  if(kcal > 0 && est > 0 && Math.abs(est - kcal) > Math.max(120, kcal*0.6)) return {code:'macro', text:`탄단지로 계산하면 약 ${n0(est)}kcal인데 ${n0(kcal)}kcal로 적혀 있어요`};
  return null;

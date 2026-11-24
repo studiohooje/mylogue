@@ -123,3 +123,13 @@ test('밤샘 A-2: 크기·도우 이름이 단위 칸에 있던 프랜차이즈 
  const odd = db.rows.filter(r => r[8] === 'f' && !OK_UNITS.has(r[2])).length;
  assert.ok(odd < 200, String(odd));
 });
+test('F-06: 업체가 탄·지를 안 준 음식은 열량 검산 경고를 내지 않고, 하루 합계에 빠진 개수를 알린다', async () => {
+ const {foodIssue} = await import('../food-check.js');
+ const {mealTotals} = await import('../domain.js');
+ const {macroGoalsHTML} = await import('../nutrition-goals.js');
+ assert.equal(foodIssue({name: '피자 R', servingQty: 1, servingUnit: '판', calories: 1420, carbs: null, protein: 60, fat: null}), null);
+ assert.equal(foodIssue({name: 'x', servingQty: 1, servingUnit: '개', calories: 1420, carbs: 30, protein: 20, fat: 10}).code, 'macro');
+ const t = mealTotals([{calories: 774, carbs: null, protein: 50, fat: null}, {calories: 300, carbs: 60, protein: 6, fat: 1}]);
+ assert.equal(t.missingMacros, 1); assert.equal(t.calories, 1074);
+ assert.match(macroGoalsHTML(t, {calorieGoal: 2000, carbsGoal: 250, proteinGoal: 150, fatGoal: 55}, {meals: 2}), /업체가 주지 않은 음식 1개/);
+});
