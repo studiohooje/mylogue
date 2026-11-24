@@ -1972,3 +1972,4 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .operator-consent .chip{min-height:44px;padding:0 16px}
 .remote-notice,.operator-notice{margin:0 0 12px}.remote-notice{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.remote-notice p{margin:0;flex:1 1 220px;word-break:keep-all}.remote-notice.warn{border-color:#f0c074}.remote-notice .chip{min-height:44px}
 .help-errors .actions{display:flex;flex-wrap:wrap;gap:8px}
+.promote-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #2c3a5c;min-height:44px}.promote-row input{margin-top:4px;width:20px;height:20px}.promote-row span{display:grid;gap:2px}.promote-row.muted b{opacity:.75}.promote-row small.warn{color:#f0c074}

@@ -11,7 +11,9 @@ import {toTrash} from './trash.js';
 import {cloudRecords,recordsToDB} from './cloud-model.js';
 import {MASS,cleanMeal,cleanWorkout,normalizeDB,validDate,uid,setDietState,convertSetUnit} from './domain.js';
 import {load,save as saveLocal,getStorageStatus,getRecoveryRaw} from './store.js';
-import {isCatalogAdmin,reviewCatalogRequest,catalogRequestPhoto} from './catalog-cloud.js';
+import {isCatalogAdmin,reviewCatalogRequest,catalogRequestPhoto,saveSharedCatalogItem as promoteSave} from './catalog-cloud.js';
+import {promoteCandidates} from './catalog-promote.js';
+import {EXERCISE_CATALOG as PROMOTE_EX} from './catalog.js';
 import {foodSuggestHTML,exerciseSuggestHTML} from './suggest-ui.js';
 import {otherUnit,genericMachine,machineTargets} from './machines-catalog.js';
 import {quickMealState,readQuickMeal,applyQuickMeal,stepFor,quickWorkoutState,readQuickWorkout,applyQuickWorkout} from './quick-edit.js';
@@ -155,6 +157,9 @@ export async function enhancedClick(t){
  if(t.id==='discard-session'){if(confirm('작성 중인 운동을 삭제할까요?')){clearSession();$s.draftWarning='';$s.savedDraft=null;$s.workDraft=[];$s.workMeta={};$f.render()}return true}
  if(t.id==='draft-archive-export'){$f.download('mylogue-draft-before-restore.json',localStorage.getItem(scopedKey('mylogue.draft.before-restore'))||'{}');return true}
  if(t.id==='draft-export'){$f.download('mylogue-draft.json',rawSession()||localStorage.getItem(scopedKey('mylogue.draft.before-restore'))||'{}');return true}
+ // 4.28.0 내 값 → 공용 도감(관리자)
+ if(t.dataset.promote!==undefined){const c=promoteCandidates($s.db,{sharedFoods:$s.sharedCatalog.foods||[],sharedExercises:$s.sharedCatalog.exercises||[],baseExercises:PROMOTE_EX});if(!$s.promotePicked)$s.promotePicked=new Set([...c.foods,...c.exercises].filter(x=>x.ok).map(x=>x.item.id));t.checked?$s.promotePicked.add(t.dataset.promote):$s.promotePicked.delete(t.dataset.promote);$f.render();return true}
+ if(t.id==='promote-run'){if(!isCatalogAdmin(cloudState.user))throw Error('관리자 계정만 공용 도감에 올릴 수 있어요.');const c=promoteCandidates($s.db,{sharedFoods:$s.sharedCatalog.foods||[],sharedExercises:$s.sharedCatalog.exercises||[],baseExercises:PROMOTE_EX}),all=[...c.foods,...c.exercises],pick=$s.promotePicked||new Set(all.filter(x=>x.ok).map(x=>x.item.id)),list=all.filter(x=>pick.has(x.item.id));if(!list.length)return true;if(!confirm(`고른 ${list.length}개를 공용 도감에 올릴까요? 승인된 모든 사용자가 검색에서 보게 돼요.`))return true;let ok=0;const fail=[];for(const x of list){try{await promoteSave(x.kind,x.item);ok++}catch(e){fail.push(`${x.item.name}: ${e.message||e}`)}}$s.promotePicked=null;await $f.refreshCatalog();$f.render();$f.toast(`공용 도감에 ${ok}개 올렸어요${fail.length?` · 실패 ${fail.length}개(${fail[0]})`:''}`);return true}
  if(t.id==='quarantine-export'){$f.download('mylogue-quarantine.json',JSON.stringify($s.db.quarantine||[],null,1));return true}
  if(t.id==='quarantine-seen'){$s.db=$f.save({...$s.db,settings:{...$s.db.settings,quarantineSeen:($s.db.quarantine||[]).length}});$f.render();return true}
  if(t.id==='recovery-export'){$f.download('mylogue-recovery.txt',getRecoveryRaw()||'','text/plain');return true}

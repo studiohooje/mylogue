@@ -133,3 +133,24 @@ test('F-06: 업체가 탄·지를 안 준 음식은 열량 검산 경고를 내�
  assert.equal(t.missingMacros, 1); assert.equal(t.calories, 1074);
  assert.match(macroGoalsHTML(t, {calorieGoal: 2000, carbsGoal: 250, proteinGoal: 150, fatGoal: 55}, {meals: 2}), /업체가 주지 않은 음식 1개/);
 });
+test('내 값 → 공용 도감: 같은 이름은 빼고, 빈 값·검산 어긋남은 기본 체크 해제, 단위는 g·개·회로', async () => {
+ const {promoteCandidates, promoteHTML} = await import('../catalog-promote.js');
+ const db = {foods: [
+  {id: 'f1', name: '킹닭 허브맛 닭다리살', servingQty: 100, servingUnit: 'g', calories: 165, carbs: 2, protein: 25, fat: 6.5},
+  {id: 'f2', name: '엄마 김밥', servingQty: 1, servingUnit: '줄', calories: 420, carbs: 70, protein: 12, fat: 10},
+  {id: 'f3', name: '모르는 메뉴', servingQty: 1, servingUnit: '개', calories: 500, carbs: null, protein: 20, fat: null},
+  {id: 'f4', name: '이미있는거', servingQty: 1, servingUnit: '개', calories: 100, carbs: 10, protein: 5, fat: 4},
+ ], customExercises: [{id: 'e1', name: '리포머 풋워크', part: '하체', equipment: '기타'}, {id: 'e2', name: '스쿼트', part: '하체'}]};
+ const c = promoteCandidates(db, {sharedFoods: [{name: '이미있는거'}], baseExercises: [{name: '스쿼트'}]});
+ const by = n => c.foods.find(x => x.item.name.startsWith(n));
+ assert.equal(by('킹닭').ok, true); assert.equal(by('킹닭').item.servingUnit, 'g');
+ assert.equal(by('엄마 김밥').item.servingUnit, '회'); assert.match(by('엄마 김밥').item.name, /\(1줄\)/);
+ assert.equal(by('모르는').ok, false);
+ assert.equal(by('이미있는거').ok, false);
+ assert.equal(c.exercises.find(x => x.item.name === '리포머 풋워크').ok, true);
+ assert.equal(c.exercises.find(x => x.item.name === '스쿼트').ok, false);
+ const esc2 = v => String(v ?? '').replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+ assert.match(promoteHTML(c, esc2), /고른 3개 공용 도감에 올리기/);
+ const {validateCatalogItem} = await import('../catalog-cloud.js');
+ for (const x of [...c.foods, ...c.exercises].filter(x => x.ok)) validateCatalogItem(x.kind, x.item); // 공용 도감 검사를 통과하는 모양
+});
