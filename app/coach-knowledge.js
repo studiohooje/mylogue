@@ -15,8 +15,8 @@ export const KNOWLEDGE = [
   {id: 'sodium', title: '나트륨', rule: '하루 나트륨 2,300mg(만성질환 위험 감소 섭취량) 이하가 권고. 참고용으로만 보여 주고 꾸짖지 않는다.', value: {mg: 2300}, evidence: 'A', source: '한국인 영양소 섭취기준(2020) 나트륨 만성질환위험감소섭취량', use: ['info.sodium']},
   {id: 'teen', title: '청소년', rule: '만 18세 이하는 체중 감량 목표·열량 제한을 제안하지 않고, 균형 잡힌 식사와 활동만 안내.', value: {maxAge: 18}, evidence: 'B', source: '소아청소년 비만 진료지침(대한비만학회 2022)', use: ['safety.teen']},
   {id: 'pregnancy', title: '임신·수유', rule: '임신·수유 중에는 감량 목표·열량 제한을 제안하지 않는다. 체중 변화는 의료진과 상의.', value: {}, evidence: 'A', source: '임신 중 체중 증가 권고(IOM 2009)·수유부 영양 섭취기준', use: ['safety.pregnancy']},
-  {id: 'kidney', title: '콩팥(신장) 질환', rule: '콩팥 질환이 있으면 단백질을 늘리라는 제안을 하지 않는다. 단백질 목표는 의료진과 정한다.', value: {}, evidence: 'A', source: 'KDIGO 만성콩팥병 지침(2024)', use: ['suppress.protein']},
-  {id: 'diabetes-med', title: '혈당약 사용', rule: '인슐린·설폰요소제 등 혈당약을 쓰면 갑자기 많이 굶거나 강하게 운동할 때 저혈당 위험. 큰 변화 전 의료진 상의.', value: {}, evidence: 'A', source: '대한당뇨병학회 진료지침(2025)', use: ['safety.diabetes-med']},
+  {id: 'kidney', title: '콩팥(신장) 질환', rule: '콩팥 질환이 있으면 단백질을 늘리라는 제안을 하지 않는다. 단백질 목표는 의료진과 정한다.', value: {}, evidence: 'A', source: 'KDIGO 만성콩팥병 지침(Kidney Int 2024;105(4S) — CKD G3~G5 단백질 0.8g/kg 권고, 진행 위험 있으면 1.3g/kg 넘지 않기)', use: ['suppress.protein']},
+  {id: 'diabetes-med', title: '혈당약 사용', rule: '인슐린·설폰요소제 등 혈당약을 쓰면 갑자기 많이 굶거나 강하게 운동할 때 저혈당 위험. 큰 변화 전 의료진 상의.', value: {}, evidence: 'A', source: '대한당뇨병학회 당뇨병 진료지침(2023 제8판, 저혈당·운동요법 장) — 2025판 원문은 확인 필요', use: ['safety.diabetes-med']},
 ];
 export const knowledge = id => KNOWLEDGE.find(k => k.id === id) || null;
 // 어떤 사용자에게도 쓰지 않는 말(꾸짖음·체형 비하·의료 단정·재촉). AI 답과 앱 문구 모두 이 목록으로 검사한다.
