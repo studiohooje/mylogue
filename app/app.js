@@ -27,6 +27,7 @@ import {loadPopularity,bumpPopularity,popId,loadSharedCatalog,mergeCatalogItems,
 import {extractInbody} from './inbody.js';
 import {recognizeInBody270} from './inbody-photo.js';
 import {recognizeLabel,parseLabel,applyLabel} from './food-register.js';
+import {cueFix,polite} from './exercise-guide.js';
 import {attachScan} from './scan-fx.js';
 import {restTick,restAlarm,restMode,webRestNotice,cancelRestNotice} from './rest-screen.js';
 /* 4.21.0 휴식 화면 시계: 화면에 있을 때만 숫자·초침을 갱신하고, '지정해 두고 쉬기'면 시간이 되면 한 번 알림 */
@@ -105,7 +106,7 @@ import {workoutBurn,BURN_NOTE} from './exercise-burn.js';
 import {EXERCISE_CATALOG as EX_CAT} from './catalog.js';
 import {CARDIO_TEMPLATES} from './templates-data.js';
 // 4.12 종목 요령·흔한 실수(도감 보강)
-$s.cueHTML=e=>{const c=EX_CAT.find(x=>x.id===(e.exerciseId||e.id)||x.name===e.name);const k=c?knowledgeOf(c):null;if(!c?.cues&&!c?.mistake&&!k)return '';/* 4.17.0 운동 지식: 대체 운동·단계·주의 관절 */const extra=k?`${k.tip&&!c?.cues?.length?`<p class="hint">${$s.esc(k.tip)}</p>`:''}${k.ladder?`<p class="ex-ladder"><b>${$s.esc(k.ladder.title)}</b> ${k.ladder.steps.map((s,i)=>`<span class="${i===k.ladder.index?'on':''}">${$s.esc(s)}</span>`).join('<i aria-hidden="true">›</i>')}</p>`:''}${k.alternatives.length?`<p class="hint">비슷한 운동(기구가 없거나 붐빌 때): ${k.alternatives.map($s.esc).join(' · ')}</p>`:''}${k.cautions.length?`<p class="hint">주의할 곳: ${k.cautions.map($s.esc).join('·')} — 아프면 멈추고, 계속되면 전문가와 상의해 주세요.</p>`:''}`:'';return `<details class="ex-cues"><summary>자세 요령${c?.level?` · ${$s.esc(c.level)}`:''}${k?` · ${$s.esc(k.pattern)}`:''}</summary><ul>${(c?.cues||[]).map(t=>`<li>${$s.esc(t)}</li>`).join('')}</ul>${c?.mistake?`<p class="hint">흔한 실수: ${$s.esc(c.mistake)}</p>`:''}${extra}</details>`};
+$s.cueHTML=e=>{const c=EX_CAT.find(x=>x.id===(e.exerciseId||e.id)||x.name===e.name);const k=c?knowledgeOf(c):null;if(!c?.cues&&!c?.mistake&&!k)return '';/* 4.17.0 운동 지식: 대체 운동·단계·주의 관절 */const extra=k?`${k.tip&&!c?.cues?.length?`<p class="hint">${$s.esc(k.tip)}</p>`:''}${k.ladder?`<p class="ex-ladder"><b>${$s.esc(k.ladder.title)}</b> ${k.ladder.steps.map((s,i)=>`<span class="${i===k.ladder.index?'on':''}">${$s.esc(s)}</span>`).join('<i aria-hidden="true">›</i>')}</p>`:''}${k.alternatives.length?`<p class="hint">비슷한 운동(기구가 없거나 붐빌 때): ${k.alternatives.map($s.esc).join(' · ')}</p>`:''}${k.cautions.length?`<p class="hint">주의할 곳: ${k.cautions.map($s.esc).join('·')} — 아프면 멈추고, 계속되면 전문가와 상의해 주세요.</p>`:''}`:'';return `<details class="ex-cues"><summary>자세 요령${c?.level?` · ${$s.esc(c.level)}`:''}${k?` · ${$s.esc(k.pattern)}`:''}</summary><ul>${(cueFix(c?.name)||c?.cues||[]).map(t=>`<li>${$s.esc(polite(t))}</li>`).join('')}</ul>${c?.mistake?`<p class="hint">흔한 실수: ${$s.esc(c.mistake)}</p>`:''}${extra}</details>`};
 import {consentOK,consentHTML,consentRecord,legalFooterHTML,CONSENT_ITEMS,CONSENT_VERSION} from './legal.js';
 const deviceConsent=(uid,set=false)=>{const k=`mylogue.consentOK.${uid}`;try{if(set){if(localStorage.getItem(k)!==CONSENT_VERSION)localStorage.setItem(k,CONSENT_VERSION);return true}return localStorage.getItem(k)===CONSENT_VERSION}catch{return false}};
 import {personaRecords,personaOf,personaCardsHTML} from './personas.js';

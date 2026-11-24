@@ -26,7 +26,7 @@ test('기구에 맞는 안전: 무게 운동 · 유산소 · 필라테스가 다
   assert.doesNotMatch(guideFor(ex('러닝머신'), null).safety.join(' '), /무게/);
   assert.match(guideFor(ex('러닝머신'), null).safety.join(' '), /안전 키/);
   assert.match(guideFor(ex('필라테스 리포머'), null).safety.join(' '), /편한 범위/);
-  assert.match(guideFor(ex('레그 프레스 카프 레이즈'), null, EXERCISE_ENRICH[ex('레그 프레스 카프 레이즈').id].c).steps[0], /위치를 먼저 확인/);
+  assert.match(guideFor(ex('레그 프레스 카프 레이즈'), null, EXERCISE_ENRICH[ex('레그 프레스 카프 레이즈').id].c).steps[0], /걸쇠 위치를 확인/);
   assert.ok(guideFor(ex('데드리프트'), null, EXERCISE_ENRICH[ex('데드리프트').id].c).steps.every(x => /요.$/.test(x)), '해요 말투');
 });
 test('유튜브 검색어: 제조사 머신 · 일반 머신 · 프리웨이트', () => {

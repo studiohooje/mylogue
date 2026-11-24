@@ -110,7 +110,21 @@ const EXTRA = {
 };
 // 기존 종목 요령 중 고쳐 보여 줄 것(검토 결과)
 const CUE_FIX = {
-  '레그 프레스 카프 레이즈': ['안전 걸쇠 위치를 먼저 확인하고, 발 앞쪽만 발판 아래쪽에 둬요.', '무릎을 편 상태로 발목만 움직여요.'],
+  // 4.27.0 전수검사 EX-02: 무릎을 '편 상태'로 버티라는 말로 읽히던 것 → 잠그지 않고 여유를 둔 채
+  '레그 프레스 카프 레이즈': ['시작 전에 안전 걸쇠 위치를 확인하고, 발 앞쪽만 발판 아래쪽에 둬요.', '무릎은 끝까지 잠그지 않고 살짝 여유를 둔 채 발목만 움직여요.', '발이 미끄러지지 않게 천천히 움직여요.'],
+  // 4.27.0 전수검사 EX-05: 깊이·각도를 단정하던 요령을 '편한 범위'로(§56 논란 없는 기본만)
+  '딥스': ['몸을 곧게 세우고 어깨가 귀 쪽으로 올라가지 않게 해요.', '어깨 앞쪽이 불편하지 않은 깊이까지만 천천히 내려가요.', '밀어 올라오되 끝에서 팔꿈치를 세게 잠그지 않아요.'],
+  '고블릿 스쿼트': ['무게를 가슴 앞에 붙여 들고, 발은 어깨너비쯤 둬요.', '허리를 곧게 유지한 채 편한 깊이까지 앉아요.', '발 전체로 바닥을 밀어 일어나요.'],
+  '케틀벨 고블릿 스쿼트': ['케틀벨을 가슴 앞에 붙여 들고, 발은 어깨너비쯤 둬요.', '허리를 곧게 유지한 채 편한 깊이까지 앉아요.', '발 전체로 바닥을 밀어 일어나요.'],
+  '핵 스쿼트': ['어깨와 등을 패드에 붙이고 발은 발판 가운데에 둬요.', '허리가 패드에서 떨어지지 않는 깊이까지만 앉아요.', '발 전체로 밀어 일어나고, 끝에서 무릎을 잠그지 않아요.'],
+  '사이드 레터럴 레이즈': ['가벼운 무게로, 몸통을 세운 채 팔을 옆으로 들어요.', '어깨 높이 정도까지만 들고, 어깨가 귀 쪽으로 올라가지 않게 해요.', '반동 없이 천천히 내려요.'],
+  '인클라인 벤치프레스': ['등받이를 낮게 세우고 등과 엉덩이를 벤치에 붙여요.', '바를 가슴 위쪽으로 천천히 내렸다가 밀어 올려요.', '어깨가 불편하면 무게나 내리는 깊이를 줄여요.'],
+  '벤치프레스': ['눈이 바 아래에 오게 눕고 등과 엉덩이를 벤치에 붙여요.', '바를 가슴 쪽으로 천천히 내렸다가 밀어 올려요.', '혼자 무겁게 할 때는 안전 바를 쓰거나 보조자를 둬요.'],
+  '푸시업': ['손은 어깨너비보다 조금 넓게, 몸은 머리부터 발끝까지 곧게 해요.', '편한 깊이까지 내려갔다가 밀어 올라와요.', '허리가 처지지 않게 배에 힘을 줘요.'],
+  '랫풀다운': ['허벅지 패드에 다리를 고정하고 바를 잡아요.', '가슴을 펴고 바를 가슴 위쪽으로 당겨요.', '몸을 크게 젖히거나 반동을 쓰지 않고 천천히 올려 보내요.'],
+  '인클라인 덤벨 프레스': ['등받이를 낮게 세우고 등과 엉덩이를 벤치에 붙여요.', '덤벨을 가슴 옆으로 천천히 내렸다가 위로 밀어요.', '어깨가 불편하면 내리는 깊이를 줄여요.'],
+  '인클라인 덤벨 플라이': ['등받이를 낮게 세우고 팔꿈치를 살짝 굽힌 채 덤벨을 들어요.', '가슴이 늘어나는 느낌이 드는 곳까지만 팔을 벌려요.', '같은 길로 천천히 모아요.'],
+  '스미스 스쿼트': ['바를 어깨 위 편한 위치에 두고 안전 멈춤 장치 높이를 먼저 맞춰요.', '허리를 곧게 유지한 채 편한 깊이까지 앉아요.', '발 전체로 밀어 일어나요.'],
   '러닝머신': ['손잡이에 기대지 않고 벨트 가운데에서 걷거나 뛰어요. 균형이 불안하면 가볍게 잡아도 돼요.', '경사를 올릴 때는 속도를 조금 낮춰요.'],
 };
 export const cueFix = name => CUE_FIX[name] || null;
@@ -125,17 +139,24 @@ export function guideFor(ex = {}, machine = null, cues = []){
   const eqSafe = load ? SAFE[load] : SAFE[ex.equipment] ?? '';
   const exCues = (cueFix(ex.name) || cues || []).slice(0, 3).map(polite);
   // 스미스·케이블처럼 여러 운동에 쓰는 기구는 머신 사용법 + 이 운동 요령, 전용 머신은 머신 사용법만(서로 어긋나지 않게)
-  const multi = load === 'smith' || load === 'cable';
+  const multi = load === 'smith' || load === 'cable', other = !!(base && base.exercise && ex.name && base.exercise !== ex.name); // 4.27.0 EX-02
   return {
     kind: steps ? 'machine' : 'exercise',
     machineName: base ? base.name : '',
     steps: steps || exCues,
-    exCues: steps && multi ? exCues : [],
+    exCues: steps && (multi || other) ? exCues : [],
     safety: [isFlow(ex) ? FLOW_SAFETY : isCardio(ex) && !machine ? CARDIO_SAFETY : BASIC_SAFETY, eqSafe, extraOf(ex.name)].filter(Boolean),
     disclaimer: DISCLAIMER,
   };
 }
 
+// 4.27.0 전수검사 EX-03: 전용 머신을 고르면 종목 요령의 기본 안전(무릎 잠그지 않기·엉덩이 뜨지 않는 깊이)이 빠졌다 → 머신 사용법에 더함
+const LOCK_NOTE = {press: ['내릴 때는 엉덩이가 등받이에서 뜨지 않는 깊이까지만 내려요.', '다 밀었을 때 무릎을 끝까지 잠그지 않아요.'], squat: ['허리가 패드에서 떨어지지 않는 깊이까지만 앉아요.', '일어났을 때 무릎을 끝까지 잠그지 않아요.']};
+export function addLockNotes(guide){
+ for (const id of ['gm:leg-press-45', 'gm:leg-press-seated', 'gm:leg-press-iso', 'gm:leg-press-vertical']) if (guide[id] && !guide[id][1].includes('잠그지')) guide[id] = [guide[id][0] + ' ' + LOCK_NOTE.press[0], guide[id][1] + ' ' + LOCK_NOTE.press[1], guide[id][2]];
+ for (const id of ['gm:power-squat', 'gm:hack-squat', 'gm:v-squat', 'gm:pendulum-squat']) if (guide[id] && !guide[id][1].includes('잠그지')) guide[id] = [guide[id][0] + ' ' + LOCK_NOTE.squat[0], guide[id][1] + ' ' + LOCK_NOTE.squat[1], guide[id][2]];
+ return guide;
+}
 // 유튜브 검색어: 제조사 머신이면 '제조사 + 머신 종류 + 머신 사용법', 일반 머신이면 '머신 종류 + 머신 사용법', 아니면 '종목 + 자세'
 export const shortMaker = m => String(m || '').replace(/\(.*?\)/g, '').trim();
 export function youtubeQuery(ex = {}, machine = null){
@@ -161,3 +182,5 @@ export function polite(sentence = ''){
   const t = String(sentence).replace(/된다\)/g, '돼요)');
   return t.replace(/(\S+?)(\)?)\.$/, (all, w, paren) => POLITE[w] ? `${POLITE[w]}${paren}.` : all);
 }
+
+addLockNotes(MACHINE_GUIDE);
