@@ -25,6 +25,7 @@ import {readSession,clearSession,rawSession} from './session.js';
 import {blankFood,batchSummary} from './meal-batch.js';
 import {newReg,readReg,setUnit,applySimilar,toPreset} from './food-register.js';
 import {pastMeals} from './meal-rank.js';
+import {kvGet} from './kv-store.js';
 import {applyWhen,shiftWhen} from './meal-when.js';
 import {upsertFoodPreset} from './nutrition.js';
 import {loadFoodDB,foodDBReady,findFoodDB} from './food-db.js';
@@ -263,7 +264,7 @@ export async function cloudClick(target){
   await reviewApplicant(match[2],match[1]);$s.adminJust={uid:match[2],status:match[1]};$f.render();const who=cloudState.applicants.find(a=>a.uid===match[2])?.email||'이 계정';$f.toast(match[1]==='approved'?`${who} 승인 완료 · 이제 기록 동기화를 쓸 수 있어요.`:match[1]==='rejected'?`${who} 반려 완료`:`${who} 승인 대기로 되돌렸어요.`);return true;
  }
  if(id==='cloud-conflicts-export'){$f.download('mylogue-sync-conflicts.json',JSON.stringify(cloudState.conflicts,null,2));return true}
- if(id==='cloud-archive-export'){const raw=localStorage.getItem(scopedKey('mylogue.cloud.before-sync'));if(!raw)throw Error('보관된 동기화 원본이 없습니다.');$f.download('mylogue-before-sync.json',raw);return true}
+ if(id==='cloud-archive-export'){const raw=(await kvGet(scopedKey('mylogue.cloud.before-sync')))||localStorage.getItem(scopedKey('mylogue.cloud.before-sync'));if(!raw)throw Error('보관된 동기화 원본이 없습니다.');$f.download('mylogue-before-sync.json',raw);return true}
  if(id==='cloud-import-guest'){
   if(!cloudState.user||cloudState.approval!=='approved')throw Error('계정 이용 승인 후 사용할 수 있습니다.');
   if(['body','meals','foods','workouts','routines','machines','customExercises','recipes','favorites'].some(k=>$s.db[k]?.length)||Object.keys($s.db.checkins||{}).length||Object.keys($s.db.dayStates||{}).length)throw Error('계정 기록이 비어 있을 때만 게스트 기록을 복사할 수 있습니다. 기존 기록은 백업으로 보관해 주세요.');

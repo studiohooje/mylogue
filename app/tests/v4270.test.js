@@ -160,3 +160,10 @@ test('C-02·03·05·06·10·11: 위험한 계획·비현실 값 막기', async (
  const under = estimateAt({body, meals: meals.map(m => ({...m, calories: 1000})), workouts: []}, D, 2500);
  assert.equal(under.ok, false); assert.equal(under.implausible, true);
 });
+
+test('DAT-03: 저장 공간이 가득 차면 한국어로 알리고 기존 기록은 그대로', () => {
+ const data = new Map();
+ globalThis.localStorage = {getItem: k => data.get(k) ?? null, setItem: (k, v) => { if (String(v).length > 200) { const e = new Error('Setting the value exceeded the quota.'); e.name = 'QuotaExceededError'; throw e; } data.set(k, v); }, removeItem: k => data.delete(k)};
+ load();
+ assert.throws(() => save({...emptyDB(), meals: Array.from({length: 5}, (_, i) => cleanMeal({date: D, name: '밥' + i, servingQty: 1, servingUnit: '공기', calories: 300}))}), /저장 공간이 가득/);
+});

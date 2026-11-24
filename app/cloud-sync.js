@@ -2,6 +2,7 @@ import {firebaseConfig} from './firebase-config.js';
 import {scopedKey,setStorageAccount,storageAccount} from './storage-scope.js';
 import {cloudRecords,planSync,recordsToDB,validRecordKey,isFreshDevice} from './cloud-model.js';
 import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
+import {kvSet} from './kv-store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
 import {isAdminUser} from './admin.js';
@@ -176,7 +177,8 @@ export async function synchronize(db, save, choices={}) {
   const next=recordsToDB(plan.merged,db);
   // Preserve both original sides before any server write or local replacement.
   checkLocal();
-  localStorage.setItem(scopedKey('mylogue.cloud.before-sync'),JSON.stringify({date:new Date().toISOString(),local:db,remote}));
+  // 4.27.0 전수검사 DAT-02: 동기화 직전 사본(기기 전체+서버 전체)은 localStorage 한도를 먼저 채웠다 → IndexedDB에 두고, 못 쓰면 예전처럼
+  {const key=scopedKey('mylogue.cloud.before-sync'),snap=JSON.stringify({date:new Date().toISOString(),local:db,remote});if(await kvSet(key,snap)){try{localStorage.removeItem(key)}catch{}}else localStorage.setItem(key,snap);checkLocal();}
   // 4.27.0 전수검사 DAT-04: 예전엔 450건을 넘으면 "관리자에게 문의"로 영영 막혔다(게스트로 오래 쓰다 가입, 큰 백업 복원 뒤).
   // 400건씩 나눠 차례로 보낸다. 중간에 실패해도 이미 보낸 묶음은 서버 값이 이 기기 값과 같아져 다음 동기화가 그대로 이어 간다.
   for(const part of chunk(plan.writes,SYNC_CHUNK))await fsSDK.runTransaction(firestore,async tx=>{
