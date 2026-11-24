@@ -2,6 +2,7 @@
 // 근거: NSCA·ACSM 교재의 움직임 분류(밀기·당기기·스쿼트·힌지·런지·운반·회전), 흔한 부상 부위 안내(일반 정보, 진단 아님).
 // 점수나 순위를 매기지 않는다(대표님 방침: 운동은 '했다'를 칭찬). 단계 사다리는 '할 수 있게 된 것'을 보여 주는 용도.
 import {EXERCISE_CATALOG, findExercise} from './catalog.js';
+import {EXERCISE_META} from './exercise-meta.js';
 import {EXERCISE_ENRICH} from './exercise-enrich.js';
 import {guideFor, youtubeQuery, youtubeURL} from './exercise-guide.js';
 
@@ -22,7 +23,13 @@ const PATTERN_RULES = [
   ['코어', /크런치|플랭크|레그 레이즈|니 레이즈|롤아웃|트위스트|싯업|우드찹|데드버그|마운틴|팔로프|토르소|할로우/],
 ];
 const ISOLATION = /크로스오버|컬|익스텐션|레이즈|플라이|펙덱|푸시다운|킥백|슈러그|어브덕션|어덕션|풀오버/;
+// 4.28.0 밤샘 B-1: 기본 종목은 표(exercise-meta.js)를 먼저 — 이름 규칙을 고쳐도 기본 종목 분류가 몰래 바뀌지 않게
 export function patternOf(ex) {
+  const e = typeof ex === 'string' ? findExercise(ex) || {name: ex} : ex;
+  const m = e?.id && EXERCISE_META[e.id]; if (m) return m.p;
+  return patternOfByName(e);
+}
+export function patternOfByName(ex) {
   const e = typeof ex === 'string' ? findExercise(ex) || {name: ex} : ex; const n = e?.name || '';
   if (['필라테스', '요가', '기타'].includes(e?.part)) return e.part;
   if (e?.kind === 'cardio' || e?.part === '유산소') return '유산소';
