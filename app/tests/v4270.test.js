@@ -82,3 +82,47 @@ test('S-01: 헬스장 머신 방식 값은 허용 목록만(HTML이 공용 도�
  assert.ok(validateCatalogItem('gymMachines', {id: 'gm1', name: 'x', spec: {load: 'stack', unit: 'level', levelFirst: 5, levelStep: 5}}));
  assert.equal(unitText('<img onerror=1>'), 'kg');
 });
+
+test('C-01: 체중을 날짜 순서와 다르게 넣어도 유지칼로리가 수집 중으로 돌아가지 않는다', async () => {
+ const {estimateAt} = await import('../maintenance.js');
+ const day = n => { const d = new Date(`${D}T12:00:00`); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+ const body = [], meals = [];
+ for (let i = 40; i >= 0; i--) { body.push({id: 'b' + i, date: day(i), weight: 80 - (40 - i) * 0.02}); meals.push({id: 'm' + i, date: day(i), name: '식사', servingQty: 1, servingUnit: '회', calories: 2300, loggedAt: `${day(i)}T03:00:00Z`}); }
+ const sorted = estimateAt({body, meals, workouts: []}, D);
+ const shuffled = estimateAt({body: [body[20], ...body.slice(0, 20), ...body.slice(21).reverse()], meals, workouts: []}, D);
+ assert.equal(sorted.span, 40);
+ assert.equal(shuffled.span, 40, '순서가 섞여도 기간이 같다(예전엔 음수)');
+ assert.equal(shuffled.kcal, sorted.kcal);
+ assert.ok(sorted.kcal > 0);
+});
+
+test('F-01·F-04: 근거 없는 한식 대표값은 확인 필요로, 통째 제품은 "통"으로', async () => {
+ const fs = await import('node:fs');
+ const db = JSON.parse(fs.readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
+ const row = name => db.rows.find(r => r[0] === name && r[8] === 'k');
+ assert.equal(row('라면')[10], 1); assert.equal(row('설렁탕')[10], 1); assert.ok(!row('쌀밥')[10]);
+ assert.ok(!db.rows.some(r => r[2] === '개' && r[3] >= 250 && ['m', 'p'].includes(r[8]) && r[4] / r[3] >= 2.5));
+});
+
+test('EX-01·EX-04: 이름 일부로 잘못 잡히던 운동 분류', async () => {
+ const {familyOf, cautionsOf, patternOf, alternativesFor} = await import('../exercise-knowledge.js');
+ assert.notEqual(familyOf('일립티컬'), '이두');
+ assert.ok(!cautionsOf('레그 컬').includes('손목'));
+ assert.ok(!cautionsOf('버티컬 레그 프레스').includes('손목'));
+ assert.ok(cautionsOf('바벨 컬').includes('손목'));
+ assert.equal(patternOf({name: '할로우 바디 홀드'}), '코어');
+ assert.notEqual(patternOf({name: '노르딕 햄스트링 컬'}), '힌지');
+ assert.notEqual(patternOf({name: '업라이트 로우'}), '수평 당기기');
+ assert.ok(!alternativesFor('일립티컬').some(x => /구기|요가/.test(x.name || '')));
+});
+
+test('M-01: 둘러보기 AI는 적은 말의 음식 이름을 쓰고, 못 찾으면 값을 비운다', async () => {
+ const {demoItems} = await import('../ai-client.js');
+ const items = demoItems('점심에 제육덮밥 먹고 콜라 한 캔');
+ assert.ok(items.length >= 2);
+ assert.ok(!items.some(x => /가짜 AI/.test(x.name)));
+ assert.ok(items.every(x => x.kcal == null || x.kcal > 0));
+ const p = await import('node:fs').then(fs => fs.readFileSync(new URL('../privacy.html', import.meta.url), 'utf8'));
+ assert.doesNotMatch(p, /운영자를 포함해 <b>다른 계정은 내 기록을 볼 수 없어요/, 'B-03 처리방침 첫 상자 모순 해소');
+ assert.match(p, /헬스 커넥트/); assert.match(p, /카카오 지도/);
+});

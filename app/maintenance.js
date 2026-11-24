@@ -35,7 +35,7 @@ export function estimateAt(db, end, formula = null){
  const intake = [...intakeByDay(db)].filter(([d]) => d >= from && d <= end);
  const med = intake.length ? [...intake.map(x => x[1])].sort((a, b) => a - b)[Math.floor(intake.length / 2)] : 0;
  const full = intake.filter(([, k]) => k >= 800 && k >= med * 0.6);
- const weights = [...weightsByDay(db)].filter(([d]) => d >= from && d <= end).map(([d, kg]) => ({t: toT(d), kg}));
+ const weights = [...weightsByDay(db)].filter(([d]) => d >= from && d <= end).map(([d, kg]) => ({t: toT(d), kg})).sort((a, b) => a.t - b.t); // 4.27.0 전수검사 C-01: 날짜순으로(지난 날짜 체중을 나중에 넣거나 동기화 병합 뒤 순서가 섞이면 기간이 음수가 되어 '수집 중'으로 돌아갔다)
  const halos = haloDays(db, from, end);
  const span = weights.length ? Math.round((weights.at(-1).t - weights[0].t) / DAY) : 0, lastGap = weights.length ? Math.round((endT - Math.max(...weights.map(x => x.t))) / DAY) : 99;
  const facts = {halos, intakeDays: full.length, weighIns: weights.length, span, lastGap, from, end};

@@ -4,6 +4,12 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 4.27.0 — 2026-11-24 (배포 전)
+
+- 전수검사(Fable) 치명 항목 우선 수정: 틀린 기록 격리(DAT-01, normalizeDB lenient·quarantine), 복원 뒤 합치기 동기화(DAT-08), APK 파일 저장 플러그인 MylogueFileSave(AA-01), 선택칸 지금 값 보존(DAT-10), 영양값 왕복·빈 값 보존(DAT-11·12), 검토함 카드별 안전·연결 도구 sets 풀기(F-02), 헬스장 방식 허용 목록·규칙 validGymSpec(S-01), 유지칼로리 날짜순(C-01), 한식 대표 17행 의심·통째 제품 1,143행 '통'(F-01·F-04), 운동 유형·묶음 오매칭(EX-01·04), 처리방침 모순·누락 항목(B-03·DOC), 둘러보기 AI 예시(M-01).
+- **Firestore 규칙 변경 있음(배포 때 규칙도 배포).**
+- 버전 4.27.0(versionCode 88).
+
 ## Mylogue Beta 4.26.0 — 2026-11-24 (배포됨)
 
 - 식사 기록 개편: 시작 선택(방금·전에·미리, meal-when.js), 지난 식사 칩 며칠 치(meal-rank.js `pastMeals`), 자주·이 시간대 순(`foodUsage`·`rankByUsage`).

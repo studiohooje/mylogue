@@ -4,6 +4,24 @@
 import {aiWorkerUrl} from './ai-config.js';
 import {fakeAI, isDemo} from './plan.js';
 import {firestoreContext} from './ai-drafts.js';
+import {searchFoodDB, foodDBReady} from './food-db.js';
+
+// 4.27.0 전수검사 M-01: 둘러보기에서 무엇을 적든 '가짜 AI 비빔밥'이 나오던 것.
+// 적은 말에서 음식 이름을 골라 음식 DB 값으로 채운다(예시임은 답에 적는다). 못 찾으면 이름만 두고 값은 비운다(0으로 채우지 않음).
+const DEMO_SPLIT = /[,，、\n]|그리고|하고 |이랑|랑 |먹고 |마시고 /;
+const DEMO_TAIL = /\s*(을|를|이|가|도|은|는)?\s*(먹었|먹음|마셨|마심|했|조금|많이|반\s|한\s|두\s|세\s).*$/;
+const DEMO_QTY = /[0-9.]+\s*(g|그램|개|팩|봉지|봉|그릇|공기|잔|캔|인분|ml)?/g;
+const DEMO_WHEN = /^(오늘|어제)?\s*(아침|점심|저녁|간식|야식)?(에|으로|은|는)?\s*/;
+export function demoItems(text = ''){
+ const parts = String(text).split(DEMO_SPLIT).map(w => w.replace(DEMO_WHEN, '').replace(DEMO_TAIL, '').replace(DEMO_QTY, '').trim()).filter(w => w.length >= 1 && w.length <= 20).slice(0, 4);
+ const items = parts.map(w => {
+  const f = foodDBReady() ? (searchFoodDB(w, {limit: 1}) || [])[0] : null;
+  if (!f || f.calories == null) return {name: `${w}(예시)`, qty: 1, unit: '회', kcal: null, carbs: null, protein: null, fat: null};
+  const mass = f.servingUnit === 'g' || f.servingUnit === 'ml';
+  return {name: f.name, qty: mass ? 100 : 1, unit: f.servingUnit, ...(f.unitGrams ? {grams: f.unitGrams} : {}), kcal: f.calories, carbs: f.carbs, protein: f.protein, fat: f.fat, estimate: {kcal: [Math.round(f.calories * 0.8), Math.round(f.calories * 1.2)], basis: '둘러보기 예시: 음식 DB 값'}};
+ });
+ return items.length ? items : [{name: '예시 음식', qty: 1, unit: '회', kcal: null, carbs: null, protein: null, fat: null}];
+}
 
 export const aiConnected = () => !!aiWorkerUrl();
 export const aiUsable = () => aiConnected() || fakeAI() || isDemo();
@@ -31,8 +49,8 @@ export function fakeReply(path, body = {}) {
   // 사진이 있으면 사진 예시(양이 애매한 음식은 추정 범위를 넓게), 없으면 말 예시
   const items = (body.images || []).length
     ? [{name: '비빔밥', qty: 1, unit: '그릇', kcal: 620, carbs: 92, protein: 21, fat: 17, estimate: {kcal: [450, 850], basis: '사진 예시: 그릇 크기로 추정'}}, {name: '된장국', qty: 1, unit: '그릇', kcal: 80, carbs: 8, protein: 6, fat: 3, estimate: {kcal: [70, 100], basis: '사진 예시'}}]
-    : [{name: '가짜 AI 비빔밥', qty: 1, unit: '그릇', kcal: 560, carbs: 85, protein: 18, fat: 14}];
-  return {text: '```json\n' + JSON.stringify({mylogue: 1, said: '가짜 AI(예시 답)', records: [{type: 'meal', date: day, time: now, items}]}) + '\n```', left: 29, fake: true};
+    : demoItems(body.text);
+  return {text: '```json\n' + JSON.stringify({mylogue: 1, said: String(body.text || '둘러보기 예시').slice(0, 200), records: [{type: 'meal', date: day, time: now, items}]}) + '\n```\n둘러보기 예시예요. 실제 AI 대신 적은 말에서 음식 이름을 골라 음식 DB 값으로 채웠어요.', left: 29, fake: true};
 }
 
 export async function aiRequest(path, body = {}, {fetchImpl = globalThis.fetch, token = null} = {}) {
