@@ -15,7 +15,7 @@ export function draftId(uid,requestId){
  return `ai-${createHash('sha256').update(`${uid}\0${requestId.trim()}`).digest('hex').slice(0,32)}`;
 }
 export function validateDraft(input){
- if(!object(input)||!DRAFT_TYPES.includes(input.type))throw Error('초안 종류는 meal, workout, body 중 하나여야 합니다.');
+ if(!object(input)||!DRAFT_TYPES.includes(input.type))throw Error('초안 종류는 meal, workout, body, food, machine, exercise 중 하나여야 합니다.');
  if(typeof input.requestId!=='string'||!input.requestId.trim()||input.requestId.length>160)throw Error('재시도 중복 방지용 requestId가 필요합니다.');
  if(typeof input.originalUtterance!=='string'||!input.originalUtterance.trim()||input.originalUtterance.length>4000)throw Error('사용자 원문을 입력해 주세요.');
  const parsedData=input.parsedData;
@@ -28,6 +28,14 @@ export function validateDraft(input){
   }
  }else if(input.type==='workout'){
   if(!date(parsedData.date)||!Array.isArray(parsedData.exercises)||!parsedData.exercises.length)throw Error('운동 날짜와 종목이 필요합니다.');
+  // 4.27.0 전수검사 F-02: 지침이 허용한 줄임 표기 sets:3을 세트 목록으로 풀고, 모양이 어긋난 종목은 여기서 알려 준다(검토함이 멈추지 않게)
+  parsedData.exercises=parsedData.exercises.map((ex,i)=>{
+   if(!object(ex)||!String(ex.name||'').trim())throw Error(`${i+1}번째 운동에 이름이 필요합니다.`);
+   if(ex.sets!=null&&!Array.isArray(ex.sets)){const n=Number(ex.sets);if(!Number.isInteger(n)||n<1||n>20)throw Error(`${ex.name}: 세트는 목록이거나 1~20 사이 숫자여야 합니다.`);return {...ex,sets:Array.from({length:n},()=>({weight:Number(ex.weight)||0,reps:Number(ex.reps)||0,unit:ex.unit||'kg'}))}}
+   if(Array.isArray(ex.sets)&&ex.sets.some(x=>!object(x)))throw Error(`${ex.name}: 세트 형식을 확인해 주세요.`);
+   if(ex.moves!=null&&!Array.isArray(ex.moves))throw Error(`${ex.name}: moves는 목록이어야 합니다.`);
+   return ex;
+  });
  }else if(input.type==='body'){
   if(!date(parsedData.date)||!['weight','bodyFatPct','skeletalMuscle','waistCm'].some(key=>nonnegative(parsedData[key])&&parsedData[key]!=null))throw Error('몸 기록 날짜와 측정값이 필요합니다.');
  }else if(input.type==='food'){

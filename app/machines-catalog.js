@@ -5,6 +5,8 @@
 // 근거: research_notes/gym_machines/machines.md (Life Fitness·Cybex·Technogym·Matrix·Precor·Hammer Strength 사양, 2026-11-20 조사)
 import {EXERCISE_CATALOG, resolveExercise} from './catalog.js';
 import {BRAND_MODELS} from './machine-brands.js';
+// 4.27.0 전수검사 S-01: 공용 도감의 헬스장 머신 방식 값은 읽을 때도 허용 목록만(이미 저장된 이상한 값이 화면에 나가지 않게)
+export function safeGymSpec(s){ if(!s||typeof s!=='object') return null; const ok=(v,l)=>l.includes(v)?v:'', n=v=>{const x=Number(v);return v!=null&&v!==''&&Number.isFinite(x)&&x>=0&&x<=1000?x:undefined}; const r={load:ok(s.load,['plate','stack','cable','smith','body']),sided:ok(s.sided,['both','iso','single']),unit:ok(s.unit,['kg','lb','level'])}; const lf=n(s.levelFirst),ls=n(s.levelStep); if(lf!==undefined)r.levelFirst=lf; if(ls!==undefined)r.levelStep=ls; return r.load||r.sided||r.unit?r:null; }
 
 const M = (slug, name, exercise, load, sided='both', aliases=[], note='') => ({id:`gm:${slug}`, generic:true, name, exercise, load, sided, aliases, note});
 export const GENERIC_MACHINES = ([
@@ -153,7 +155,7 @@ export function brandMachinesAt(shared={}, gymName='', exerciseId='', gymKey='')
  const gens = exerciseId ? new Set(genericMachinesFor(exerciseId).map(g => g.id)) : null;
  const fits = m => !exerciseId || (m.generic ? gens.has(m.id) : m.baseId ? gens.has(m.baseId) || m.exerciseId===exerciseId : (!m.exerciseId || m.exerciseId===exerciseId));
  // 헬스장에서 고른 방식(spec: 무게 방식·움직임·무게 표시)을 모델 기본값 위에 덮는다
- return (shared.gymMachines||[]).filter(g => !g.removed && (gymKey && g.gymKey ? g.gymKey===gymKey : g.gymName===gymName)).map(g => { const m = models.get(g.modelId); return m && {...m, ...(g.spec?.load?{load:g.spec.load}:{}), ...(g.spec?.sided?{sided:g.spec.sided}:{}), ...(g.spec?.unit?{unit:g.spec.unit}:{}), ...(g.spec?.levelFirst!=null?{levelFirst:g.spec.levelFirst}:{}), ...(g.spec?.levelStep!=null?{levelStep:g.spec.levelStep}:{}), gymSpec:g.spec||null}; }).filter(m => m && fits(m)).map(m => ({...m, brand:!m.generic, atGym:true}));
+ return (shared.gymMachines||[]).filter(g => !g.removed && (gymKey && g.gymKey ? g.gymKey===gymKey : g.gymName===gymName)).map(g => { const m = models.get(g.modelId), sp = safeGymSpec(g.spec); return m && {...m, ...(sp?.load?{load:sp.load}:{}), ...(sp?.sided?{sided:sp.sided}:{}), ...(sp?.unit?{unit:sp.unit}:{}), ...(sp?.levelFirst!=null?{levelFirst:sp.levelFirst}:{}), ...(sp?.levelStep!=null?{levelStep:sp.levelStep}:{}), gymSpec:sp}; }).filter(m => m && fits(m)).map(m => ({...m, brand:!m.generic, atGym:true}));
 }
 export const brandModelId = (manufacturer, model) => `mm:${String(manufacturer).trim()}:${String(model).trim()}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
 export const gymMachineId = (gymName, modelId) => `gx:${String(gymName).trim()}:${modelId}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);

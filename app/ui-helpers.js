@@ -5,7 +5,9 @@ import {exercisePickerHTML,muscleMapHTML,machineIconHTML} from './exercise-ui.js
 import {exArtHTML} from './exercise-art-ui.js';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const val = value => value ?? '';
-const option = (items, selected) => items.map(item => `<option ${item===selected?'selected':''}>${esc(item)}</option>`).join('');
+/* 4.27.0 전수검사 DAT-10: 선택칸 목록에 없는 지금 값도 맨 앞에 두어, 열고 저장만 해도 값이 바뀌지 않게 */
+const UNIT_LABEL = {level:'단계'};
+const option = (items, selected) => (selected!=null&&selected!==''&&!items.includes(selected)?[selected,...items]:items).map(item => `<option value="${esc(item)}" ${item===selected?'selected':''}>${esc(UNIT_LABEL[item]||item)}</option>`).join('');
 const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
 
 export function mealFormHTML({meal, date, recent=[], presets=[]}) {
@@ -19,13 +21,13 @@ export function mealFormHTML({meal, date, recent=[], presets=[]}) {
       <label class="field">날짜<input name="date" type="date" required value="${esc(m.date||date)}"></label>
       <label class="field">끼니<select name="slot">${option([...new Set([m.slot||'식사','식사','아침','점심','저녁','간식','보충제'])],m.slot||'식사')}</select></label>
       <label class="field wide">음식 이름<input name="name" required value="${esc(m.name||'')}" placeholder="예: 현미밥 1공기"></label>
-      <label class="field">수량<input name="servingQty" type="number" min="0.1" step="0.1" value="${esc(qty)}"></label>
+      <label class="field">수량<input name="servingQty" type="number" min="0.01" step="any" value="${esc(qty)}"></label>
       <label class="field">단위<input name="servingUnit" value="${esc(m.servingUnit||'회')}" placeholder="회, 개, 접시"></label>
       <label class="field">1회 칼로리 kcal<input name="calories" type="number" min="0" step="0.1" value="${esc(base('calories'))}"></label>
       <label class="field">1회 탄수화물 g<input name="carbs" type="number" min="0" step="0.1" value="${esc(base('carbs'))}"></label>
       <label class="field">1회 단백질 g<input name="protein" type="number" min="0" step="0.1" value="${esc(base('protein'))}"></label>
       <label class="field">1회 지방 g<input name="fat" type="number" min="0" step="0.1" value="${esc(base('fat'))}"></label>
-      <label class="field wide">영양값 출처<select name="source">${[['manual','사용자 직접 입력'],['label','제품 영양 라벨'],['estimate','추정값']].map(([value,label])=>`<option value="${value}" ${(m.source||'manual')===value?'selected':''}>${label}</option>`).join('')}</select></label><label class="field wide">메모<input name="note" value="${esc(m.note||'')}"></label>
+      <label class="field wide">영양값 출처<select name="source">${(l=>(m.source&&!l.some(x=>x[0]===m.source)?[[m.source,`지금 값 그대로(${m.source})`],...l]:l))([['manual','사용자 직접 입력'],['label','제품 영양 라벨'],['estimate','추정값']]).map(([value,label])=>`<option value="${value}" ${(m.source||'manual')===value?'selected':''}>${label}</option>`).join('')}</select></label><label class="field wide">메모<input name="note" value="${esc(m.note||'')}"></label>
       <div id="meal-preview" class="alert wide" role="status"></div>
       <button class="button wide">${meal?'식사 수정 저장':'식사 저장'}</button>
     </form></div>`;

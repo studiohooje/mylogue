@@ -29,6 +29,8 @@ export function validateCatalogItem(kind,item){
   for(const key of ['calories','carbs','protein','fat'])if(!finiteNonnegative(item[key]))throw Error(`${key} 영양값을 확인해 주세요.`);
  }
  if(kind==='machineModels'&&!cleanText(item.manufacturer))throw Error('제조사를 입력해 주세요.');
+ // 4.27.0 전수검사 S-01: 헬스장 머신 방식(spec)은 허용 목록 값만
+ if(kind==='gymMachines'&&item.spec!=null){const sp=item.spec,ok=(v,l)=>v===undefined||v===''||l.includes(v),num=v=>v===undefined||(typeof v==='number'&&Number.isFinite(v));if(typeof sp!=='object'||Object.keys(sp).some(k=>!['load','sided','unit','levelFirst','levelStep'].includes(k))||!ok(sp.load,['plate','stack','cable','smith','body'])||!ok(sp.sided,['both','iso','single'])||!ok(sp.unit,['kg','lb','level'])||!num(sp.levelFirst)||!num(sp.levelStep))throw Error('헬스장 머신 방식 값을 확인해 주세요.')}
  return {...item,name,published:true};
 }
 

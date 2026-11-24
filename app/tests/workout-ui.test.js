@@ -6,7 +6,7 @@ import {latestEstimate,suggestSets} from '../training.js';
 
 test('workout editor preserves original lb input, machine selection and set contracts',()=>{
  const html=workoutFormHTML({draft:[{name:'랫풀다운',exerciseId:'lat',machineId:'machine-a',part:'등',sets:[{weight:100,unit:'lb',reps:10,completed:false}]}],catalog:[{id:'lat',name:'랫풀다운',part:'등',primaryMuscleIds:['back']}],machines:[{id:'machine-a',manufacturer:'내 기구',model:'A'}],checkin:{pain:false,energy:3}});
- assert.match(html,/data-set="unit"[^>]*><option >kg<\/option><option selected>lb/);
+ assert.match(html,/data-set="unit"[^>]*><option value="kg" >kg<\/option><option value="lb" selected>lb/);
  assert.match(html,/value="100" aria-label="중량"/);
  assert.match(html,/value="machine-a" selected/);
  assert.match(html,/data-step-set="0:0:weight:2.5"/);

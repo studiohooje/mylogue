@@ -151,6 +151,8 @@ export async function enhancedClick(t){
  if(t.id==='discard-session'){if(confirm('작성 중인 운동을 삭제할까요?')){clearSession();$s.draftWarning='';$s.savedDraft=null;$s.workDraft=[];$s.workMeta={};$f.render()}return true}
  if(t.id==='draft-archive-export'){$f.download('mylogue-draft-before-restore.json',localStorage.getItem(scopedKey('mylogue.draft.before-restore'))||'{}');return true}
  if(t.id==='draft-export'){$f.download('mylogue-draft.json',rawSession()||localStorage.getItem(scopedKey('mylogue.draft.before-restore'))||'{}');return true}
+ if(t.id==='quarantine-export'){$f.download('mylogue-quarantine.json',JSON.stringify($s.db.quarantine||[],null,1));return true}
+ if(t.id==='quarantine-seen'){$s.db=$f.save({...$s.db,settings:{...$s.db.settings,quarantineSeen:($s.db.quarantine||[]).length}});$f.render();return true}
  if(t.id==='recovery-export'){$f.download('mylogue-recovery.txt',getRecoveryRaw()||'','text/plain');return true}
  if(t.id==='retry-recovery'){await recoverInterruptedRestore();$s.db=load();$f.render();return true}
  if(t.dataset.dietState){$s.db=$f.save(setDietState($s.db,$s.selectedDate,t.dataset.dietState));$f.render();return true}
@@ -267,7 +269,7 @@ export async function cloudClick(target){
   if(['body','meals','foods','workouts','routines','machines','customExercises','recipes','favorites'].some(k=>$s.db[k]?.length)||Object.keys($s.db.checkins||{}).length||Object.keys($s.db.dayStates||{}).length)throw Error('계정 기록이 비어 있을 때만 게스트 기록을 복사할 수 있습니다. 기존 기록은 백업으로 보관해 주세요.');
   const raw=localStorage.getItem('mylogue.v1');if(!raw)throw Error('이 브라우저에 게스트 기록이 없습니다.');
   if(!confirm('게스트의 숫자·텍스트 기록을 현재 계정 공간에 복사할까요? 사진과 초안은 제외합니다. 아직 서버에는 전송하지 않습니다.'))return true;
-  $s.db=$f.save(recordsToDB(cloudRecords(normalizeDB(JSON.parse(raw)))));$f.render();$f.toast('계정 공간에 복사했습니다. 서버 전송은 지금 동기화를 눌러 주세요.');return true;
+  $s.db=$f.save(recordsToDB(cloudRecords(normalizeDB(JSON.parse(raw),{lenient:true}))));$f.render();$f.toast('계정 공간에 복사했습니다. 서버 전송은 지금 동기화를 눌러 주세요.');return true;
  }
  if(id==='cloud-sync'||id==='cloud-resolve'){
   const choices={};

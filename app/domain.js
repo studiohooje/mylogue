@@ -80,7 +80,7 @@ export const emptyDB=()=>({schemaVersion:VERSION,body:[],meals:[],foods:[],worko
 export const LB_TO_KG=0.45359237;
 // 4.7.0 무게 표시: kg·lb, 그리고 'level' = 머신에 kg 없이 숫자(핀 번호·단계)만 적힌 경우. 단계는 kg로 바꿀 수 없어 볼륨·1RM에서 뺀다.
 export const UNITS=['kg','lb','level'];
-export const unitText=u=>u==='level'?'단계':u||'kg';
+export const unitText=u=>u==='level'?'단계':['kg','lb'].includes(u)?u:'kg';/* 4.27.0 S-01: 목록 밖 단위 글자는 화면에 그대로 내보내지 않음 */
 export const setWeightKg=s=>{
  if((s?.unit||'kg')==='level')return Math.round((number(s?.levelKg)||0)*100)/100; // 4.7.0 숫자 단계는 저장할 때 환산한 kg
  const hasOriginal=number(s?.originalWeight)!==null&&['kg','lb'].includes(s?.originalUnit);
@@ -126,16 +126,21 @@ export function setDietState(db,date,state){
  if(state==='complete'&&!meals.length)throw Error('식사 기록이 없습니다. 단식이라면 단식을 선택해 주세요.');
  return {...db,dayStates:{...db.dayStates,[date]:state}};
 }
-export function normalizeDB(raw){
+// 4.27.0 전수검사 DAT-01: 예전엔 기록 1건만 형식이 틀려도 전체가 '읽을 수 없음'이 되어 앱 전체 저장이 잠겼다.
+// lenient(앱의 평소 읽기·저장)에서는 틀린 기록만 db.quarantine에 원본 그대로 따로 보관하고 나머지는 연다(지우지 않음).
+// 백업 가져오기처럼 사람이 고른 파일을 검사할 때는 지금처럼 엄격하게(lenient 아님) 이유를 알려 준다.
+export function normalizeDB(raw,{lenient=false}={}){
  if(!raw||typeof raw!=='object'||raw.schemaVersion!==VERSION)throw Error('지원하지 않는 백업 형식입니다.');
- const db=emptyDB(),list=k=>{if(raw[k]!=null&&!Array.isArray(raw[k]))throw Error(k+' 백업 목록을 확인해 주세요.');return raw[k]||[]};
- db.body=list('body').map(cleanBody);db.meals=list('meals').map(cleanMeal);db.foods=list('foods').map(cleanFoodPreset);db.workouts=list('workouts').map(cleanWorkout);
- db.routines=list('routines').map(r=>({...r,exercises:(r.exercises||[]).map(cleanExercise)}));
- db.machines=list('machines').map(cleanMachine);db.customExercises=list('customExercises').map(cleanCustomExercise);db.favorites=cleanIds(list('favorites'));
- db.recipes=list('recipes').map(r=>{if(!String(r.name||'').trim()||!Array.isArray(r.items)||!r.items.length)throw Error('레시피 형식을 확인해 주세요.');return {id:r.id||uid(),name:String(r.name).trim(),items:r.items.map(x=>cleanMeal({...x,date:x.date||'2000-01-01'}))}});
- for(const k of ['dayStates','checkins'])if(raw[k]!=null&&(typeof raw[k]!=='object'||Array.isArray(raw[k])))throw Error(k+' 형식을 확인해 주세요.');
- for(const [date,state] of Object.entries(raw.dayStates||{})){if(!validDate(date)||!['partial','complete','fasting','unrecorded'].includes(state))throw Error('식단 상태 형식을 확인해 주세요.');db.dayStates[date]=state;}
- for(const [date,state] of Object.entries(raw.checkins||{})){if(!validDate(date)||!state||typeof state!=='object')throw Error('체크인 형식을 확인해 주세요.');db.checkins[date]=cleanCheckin(state);}
+ const db=emptyDB(),bad=[],list=k=>{if(raw[k]!=null&&!Array.isArray(raw[k])){if(lenient){bad.push({kind:k,raw:raw[k],reason:'목록 형식 아님'});return []}throw Error(k+' 백업 목록을 확인해 주세요.')}return raw[k]||[]};
+ const each=(k,fn)=>list(k).flatMap(x=>{if(!lenient)return [fn(x)];try{return [fn(x)]}catch(e){bad.push({kind:k,raw:x,reason:String(e?.message||e).slice(0,120)});return []}});
+ db.body=each('body',cleanBody);db.meals=each('meals',cleanMeal);db.foods=each('foods',cleanFoodPreset);db.workouts=each('workouts',cleanWorkout);
+ db.routines=each('routines',r=>({...r,exercises:(r.exercises||[]).map(cleanExercise)}));
+ db.machines=each('machines',cleanMachine);db.customExercises=each('customExercises',cleanCustomExercise);db.favorites=cleanIds(list('favorites'));
+ db.recipes=each('recipes',r=>{if(!String(r.name||'').trim()||!Array.isArray(r.items)||!r.items.length)throw Error('레시피 형식을 확인해 주세요.');return {id:r.id||uid(),name:String(r.name).trim(),items:r.items.map(x=>cleanMeal({...x,date:x.date||'2000-01-01'}))}});
+ for(const k of ['dayStates','checkins'])if(raw[k]!=null&&(typeof raw[k]!=='object'||Array.isArray(raw[k]))){if(!lenient)throw Error(k+' 형식을 확인해 주세요.');bad.push({kind:k,raw:raw[k],reason:'형식 아님'});raw={...raw,[k]:{}}}
+ for(const [date,state] of Object.entries(raw.dayStates||{})){if(!validDate(date)||!['partial','complete','fasting','unrecorded'].includes(state)){if(!lenient)throw Error('식단 상태 형식을 확인해 주세요.');continue}db.dayStates[date]=state;}
+ for(const [date,state] of Object.entries(raw.checkins||{})){if(!validDate(date)||!state||typeof state!=='object'){if(!lenient)throw Error('체크인 형식을 확인해 주세요.');continue}try{db.checkins[date]=cleanCheckin(state)}catch(e){if(!lenient)throw e}}
+ if(lenient){const kept=Array.isArray(raw.quarantine)?raw.quarantine.filter(q=>q&&typeof q==='object'):[];const all=[...kept,...bad.map(b=>({...b,at:new Date().toISOString()}))].slice(-200);if(all.length)db.quarantine=all}
  for(const m of db.meals)if(['fasting','unrecorded'].includes(db.dayStates[m.date]))db.dayStates[m.date]='partial';
  db.settings={...db.settings,...raw.settings};if(!Number.isFinite(Number(db.settings.barbellWeightKg))||Number(db.settings.barbellWeightKg)<0)db.settings.barbellWeightKg=20;
  db.settings.workoutTitles=Array.isArray(db.settings.workoutTitles)?[...new Set(db.settings.workoutTitles.map(x=>String(x).trim()).filter(Boolean))]:[];

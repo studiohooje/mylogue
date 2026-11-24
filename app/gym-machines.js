@@ -66,7 +66,7 @@ export function registeredAt(shared = {}, key = '', name = ''){
 }
 export function newGymPicker(shared, settings, gymName){
  const key = gymKeyOf(settings, gymName), have = registeredAt(shared, key, gymName), spec = {};
- for(const g of shared.gymMachines||[]) if(!g.removed && have.has(g.modelId) && (g.gymKey ? g.gymKey===key : g.gymName===gymName) && g.spec) spec[g.modelId] = {...g.spec};
+ for(const g of shared.gymMachines||[]) if(!g.removed && have.has(g.modelId) && (g.gymKey ? g.gymKey===key : g.gymName===gymName) && cleanGymSpec(g.spec)) spec[g.modelId] = cleanGymSpec(g.spec);
  return {gymName, key, part:'가슴', open:{}, checked:new Set(have), initial:new Set(have), spec, initialSpec:JSON.parse(JSON.stringify(spec)), adding:false};
 }
 export function pickMachine(st, shared, id, on){
@@ -129,9 +129,12 @@ export function gymRequests(st, shared = {}){
  const models = allModels(shared);
  return [...st.checked].filter(id => !st.initial.has(id)).map(id => { const m = models.get(id)||{}; const base = GENERIC_MACHINES.find(g => g.id===(m.baseId||id)); return {type:'machine', mode:'manual', name:base?.exercise||'', manufacturer:m.manufacturer||'일반 머신', model:m.model||m.name||id, gymName:st.gymName, targetIds:[], note:`[헬스장 머신] modelId=${encodeURIComponent(id)} gymKey=${encodeURIComponent(st.key)} spec=${[st.spec?.[id]?.load||'',st.spec?.[id]?.sided||'',st.spec?.[id]?.unit||'',st.spec?.[id]?.levelFirst??'',st.spec?.[id]?.levelStep??''].join('_')}${m.kind==='brand'&&!String(id).startsWith('bm:')&&!String(id).startsWith('gm:')?` base=${encodeURIComponent(m.baseId)}`:''}`.slice(0, 1000)}; });
 }
+// 4.27.0 전수검사 S-01: 방식 값은 허용 목록만(예전엔 메모의 글자를 그대로 공용 도감에 넣어 다른 사람 화면에 HTML로 나갈 수 있었다)
+export const GYM_LOADS = ['plate','stack','cable','smith','body'], GYM_SIDES = ['both','iso','single'], GYM_UNITS = ['kg','lb','level'];
+export function cleanGymSpec(s){ if(!s || typeof s !== 'object') return null; const load = GYM_LOADS.includes(s.load) ? s.load : '', sided = GYM_SIDES.includes(s.sided) ? s.sided : '', unit = GYM_UNITS.includes(s.unit) ? s.unit : ''; const n = v => { const x = Number(v); return v !== undefined && v !== '' && v !== null && Number.isFinite(x) && x >= 0 && x <= 1000 ? x : undefined; }; const lf = n(s.levelFirst), ls = n(s.levelStep); if(!load && !sided && !unit) return null; return {load, sided, unit, ...(lf !== undefined ? {levelFirst:lf} : {}), ...(ls !== undefined ? {levelStep:ls} : {})}; }
 // 요청 메모에서 모델·헬스장 키 읽기(관리자 승인 때)
 export function parseGymRequest(note = ''){
- const m = /\[헬스장 머신\] modelId=(\S+) gymKey=(\S+)(?: spec=(\S*))?(?: base=(\S+))?/.exec(String(note)); const d = v => { try{ return decodeURIComponent(v||''); }catch{ return v||''; } }; if(!m) return null; const [load, sided, unit, lf, ls] = (r => r.split(r.includes('_') ? '_' : '.'))(String(m[3]||'')); const spec = load||sided||unit ? {load, sided, unit, ...(lf!==undefined&&lf!==''?{levelFirst:Number(lf)}:{}), ...(ls!==undefined&&ls!==''?{levelStep:Number(ls)}:{})} : null; return {modelId:d(m[1]), gymKey:d(m[2]), baseId:d(m[4]), spec};
+ const m = /\[헬스장 머신\] modelId=(\S+) gymKey=(\S+)(?: spec=(\S*))?(?: base=(\S+))?/.exec(String(note)); const d = v => { try{ return decodeURIComponent(v||''); }catch{ return v||''; } }; if(!m) return null; const [load, sided, unit, lf, ls] = (r => r.split(r.includes('_') ? '_' : '.'))(String(m[3]||'')); const spec = cleanGymSpec({load, sided, unit, levelFirst:lf, levelStep:ls}); return {modelId:d(m[1]), gymKey:d(m[2]), baseId:d(m[4]), spec};
 }
 
 // 4.7.0 중복 방지(대표님: 한 헬스장 머신을 여러 사람이 중복 등록하거나 관리자에게 무분별한 요청이 오면 안 됨)

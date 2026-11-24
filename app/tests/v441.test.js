@@ -11,7 +11,7 @@ test('점검 D-1·D-3: ml 음식도 100당으로 되돌리고 그대로 저장�
  assert.equal(toFoodPreset(milk).calories,65);
  const h=mealFormHTML({meal:{...milk,date:'2026-11-22',slot:'식사'},date:'2026-11-22'});
  assert.match(h,/name="calories" type="number" min="0" step="0.1" value="65"/);
- assert.match(h,/<option selected>식사<\/option>/,'끼니가 아침으로 바뀌지 않음');
+ assert.match(h,/<option value="식사" selected>식사<\/option>/,'끼니가 아침으로 바뀌지 않음');
  assert.equal(unitFactor(200,'ml'),2);
 });
 test('점검 C-16: L·kg·cc는 저장할 때 ml·g로',()=>{

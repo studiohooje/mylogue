@@ -238,8 +238,19 @@ service cloud.firestore {
       function catalogKind() {
         return kind in ['foods','exercises','machineModels','gymLocations','gymMachines'];
       }
+      // 4.27.0 전수검사 S-01: 헬스장 머신의 방식(spec)은 허용 목록 값만
+      function validGymSpec(s) {
+        return s is map
+          && s.keys().hasOnly(['load','sided','unit','levelFirst','levelStep'])
+          && (!('load' in s) || s.load in ['','plate','stack','cable','smith','body'])
+          && (!('sided' in s) || s.sided in ['','both','iso','single'])
+          && (!('unit' in s) || s.unit in ['','kg','lb','level'])
+          && (!('levelFirst' in s) || s.levelFirst is number)
+          && (!('levelStep' in s) || s.levelStep is number);
+      }
       function validCatalog() {
         return catalogKind()
+          && (kind != 'gymMachines' || !('spec' in request.resource.data) || request.resource.data.spec == null || validGymSpec(request.resource.data.spec))
           && request.resource.data.id == itemId
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0
