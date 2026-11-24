@@ -89,7 +89,7 @@ $s.readSchedForm=()=>{const f=document.getElementById('plan-workout-form');retur
 import {placesHTML,weekFlowHTML,plannedWorkoutsHTML,partBalanceHTML,dayWorkoutsHTML} from './workout-page.js';
 import {enhanceWhenInputs,handleWhenClick} from './when-chips.js';
 import {planFromSettings,applyMacroPlan,refreshMacroGoals,macroPlanFormHTML,PRESETS,autoRest,applyFix} from './macro-plan.js';
-import {aiInputHTML,aiPreviewHTML,parsePaste,fullPrompt,aiContextText} from './ai-paste.js';
+import {aiInputHTML,aiPreviewHTML,unitIssueHTML,uncertainHTML,parsePaste,fullPrompt,aiContextText} from './ai-paste.js';
 import {renderAIInbox,readAIReview,wireAIReview} from './ai-inbox.js';
 import {createBackup,validateBackup,restoreBackup,recoverInterruptedRestore} from './backup.js';
 import {readSession,writeSession,clearSession,rawSession} from './session.js';
@@ -286,7 +286,7 @@ $s.root.addEventListener('input',event=>{if(!['q-t-min','q-t-km'].includes(event
 $s.root.addEventListener('change',async event=>{if(event.target.id!=='ai-photo')return;const files=[...(event.target.files||[])].slice(0,2);try{$s.aiInput.photos=await Promise.all(files.map(aiPhotoData));render()}catch(error){toast(error.message||'사진을 읽지 못했어요.')}});
 // AI 서버로 보낼 사진: 긴 변 1280px JPEG로 줄인다(요청 크기·비용 절약)
 async function aiPhotoData(file){const url=URL.createObjectURL(file);try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(Error('사진을 읽지 못했어요.'));i.src=url});const k=Math.min(1,1280/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',0.82).split(',')[1]}finally{URL.revokeObjectURL(url)}}
-$s.root.addEventListener('input',event=>{if(event.target.id!=='ai-code')return;$s.aiInput.text=event.target.value;$s.aiInput.msg='';const p=document.getElementById('ai-in-preview');if(p)p.innerHTML=aiPreviewHTML($s.aiInput.text)});
+$s.root.addEventListener('input',event=>{if(event.target.id!=='ai-code')return;$s.aiInput.text=event.target.value;$s.aiInput.msg='';const p=document.getElementById('ai-in-preview');if(p)p.innerHTML=aiPreviewHTML($s.aiInput.text)+unitIssueHTML($s.aiInput.text)+uncertainHTML($s.aiInput.text)});
 $s.root.addEventListener('input',event=>{if(event.target.dataset?.gmLevel&&$s.gymPick){const [id,k]=event.target.dataset.gmLevel.split('|');setSpec($s.gymPick,id,k,event.target.value);return}if(event.target.id!=='q-set-weight')return;const c=document.getElementById('q-set-conv');if(c)c.textContent=$s.quickWorkout?.unit==='level'?levelConvText(findMachine($s.db,$s.sharedCatalog,$s.quickWorkout.machineId,$s.quickWorkout),event.target.value):otherUnit(event.target.value,$s.quickWorkout?.unit||'kg')});
 $s.root.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.classList?.contains('brand-home')){event.preventDefault();event.target.click()}});
 // 3.11.0 팝업 바깥(어두운 배경)을 누르면 닫기. 작성 중인 내용이 있으면 먼저 묻는다.

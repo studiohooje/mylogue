@@ -4,6 +4,14 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 4.25.0 — 2026-11-24 (배포 전)
+
+- AI 검토함 단위 칸이 g·개·회뿐이라 팩·공기·그릇 등이 '내용 확인·수정' 확정 때 g로 저장되던 버그 수정(`unitOptions`, MEAL_UNITS 전체). 음식별·카드 단위 경고.
+- ai-paste: 숫자는 첫 수만(분수·반·한/두/세), 양 칸의 단위 인식, `grams` → unitGrams, 붙여넣기 단위 경고. 지시문 단위·팩 규칙, 내 음식 목록 100g 기준 표기.
+- 값 정리: 단위 바로잡기 선택지 확대.
+- 영양 막대 C안: 목표선 80% 고정, 넘친 양 압축(`barPos`), 숫자 칸 고정폭. 탄수화물 한 줄 제안(`carbTipHTML`).
+- 버전 4.25.0(versionCode 86).
+
 ## Mylogue Beta 4.24.0 — 2026-11-24 (배포 전)
 
 - 볼륨 규칙 하나(`volumeFactor`·`setVolume`·`setReps`, domain.js): workoutTotals·exerciseTrend·partSummary·machineBreakdown이 같은 규칙.

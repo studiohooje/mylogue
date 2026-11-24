@@ -17,11 +17,12 @@ test('막대 축: 평소 ×1.25, 하나라도 넘치면 모두 ×2, 또 넘치�
  assert.equal(sharedScale([[190,150],[1800,2200]]), 2);
  assert.equal(sharedScale([[310,150],[100,2200]]), 4);
  assert.equal(sharedScale([[650,150]]), 8);
+ // 4.25.0 C안: 목표선은 늘 80% 자리, 넘친 양은 남은 20%에 압축(끝을 넘지 않음)
  const b = barParts(230, 150, 0, 2);
- assert.equal(b.mark, 50);
- assert.ok(Math.abs(b.over - 26.67) < .1);
+ assert.equal(b.mark, 80);
+ assert.ok(b.over > 0 && b.over < 20);
  const mini = macroMiniHTML({calories:1800, carbs:100, protein:310, fat:40}, {calorieGoal:2200, carbsGoal:250, proteinGoal:150, fatGoal:70});
- assert.match(mini, /left:25\.0%/, '모든 막대 목표선이 1/4 자리(×4)');
+ assert.equal((mini.match(/<u style="left:80.0%"/g)||[]).length, 4, '네 막대 목표선이 모두 같은 자리');
  assert.doesNotMatch(mini, /axis-badge|×4/, '배수 표시는 보이지 않는다(대표님 지시)');
  assert.doesNotMatch(macroGoalsHTML({calories:1800, protein:190}, {calorieGoal:2200, proteinGoal:150}), /막대 끝 = 목표/);
 });

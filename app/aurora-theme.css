@@ -1904,3 +1904,12 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .wflag:has(input:checked){border-color:#8ce4e0;background:#8ce4e01a}
 .q-ladder{margin:0;font-size:14px;font-variant-numeric:tabular-nums;color:var(--text)}
 .q-ladder small{color:var(--muted);font-size:12px}
+
+/* 4.25.0 탄수화물 한 줄 제안(B안)·AI 검토함 단위 경고 */
+.home-diet .carb-tip{margin:10px 0 2px;padding:10px 14px;border-radius:12px;border:1px solid #e8d06a55;background:#e8d06a12;font-size:14px;line-height:1.5;color:#dce7f0;word-break:keep-all}
+.home-diet .carb-tip b{color:#f0dc84;font-weight:700}
+.home-diet .carb-tip small{font-size:13px;color:#aebfd0}
+.ai-unit-warn{margin:6px 0 10px;padding:8px 12px;border-radius:10px;border:1px solid #f3c27a88;background:#f3c27a14;color:#f3d6a8;font-size:13px;line-height:1.5;word-break:keep-all}
+/* 4.25.0 목표선을 모든 줄에서 같은 자리에: 숫자 칸 폭을 고정해 막대 길이를 맞춘다(전에는 줄마다 숫자 폭이 달라 막대가 들쭉날쭉) */
+.macro-row{grid-template-columns:74px minmax(0,1fr) 108px 76px}
+@media(max-width:420px){.macro-row{grid-template-columns:62px minmax(0,1fr) 92px}}

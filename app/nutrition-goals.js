@@ -43,9 +43,14 @@ export function barParts(a, g, p=0, m=1.25){
  a = Math.max(0, Number(a)||0); g = Math.max(0, Number(g)||0); p = Math.max(0, Number(p)||0);
  const total = a + p;
  if(!g){ const sc = Math.max(total, 1); return {fill:a/sc*100, over:0, mark:0, plan:p/sc*100, planLeft:a/sc*100, m}; }
- const sc = m*g, cap = v => Math.min(v, sc), mark = 100/m;
- return {fill:Math.min(a, g)/sc*100, over:a>g ? (cap(a)-g)/sc*100 : 0, mark, plan:(cap(total)-cap(a))/sc*100, planLeft:cap(a)/sc*100, m};
+ const at = barPos(a, g), end = barPos(total, g);
+ return {fill:barPos(Math.min(a, g), g), over:a>g ? at-MARK : 0, mark:MARK, plan:end-at, planLeft:at, m};
 }
+// 4.25.0 대표님 결정(C안): 목표선은 모든 막대에서 같은 자리(80%)에 둔다. 목표까지는 비례로 그리고, 넘친 양은 남은 20% 칸에 압축한다.
+// 조금 넘치면 거의 비례로, 많이 넘쳐도 끝을 넘지 않는다. 4.0.0처럼 넘친 막대만 축을 늘리면 그 막대의 목표선만 움직여 헷갈렸다.
+// barParts의 m(예전 축 배수)은 호출 호환을 위해 받기만 하고 쓰지 않는다.
+export const MARK = 80;
+export function barPos(v, g){ v = Math.max(0, Number(v)||0); if(!(g > 0)) return 0; if(v <= g) return v/g*MARK; const f = (v-g)/g; return MARK + (100-MARK)*f/(f+0.25); }
 const pct = v => `${Math.max(0, v).toFixed(1)}%`;
 export function barInner(a, g, p=0, m=1.25){
  const b = barParts(a, g, p, m);
@@ -65,7 +70,17 @@ export function macroGoalsHTML(day={},settings={},{meals=0,planned=null,plannedC
   const note=s.state==='none'?'<em class="macro-note">목표 없음</em>':s.state==='over'?`<em class="macro-note over">+${num(s.diff,d)}${unit} 초과</em>`:s.state==='under'?`<em class="macro-note under">${num(-s.diff,d)}${unit} 부족</em>`:'<em class="macro-note met">달성</em>';
   return `<div class="macro-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}"><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit}${e?` · 예정 포함 ${num(a+e,d)}${unit}`:''} / 목표 ${g?num(g,d)+unit:'없음'}">${barInner(a,g,e,rowAxis(a+e,g))}</span><span class="macro-val">${num(a+e,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}</div>`;
  }).join('');
- return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num((Number(day.calories)||0)+extra('calories'))}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${head}</div>${plannedToggle(plannedCount,showPlanned)}<div class="macro-rows">${rows}</div><p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
+ const tip=carbTipHTML((Number(day.carbs)||0)+extra('carbs'),Number(settings.carbsGoal)||0,{plannedCarbs:extra('carbs')});
+ return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num((Number(day.calories)||0)+extra('calories'))}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${head}</div>${plannedToggle(plannedCount,showPlanned)}<div class="macro-rows">${rows}</div>${tip}<p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
+}
+// 4.25.0 B안: 탄수화물이 넘치면 막대 아래 한 줄로 얼마나 넘었는지, 밥으로 치면 어느 정도인지 알려 준다.
+// 탄수화물만 조절하면 된다는 대표님 방침을 따른다. 밥 1공기는 음식 DB의 쌀밥 210g(탄수화물 78.4g) 기준. 경고 말투는 쓰지 않는다.
+export const RICE_CARBS = 78.4;
+export function carbTipHTML(carbs, goal, {plannedCarbs=0}={}){
+ const over = carbs - goal; if(!(goal > 0) || over <= goal*0.05) return '';
+ const bowls = Math.round(over/RICE_CARBS*2)/2, rice = over/RICE_CARBS >= 0.4 ? ` · 밥으로 치면 약 ${bowls<1 ? '반 공기' : `${num(bowls,1)}공기`}` : '';
+ const how = plannedCarbs > 0 ? '예정된 식사에서 밥·면을 조금 줄이면 맞출 수 있어요.' : '다음 끼니에서 밥·면만 조금 줄이면 돼요. 단백질은 그대로 드세요.';
+ return `<p class="carb-tip" role="note"><b>탄수화물이 목표보다 ${num(over,1)}g 많아요</b>${rice}<br><small>${how}</small></p>`;
 }
 // '예정 포함' 토글: 먹을 예정으로 넣은 식사가 있을 때만 보인다. 기본은 실제로 먹은 것만.
 export function plannedToggle(count, on){

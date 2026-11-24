@@ -40,7 +40,8 @@ export function applyFoodFix(db, code){
 export function foodCheckHTML(db, {open = false} = {}){
  const items = foodIssues(db);
  if(!items.length) return '';
- const row = ({kind, rec, issue}) => { const key = `${kind}:${rec.id}`; const units = MASS.has(rec.servingUnit) ? ['회','개','병','팩'] : [];
+ const row = ({kind, rec, issue}) => { const key = `${kind}:${rec.id}`; // 4.25.0 AI 검토함 단위 칸 버그(팩·그릇·공기가 g로 저장)를 되돌릴 수 있게 흔한 단위를 더 보여 준다
+ const units = MASS.has(rec.servingUnit) ? ['팩','개','회','인분','그릇','공기','병','봉'] : [];
   return `<li class="fc-item"><div class="fc-what"><b>${esc(rec.name)}</b> <small>${kind==='food'?'저장된 음식':`${esc(String(rec.date).slice(5).replace('-','/'))} 기록`} · ${esc(rec.servingQty)}${esc(rec.servingUnit||'')}</small><p>⚠ ${esc(issue.text)}</p></div><div class="fc-fix">${units.map(u => `<button type="button" class="chip" data-fc="${key}:unit:${u}">단위를 ‘${u}’로</button>`).join('')}${kind==='meal'?`<button type="button" class="chip" data-qm="${esc(rec.mealGroupId||`legacy:${rec.slot||'식사'}`)}" data-qm-date="${esc(rec.date)}">직접 고치기</button>`:''}<button type="button" class="text-button" data-fc="${key}:ok">그대로 두기</button></div></li>`; };
  return `<section class="section card food-check"><details ${open?'open':''}><summary><b>정리할 값 ${items.length}개</b><small>이상해 보이는 음식 값이 있어요 · 고치면 그 기록만 바뀌어요</small></summary><ul class="fc-list">${items.slice(0, 30).map(row).join('')}</ul>${items.length>30?`<p class="hint">외 ${items.length-30}개</p>`:''}</details></section>`;
 }

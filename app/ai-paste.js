@@ -3,6 +3,7 @@ import {scanHTML} from './scan-fx.js';
 // 사용자는 그 답을 복사(또는 Android 공유)해 마이로그 'AI 입력'에 붙여넣고, 초안은 AI 검토함으로 간다(확정은 사람이).
 // 해석은 너그럽게: 코드 블록·앞뒤 설명·둥근 따옴표·끝 쉼표·한글 키 이름을 받아 준다. 값을 지어내지 않고 모르는 값은 비운다.
 import {cleanMeal, cleanWorkout, cleanBody} from './domain.js';
+import {foodIssue} from './food-check.js';
 import {findExercise} from './catalog.js';
 import {GENERIC_MACHINES, BUILTIN_BRANDS} from './machines-catalog.js';
 
@@ -11,7 +12,22 @@ export {AI_PROMPT};
 
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const nowHM = () => { const d = new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-const num = v => { if(v==null || v==='') return null; const n = Number(String(v).replace(/,/g,'').replace(/[^\d.\-]/g,'')); return Number.isFinite(n) ? n : null; };
+// 4.25.0 숫자는 처음 나오는 수 하나만 읽는다. 예전엔 글자를 모두 빼고 숫자를 이어 붙여 "1팩(100g)" → 1100, "300~400" → 300400이 됐다.
+// "1/2"(분수)·"반"·"한/두/세"도 받는다. "한 팩 반" → 1.5.
+const KO_NUM = [[/^(한|하나)/, 1], [/^(두|둘)/, 2], [/^(세|셋)/, 3], [/^(네|넷)/, 4], [/^다섯/, 5]];
+export const num = v => {
+ if(v==null || v==='') return null;
+ if(typeof v==='number') return Number.isFinite(v) ? v : null;
+ const s = String(v).replace(/,/g,'').trim();
+ const fr = s.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+ if(fr) return Number(fr[2]) ? Number(fr[1])/Number(fr[2]) : null;
+ const m = s.match(/-?\d+(?:\.\d+)?/);
+ let n = m ? Number(m[0]) : (KO_NUM.find(([re]) => re.test(s))?.[1] ?? (/^반/.test(s) ? 0.5 : null));
+ if(n!=null && n>=1 && /\S\s*반$/.test(s)) n += 0.5;
+ return Number.isFinite(n) ? n : null;
+};
+// 양 칸에 단위가 붙어 오면("2팩", "1 공기") 단위 칸이 비었을 때 그 단위를 쓴다.
+export const unitFromQty = v => { const m = String(v??'').trim().match(/^[\d.\/\s]*(?:한|하나|두|둘|세|셋|네|넷|다섯|반)?\s*([가-힣a-zA-Zℓ]+)/); return m && !/^반$/.test(m[1]) ? m[1].replace(/반$/,'') : ''; };
 const pick = (o, ...keys) => { for(const k of keys) if(o && o[k]!=null && o[k]!=='') return o[k]; return undefined; };
 const norm = t => String(t||'').normalize('NFKC').toLocaleLowerCase('ko').replace(/[\s·()\-_/.,°도]/g,'');
 const dateOk = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v||''));
@@ -54,7 +70,8 @@ function mealDraft(r, said){
   const range = k => Array.isArray(est?.[k]) ? est[k].map(num) : [num(est?.[`${k}Min`]), num(est?.[`${k}Max`])];
   const [kMin, kMax] = est ? range('kcal').some(v => v!=null) ? range('kcal') : range('calories') : [null, null];
   const aiEstimate = est ? {estimated:true, caloriesMin:kMin, caloriesMax:kMax, carbsMin:range('carbs')[0], carbsMax:range('carbs')[1], proteinMin:range('protein')[0], proteinMax:range('protein')[1], fatMin:range('fat')[0], fatMax:range('fat')[1], basis:String(est.basis||'AI 추정').slice(0,160)} : null;
-  const item = {date, slot:String(r.slot||'식사'), loggedAt:new Date(`${date}T${time}:00`).toISOString(), name:String(pick(it, 'name', '이름')||'').trim(), servingQty:num(pick(it, 'qty', 'servingQty', 'amount', '양'))??1, servingUnit:String(pick(it, 'unit', 'servingUnit', '단위')||'회'), calories:num(pick(it, 'kcal', 'calories', '칼로리')), carbs:num(pick(it, 'carbs', 'carb', '탄수화물')), protein:num(pick(it, 'protein', '단백질')), fat:num(pick(it, 'fat', '지방'))};
+  const qRaw = pick(it, 'qty', 'servingQty', 'amount', '양'), unit = String(pick(it, 'unit', 'servingUnit', '단위')||'').trim() || unitFromQty(qRaw) || '회', grams = num(pick(it, 'grams', 'unitGrams', '무게'));
+  const item = {date, slot:String(r.slot||'식사'), loggedAt:new Date(`${date}T${time}:00`).toISOString(), name:String(pick(it, 'name', '이름')||'').trim(), servingQty:num(qRaw)??1, servingUnit:unit, ...(grams>0 && !/^(g|ml|그램|kg)$/i.test(unit) ? {unitGrams:grams} : {}), calories:num(pick(it, 'kcal', 'calories', '칼로리')), carbs:num(pick(it, 'carbs', 'carb', '탄수화물')), protein:num(pick(it, 'protein', '단백질')), fat:num(pick(it, 'fat', '지방'))};
   if(aiEstimate) item.aiEstimate = aiEstimate;
   cleanMeal(item);
   return item;
@@ -121,6 +138,9 @@ export function aiPreviewHTML(text){
 }
 // 4.17.0 사진 기록: AI 추정 범위가 넓은(최대가 최소의 1.6배 이상) 음식은 양을 꼭 확인하도록 이름을 짚어 준다
 export function uncertainItems(text){let ds=[];try{ds=parsePaste(text)}catch{return []}const out=[];for(const d of ds)for(const it of d.parsedData?.items||[]){const e=it.aiEstimate||{};if(e.estimated&&e.caloriesMin>0&&e.caloriesMax/e.caloriesMin>=1.6)out.push({name:it.name,min:e.caloriesMin,max:e.caloriesMax})}return out}
+// 4.25.0 단위가 이상해 보이는 음식(예: 1g에 177kcal)은 검토함에 넣기 전에 바로 짚어 준다
+export function unitIssues(text){let ds=[];try{ds=parsePaste(text)}catch{return []}const out=[];for(const d of ds)for(const it of d.parsedData?.items||[]){const is=foodIssue(it);if(is&&is.code!=='macro')out.push({name:it.name,text:is.text})}return out}
+export function unitIssueHTML(text){const u=unitIssues(text);return u.length?`<div class="ai-uncertain ai-unit-issue" role="note"><b>양·단위를 확인해 주세요</b><ul>${u.map(x=>`<li>${h(x.name)} <small>${h(x.text)}</small></li>`).join('')}</ul><p class="hint">팩·봉·개로 먹었는데 g로 적혔을 수 있어요. 검토함에서 단위를 고친 뒤 확정하면 돼요.</p></div>`:''}
 export function uncertainHTML(text){const u=uncertainItems(text);return u.length?`<div class="ai-uncertain" role="note"><b>양을 확인해 주세요</b><ul>${u.map(x=>`<li>${h(x.name)} <small>AI 추정 ${Math.round(x.min)}~${Math.round(x.max)}kcal</small></li>`).join('')}</ul><p class="hint">사진만으로는 양이 애매해요. 검토함에서 '반 공기', '1.5인분'처럼 고친 뒤 확정하면 돼요.</p></div>`:''}
 export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  const photos = state.photos||[];
@@ -142,7 +162,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  <label class="field ai-in-field">AI가 준 코드 붙여넣기<textarea id="ai-code" rows="6" placeholder="여기에 AI 답을 붙여넣어요 (설명 글이 같이 붙어도 괜찮아요)" spellcheck="false" autocomplete="off">${h(state.text||'')}</textarea></label>
  <div class="ai-in-tools"><button type="button" class="button secondary small" id="ai-paste-clip">클립보드에서 붙여넣기</button>${state.text?'<button type="button" class="text-button" id="ai-code-clear">지우기</button>':''}</div>
  ${server?'</details>':''}
- <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}${uncertainHTML(state.text)}</div>
+ <div id="ai-in-preview" aria-live="polite">${aiPreviewHTML(state.text)}${unitIssueHTML(state.text)}${uncertainHTML(state.text)}</div>
  ${state.msg?`<p class="ai-in-msg">${h(state.msg)}</p>`:''}
  ${ready?'':'<p class="ai-in-err">AI 입력은 로그인하고 이용 승인된 계정에서 쓸 수 있어요.</p>'}
  <div class="actions ai-in-actions"><button type="button" class="button" id="ai-send" ${ready&&!state.busy?'':'disabled'}>${state.busy?'넣는 중…':'검토함에 넣기'}</button><button type="button" class="button secondary" id="ai-go-inbox" data-page="ai-inbox">AI 검토함 열기${pending?` <span class="ai-in-count">${pending}</span>`:''}</button></div>
@@ -161,10 +181,11 @@ export function aiContextText(db={}, {days = CONTEXT_RECORD_DAYS} = {}){
  const foods = new Map();
  const add = (x, count, at) => { const k = key(x); if(!String(x.name||'').trim()) return; const cur = foods.get(k); if(!cur) foods.set(k, {x, count, at}); else { cur.count += count; if(at>=cur.at){ cur.x = x; cur.at = at; } } };
  for(const m of (db.meals||[]).filter(m => mealDays.has(String(m.date||'')))) add(m, 1, `${m.date||''}${m.loggedAt||''}${m.updatedAt||''}`);
- for(const f of db.foods||[]) if(!f.catalog && f.source!=='대표값') add(f, 0, '');
+ for(const f of db.foods||[]) if(!f.catalog && f.source!=='대표값') add({...f, preset:true}, 0, '');
  const num = v => v==null || v==='' || !Number.isFinite(Number(v)) ? null : Math.round(Number(v));
  const per = f => [num(f.calories)!=null?`${num(f.calories)}kcal`:'', num(f.carbs)!=null?`탄${num(f.carbs)}`:'', num(f.protein)!=null?`단${num(f.protein)}`:'', num(f.fat)!=null?`지${num(f.fat)}`:''].filter(Boolean).join(' ');
- const qty = f => `${Number(f.servingQty)||1}${f.servingUnit||'회'}`;
+ // 4.25.0 직접 저장한 음식은 g·ml이면 100당 값이다(예전엔 '1g · 177kcal'로 적혀 AI가 양을 잘못 셌다). 그 밖의 단위는 1단위 값.
+ const qty = f => f.preset ? (/^(g|ml)$/i.test(f.servingUnit||'') ? `100${f.servingUnit}` : `1${f.servingUnit||'회'}${Number(f.unitGrams)>0 ? `(${Math.round(f.unitGrams)}g)` : ''}`) : `${Number(f.servingQty)||1}${f.servingUnit||'회'}${Number(f.unitGrams)>0 && !/^(g|ml)$/i.test(f.servingUnit||'') ? `(1${f.servingUnit} ${Math.round(f.unitGrams)}g)` : ''}`;
  const foodRows = [...foods.values()].sort((a, b) => b.count - a.count || String(b.at).localeCompare(String(a.at))).slice(0, 300);
  const ex = new Map();
  for(const w of (db.workouts||[]).filter(w => workDays.has(String(w.date||'')))) for(const e of w.exercises||[]){ const n = String(e.name||'').trim(); if(!n) continue; const cur = ex.get(n) || {n, count:0, machines:new Map()}; cur.count++; if(e.machineId) cur.machines.set(e.machineId, (cur.machines.get(e.machineId)||0) + 1); ex.set(n, cur); }
