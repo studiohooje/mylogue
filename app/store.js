@@ -11,8 +11,10 @@ export function getRecoveryRaw(){return localStorage.getItem(STORAGE_KEY)}
 export function load(){
  try{
   if(localStorage.getItem(RESTORE_PENDING_KEY))throw Error('중단된 복원을 먼저 복구해 주세요.');
-  const raw=localStorage.getItem(STORAGE_KEY),db=raw?normalizeDB(JSON.parse(raw),{lenient:true}):emptyDB();/* 4.27.0 DAT-01: 틀린 기록만 따로 보관하고 연다 */
+  const raw=localStorage.getItem(STORAGE_KEY),parsed=raw?JSON.parse(raw):null,db=parsed?normalizeDB(parsed,{lenient:true}):emptyDB();/* 4.27.0 DAT-01: 틀린 기록만 따로 보관하고 연다 */
   loadedRaw=raw;
+  // 4.27.0 추가 점검 A-4: 이번에 새로 가려낸 보관분은 바로 적어 둔다(백업·내려받기에 곧바로 담기게). 못 적어도 여는 데는 지장 없음
+  if(parsed&&(db.quarantine?.length||0)>(Array.isArray(parsed.quarantine)?parsed.quarantine.length:0)){try{const enc=JSON.stringify(db);localStorage.setItem(STORAGE_KEY,enc);loadedRaw=enc}catch{}}
   status={blocked:false,reason:''};return db;
  }catch(error){status={blocked:true,reason:error.message||'저장소를 읽을 수 없습니다.'};return emptyDB()}
 }

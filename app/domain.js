@@ -130,7 +130,7 @@ export function setDietState(db,date,state){
 // lenient(앱의 평소 읽기·저장)에서는 틀린 기록만 db.quarantine에 원본 그대로 따로 보관하고 나머지는 연다(지우지 않음).
 // 백업 가져오기처럼 사람이 고른 파일을 검사할 때는 지금처럼 엄격하게(lenient 아님) 이유를 알려 준다.
 export const QUARANTINE_MAX=500;
-const quarantineSig=q=>{try{return `${q.kind}|${q.id??''}|${JSON.stringify(q.raw)}`}catch{return `${q.kind}|${q.id??''}|${Math.random()}`}};
+const quarantineSig=q=>{if(q.id!=null&&q.id!=='')return `${q.kind}|id|${q.id}`;try{return `${q.kind}||${JSON.stringify(q.raw)}`}catch{return `${q.kind}||${Math.random()}`}};
 export function normalizeDB(raw,{lenient=false}={}){
  if(!raw||typeof raw!=='object'||raw.schemaVersion!==VERSION)throw Error('지원하지 않는 백업 형식입니다.');
  const db=emptyDB(),bad=[],list=k=>{if(raw[k]!=null&&!Array.isArray(raw[k])){if(lenient){bad.push({kind:k,raw:raw[k],reason:'목록 형식 아님'});return []}throw Error(k+' 백업 목록을 확인해 주세요.')}return raw[k]||[]};

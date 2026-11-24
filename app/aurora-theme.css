@@ -1969,3 +1969,6 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .quick-again.compact .qa-ico{width:26px;height:26px;font-size:14px}
 
 .applicant-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px}.applicant-tools input{flex:1 1 200px;min-height:44px;font-size:16px}
+.operator-consent .chip{min-height:44px;padding:0 16px}
+.remote-notice,.operator-notice{margin:0 0 12px}.remote-notice{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.remote-notice p{margin:0;flex:1 1 220px;word-break:keep-all}.remote-notice.warn{border-color:#f0c074}.remote-notice .chip{min-height:44px}
+.help-errors .actions{display:flex;flex-wrap:wrap;gap:8px}
