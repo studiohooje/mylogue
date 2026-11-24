@@ -1770,7 +1770,7 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .q-plan .chip-row{flex-wrap:wrap;overflow:visible;padding-bottom:0;mask-image:none;-webkit-mask-image:none}
 .q-plan .chip-row::-webkit-scrollbar{display:none}
 .q-title{display:grid;gap:6px;font-size:14px}
-.q-title>small{display:none}
+.q-title>small.q-title-hint{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .q-title input::placeholder{font-size:15px}
 .qs-reps{flex-wrap:wrap;gap:6px;margin-top:8px}
 .qs-reps .chip{min-height:40px;min-width:52px;justify-content:center;font-variant-numeric:tabular-nums}
