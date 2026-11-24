@@ -1,3 +1,4 @@
+import {scanHTML} from './scan-fx.js';
 // 3.16.0 AI 입력(붙여넣기): ChatGPT·Gemini·Claude 등 어떤 AI든 아래 지시문을 한 번 주면, 말로 한 기록을 '마이로그 코드'로 답한다.
 // 사용자는 그 답을 복사(또는 Android 공유)해 마이로그 'AI 입력'에 붙여넣고, 초안은 AI 검토함으로 간다(확정은 사람이).
 // 해석은 너그럽게: 코드 블록·앞뒤 설명·둥근 따옴표·끝 쉼표·한글 키 이름을 받아 준다. 값을 지어내지 않고 모르는 값은 비운다.
@@ -126,7 +127,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
  const say = server ? `<section class="ai-say" aria-label="말로 입력">
   <label class="field ai-say-field">말하듯 적어 주세요<textarea id="ai-say" rows="3" placeholder="예: 점심에 제육덮밥 먹고 콜라 한 캔 / 하체 했어, 레그프레스 100키로 12개 3세트 / 아침 체중 72.4">${h(state.say||'')}</textarea></label>
   <div class="ai-say-tools"><label class="button secondary small ai-photo-btn">사진 넣기<input id="ai-photo" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label>${photos.length?`<span class="ai-photo-count">사진 ${photos.length}장</span><button type="button" class="text-button" id="ai-photo-clear">사진 빼기</button>`:''}</div>
-  ${photos.length?`<div class="ai-photo-thumbs">${photos.slice(0,4).map((d,i)=>`<img src="data:image/jpeg;base64,${h(d)}" alt="넣은 사진 ${i+1}">`).join('')}</div><p class="hint">사진만 보내도 되지만, '반 공기', '둘이 나눠 먹음'처럼 한 줄 적어 주면 양을 훨씬 잘 맞혀요.</p>`:`<p class="hint ai-photo-tip">음식 사진은 <b>위에서 한 장</b>, 밝은 곳에서, 수저나 손이 같이 나오면 양을 더 잘 맞혀요. 여럿이 먹은 상이면 '몇 명이서'를 적어 주세요.</p>`}
+  ${photos.length?`${state.asking?scanHTML(photos.map(d=>`data:image/jpeg;base64,${d}`),{alt:'AI가 보는 사진'}):`<div class="ai-photo-thumbs">${photos.slice(0,4).map((d,i)=>`<img src="data:image/jpeg;base64,${h(d)}" alt="넣은 사진 ${i+1}">`).join('')}</div>`}<p class="hint">사진만 보내도 되지만, '반 공기', '둘이 나눠 먹음'처럼 한 줄 적어 주면 양을 훨씬 잘 맞혀요.</p>`:`<p class="hint ai-photo-tip">음식 사진은 <b>위에서 한 장</b>, 밝은 곳에서, 수저나 손이 같이 나오면 양을 더 잘 맞혀요. 여럿이 먹은 상이면 '몇 명이서'를 적어 주세요.</p>`}
   <button type="button" class="button ai-ask" id="ai-ask" ${ready&&!state.asking?'':'disabled'}>${state.asking?'AI가 정리하는 중…':'✦ AI에게 정리 맡기'}</button>
   ${state.left!=null?`<p class="hint">오늘 AI 정리 ${state.left}번 남았어요.</p>`:''}
   ${ready?'':'<p class="hint">앱 안 AI 정리는 계정 이용 승인 후 쓸 수 있어요. 그 전에는 아래 ‘다른 AI의 답 붙여넣기’로 기록할 수 있고, 이 기기 검토함에 모여요.</p>'}

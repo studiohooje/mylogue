@@ -1774,3 +1774,37 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .q-title input::placeholder{font-size:15px}
 .qs-reps{flex-wrap:wrap;gap:6px;margin-top:8px}
 .qs-reps .chip{min-height:40px;min-width:52px;justify-content:center;font-variant-numeric:tabular-nums}
+
+/* 4.20.0 사진 스캔 이펙트(오로라 빛줄기 · 격자 · 찾은 지점 · 모서리 · 하는 일) */
+.scan-fx{display:grid;gap:8px;margin:8px 0}
+.scan-fx.two{grid-template-columns:1fr 1fr}
+.scan-frame{position:relative;margin:0;overflow:hidden;border-radius:16px;isolation:isolate;background:#060b16;box-shadow:0 0 0 1px #8ce4e033,0 12px 40px -12px #8ce4e055}
+.scan-frame img{display:block;width:100%;max-height:360px;object-fit:cover;animation:scanImg 3.2s ease-in-out infinite;filter:saturate(.85) brightness(.82)}
+.scan-frame.attached img{object-fit:contain;max-height:420px}
+@keyframes scanImg{0%,100%{filter:saturate(.85) brightness(.86)}50%{filter:saturate(1.05) brightness(1)}}
+.scan-grid{position:absolute;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(#8ce4e01f 1px,transparent 1px),linear-gradient(90deg,#8ce4e01f 1px,transparent 1px);background-size:22px 22px;mix-blend-mode:screen;-webkit-mask-image:linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(180deg,transparent,#000 30%,#000 70%,transparent);animation:scanGrid 2.6s ease-in-out infinite alternate}
+@keyframes scanGrid{from{-webkit-mask-position:0 -120px;mask-position:0 -120px;opacity:.35}to{-webkit-mask-position:0 120px;mask-position:0 120px;opacity:.75}}
+.scan-beam{position:absolute;left:-10%;right:-10%;top:0;height:42%;z-index:2;pointer-events:none;background:linear-gradient(180deg,transparent 0%,#b8aaf20d 40%,#8ce4e033 78%,#f2b49b55 92%,#ffffffcc 96%,transparent 100%);filter:blur(.4px);mix-blend-mode:screen;animation:scanBeam 2.6s cubic-bezier(.45,.05,.55,.95) infinite alternate}
+.scan-beam::after{content:"";position:absolute;left:0;right:0;bottom:3%;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#f2b49b 15%,#8ce4e0 50%,#b8aaf2 85%,transparent);box-shadow:0 0 18px 4px #8ce4e099,0 0 42px 10px #b8aaf255}
+@keyframes scanBeam{from{transform:translateY(-100%)}to{transform:translateY(240%)}}
+.scan-corners i{position:absolute;z-index:3;width:22px;height:22px;border:2px solid #8ce4e0;opacity:.9;animation:scanCorner 1.6s ease-in-out infinite alternate}
+.scan-corners i:nth-child(1){top:10px;left:10px;border-right:0;border-bottom:0;border-top-left-radius:8px}
+.scan-corners i:nth-child(2){top:10px;right:10px;border-left:0;border-bottom:0;border-top-right-radius:8px;border-color:#b8aaf2}
+.scan-corners i:nth-child(3){bottom:10px;left:10px;border-right:0;border-top:0;border-bottom-left-radius:8px;border-color:#f2b49b}
+.scan-corners i:nth-child(4){bottom:10px;right:10px;border-left:0;border-top:0;border-bottom-right-radius:8px}
+@keyframes scanCorner{from{transform:scale(1);opacity:.6}to{transform:scale(1.12);opacity:1}}
+.scan-dot{position:absolute;z-index:3;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 #8ce4e0aa;opacity:0;animation:scanDot 3.6s ease-out infinite}
+@keyframes scanDot{0%,12%{opacity:0;transform:scale(.4)}18%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 #8ce4e0aa}40%{opacity:.9;box-shadow:0 0 0 14px #8ce4e000}70%,100%{opacity:0;transform:scale(.6)}}
+.scan-label{position:absolute;z-index:4;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;max-width:calc(100% - 28px);padding:8px 14px;border-radius:999px;background:#060b16cc;border:1px solid #8ce4e055;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#eaf4ff;font-size:14px;font-weight:600;white-space:nowrap;box-shadow:0 6px 24px #0008}
+.scan-label:empty{display:none}
+.scan-pulse{width:8px;height:8px;border-radius:50%;background:#8ce4e0;flex:none;animation:scanPulse 1.2s ease-in-out infinite}
+@keyframes scanPulse{0%,100%{box-shadow:0 0 0 0 #8ce4e099;opacity:1}50%{box-shadow:0 0 0 6px #8ce4e000;opacity:.6}}
+.scan-steps{display:grid;height:1.4em;line-height:1.4em;overflow:hidden}
+.scan-steps b{grid-area:1/1;font-weight:600;opacity:0;animation:scanStep calc(var(--n) * 1.8s) infinite}
+.scan-steps b:nth-child(2){animation-delay:1.8s}.scan-steps b:nth-child(3){animation-delay:3.6s}.scan-steps b:nth-child(4){animation-delay:5.4s}.scan-steps b:nth-child(5){animation-delay:7.2s}
+@keyframes scanStep{0%{opacity:0;transform:translateY(60%)}4%,20%{opacity:1;transform:none}25%,100%{opacity:0;transform:translateY(-60%)}}
+.scan-label:has(.scan-steps:empty){display:none}
+.scan-frame.scan-done .scan-beam,.scan-frame.scan-done .scan-grid,.scan-frame.scan-done .scan-dot{animation:none;opacity:0;transition:opacity .5s}
+.scan-frame.scan-done img{animation:none;filter:none;transition:filter .5s}
+.scan-frame.scan-done .scan-corners i{animation:none;border-color:#8ce4e0;transform:scale(1.04)}
+@media (prefers-reduced-motion:reduce){.scan-beam,.scan-dot,.scan-grid{animation:none;opacity:0}.scan-frame img{animation:scanImg 4s ease-in-out infinite}.scan-corners i{animation:none}.scan-steps b{animation:none}.scan-steps b:first-child{opacity:1}}
