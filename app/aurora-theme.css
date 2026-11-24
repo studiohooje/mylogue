@@ -1913,3 +1913,53 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 /* 4.25.0 목표선을 모든 줄에서 같은 자리에: 숫자 칸 폭을 고정해 막대 길이를 맞춘다(전에는 줄마다 숫자 폭이 달라 막대가 들쭉날쭉) */
 .macro-row{grid-template-columns:74px minmax(0,1fr) 108px 76px}
 @media(max-width:420px){.macro-row{grid-template-columns:62px minmax(0,1fr) 92px}}
+
+/* 4.26.0 식단: 지난 식사 칩(며칠 치, 컴팩트) · 이 시간에 자주 · 새 음식 등록 3단계 · 언제 먹은 것 · 식사 수정 고정 단위 */
+.quick-again.compact{margin:0 0 12px;padding:0;overflow:visible}
+.quick-again.compact .qa-head{display:flex;align-items:baseline;gap:8px;min-height:0;padding:0 2px 6px;border:0;background:none;cursor:default}
+.quick-again.compact .qa-head b{display:inline;font-size:15px}
+.quick-again.compact .qa-head small{display:inline;margin:0;font-size:12px}
+.qa-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.qa-chip{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:52px;max-width:200px;padding:8px 12px;border-radius:14px;border:1px solid #8ce4e055;background:#8ce4e012;color:#edf4f8;font:inherit;text-align:left;cursor:pointer;scroll-snap-align:start}
+.qa-chip b{font-size:14px;white-space:nowrap}
+.qa-chip small{font-size:12px;color:#aebfd0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:176px}
+.qa-chip:active{background:#8ce4e033}
+.habit-badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#f7c27026;color:#f7c270;font-size:12px;font-style:normal;font-weight:700;vertical-align:middle}
+.q-new-food{display:grid;gap:4px;margin-top:10px}
+.q-new-food .q-reg-open{min-height:48px;font-size:16px;white-space:normal;word-break:keep-all}
+.q-new-food .text-button{justify-self:center;font-size:13px}
+.reg-overlay .field{margin:8px 0}
+.reg-steps{display:flex;gap:6px;margin:0 0 12px;padding:0;list-style:none;font-size:12px;color:#8a9bb0}
+.reg-steps li{flex:1;padding:6px 0;border-top:3px solid #33506d;text-align:center;word-break:keep-all}
+.reg-steps li.on{border-color:#8ce4e0;color:#8ce4e0;font-weight:700}
+.reg-steps li.done{border-color:#4f8e8c;color:#b4c6d8}
+.reg-q{margin:12px 0 6px;font-size:14px;font-weight:700;color:#edf4f8}
+.reg-err{margin:0 0 8px;padding:8px 12px;border-radius:10px;background:#ff8a8a1a;border:1px solid #ff8a8a66;color:#ffc2c2;font-size:13px;line-height:1.5}
+.reg-src{margin-bottom:8px}
+.reg-sim{display:grid;gap:6px;margin:6px 0 4px}
+.reg-sim .quick-choice.active{border-color:#8ce4e0;background:#8ce4e01a}
+.reg-photo-btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;margin:4px 0;cursor:pointer}
+.reg-ok{margin:6px 0;color:#8ce4e0;font-size:13px}
+.reg-from{margin:8px 0 0;font-size:12px;color:#f7c270}
+.reg-vals{margin-top:6px}
+.reg-micro{margin:6px 0}.reg-micro summary{font-size:13px;color:#aebfd0;cursor:pointer;min-height:36px;display:flex;align-items:center}
+.reg-warn{margin:6px 0;color:#f3d6a8;font-size:13px;line-height:1.5;word-break:keep-all}
+.reg-sum{margin:0 0 4px}.reg-sum b{display:block;font-size:16px}.reg-sum small{color:#aebfd0;font-size:13px;word-break:keep-all}
+.reg-actions{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:12px}
+.q-when-bar{gap:8px}
+.q-when-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q-when-head b{font-size:15px}
+.q-when-at{font-variant-numeric:tabular-nums;color:#8ce4e0;font-weight:700}
+.q-when-head .text-button{margin-left:auto;min-height:36px}
+.q-when-bar .chip-row{margin-top:8px}
+.q-hours{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+.q-plan-note{margin:8px 0 0;font-size:12px}
+.qe-unit-fixed{display:inline-flex;align-items:center;justify-content:center;min-width:56px;min-height:44px;padding:0 10px;border-radius:12px;border:1px solid #33506d;color:#b4c6d8;font-size:16px}
+
+/* 4.26.0 식사 기록을 운동 기록과 같은 틀로: 시작 카드·미리 버튼·상단 방식 표시·지난 기록 아이콘 */
+.q-plan-btn{border-color:#8ce4e066;background:#8ce4e00d}
+.q-plan-ico{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#8ce4e022;color:#8ce4e0;font-size:16px;flex:none}
+.q-plan-btn b{display:block;font-size:15px}.q-plan-btn small{display:block;font-size:12px;color:var(--muted);margin-top:2px;word-break:keep-all}
+.q-when-bar .q-when-at{margin:0;font-size:16px}
+.quick-again.compact .qa-head{align-items:center}
+.quick-again.compact .qa-ico{width:26px;height:26px;font-size:14px}

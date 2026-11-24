@@ -23,6 +23,10 @@ import {savedLine} from './motivation.js';
 import {createBackup,recoverInterruptedRestore} from './backup.js';
 import {readSession,clearSession,rawSession} from './session.js';
 import {blankFood,batchSummary} from './meal-batch.js';
+import {newReg,readReg,setUnit,applySimilar,toPreset} from './food-register.js';
+import {pastMeals} from './meal-rank.js';
+import {applyWhen,shiftWhen} from './meal-when.js';
+import {upsertFoodPreset} from './nutrition.js';
 import {loadFoodDB,foodDBReady,findFoodDB} from './food-db.js';
 import {emptyQuickMeal,emptyQuickWorkout,quickTime,quickFoodCandidates,quickMealRecords,quickWorkoutRecord,lastSession,findMachine,usesBar,defaultBar,memoKey,usualQty,yesterdayMeal,mealToRow,recentMealGroups,frequentCombo,exKeyOf} from './quick-entry.js';
 import {resolveExercise} from './catalog.js';
@@ -38,6 +42,27 @@ import {createRecipe,recipeMeals} from './model-features.js';
 export function quickClick(t){
  if($s.modal==='quick-meal'){
   const s=$s.quickMeal;
+
+  /* 4.26.0 식사 시작 선택(방금·전에·미리)과 시각 칩 */
+  if(t.dataset.qWhen){applyWhen(s,t.dataset.qWhen);$f.render();return true}
+  if(t.dataset.qWhenReset!==undefined){s.when=null;$f.render();return true}
+  if(t.dataset.qWhenDate){s.date=t.dataset.qWhenDate;$f.render();return true}
+  if(t.dataset.qWhenTime){s.time=t.dataset.qWhenTime;if(s.when==='now')s.date=new Date().toLocaleString('sv-SE').slice(0,10);$f.render();return true}
+  if(t.dataset.qWhenShift){const w=shiftWhen(s.date,s.time,Number(t.dataset.qWhenShift));s.date=w.date;s.time=w.time;$f.render();return true}
+  /* 4.26.0 새 음식 등록(빠른 기록 안 3단계) */
+  if(t.dataset.regOpen!==undefined){s.picked=null;s.reg=newReg(s.query||'');$f.render();return true}
+  if(s.reg){const R=s.reg,go=()=>{R.err='';$f.render();return true},bad=m=>{R.err=m;$f.render();return true};
+   if(t.dataset.regClose!==undefined){s.reg=null;$f.render();return true}
+   readReg(R,document.querySelector('.reg-overlay'));
+   if(t.dataset.regUnit){setUnit(R,t.dataset.regUnit);return go()}
+   if(t.dataset.regSrc){R.src=t.dataset.regSrc;return go()}
+   if(t.dataset.regBasis){R.basis=t.dataset.regBasis;return go()}
+   if(t.dataset.regSim){const it=findFoodDB(t.dataset.regSim);if(it)applySimilar(R,it);return go()}
+   if(t.dataset.regQty){R.qty=Number(t.dataset.regQty);return go()}
+   if(t.dataset.regBack!==undefined){R.step=Math.max(1,R.step-1);return go()}
+   if(t.dataset.regNext!==undefined){if(R.step===1&&!R.name)return bad('음식 이름을 적어 주세요.');if(R.step===2){const r=toPreset(R);if(r.error)return bad(r.error)}R.step=Math.min(3,R.step+1);return go()}
+   if(t.dataset.regDone!==undefined){const r=toPreset(R);if(r.error)return bad(r.error);if(!(Number(R.qty)>0))return bad('먹은 양을 확인해 주세요.');const foods=upsertFoodPreset($s.db.foods||[],r.preset),saved=foods[foods.length-1];$s.db=$f.save({...$s.db,foods});s.rows.push($f.quickFoodRow(saved,Math.round(Number(R.qty)*100)/100));s.reg=null;s.query='';$f.render();$f.toast(`'${saved.name}' 내 음식에 저장하고 이번 식사에 담았어요.`);return true}
+  }
   if(t.dataset.qTab){s.tab=t.dataset.qTab;$f.render();return true}
   if(t.dataset.sgFoodGroup){s.sgGroup=s.sgGroup===t.dataset.sgFoodGroup?null:t.dataset.sgFoodGroup;$f.render();return true}
   if(t.dataset.qYday!==undefined){const yd=yesterdayMeal($s.db.meals,s.date,s.time);if(yd){s.rows=yd.items.map(mealToRow);$f.render();$f.toast('어제 식사를 담았어요. 양만 바꿔서 저장하면 돼요.')}return true}
@@ -45,7 +70,7 @@ export function quickClick(t){
   if(t.id==='q-combo-save'){const c=frequentCombo($s.db,s.rows);if(!c)return true;const meals=quickMealRecords({...s,date:s.date||$f.today(),time:s.time||'12:00'});const name=`${s.slot&&s.slot!=='식사'?s.slot+' ':''}${s.rows[0].name}${s.rows.length>1?` 외 ${s.rows.length-1}가지`:''}`;$s.db=$f.save({...$s.db,recipes:[...($s.db.recipes||[]),createRecipe(name,meals)]});$f.toast(`'${name}'${(c=>{const k=c.charCodeAt(0)-0xAC00;return k>=0&&k<11172&&k%28&&k%28!==8?'으로':'로'})(name.slice(-1))} 저장했어요. '저장한 조합'에서 한 번에 담을 수 있어요.`);$f.render();return true}
   if(t.id==='q-combo-no'){const c=frequentCombo($s.db,s.rows);if(c)$s.db=$f.save({...$s.db,settings:{...$s.db.settings,comboDismissed:[...($s.db.settings.comboDismissed||[]),c.sig].slice(-100)}});$f.render();return true}
   if(t.id==='q-doubt-calc'&&s.picked){const r=s.picked;r.calories=Math.round((r.carbs||0)*4+(r.protein||0)*4+(r.fat||0)*9);r.dbDoubt=false;r.aiEvidence={...(r.aiEvidence||{}),note:'열량은 탄단지로 계산(사용자 선택)'};$f.render();$f.toast('탄단지로 계산한 열량으로 바꿨어요.');return true}
-  if(t.dataset.qAgainMeal){const g=recentMealGroups($s.db.meals,s.date).find(x=>x.key===t.dataset.qAgainMeal);if(!g)return true;s.rows=g.items.map(m=>mealToRow(m));if(g.slot&&!s.slotTouched)s.slot=g.slot;$f.render();$f.toast(`${g.items.length}가지를 담았어요. 양이 다르면 −/+로 바꿔 주세요.`);return true}
+  if(t.dataset.qAgainMeal){const g=pastMeals($s.db.meals,s.date,s.time,{limit:20}).find(x=>x.key===t.dataset.qAgainMeal);if(!g)return true;s.rows=g.items.map(m=>mealToRow(m));if(g.slot&&!s.slotTouched)s.slot=g.slot;$f.render();$f.toast(`${g.items.length}가지를 담았어요. 양이 다르면 −/+로 바꿔 주세요.`);return true}
   if(t.dataset.qRowStep){const [i,dir]=t.dataset.qRowStep.split(':').map(Number),row=s.rows[i];if(!row)return true;const mass=MASS.has(row.servingUnit),step=mass?(row.servingQty>=200?20:10):0.5,next=Math.round((Number(row.servingQty)+dir*step)*10)/10;if(next<=0)return true;row.servingQty=next;$f.render();return true}
   if(t.dataset.qFood){const item=quickFoodCandidates($f.foodChoices()).find(x=>`${x.name.toLocaleLowerCase('ko')}|${x.servingUnit||'g'}`===t.dataset.qFood);if(!item)throw Error('음식을 찾지 못했습니다.');if(['calories','carbs','protein','fat'].some(k=>item[k]==null))throw Error('영양값이 일부 없는 음식입니다. 상세 입력에서 라벨 값을 확인해 주세요.');s.picked=structuredClone(item);s.share=1;s.editIndex=-1;s.usual=usualQty($s.db.meals,item.name,item.servingUnit);s.qty=s.usual[0]?.qty??(MASS.has(item.servingUnit)?($s.db.settings.lastGrams?.[item.name]||100):1);s.gramOptions=$s.db.settings.gramOptions?.[item.name]||[100,200,210,250,300];$f.render();return true}
   if(t.dataset.qRecipe){const recipe=($s.db.recipes||[]).find(x=>x.id===t.dataset.qRecipe);if(!recipe)return true;for(const meal of recipeMeals(recipe,s.date,'식사',1)){const q=MASS.has(meal.servingUnit)?($s.db.settings.lastGrams?.[meal.name]||meal.servingQty):meal.servingQty,base=MASS.has(meal.servingUnit)?meal.servingQty/100:meal.servingQty;s.rows.push($f.quickFoodRow({...meal,...Object.fromEntries(['calories','carbs','protein','fat'].map(k=>[k,meal[k]==null?null:meal[k]/base]))},q))}$f.render();return true}
@@ -200,7 +225,7 @@ export function quickEditClick(t){
   if(t.dataset.qmRemove!==undefined){readQuickMeal($s.qm,sheet);$s.sheetDirty=true;$s.dirtyModal=$s.modal;$s.qm.rows[Number(t.dataset.qmRemove)].removed=true;$f.render();return true}
   if(t.dataset.qmUndo!==undefined){readQuickMeal($s.qm,sheet);$s.qm.rows[Number(t.dataset.qmUndo)].removed=false;$f.render();return true}
   if(t.id==='qm-save'){readQuickMeal($s.qm,sheet);const ids=new Set($s.qm.rows.map(r=>r.id)),before=$s.db.meals,gone=new Set($s.qm.rows.filter(r=>r.removed).map(r=>r.id));if(gone.size)toTrash($s.TRASH(),'meals',before.filter(m=>gone.has(m.id)));$s.db=$f.save(applyQuickMeal($s.db,$s.qm));$s.selectedDate=$s.qm.newDate;$s.qm=null;$s.modal=null;$f.render();$f.toastUndo('식사를 고쳤어요.',$s.undoRecords('meals',before,ids));return true}
-  if(t.id==='qm-add'){readQuickMeal($s.qm,sheet);$s.db=$f.save(applyQuickMeal($s.db,$s.qm));$s.selectedDate=$s.qm.newDate;$s.quickMeal=emptyQuickMeal($s.qm.newDate,$s.qm.time);$s.quickMeal.groupId=String($s.qm.key).startsWith('legacy:')?'':$s.qm.key;$s.quickMeal.slot=$s.qm.slot;$s.quickMeal.joinLabel=true;$s.sheetDirty=false;$s.qm=null;$s.modal='quick-meal';$f.render();$f.toast('고친 내용을 저장했어요. 이 식사에 더할 음식을 골라 주세요.');return true}
+  if(t.id==='qm-add'){readQuickMeal($s.qm,sheet);$s.db=$f.save(applyQuickMeal($s.db,$s.qm));$s.selectedDate=$s.qm.newDate;$s.quickMeal=emptyQuickMeal($s.qm.newDate,$s.qm.time);$s.quickMeal.groupId=String($s.qm.key).startsWith('legacy:')?'':$s.qm.key;$s.quickMeal.slot=$s.qm.slot;$s.quickMeal.joinLabel=true;$s.quickMeal.when='fixed';$s.sheetDirty=false;$s.qm=null;$s.modal='quick-meal';$f.render();$f.toast('고친 내용을 저장했어요. 이 식사에 더할 음식을 골라 주세요.');return true}
   if(t.id==='qm-delete-all'){const before=$s.db.meals,ids=new Set($s.qm.rows.map(r=>r.id)),_t=toTrash($s.TRASH(),'meals',$s.db.meals.filter(m=>ids.has(m.id))),d0=$s.qm.date,left=$s.db.meals.filter(m=>!ids.has(m.id));$s.db=$f.save({...$s.db,meals:left,dayStates:{...$s.db.dayStates,[d0]:left.some(m=>m.date===d0)?$s.db.dayStates?.[d0]:'unrecorded'}});$s.qm=null;$s.modal=null;$f.render();$f.toastUndo('식사를 지웠어요.',$s.undoRecords('meals',before,ids));return true}
  }
  if($s.qw&&$s.modal==='quick-work-edit'){
