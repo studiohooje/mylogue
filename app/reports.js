@@ -1,4 +1,4 @@
-import {mealTotals,workoutTotals,estimate1RM,round,setWeightKg,dietState} from './domain.js';
+import {mealTotals,workoutTotals,estimate1RM,round,setWeightKg,dietState,setVolume} from './domain.js';
 
 const dayString=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const dayList=(days,now)=>Array.from({length:days},(_,i)=>{const d=new Date(now);d.setHours(12,0,0,0);d.setDate(d.getDate()-days+1+i);return dayString(d)});
@@ -8,11 +8,11 @@ export function dietTrend(db,days=7,now=new Date()){
 export function exerciseTrend(db,name,days=90,now=new Date(),options={},legacyOptions){
  options=legacyOptions||options||{};
  const q=String(name||'').trim().toLocaleLowerCase('ko');
- return dayList(days,now).flatMap(date=>{const entries=(db.workouts||[]).filter(w=>w.date===date).flatMap(w=>w.exercises||[]).filter(e=>(options.exerciseId?e.exerciseId===options.exerciseId:e.name.trim().toLocaleLowerCase('ko')===q)&&(!Object.hasOwn(options,'machineId')||(e.machineId||null)===(options.machineId||null))&&e.kind!=='cardio');if(!entries.length)return [];let volume=0,sets=0,maxWeight=0,best1RM=0;for(const e of entries)for(const s of e.sets||[]){if(s.completed===false)continue;volume+=setWeightKg(s)*(s.reps||0);sets++;maxWeight=Math.max(maxWeight,setWeightKg(s));best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0))}return [{date,name:entries[0].name,volume:round(volume),sets,maxWeight,best1RM}]});
+ return dayList(days,now).flatMap(date=>{const entries=(db.workouts||[]).filter(w=>w.date===date).flatMap(w=>w.exercises||[]).filter(e=>(options.exerciseId?e.exerciseId===options.exerciseId:e.name.trim().toLocaleLowerCase('ko')===q)&&(!Object.hasOwn(options,'machineId')||(e.machineId||null)===(options.machineId||null))&&e.kind!=='cardio');if(!entries.length)return [];let volume=0,sets=0,maxWeight=0,best1RM=0;for(const e of entries)for(const s of e.sets||[]){if(s.completed===false)continue;volume+=setVolume(e,s);sets++;maxWeight=Math.max(maxWeight,setWeightKg(s));best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0))}return [{date,name:entries[0].name,volume:round(volume),sets,maxWeight,best1RM}]});
 }
 export function partSummary(db,days=30,now=new Date()){
  const dates=new Set(dayList(days,now)),parts=new Map();
- for(const w of db.workouts||[])if(dates.has(w.date))for(const e of w.exercises||[]){const key=e.part||'기타',x=parts.get(key)||{part:key,sets:0,reps:0,volume:0,lastDate:null,cardioMinutes:0};if(e.kind==='cardio')x.cardioMinutes+=e.durationMin||0;else for(const s of e.sets||[]){if(s.completed===false)continue;x.sets++;x.reps+=s.reps||0;x.volume+=setWeightKg(s)*(s.reps||0)}if(!x.lastDate||w.date>x.lastDate)x.lastDate=w.date;parts.set(key,x)}
+ for(const w of db.workouts||[])if(dates.has(w.date))for(const e of w.exercises||[]){const key=e.part||'기타',x=parts.get(key)||{part:key,sets:0,reps:0,volume:0,lastDate:null,cardioMinutes:0};if(e.kind==='cardio')x.cardioMinutes+=e.durationMin||0;else for(const s of e.sets||[]){if(s.completed===false)continue;x.sets++;x.reps+=s.reps||0;x.volume+=setVolume(e,s)}if(!x.lastDate||w.date>x.lastDate)x.lastDate=w.date;parts.set(key,x)}
  return [...parts.values()].map(x=>({...x,volume:round(x.volume),cardioMinutes:round(x.cardioMinutes)})).sort((a,b)=>b.volume-a.volume||b.sets-a.sets);
 }
 export function fatigueProxy(db,now=new Date()){
@@ -45,7 +45,7 @@ export function machineBreakdown(db, pick, group, days = 84, now = new Date()){
   for(const e of w.exercises||[]){
    if(e.kind==='cardio' || !pick(e)) continue;
    const g = group(e.machineId||''), r = by.get(g.key) || by.set(g.key, {key:g.key, label:g.label, dates:new Set(), sets:0, volume:0, best1RM:0, topKg:0, last:''}).get(g.key);
-   for(const s of e.sets||[]){ if(s.completed===false) continue; const kg = setWeightKg(s); r.sets++; r.volume += kg*(s.reps||0); r.topKg = Math.max(r.topKg, kg); r.best1RM = Math.max(r.best1RM, estimate1RM(kg, s.reps||0)); }
+   for(const s of e.sets||[]){ if(s.completed===false) continue; const kg = setWeightKg(s); r.sets++; r.volume += setVolume(e, s); r.topKg = Math.max(r.topKg, kg); r.best1RM = Math.max(r.best1RM, estimate1RM(kg, s.reps||0)); }
    r.dates.add(w.date); if(w.date > r.last) r.last = w.date;
   }
  }

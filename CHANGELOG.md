@@ -4,6 +4,13 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 4.24.0 — 2026-11-24 (배포 전)
+
+- 볼륨 규칙 하나(`volumeFactor`·`setVolume`·`setReps`, domain.js): workoutTotals·exerciseTrend·partSummary·machineBreakdown이 같은 규칙.
+- 예전 휴식 알약(#rest-timer, updateRestTimer·startRestTimer·stopRestTimer, data-timer·timer-stop) 제거. 이어쓰기 초안의 timerEnds 칸은 호환을 위해 유지.
+- AI_RECORDING_GUIDE: targets·세션 이름·세트 type/side/restSec·body flags 안내. PROJECT_DIRECTION §56.
+- 버전 4.24.0(versionCode 85).
+
 ## Mylogue Beta 4.23.0 — 2026-11-24 (배포됨)
 
 - 휴식 끝 알림: 안드로이드 LocalNotifications 예약(id 5102, 지정해 두고 쉬기만, 시간·다음 세트 바뀌면 다시 예약, 시작·종목 그만·새 기록·뒤로가기에서 취소), 웹은 탭이 숨었을 때 서비스워커 알림. 권한은 첫 휴식·'지정' 선택 때 요청.

@@ -58,3 +58,15 @@ test('한쪽씩 세트 볼륨: 양쪽을 했다고 보고 2배, 이미 한쪽 �
   const bss = workoutTotals(cleanWorkout({date: '2026-11-24', exercises: [{name: '불가리안 스플릿 스쿼트', repBasis: 'per-side', sets: [{weight: 20, reps: 8, side: 'single'}]}]}));
   assert.equal(bss.reps, 16);
 });
+
+test('볼륨은 모든 화면에서 같은 규칙(기록 합계 = 종목 성장 = 제조사별)', async () => {
+  const {workoutTotals} = await import('../domain.js');
+  const {exerciseTrend, machineBreakdown} = await import('../reports.js');
+  const d = new Date(); const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const w = cleanWorkout({date: today, exercises: [{name: '덤벨 벤치프레스', exerciseId: 'exercise:덤벨 벤치프레스', weightBasis: 'per-hand', handCount: 2, sets: [{weight: 20, reps: 10}]}, {name: '레그 익스텐션', exerciseId: 'exercise:레그 익스텐션', sets: [{weight: 30, reps: 10, side: 'single'}]}]});
+  const db = {workouts: [w]};
+  const total = workoutTotals(w).volume;
+  const trend = exerciseTrend(db, '덤벨 벤치프레스', 7, new Date(), {exerciseId: 'exercise:덤벨 벤치프레스'})[0].volume + exerciseTrend(db, '레그 익스텐션', 7, new Date(), {exerciseId: 'exercise:레그 익스텐션'})[0].volume;
+  const split = machineBreakdown(db, () => true, () => ({key: 'k', label: 'k'}), 7)[0].volume;
+  assert.equal(total, 20 * 10 * 2 + 30 * 10 * 2); assert.equal(trend, total); assert.equal(split, total);
+});
