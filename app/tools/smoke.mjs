@@ -24,7 +24,7 @@ await new Promise(r => server.listen(0, '127.0.0.1', r));
 const port = server.address().port, debug = 9400 + Math.floor(Math.random() * 400);
 const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'mylogue-smoke-'));
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${debug}`, `--user-data-dir=${prof}`, '--no-first-run', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : []), 'about:blank'], {stdio: 'ignore'});
-let errors = [], code = 0;
+let errors = [], code = 0; const flowErrors = [];
 try {
  for (let i = 0; i < 40; i++) { try { await fetch(`http://127.0.0.1:${debug}/json/version`); break; } catch { await wait(250); } }
  const c = await connect(debug);
@@ -53,10 +53,21 @@ try {
   if (m === 'meal') { await c.run(`(()=>{const i=document.getElementById('q-food-search');if(!i)return false;i.value='닭가슴살';i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`); await wait(1200); }
   await c.run(`(()=>{const x=document.querySelector('.sheet .close, .sheet [aria-label*="닫기"], #modal-close');x?.click();return true})()`); await wait(500);
  }
+ // 4.28.0: 운동 기록 안에서 헬스장 새로 추가 → 바로 골라져야 한다
+ {
+  await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(500);
+  await c.run(`(()=>{let b=document.querySelector('[data-modal="workout"]');if(!b){document.querySelector('[data-modal="quick"]')?.click();b=document.querySelector('.sheet [data-modal="workout"]')}b?.click();return !!b})()`); await wait(900);
+  await c.run(`(()=>{document.querySelector('[data-q-live]')?.click();return true})()`); await wait(700);
+  const opened = await c.run(`(()=>{const b=document.getElementById('q-gym-add-open');if(b){b.click();return 'btn'}const sel=document.querySelector('select[data-q-work="gymName"]');if(!sel)return 'none';sel.value='__new__';sel.dispatchEvent(new Event('change',{bubbles:true}));return 'select'})()`); await wait(600);
+  const added = await c.run(`(()=>{const i=document.getElementById('q-gym-new');if(!i)return 'no-input';i.value='연기시험짐';document.getElementById('q-gym-save').click();return 'saved'})()`); await wait(700);
+  const picked = await c.run(`[...document.querySelectorAll('select[data-q-work="gymName"]')].some(x=>x.value==='연기시험짐')`);
+  steps.push(`헬스장 추가:${opened}/${added}/${picked ? '골라짐' : '안 골라짐'}`);
+  if (!picked) flowErrors.push('운동 기록 안 헬스장 추가 뒤 선택이 안 됨');
+ }
  await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(700);
  steps.push('끝 창:' + await c.run(`document.querySelector('.sheet h2')?.innerText||'없음'`)); if (process.env.SMOKE_DEBUG) console.log(await c.run(`document.querySelector('main')?.innerText.slice(0,400)`));
  await c.run(`(()=>{document.dispatchEvent(new Event('visibilitychange'));dispatchEvent(new Event('pagehide'));return true})()`); await wait(500);
- errors = await c.run(`window.__smokeErr||[]`);
+ errors = [...await c.run(`window.__smokeErr||[]`), ...flowErrors];
  const text = await c.run(`document.querySelector('main')?.innerText.length||0`);
  console.log('연기 시험', steps.join(' '), `· 본문 ${text}자`);
  if (!text) errors.push('화면이 비어 있어요');

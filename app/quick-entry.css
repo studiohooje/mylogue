@@ -111,3 +111,6 @@
 .quick-picked-actions .qp-qty .qp-step{border:1px solid #426481!important;background:#1d3b56!important;color:#e7f4ff!important}
 .combo-offer{display:grid;gap:8px;padding:12px 14px;margin-bottom:8px;border-radius:12px;background:#2e5c7433;border:1px solid #8ce4e066;font-size:14px;line-height:1.55;word-break:keep-all}.combo-actions{display:flex;gap:8px}.combo-actions .button{min-height:40px}
 .doubt-note{margin:8px 0;padding:12px 14px;border-radius:12px;border:1px solid #f3c27a88;background:#f3c27a14;display:grid;gap:6px}.doubt-note b{font-size:14px}.doubt-note p{margin:0;font-size:13px;line-height:1.6;word-break:keep-all}.doubt-note .button{justify-self:start;min-height:40px}
+
+.q-gym-add{display:grid;gap:8px;padding:12px;border:1px solid var(--line,#2c3a5c);border-radius:14px;margin:8px 0}.q-gym-add .actions{display:flex;gap:8px;flex-wrap:wrap}.q-gym-add .button{min-height:44px}
+.q-when{flex-wrap:wrap}.q-when .q-gym-add{flex:1 1 100%;margin:0}
