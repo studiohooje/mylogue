@@ -4,7 +4,7 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
-## Mylogue Beta 4.26.0 — 2026-11-24 (배포 전)
+## Mylogue Beta 4.26.0 — 2026-11-24 (배포됨)
 
 - 식사 기록 개편: 시작 선택(방금·전에·미리, meal-when.js), 지난 식사 칩 며칠 치(meal-rank.js `pastMeals`), 자주·이 시간대 순(`foodUsage`·`rankByUsage`).
 - 새 음식 등록 3단계(food-register.js): 비슷한 음식(추정)·영양성분표 사진(기기 안 OCR)·직접 입력, 기준 환산, 내 음식에만 저장. 예전 상세 입력은 '여러 음식을 한 번에'로 유지.
