@@ -1739,3 +1739,38 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .quick-again.open .qa-row:last-child{border-radius:0 0 14px 14px}
 .q-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px 0 4px;margin:0 0 4px;border:0;background:none;color:#8ce4e0;font-size:15px;font-weight:600;cursor:pointer}
 .q-back span{font-size:22px;line-height:1}
+
+/* 4.19.0 오늘 할 운동: 날짜·헬스장 한 줄(작게), 큰 종류 → 부위·기구, 운동 이름 추천, 하던 순서, 웜업·메인 */
+.q-plan{display:grid;gap:10px;margin:0 0 12px;padding:14px;border:1px solid #8ce4e044;border-radius:16px;background:linear-gradient(180deg,#8ce4e00f,transparent)}
+.q-when{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.q-when-btn{display:inline-flex;align-items:baseline;gap:6px;min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--text);font-size:15px;font-weight:700;cursor:pointer}
+.q-when-btn small{font-size:12px;font-weight:500;color:var(--muted)}
+.q-when-btn[disabled]{opacity:.6;cursor:default}
+.q-when-gym select{min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--text);font-size:16px;max-width:100%}
+.q-when-date{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.q-when-date input{min-height:40px;font-size:16px}
+.q-plan-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.q-plan-head h3{margin:0;font-size:18px}
+.q-plan-head small{font-size:12px;color:var(--muted)}
+.q-cats .chip,.q-sub .chip{min-height:40px}
+.q-sub{display:grid;gap:6px;padding-left:10px;border-left:2px solid #8ce4e055}
+.q-sub>small{font-size:12px;color:#8ce4e0}
+.q-title{margin:0}
+.q-title small{font-size:12px;color:var(--muted);font-weight:400}
+.q-titles .chip{min-height:36px}
+.qa-head.static{cursor:default}
+.q-order{list-style:none;counter-reset:qo;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:0}
+.q-order li{counter-increment:qo;display:flex;align-items:center;gap:4px}
+.q-order li::before{content:counter(qo);display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#8ce4e033;color:#8ce4e0;font-size:12px;font-weight:700}
+.q-wm{margin:8px 0;padding:10px 12px;border-radius:12px;background:#ffffff0a;display:grid;gap:8px}
+.q-wm p{margin:0;font-size:15px;font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.q-wm-tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.q-wm-tag.warm{background:#ffd58a2b;color:#ffd58a}
+.q-wm-tag.main{background:#8ce4e02b;color:#8ce4e0;margin-left:4px}
+.q-plan .chip-row{flex-wrap:wrap;overflow:visible;padding-bottom:0;mask-image:none;-webkit-mask-image:none}
+.q-plan .chip-row::-webkit-scrollbar{display:none}
+.q-title{display:grid;gap:6px;font-size:14px}
+.q-title>small{display:none}
+.q-title input::placeholder{font-size:15px}
+.qs-reps{flex-wrap:wrap;gap:6px;margin-top:8px}
+.qs-reps .chip{min-height:40px;min-width:52px;justify-content:center;font-variant-numeric:tabular-nums}
