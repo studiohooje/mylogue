@@ -2,6 +2,8 @@
 // 근거: NSCA·ACSM 교재의 움직임 분류(밀기·당기기·스쿼트·힌지·런지·운반·회전), 흔한 부상 부위 안내(일반 정보, 진단 아님).
 // 점수나 순위를 매기지 않는다(대표님 방침: 운동은 '했다'를 칭찬). 단계 사다리는 '할 수 있게 된 것'을 보여 주는 용도.
 import {EXERCISE_CATALOG, findExercise} from './catalog.js';
+import {EXERCISE_ENRICH} from './exercise-enrich.js';
+import {guideFor, youtubeQuery, youtubeURL} from './exercise-guide.js';
 
 // 움직임 유형: 이름 규칙(위에서부터 처음 맞는 것). part와 함께 쓴다.
 const PATTERN_RULES = [
@@ -126,14 +128,19 @@ export function knowledgeOf(ex) {
   return {name: e.name, pattern: patternOf(e), cautions: cautionsOf(e), tip: tipOf(e), ladder: ladderOf(e), alternatives: alternativesFor(e).map(x => x.name)};
 }
 // 입력 화면용 접힌 한 칸: 요령 한 줄 · 단계 · 바꿔 할 운동(누르면 그 종목으로) · 주의할 곳
-export function knowHTML(ex, esc = s => String(s)) {
+// 4.22.0 기본 사용법(머신 종류별 또는 종목 요령) · 안전 · 유튜브 검색 · 안내 문구를 함께. machine: 고른 머신
+export function knowHTML(ex, esc = s => String(s), {machine = null} = {}) {
   const k = knowledgeOf(ex); if (!k) return '';
+  const e = typeof ex === 'string' ? findExercise(ex) : ex, g = guideFor(e || {}, machine, EXERCISE_ENRICH[e?.id]?.c || []), q = youtubeQuery(e || {}, machine);
   const byName = n => EXERCISE_CATALOG.find(x => x.name === n);
   const chip = n => { const x = byName(n); return x ? `<button type="button" class="chip" data-q-ex="${esc(x.id)}">${esc(n)}</button>` : ''; };
-  return `<details class="ex-know"><summary>요령 · 바꿔 할 운동${k.cautions.length ? ` · 주의 ${esc(k.cautions.join('·'))}` : ''}</summary><div class="ex-know-body">`
-    + `<p>${esc(k.tip)}</p>`
+  return `<details class="ex-know"><summary>사용법 · 요령 · 바꿔 할 운동${k.cautions.length ? ` · 주의 ${esc(k.cautions.join('·'))}` : ''}</summary><div class="ex-know-body">`
+    + (g.steps.length ? `<p class="sub">${g.kind === 'machine' ? `기본 사용법 · ${esc(g.machineName)}` : '기본 동작'}</p><ol class="ex-steps">${g.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p>${esc(k.tip)}</p>`)
+    + (g.exCues.length ? `<p class="sub">이 운동에서는</p><ul class="ex-cues">${g.exCues.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
     + (k.ladder ? `<p class="ex-ladder"><b>${esc(k.ladder.title)}</b> ${k.ladder.steps.map((s, i) => `<span class="${i === k.ladder.index ? 'on' : ''}">${esc(s)}</span>`).join('<i aria-hidden="true">›</i>')}</p>` : '')
     + (k.alternatives.length ? `<p class="sub">기구가 없거나 붐빌 때</p><div class="chips">${k.alternatives.map(chip).join('')}</div>` : '')
-    + (k.cautions.length ? `<p class="hint">${esc(k.cautions.join('·'))}에 부담이 갈 수 있어요. 아프면 멈추고, 계속되면 전문가와 상의해 주세요.</p>` : '')
+    + `<p class="sub">안전</p><ul class="ex-safe">${g.safety.map(x => `<li>${esc(x)}</li>`).join('')}${k.cautions.length ? `<li>${esc(k.cautions.join('·'))}에 부담이 갈 수 있어요. 무리가 느껴지면 무게를 줄이거나 멈춰요.</li>` : ''}</ul>`
+    + `<a class="yt-link" href="${esc(youtubeURL(q))}" target="_blank" rel="noopener noreferrer"><span class="yt-ico" aria-hidden="true">▶</span><span>유튜브에서 <b>${esc(q)}</b> 찾아보기</span></a>`
+    + `<p class="hint ex-disclaimer">${esc(g.disclaimer)}</p>`
     + `</div></details>`;
 }

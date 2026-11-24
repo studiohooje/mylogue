@@ -1885,3 +1885,14 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .q-live-ico{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#8ce4e022;color:#8ce4e0;font-size:22px;flex:none}
 .q-live-line{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .q-live-badge{font-size:13px;font-weight:700;color:var(--muted)}.q-live-badge.live{color:#8ce4e0}
+
+/* 4.22.0 요령 칸: 기본 사용법 · 이 운동에서는 · 안전 · 유튜브 */
+.ex-know .ex-steps{margin:4px 0 8px;padding-left:22px;display:grid;gap:6px;font-size:14px;line-height:1.55;word-break:keep-all}
+.ex-know .ex-cues,.ex-know .ex-safe{margin:4px 0 8px;padding-left:18px;display:grid;gap:4px;font-size:14px;line-height:1.55;word-break:keep-all}
+.ex-know .ex-safe{color:var(--muted)}
+.yt-link{display:flex;align-items:center;gap:10px;min-height:44px;margin:8px 0 6px;padding:10px 12px;border-radius:12px;border:1px solid #ff4e4e44;background:#ff4e4e12;color:var(--text);font-size:14px;text-decoration:none;word-break:keep-all}
+.yt-link b{font-weight:700}
+.yt-ico{display:inline-grid;place-items:center;width:28px;height:20px;border-radius:6px;background:#ff3b3b;color:#fff;font-size:11px;flex:none}
+.yt-first{display:inline-flex;align-items:center;gap:6px;min-height:36px;margin:2px 0 6px;font-size:13px;color:#ffb4b4;text-decoration:none}
+.yt-first span{display:inline-grid;place-items:center;width:22px;height:16px;border-radius:5px;background:#ff3b3b;color:#fff;font-size:10px}
+.ex-disclaimer{font-size:12px;margin-top:4px}
