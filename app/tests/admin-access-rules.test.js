@@ -50,4 +50,13 @@ test('관리로그 보안 규칙',{skip:!host},async()=>{
   await assertFails(b.commit());
   // 본인 동기화는 그대로
   await assertSucceeds(setDoc(doc(owner,'users','u1','records','meals~m1'),{revision:3,payload:'{"id":"m1","y":2}',updatedAt:serverTimestamp()}));
+  // 4.27.0 B-08: 본인이 운영자 열람을 거부하면 관리자는 읽지도 고치지도 못한다(본인 동기화는 그대로)
+  await assertSucceeds(setDoc(doc(owner,'users','u1','meta','consent'),{version:'v',items:{operator:false},at:serverTimestamp()}));
+  await assertFails(getDoc(doc(admin,'users','u1','records','meals~m1')));
+  await assertFails(getDocs(collection(admin,'users','u1','records')));
+  b=writeBatch(admin);b.set(doc(admin,'users','u1','accessLog','meals~m1__r4'),log(admin,'meals~m1',4));b.set(doc(admin,'users','u1','records','meals~m1'),{revision:4,payload:'{"id":"m1","x":1}',updatedAt:serverTimestamp()});
+  await assertFails(b.commit());
+  await assertSucceeds(getDoc(doc(owner,'users','u1','records','meals~m1')));
+  await assertSucceeds(setDoc(doc(owner,'users','u1','meta','consent'),{version:'v',items:{operator:true},at:serverTimestamp()}));
+  await assertSucceeds(getDoc(doc(admin,'users','u1','records','meals~m1')));
  }finally{await env.cleanup()}});

@@ -8,12 +8,17 @@ let auth, authSDK, firestore, fsSDK;
 import {isAdminUser} from './admin.js';
 export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[],plan:'free',consent:null,consentLoaded:false};
 const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
+// 4.27.0 전수검사 E-01: 약한 신호(지하 헬스장)에서 서버 확인이 끝없이 기다려 첫 화면이 비지 않게 시간 제한.
+export const BOOT_WAIT_MS=4000;
+export function withTimeout(promise,ms=BOOT_WAIT_MS){let t;return Promise.race([promise,new Promise((_,reject)=>{t=setTimeout(()=>reject(Object.assign(Error('시간 초과'),{code:'timeout'})),ms)})]).finally(()=>clearTimeout(t))}
+// 이 기기에서 로그인한 적이 있는지(계정별 저장 키가 있는지). 없으면 계정 확인이 안 돼도 손님으로 연다.
+export function hadAccountOnDevice(){try{for(let i=0;i<localStorage.length;i++){if(/^mylogue\.v1\.user\./.test(localStorage.key(i)||''))return true}}catch{}return false}
 export async function refreshApproval(){
   const user=auth?.currentUser;
   if(!user){cloudState.approval='guest';return 'guest'}
   if(isAdminUser(user)){cloudState.approval='approved';cloudState.approvalError='';return 'approved'}
   try{
-    const snapshot=await fsSDK.getDocFromServer(profileRef(user.uid));
+    const snapshot=await withTimeout(fsSDK.getDocFromServer(profileRef(user.uid)));
     cloudState.approval=snapshot.exists()?snapshot.data().status:'not_applied';
     cloudState.plan=snapshot.exists()&&snapshot.data().plan==='plus'?'plus':'free';
     cloudState.approvalError='';
@@ -27,7 +32,7 @@ export async function loadAccountConsent(){
   if(!user)return null;
   // 4.18.0 서버에서 못 읽으면 기기에 남은 사본으로(일시적인 통신 실패로 동의 화면이 다시 뜨지 않게)
   const read=snap=>{if(snap?.exists()){const d=snap.data();cloudState.consent={version:String(d.version||''),items:d.items||{},at:d.at?.toDate?d.at.toDate().toISOString():''}}};
-  try{read(await fsSDK.getDocFromServer(consentRef(user.uid)))}catch(error){cloudState.consentError=String(error?.code||error);console.warn('동의 기록을 읽지 못했어요',error?.code||error);try{read(await fsSDK.getDoc(consentRef(user.uid)))}catch{}}
+  try{read(await withTimeout(fsSDK.getDocFromServer(consentRef(user.uid))))}catch(error){cloudState.consentError=String(error?.code||error);console.warn('동의 기록을 읽지 못했어요',error?.code||error);try{read(await withTimeout(fsSDK.getDoc(consentRef(user.uid)),2000))}catch{}}
   cloudState.consentLoaded=true;return cloudState.consent;
 }
 export async function saveAccountConsent(record){
@@ -57,7 +62,21 @@ export async function reviewApplicant(uid,status){
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 가입을 승인할 수 있습니다.');
   if(!uid||!['pending','approved','rejected'].includes(status))throw Error('신청 상태를 확인해 주세요.');
   await fsSDK.updateDoc(profileRef(uid),{status,reviewerUid:auth.currentUser.uid,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
-  return listApplicants();
+  return markReviewed([uid],status);
+}
+// 4.27.0 전수검사 AA-08: 승인할 때마다 users 전체를 다시 읽지 않고 화면 목록만 고친다(새로고침 버튼은 그대로 전체 읽기).
+export function markReviewed(uids,status,list=cloudState.applicants){
+  const set=new Set(uids);
+  cloudState.applicants=list.map(a=>set.has(a.uid)?{...a,status,reviewedAt:a.reviewedAt}:a);
+  return cloudState.applicants;
+}
+// 대기 중인 여러 계정을 한 번에(400건씩 나눠 일괄 저장)
+export async function reviewApplicants(uids,status){
+  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 가입을 승인할 수 있습니다.');
+  const list=[...new Set((uids||[]).filter(u=>typeof u==='string'&&/^[A-Za-z0-9]+$/.test(u)))];
+  if(!list.length||!['approved','rejected'].includes(status))throw Error('처리할 신청을 확인해 주세요.');
+  for(let i=0;i<list.length;i+=400){const b=fsSDK.writeBatch(firestore);for(const uid of list.slice(i,i+400))b.update(profileRef(uid),{status,reviewerUid:auth.currentUser.uid,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});await b.commit();markReviewed(list.slice(i,i+400),status)}
+  return cloudState.applicants;
 }
 // 4.17.0 플러스 전환(관리자 전용): 계정 문서의 plan을 바꾼다. 결제가 붙으면 같은 칸을 결제 기록이 채운다.
 export async function setAccountPlan(uid,plan){
@@ -89,9 +108,11 @@ export async function initializeCloud() {
     firestore=fsSDK.getFirestore(app);
     await refreshApproval();
     await loadAccountConsent();
+    if(cloudState.approval==='unknown')setTimeout(()=>refreshApproval().then(()=>{try{window.dispatchEvent(new Event('mylogue-cloud-refresh'))}catch{}}).catch(()=>{}),3000);
     // Cross-tab auth changes never leave a previous user's records on the screen.
     authSDK.onAuthStateChanged(auth,user=>{if((user?.uid||'')!==storageAccount())location.reload();});
   } catch {
+    if(!auth?.currentUser&&!hadAccountOnDevice()){cloudState.error='';cloudState.offline=true;return}
     cloudState.error='계정 상태를 확인하지 못해 기록 화면을 잠갔습니다. 기존 기록은 보존되어 있습니다. 앱을 다시 열어 주세요.';
     const root=document.getElementById('app');
     if(root){root.innerHTML='<main class="card" style="margin:24px"><h2>계정 확인이 필요합니다</h2><p>계정 상태를 확인하지 못해 기록 화면을 잠갔습니다. 기존 기록은 그대로 보존되어 있습니다.</p><button class="button" id="cloud-boot-retry">다시 시도</button></main>';document.getElementById('cloud-boot-retry')?.addEventListener('click',()=>location.reload());}
@@ -206,7 +227,8 @@ const adminUser=()=>{const u=auth?.currentUser;if(!isAdminUser(u))throw Error('�
 export async function adminLoadUser(uid){
   adminUser();
   if(!uid)throw Error('계정을 골라 주세요.');
-  const snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,'records')),records={},payloads={};
+  let snap;try{snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,'records'))}catch(e){if(e?.code==='permission-denied')throw Error('이 사용자는 운영자 열람에 동의하지 않았어요(동의는 사용자 설정에서만 바꿀 수 있어요).');throw e}
+  const records={},payloads={};
   snap.forEach(doc=>{const v=doc.data();if(!validRecordKey(doc.id))return;records[doc.id]={revision:v.revision,payload:v.payload??null};payloads[doc.id]=v.payload??null});
   return {records,db:recordsToDB(payloads)};
 }

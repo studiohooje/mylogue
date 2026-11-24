@@ -112,12 +112,14 @@ export function landingHTML({installHTML='', returning=false}={}){
   <div class="ld-sky" aria-hidden="true"></div>
   ${halo}
   <p class="ld-word" aria-label="Mylogue">My<b>log</b>ue</p>
+  <p class="ld-what">체중·식단·운동을 한 줄로 남기는 건강 기록 앱</p>
   <h1>기록만으로,<br>이미 절반은 해냈어요.</h1>
   <p class="ld-lead">칼같은 식단, 땀 흘리는 운동이 필요한 날도 오겠지만 — 그 전에 오늘 남긴 한 줄이 먼저예요. 기록하는 사람은 이미 남들보다 한 걸음 앞에 있어요.</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup">Google로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo">로그인 전에 둘러보기</button>
   </div>
+  <p class="ld-beta">지금은 소수 베타예요. Google로 시작하면 이용 신청을 하고, 운영자가 승인하면 여러 기기에서 기록이 이어져요. 기다리는 동안엔 둘러보기나 가입 없이 쓰기를 이용할 수 있어요.</p>
   ${returning ? '<button type="button" class="ld-link" id="landing-back">내 기록으로 돌아가기</button>' : '<button type="button" class="ld-link" id="landing-more">예시 화면과 이야기 먼저 보기 ↓</button>'}
  </section>
 
@@ -173,7 +175,7 @@ export function landingHTML({installHTML='', returning=false}={}){
    <button type="button" class="ld-btn" id="landing-demo3">먼저 둘러보기</button>
   </div>
   ${installHTML}
-  <p class="ld-fine">가입하면 기록이 여러 기기에 이어져요. 가입 없이 쓰면 이 기기에만 저장돼요.</p>
+  <p class="ld-fine">가입은 베타 기간 동안 운영자 승인 뒤에 열려요. 승인되면 기록이 여러 기기에 이어지고, 가입 없이 쓰면 이 기기에만 저장돼요.</p>
   <button type="button" class="ld-link" id="landing-guest">${returning ? '내 기록으로 돌아가기' : '가입 없이 이 기기에서만 써 볼게요'}</button>
   <p class="legal-foot"><a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a> · <a href="mailto:studiohooje@gmail.com">문의</a><br>© 2026 Studio Hooje. All rights reserved.</p>
  </section>

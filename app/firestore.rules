@@ -39,9 +39,14 @@ service cloud.firestore {
     }
     // 4.15.0 관리로그(대표님 결정 2026-11-23: 베타 기간 동안 관리자 전체 열람·수정, 정식 서비스 때 '허락받은 동안만'으로 전환)
     // 관리자 쓰기는 같은 일괄 저장 안에 접근 기록(accessLog/{recordId}__r{revision})이 함께 생겨야 하고, 최근 60분 안에 로그인한 상태여야 한다.
+    // 4.27.0 전수검사 B-08: 운영자 열람은 선택 동의. 사용자가 명시적으로 거부(operator == false)했으면 관리자도 기록을 읽거나 고칠 수 없다.
+    function operatorAllowed(uid) {
+      return !exists(/databases/$(database)/documents/users/$(uid)/meta/consent)
+        || get(/databases/$(database)/documents/users/$(uid)/meta/consent).data.items.get('operator', true) != false;
+    }
     function recentLogin() { return request.auth.token.auth_time > request.time.toMillis() / 1000 - 3600; }
     function auditedAdminWrite(uid, recordId) {
-      return admin() && recentLogin()
+      return admin() && recentLogin() && operatorAllowed(uid)
         && existsAfter(/databases/$(database)/documents/users/$(uid)/accessLog/$(recordId + '__r' + string(request.resource.data.revision)))
         && auditLogMatches(getAfter(/databases/$(database)/documents/users/$(uid)/accessLog/$(recordId + '__r' + string(request.resource.data.revision))).data, recordId);
     }
@@ -90,14 +95,14 @@ service cloud.firestore {
       allow delete: if owner(uid);
     }
     match /users/{uid}/records/{recordId} {
-      allow read: if (owner(uid) && approved()) || admin();
+      allow read: if (owner(uid) && approved()) || (admin() && operatorAllowed(uid));
       allow create: if validRecord() && request.resource.data.revision == 1
         && ((owner(uid) && approved()) || auditedAdminWrite(uid, recordId));
       allow update: if validRecord() && request.resource.data.revision == resource.data.revision + 1
         && ((owner(uid) && approved()) || auditedAdminWrite(uid, recordId));
       // Deletions use versioned null payloads, never remove tombstones.
       // 4.11.0 예외: 계정 삭제 때 본인은 자기 기록 문서를 실제로 지운다(승인이 취소된 뒤에도 지울 수 있게 approved는 묻지 않음).
-      allow list: if owner(uid) || admin();
+      allow list: if owner(uid) || (admin() && operatorAllowed(uid));
       allow delete: if owner(uid);
       function validRecord() {
         return request.resource.data.keys().hasOnly(['revision','payload','updatedAt'])

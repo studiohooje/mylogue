@@ -3,7 +3,7 @@ import {$s,$f} from './app-state.js';
 import {QUESTIONS,prefsOf,withPrefs,onboardingPick,onboardingMove,newOnboarding,finishOnboarding,skipOnboarding,applyPrefClick,emptyAfterWorkout,afterWorkoutFromLast,readAfterWorkoutForm} from './prefs.js';
 import {emptyPlan,planFromWorkout,planFromRoutine,readPlanForm,completeSet,skipExercise,finishRun,addRest,endRest,editCurrent,current as guideCurrent,scheduleRestAlert,cancelRestAlert} from './guide.js';
 import {addGymPlace,removeGym,centerFor} from './places.js';
-import {cloudState,cloudLogin,cloudLogout,synchronize,refreshApproval,applyForAccess,reviewApplicant,setAccountPlan,deleteAccount} from './cloud-sync.js';
+import {cloudState,cloudLogin,cloudLogout,synchronize,refreshApproval,applyForAccess,reviewApplicant,reviewApplicants,setAccountPlan,deleteAccount} from './cloud-sync.js';
 import {planItems} from './admin-panel.js';
 import {scopedKey} from './storage-scope.js';
 import {gymKeyOf,levelToKg} from './gym-machines.js';
@@ -256,6 +256,12 @@ export async function cloudClick(target){
   const match=/^cloud-plan-(plus|free)-([A-Za-z0-9]+)$/.exec(id);
   if(!match)throw Error('계정을 확인해 주세요.');
   await setAccountPlan(match[2],match[1]);$f.render();const who=cloudState.applicants.find(a=>a.uid===match[2])?.email||'이 계정';$f.toast(match[1]==='plus'?`${who} 플러스 켜짐`:`${who} 플러스 꺼짐`);return true;
+ }
+ if(id==='cloud-review-all-approved'){
+  const uids=cloudState.applicants.filter(a=>a.status==='pending').map(a=>a.uid);
+  if(!uids.length)return true;
+  if(!confirm(`승인 대기 ${uids.length}건을 모두 승인할까요? 승인된 계정은 기록 동기화와 공용 도감을 쓸 수 있어요.`))return true;
+  await reviewApplicants(uids,'approved');$s.adminJust={};$f.render();$f.toast(`${uids.length}건 승인 완료`);return true;
  }
  if(id.startsWith('cloud-review-')){
   const match=/^cloud-review-(approved|pending|rejected)-([A-Za-z0-9]+)$/.exec(id);

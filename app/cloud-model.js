@@ -50,6 +50,16 @@ export function recordsToDB(records, local = emptyDB()) {
 export function isFreshDevice(db = {}, baseline = {}) {
   return Object.keys(baseline).length === 0 && LISTS.every(k => !(db[k]||[]).length) && !(db.favorites||[]).length;
 }
+// 세 갈래 합치기: 기준(b)에서 이 기기(l)가 바꾼 칸은 l, 아니면 서버(r). 객체가 아니면 이 기기 값.
+export function mergeSetting(l, r, b){
+  try {
+    const L = JSON.parse(l), R = JSON.parse(r), B = b ? JSON.parse(b) : {};
+    if (!L || !R || typeof L !== 'object' || typeof R !== 'object' || Array.isArray(L) || Array.isArray(R)) return l;
+    const out = {...R};
+    for (const k of new Set([...Object.keys(L), ...Object.keys(B || {})])) { if (JSON.stringify(L[k]) !== JSON.stringify(B?.[k])) { if (k in L) out[k] = L[k]; else delete out[k]; } }
+    return JSON.stringify(out);
+  } catch { return l; }
+}
 export function planSync(local, remote, baseline = {}, choices = {}, {fresh = false} = {}) {
   const merged = {}, writes = [], conflicts = [];
   // 4.4.1 점검 B-1: 이 계정으로 처음 맞추는 기기(baseline 없음)는 기록이 이미 있어도 설정·하루 상태·체크인은 서버 값을 쓴다.
@@ -64,6 +74,9 @@ export function planSync(local, remote, baseline = {}, choices = {}, {fresh = fa
     else if (choices[key]?.side === 'remote' && choices[key].local === l && choices[key].remote === r) value = r;
     else if (fresh && !baseline[key]) value = r ?? l;
     else if (firstSync && isSetting(key)) value = r ?? l;
+    // 4.27.0 전수검사 DAT-05: 설정·하루 상태·체크인은 양쪽이 바꿔도 동기화 전체를 멈추지 않는다.
+    // 설정은 칸마다 합치고(바뀐 쪽 우선, 둘 다 바꿨으면 이 기기), 나머지는 이 기기 값으로. 기록(식사·운동 등)은 예전처럼 물어본다.
+    else if (isSetting(key) && l !== null && r !== null) value = mergeSetting(l, r, b);
     else { conflicts.push({key,local:l,remote:r}); continue; }
     if (value !== null) merged[key] = value;
     if (value !== r) writes.push({key,payload:value,expectedRevision:remote[key]?.revision || 0});

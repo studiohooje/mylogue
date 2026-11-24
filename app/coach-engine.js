@@ -44,13 +44,13 @@ export function analyze(db, today) {
   const lowDays = loggedDays.filter(([, d]) => d.kcal > 0 && d.kcal < lowLine).length;
   const lastWeekLow = loggedDays.filter(([date, d]) => date > addDays(today, -8) && d.kcal > 0 && d.kcal < lowLine).length;
   const binge = loggedDays.some(([, d]) => d.kcal > (pr.sex === 'male' ? 3800 : 3200));
-  if (lastWeekLow >= low.days && binge) add('safety.ed-pattern', 'safety', '아주 적게 먹는 날과 많이 먹는 날이 번갈아 나타나고 있어요. 몸과 마음이 지치기 쉬운 흐름이에요. 숫자를 잠시 가리고, 힘들면 전문가와 이야기해 보세요(정신건강 위기상담 109).', 'ed-signals');
+  if (lastWeekLow >= low.days && binge) add('safety.ed-pattern', 'safety', '기록에 아주 적게 먹은 날과 많이 먹은 날이 번갈아 있어요. 숫자를 보는 게 부담되면 잠시 가려도 괜찮아요. 마음이 힘들면 누군가와 이야기해 보세요(정신건강 위기상담 109).', 'ed-signals');
   else if (lastWeekLow >= low.days) add('safety.low-intake', 'safety', `최근 일주일 중 ${lastWeekLow}일은 섭취가 꽤 적었어요. 너무 적게 먹으면 오히려 지치고 반동이 오기 쉬워요. 끼니를 조금 더 챙겨 보세요.`, 'low-intake');
   // 감량 속도: 최근 7일 평균 vs 14일 전 7일 평균
   const nowAvg = weekAvg(ws, today), prevAvg = weekAvg(ws, addDays(today, -14));
   if (nowAvg && prevAvg && ws.filter(x => x.date > addDays(today, -7)).length >= 3 && ws.filter(x => x.date > addDays(today, -21) && x.date <= addDays(today, -14)).length >= 3) {
     const weeklyPct = (prevAvg - nowAvg) / prevAvg * 100 / 2;
-    if (weeklyPct > knowledge('loss-rate').value.maxWeeklyPct) add('safety.loss-too-fast', 'safety', `2주 동안 주에 약 ${r1(weeklyPct)}%씩 빠지고 있어요. 이보다 천천히(주 0.5~1%) 빼야 근육을 지키고 다시 찌지 않아요.`, 'loss-rate');
+    if (weeklyPct > knowledge('loss-rate').value.maxWeeklyPct) add('safety.loss-too-fast', 'safety', `2주 동안 주에 약 ${r1(weeklyPct)}%씩 줄었어요. 흔히 권하는 속도(주 0.5~1%)보다 빨라요. 조금 천천히 가도 괜찮아요.`, 'loss-rate');
   }
   const safety = out.some(x => x.level === 'safety');
 

@@ -7,6 +7,16 @@ export function goalSettingsHTML(settings={}){
  return `<section class="card nutrition-settings"><h3>일일 식단 목표</h3><div class="gw-entry"><div><b>잘 모르겠다면 추천받기</b><small>나이·키·체중·목표로 유지 칼로리를 계산하고 칼로리·탄단지 비율을 여러 개 제안해요.</small></div><button type="button" class="button" id="gw-open">추천받아 정하기</button></div><p class="hint">직접 정하려면(고급) 아래에 g 또는 열량 비율로 입력하세요. 비율 모드에서는 목표 칼로리로 g을 계산합니다.</p><form id="goal-form" class="form-grid"><label class="field">목표 설정 방식<select name="goalMode"><option value="grams" ${mode==='grams'?'selected':''}>탄단지 g 직접 입력</option><option value="ratio" ${mode==='ratio'?'selected':''}>탄단지 열량 비율 %</option></select></label><label class="field">목표 칼로리 kcal<input name="calorieGoal" type="number" min="0" value="${esc(s.calorieGoal??2200)}"></label><label class="field">탄수화물 g<input name="carbsGoal" type="number" min="0" step="any" value="${esc(s.carbsGoal??250)}"></label><label class="field">단백질 g<input name="proteinGoal" type="number" min="0" step="any" value="${esc(s.proteinGoal??150)}"></label><label class="field">지방 g<input name="fatGoal" type="number" min="0" step="any" value="${esc(s.fatGoal??70)}"></label><div class="field wide"><strong>탄단지 목표 열량 비율</strong><p class="hint">비율 모드에서는 세 값을 합쳐 100%로 입력합니다.</p></div><label class="field">탄수화물 %<input name="carbsPctGoal" type="number" min="0" max="100" step="any" value="${esc(s.carbsPctGoal??40)}"></label><label class="field">단백질 %<input name="proteinPctGoal" type="number" min="0" max="100" step="any" value="${esc(s.proteinPctGoal??30)}"></label><label class="field">지방 %<input name="fatPctGoal" type="number" min="0" max="100" step="any" value="${esc(s.fatPctGoal??30)}"></label><label class="field wide">바벨 자체 중량 kg<input name="barbellWeightKg" type="number" min="0" step="0.5" value="${esc(s.barbellWeightKg??20)}"></label><button class="button wide">목표 저장</button></form></section>`;
 }
 
+// 4.27.0 전수검사 C-04: 목표 칼로리가 바뀌면 탄단지 g을 지금 비율(없으면 지금 g의 열량 비율)대로 다시 맞춘다
+export function rescaleMacros(settings={}, kcal){
+ const k=Number(kcal); if(!(k>0)) return settings;
+ let pc=Number(settings.carbsPctGoal)||0, pp=Number(settings.proteinPctGoal)||0, pf=Number(settings.fatPctGoal)||0;
+ if(!(pc+pp+pf>0)){ const c=(Number(settings.carbsGoal)||0)*4, p=(Number(settings.proteinGoal)||0)*4, f=(Number(settings.fatGoal)||0)*9, t=c+p+f; if(!(t>0)) return settings; pc=c/t*100; pp=p/t*100; pf=f/t*100; }
+ const r=v=>Math.round(v*10)/10;
+ // 단백질을 체중 기준(GLP-1 단백질 우선 등)으로 정했으면 단백질 g은 그대로 두고 남은 열량을 탄수·지방 비율로 나눈다
+ if(settings.macroPlan?.rules?.protein?.mode==='perKg' && Number(settings.proteinGoal)>0){ const prot=Number(settings.proteinGoal), rest=Math.max(0,k-prot*4), cf=pc+pf; if(cf>0) return {...settings, carbsGoal:r(rest*pc/cf/4), fatGoal:r(rest*pf/cf/9)}; }
+ return {...settings, carbsGoal:r(k*pc/100/4), proteinGoal:r(k*pp/100/4), fatGoal:r(k*pf/100/9)};
+}
 export function saveGoalSettings(settings={},data={}){
  const mode=data.goalMode==='ratio'?'ratio':'grams';
  /* 4.27.0 전수검사 C-10: 0이 아닌데 800kcal 미만인 목표는 저장하지 않는다(문답의 하한과 같게) */if(positive(data.calorieGoal)>0&&positive(data.calorieGoal)<800)throw Error('하루 목표 칼로리는 800kcal 이상으로 정해 주세요. 더 낮은 목표는 의료진과 상의해 주세요.');

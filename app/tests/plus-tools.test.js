@@ -10,7 +10,7 @@ test('시뮬레이터: 지금 흐름 + 바꾼 것, 범위와 경고', () => {
   assert.ok(a.hasTrend && a.low < a.mid && a.mid < a.high);
   assert.ok(b.perWeek < a.perWeek); assert.match(b.warn, /1%/);
   assert.equal(simulate({body: []}, today, {}), null);
-  assert.match(simulatorHTML({kcal: 0, workouts: 0, weeks: 12}, a), /12주 뒤 체중은 대략/);
+  assert.match(simulatorHTML({kcal: 0, workouts: 0, weeks: 12}, a), /12주 뒤 단순 계산: 대략/);
 });
 test('상황 플랜: 8가지, 무료는 다음 날 안심 안내만', () => {
   assert.equal(SITUATIONS.length, 8);

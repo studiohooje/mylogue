@@ -167,3 +167,24 @@ test('DAT-03: 저장 공간이 가득 차면 한국어로 알리고 기존 기�
  load();
  assert.throws(() => save({...emptyDB(), meals: Array.from({length: 5}, (_, i) => cleanMeal({date: D, name: '밥' + i, servingQty: 1, servingUnit: '공기', calories: 300}))}), /저장 공간이 가득/);
 });
+
+test('DAT-05·07·C-04: 설정은 칸마다 합치고, 헬스 걷기 출처를 남기고, 페이즈 시작 때 탄단지도 다시', async () => {
+ const {planSync, mergeSetting} = await import('../cloud-model.js');
+ const b = JSON.stringify({a: 1, lastGrams: {밥: 210}, goal: 2000});
+ const l = JSON.stringify({a: 1, lastGrams: {밥: 150}, goal: 2000});
+ const r = JSON.stringify({a: 1, lastGrams: {밥: 210}, goal: 1800});
+ const plan = planSync({'settings~main': l}, {'settings~main': {revision: 2, payload: r}}, {'settings~main': {revision: 1, payload: b}});
+ assert.equal(plan.conflicts.length, 0);
+ assert.deepEqual(JSON.parse(plan.merged['settings~main']), {a: 1, lastGrams: {밥: 150}, goal: 1800});
+ assert.equal(mergeSetting('x', 'y', null), 'x');
+ const meal = planSync({'meals~m1': '{"q":1}'}, {'meals~m1': {revision: 2, payload: '{"q":2}'}}, {'meals~m1': {revision: 1, payload: '{"q":0}'}});
+ assert.equal(meal.conflicts.length, 1, '기록은 예전처럼 물어봄');
+ const {cleanWorkout} = await import('../domain.js');
+ const w = cleanWorkout({date: D, title: '걷기(헬스 연동)', source: 'health', healthSteps: 8123, exercises: [{name: '걷기', kind: 'cardio', sets: [], durationMin: 60}]});
+ assert.equal(w.source, 'health'); assert.equal(w.healthSteps, 8123);
+ const {rescaleMacros} = await import('../nutrition-goals.js');
+ const s = rescaleMacros({carbsPctGoal: 50, proteinPctGoal: 25, fatPctGoal: 25, carbsGoal: 250, proteinGoal: 125, fatGoal: 56}, 1600);
+ assert.equal(s.carbsGoal, 200); assert.equal(s.proteinGoal, 100);
+ const glp = rescaleMacros({macroPlan: {rules: {protein: {mode: 'perKg'}}}, carbsPctGoal: 40, proteinPctGoal: 35, fatPctGoal: 25, proteinGoal: 120}, 1500);
+ assert.equal(glp.proteinGoal, 120, '체중 기준 단백질은 그대로');
+});

@@ -75,3 +75,27 @@ test('레시피 분해 실패는 횟수 미차감', async () => {
   const b = await (await route(await post('recipe', {text: '이건 레시피가 아님'}, tok), s.deps)).json();
   assert.equal(b.recipe, null); assert.equal(b.refunded, true);
 });
+
+// 4.27.0 전수검사 S-02·B-10: 실패 환불을 이용한 무제한 호출 막기, 1인 월 원가 상한
+test('인식 실패(기록 0건)를 계속 보내도 AI 호출은 하루 한도의 3배에서 멈춘다', async () => {
+  resetKeyCache(); const s = setup({plan: 'plus', answer: () => '```json\n{"mylogue":1,"records":[]}\n```'}); const tok = await token();
+  const st = {};
+  for (let i = 0; i < 30; i++) { const r = await route(await post('parse', {images: [img('p' + i)]}, tok), s.deps); st[r.status] = (st[r.status] || 0) + 1; }
+  assert.equal(s.calls.length, 9); // LIMIT_PHOTO 플러스 3 × 3
+  assert.equal(st[429], 21);
+});
+test('거절(refusal)되는 질문을 계속 보내도 호출이 멈춘다', async () => {
+  resetKeyCache(); const s = setup({plan: 'plus'}); s.deps.callClaude = async (m, o) => { s.calls.push(o); return {text: '', stopReason: 'refusal', model: o.model}; };
+  const tok = await token();
+  for (let i = 0; i < 20; i++) await route(await post('chat', {question: '질문 ' + i}, tok), s.deps);
+  assert.equal(s.calls.length, 6); // LIMIT_CHAT 플러스 2 × 3
+});
+test('1인 월 원가 상한(MONTHLY_COST_WON)을 넘으면 그 달은 AI를 부르지 않는다', async () => {
+  resetKeyCache(); const s = setup({plan: 'plus'}); s.deps.env.MONTHLY_COST_WON = '1'; s.deps.env.COST_WON = 'parse:0.4'; const tok = await token();
+  const codes = [];
+  for (let i = 0; i < 4; i++) codes.push((await route(await post('parse', {text: '점심 비빔밥 ' + i}, tok), s.deps)).status);
+  assert.deepEqual(codes, [200, 200, 429, 429]);
+  assert.equal(s.calls.length, 2);
+  const r = await route(await post('parse', {text: '저녁'}, tok), s.deps);
+  assert.match((await r.json()).error, /다음 달 1일/);
+});
