@@ -27,13 +27,14 @@ export const METRICS = [
 export function dietScore(t, s = {}){
  const goal = Number(s.calorieGoal)||0;
  if(!t || !goal || !(t.calories>0)) return null;
- const cal = band(Math.abs(t.calories/goal - 1), 0.05, 0.5);
+ // 4.28.0 대표님: 목표 근처에서 조금 넘친 날(칼로리 +11%·탄수 +18%)이 91점은 짜다 → 만점 구간과 감점 폭을 넓힘. 저장값이 아니라 그때그때 계산이라 지난 날짜에도 그대로 적용된다.
+ const cal = band(Math.abs(t.calories/goal - 1), 0.10, 0.6);
  const g = k => Number(s[`${k}Goal`])||0;
  if(!g('carbs') || !g('protein') || !g('fat')) return {total:Math.round(cal*100), parts:{calories:Math.round(cal*100)}};
  const pm = t.protein/g('protein');
- const pro = clamp(1 - Math.max(0, 1-pm)/0.6 - Math.max(0, pm-1.3)/1.0);
- const carb = band(Math.abs(t.carbs/g('carbs') - 1), 0.1, 0.6);
- const fat = band(Math.abs(t.fat/g('fat') - 1), 0.1, 0.6);
+ const pro = clamp(1 - Math.max(0, 0.95-pm)/0.65 - Math.max(0, pm-1.35)/1.0);
+ const carb = band(Math.abs(t.carbs/g('carbs') - 1), 0.15, 0.7);
+ const fat = band(Math.abs(t.fat/g('fat') - 1), 0.15, 0.7);
  const parts = {calories:Math.round(cal*40), protein:Math.round(pro*25), carbs:Math.round(carb*20), fat:Math.round(fat*15)};
  return {total:parts.calories + parts.protein + parts.carbs + parts.fat, parts};
 }
@@ -80,6 +81,6 @@ export function dietFlowHTML(db, {period = 30, end} = {}){
  return `<section class="section card diet-flow"><div class="df-head"><h3>식단 흐름</h3><div class="df-tools"><div class="df-period" role="group" aria-label="기간">${[[7,'1주'],[30,'1달'],[90,'3달']].map(([d, l]) => `<button type="button" class="${d===period?'on':''}" data-df-period="${d}" aria-pressed="${d===period}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
  <div class="gc-legend"><span><i class="lb"></i>목표 범위</span><span><i class="ld"></i>범위 안</span><span><i class="lr"></i>범위 밖</span><span>큰 점 = ${end && end!==ymd(new Date()) ? '보는 날' : '오늘'}</span></div>
  <div class="df-grid">${tile(series, 'score', s, true)}${tile(series, 'calories', s, true)}<div class="df-macros">${['carbs','protein','fat'].map(k => tile(series, k, s, false)).join('')}</div></div>
- <details class="df-how"><summary>점수는 이렇게 매겨요</summary><p>목표 칼로리에 가까울수록 최대 40점(±5% 안이면 만점), 단백질은 목표를 채울수록 최대 25점(130%까지는 넘쳐도 괜찮아요), 탄수 20점·지방 15점은 목표 ±10% 안이면 만점이에요. 탄단지 목표가 없으면 칼로리만으로 매겨요. 예정 식사는 넣지 않아요. 띠는 점수 80~100점, 나머지는 목표 ±10%예요.</p></details>
+ <details class="df-how"><summary>점수는 이렇게 매겨요</summary><p>목표 칼로리에 가까울수록 최대 40점(±10% 안이면 만점), 단백질은 목표의 95%를 채우면 25점 만점(135%까지는 넘쳐도 괜찮아요), 탄수 20점·지방 15점은 목표 ±15% 안이면 만점이에요. 조금 넘치거나 모자란 날은 조금만 깎아요. 탄단지 목표가 없으면 칼로리만으로 매겨요. 예정 식사는 넣지 않아요. 띠는 점수 80~100점, 나머지는 목표 ±10%예요.</p></details>
  </section>`;
 }

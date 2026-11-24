@@ -88,3 +88,12 @@ test('AA-07: 원격 공지는 형식·기간·링크를 검사하고, 확인하�
  assert.equal(cleanNotice(empty), null); // 기본 파일은 아무것도 띄우지 않는다
  assert.match(src('build.mjs'), /'error-log\.js','notice\.json'/);
 });
+test('식단 점수 완화(대표님 2026-11-24): 칼로리 +11%·탄수 +18% 날이 98점, 크게 넘친 날은 여전히 낮게', async () => {
+ const {dietScore, dietSeries} = await import('../diet-trends.js');
+ const s = {calorieGoal: 2300, carbsGoal: 262.5, proteinGoal: 168.8, fatGoal: 63.9};
+ assert.equal(dietScore({calories: 2564, carbs: 308.8, protein: 196.3, fat: 61.1}, s).total, 98);
+ assert.ok(dietScore({calories: 3500, carbs: 450, protein: 120, fat: 120}, s).total < 40);
+ // 저장값이 아니라 계산값이라 지난 날짜에도 그대로 적용된다
+ const ser = dietSeries({settings: s, meals: [{date: '2026-11-01', calories: 2564, carbs: 308.8, protein: 196.3, fat: 61.1}]}, {days: 3, end: '2026-11-02'});
+ assert.equal(ser.find(x => x.date === '2026-11-01').score, 98);
+});
