@@ -145,7 +145,7 @@ export function normalizeDB(raw,{lenient=false}={}){
  // 4.27.0 재검사 N-1·N-8: 보관분은 백업 파일에도 실려 가져오기 때 이어지고, 같은 기록은 한 번만 둔다. 기록 키(id)를 함께 두어 동기화가 건드리지 않게 한다.
  {const kept=Array.isArray(raw.quarantine)?raw.quarantine.filter(q=>q&&typeof q==='object'&&!Array.isArray(q)):[],seen=new Set(),all=[];for(const q of [...kept,...bad.map(b=>({...b,id:b.id??(b.raw&&typeof b.raw==='object'?b.raw.id:undefined),at:new Date().toISOString()}))]){const k=quarantineSig(q);if(seen.has(k))continue;seen.add(k);all.push(q)}if(all.length)db.quarantine=all.slice(-QUARANTINE_MAX)}
  for(const m of db.meals)if(['fasting','unrecorded'].includes(db.dayStates[m.date]))db.dayStates[m.date]='partial';
- db.settings={...db.settings,...raw.settings};if(!Number.isFinite(Number(db.settings.barbellWeightKg))||Number(db.settings.barbellWeightKg)<0)db.settings.barbellWeightKg=20;
+ db.settings={...db.settings,...raw.settings};/* 4.28.0 밤샘 E-1이 찾음: 목표 숫자 칸이 숫자가 아니면(동기화·백업으로 들어온 글자) 화면에 NaN이 찍혔다 → 숫자로, 안 되면 0 */for(const k of ['calorieGoal','carbsGoal','proteinGoal','fatGoal','carbsPctGoal','proteinPctGoal','fatPctGoal','goalWeight']){if(db.settings[k]==null||db.settings[k]==='')continue;const n=Number(db.settings[k]);db.settings[k]=Number.isFinite(n)&&n>=0?n:0}if(!Number.isFinite(Number(db.settings.barbellWeightKg))||Number(db.settings.barbellWeightKg)<0)db.settings.barbellWeightKg=20;
  db.settings.workoutTitles=Array.isArray(db.settings.workoutTitles)?[...new Set(db.settings.workoutTitles.map(x=>String(x).trim()).filter(Boolean))]:[];
  db.settings.gyms=Array.isArray(db.settings.gyms)?[...new Set(db.settings.gyms.map(x=>String(x).trim()).filter(Boolean))]:[];
  {const gp=cleanGymPlaces(db.settings);if(Object.keys(gp).length)db.settings.gymPlaces=gp;else delete db.settings.gymPlaces;}
