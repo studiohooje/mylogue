@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {flagDoubts} from './food-db-check.mjs';
+import {normalizeUnit} from './unit-normalize.mjs';
 // 4.27.0 전수검사 F-01: 근거 없이 값을 바꾸지 않고(대표님 원칙) '값 확인 필요'로 내려 검색 뒤로.
 // 한식 대표(k·e) 중 1회 무게가 0인 그릇·인분 행과, 1회분 열량이 3~10배 낮게 들어간 것으로 확인된 행.
 export const KR_DOUBT = new Set(['라면','짜장라면','비빔면','막국수','토마토스파게티','카레라이스','동태탕','꽃게탕','설렁탕','잔치국수','바지락칼국수','쌀국수','콩나물해장국','알탕','도가니탕','버섯전골','샤브샤브']);
@@ -32,6 +33,7 @@ export function applyKrFix(r, fix = KR_FIXES[r[0]]) {
 export function fixRows(rows){
  let doubt = 0, tub = 0;
  for (const r of rows) {
+  { const u = normalizeUnit(r); if (u) { r[0] = u.name; r[2] = u.to; } } // 4.28.0 밤샘 A-2: 크기·도우 이름이 단위 칸에 있던 프랜차이즈 행
   if (applyKrFix(r)) { if (r[10] === 1) doubt++; continue; }
   if ((r[8] === 'k' || r[8] === 'e') && (KR_DOUBT.has(r[0]) || (!(r[3] > 0) && /그릇|인분/.test(r[2])))) { if (r.length < 11) r[9] = r[9] ?? ''; if (r[10] !== 1) { r[10] = 1; doubt++; } }
   if (r[2] === '개' && r[3] >= 250 && (r[8] === 'm' || r[8] === 'p') && r[4] / r[3] >= 2.5) { r[2] = '통'; tub++; }

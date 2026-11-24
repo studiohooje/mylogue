@@ -111,3 +111,15 @@ test('밤샘 A-1: 한식 대표값 교체는 성인 1인분 근거 2행 이상·
  }
  assert.ok(n >= 30);
 });
+test('밤샘 A-2: 크기·도우 이름이 단위 칸에 있던 프랜차이즈 행은 잔·조각·판·컵으로(값은 그대로)', async () => {
+ const {normalizeUnit, OK_UNITS} = await import('../tools/unit-normalize.mjs');
+ assert.deepEqual(normalizeUnit(['아메리카노', '스타벅스', 'Tall', 355, 10, 2, 1, 0, 'f', '']), {from: 'Tall', to: '잔', name: '아메리카노 (Tall)'});
+ assert.equal(normalizeUnit(['불고기 · 크림치즈 L', '미스터피자', '크림치즈', 114, 311, 30, 12, 15, 'f', '']).to, '조각');
+ assert.equal(normalizeUnit(['꿈을피자 R', '피자알볼로', 'R', 564, 1420, 150, 60, 60, 'f', '']).to, '판');
+ assert.equal(normalizeUnit(['프라이 Regular', '쉐이크쉑', 'Regular', 0, 470, 60, 6, 22, 'f', '']).to, '개');
+ assert.equal(normalizeUnit(['그린티 아이스크림', '배스킨라빈스', '싱글레귤러', 115, 250, 30, 4, 12, 'f', '']).to, '컵');
+ assert.equal(normalizeUnit(['샌드위치', '서브웨이', 'cm', 241, 406, 50, 20, 12, 'f', '']), null); // 뜻이 분명하지 않으면 그대로
+ const db = JSON.parse(readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
+ const odd = db.rows.filter(r => r[8] === 'f' && !OK_UNITS.has(r[2])).length;
+ assert.ok(odd < 200, String(odd));
+});
