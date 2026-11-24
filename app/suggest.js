@@ -44,7 +44,7 @@ export function matchScore(query, names){
   let s = 0;
   if(qPlain && nPlain === qPlain) s = 100;
   else if(qPlain && nPlain.startsWith(qPlain)) s = 92;
-  else if(qKs && nKs.startsWith(qKs)) s = 88;
+  else if(qKs && nKs.startsWith(qKs)) s = /[가-힣]$/.test(q) && !/[ㄱ-ㅎㅏ-ㅣ]/.test(q) ? 58 : 88; // 4.28.0 밤샘 A-6: 다 친 글자면 '소주'→'소중한'은 뒤로
   else if(qKsHan && nKs.startsWith(qKsHan)) s = 85;
   else if(words.some(w => plain(w).startsWith(qPlain) || keystrokes(w).startsWith(qKs) || (qKsHan && keystrokes(w).startsWith(qKsHan)))) s = 75;
   else if(onlyCons && choseong(name).replace(/\s/g,'').startsWith(q.replace(/\s/g,''))) s = 70;

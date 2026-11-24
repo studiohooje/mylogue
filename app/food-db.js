@@ -64,13 +64,30 @@ export function loadFoodDB({url='food-db.json', fetcher=globalThis.fetch, onMore
 
 // 검색: 먼저 가볍게 걸러서(포함·자판·초성) 300개까지 점수를 매기고, 맞는 정도 → 출처 순위 → 짧은 이름 순
 // 4.17.2 영어로 친 흔한 음식 이름(한/영 자판 실수가 아닌 진짜 영어)은 한국어 이름으로도 찾는다
-const EN = {salad:'샐러드', chicken:'치킨', pizza:'피자', coffee:'커피', americano:'아메리카노', latte:'라떼', bread:'빵', rice:'밥', egg:'계란', milk:'우유', beer:'맥주', soju:'소주', wine:'와인', banana:'바나나', apple:'사과', ramen:'라면', ramyeon:'라면', kimchi:'김치', kimbap:'김밥', gimbap:'김밥', burger:'버거', hamburger:'햄버거', sandwich:'샌드위치', steak:'스테이크', pasta:'파스타', tteokbokki:'떡볶이', bibimbap:'비빔밥', yogurt:'요거트', tofu:'두부', cola:'콜라', coke:'콜라'};
+const EN = {salad:'샐러드', chicken:'치킨', pizza:'피자', coffee:'커피', americano:'아메리카노', latte:'라떼', bread:'빵', rice:'밥', egg:'계란', milk:'우유', beer:'맥주', soju:'소주', wine:'와인', banana:'바나나', apple:'사과', ramen:'라면', ramyeon:'라면', kimchi:'김치', kimbap:'김밥', gimbap:'김밥', burger:'버거', hamburger:'햄버거', sandwich:'샌드위치', steak:'스테이크', pasta:'파스타', tteokbokki:'떡볶이', bibimbap:'비빔밥', yogurt:'요거트', tofu:'두부', cola:'콜라', coke:'콜라',
+ // 4.28.0 밤샘 A-6(전수검사 F-07): 두 낱말 영어·제품명, 흔한 줄임말
+ 'chicken breast':'닭가슴살', 'chicken breasts':'닭가슴살', 'coke zero':'코카콜라 제로', 'pepsi zero':'펩시 제로', 'big mac':'빅맥', 'sweet potato':'고구마', 'greek yogurt':'그릭요거트', 'protein bar':'프로틴바', 'protein shake':'프로틴 쉐이크', protein:'프로틴', oatmeal:'오트밀', oats:'오트밀', avocado:'아보카도', salmon:'연어', tuna:'참치', beef:'소고기', pork:'돼지고기', noodle:'국수', noodles:'국수', dumpling:'만두', dumplings:'만두', 'fried chicken':'후라이드치킨', 'ice cream':'아이스크림', donut:'도넛', bagel:'베이글', croissant:'크루아상', cereal:'시리얼', almond:'아몬드', nuts:'견과', cheese:'치즈', ham:'햄', bacon:'베이컨', sausage:'소시지', 'egg white':'달걀흰자', bmt:'이탈리안 비엠티'};
+// 한국어 동의어: 이 말로 찾으면 그 말로도 찾는다
+const SYN = {계란:'달걀', 달걀:'계란', 참치캔:'참치', 닭가슴:'닭가슴살', 고구마말랭이:'고구마', 아아:'아이스 아메리카노', 뜨아:'아메리카노', 프로틴:'단백질', 단백질쉐이크:'프로틴', 콜라제로:'제로 콜라', 제로콜라:'콜라 제로'};
 export function searchFoodDB(query, {limit=30}={}){
- const q = String(query||'').trim(), en = EN[q.toLowerCase()];
- if(!en) return searchOne(q, limit);
- const seen = new Set();
- return [...searchOne(en, limit), ...searchOne(q, limit)].filter(f => !seen.has(f.id) && seen.add(f.id)).slice(0, limit);
+ const q = String(query||'').trim(), low = q.toLowerCase().replace(/\s+/g, ' '), en = EN[low], syn = SYN[q.replace(/\s/g, '')];
+ const seen = new Set(), uniq = list => list.filter(f => !seen.has(f.id) && seen.add(f.id));
+ let out = uniq([...(en ? searchOne(en, limit) : []), ...searchOne(q, limit), ...(syn ? searchOne(syn, limit) : [])]);
+ // 4.28.0 밤샘 A-6: 결과가 거의 없고 한글 세 글자 이상이면 한 글자 오타(닭가슴쌀·김치찌게)를 너그럽게 — 한 글자를 빼고 찾은 뒤 비슷한 순으로
+ if(out.length < 3 && /^[가-힣\s]{3,12}$/.test(q)) out = [...out, ...uniq(typoSearch(q.replace(/\s/g, ''), limit))];
+ return out.slice(0, limit);
 }
+function typoSearch(q, limit){
+ const cand = new Map();
+ for(let k = 0; k < q.length; k++){
+  // 틀린 글자를 빼고 앞·뒤 조각을 각각 포함하는 이름(낱말 여러 개 검색과 같은 방식)
+  const part = [q.slice(0, k), q.slice(k + 1)].filter(Boolean).join(' ');
+  if(part.replace(/\s/g, '').length < 2) continue;
+  for(const f of searchOne(part, 20)){ const n = String(f.name).replace(/\s/g, ''); if(Math.abs(n.length - q.length) > 6) continue; const d = editDistance(q, n.slice(0, q.length)); if(d <= 1) cand.set(f.id, {f, d}); }
+ }
+ return [...cand.values()].sort((a, b) => a.d - b.d).map(x => x.f).slice(0, limit);
+}
+function editDistance(a, b){ const m = a.length, n = b.length, d = Array.from({length: m + 1}, (_, i) => [i, ...Array(n).fill(0)]); for(let j = 1; j <= n; j++) d[0][j] = j; for(let i = 1; i <= m; i++) for(let j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return d[m][n]; }
 function searchOne(q, limit){
  if(!rows || !q) return [];
  const qp = plain(q), qk = keystrokes(q), qh = /[a-z]/i.test(q) ? keystrokes(q, {latinAsHangul:true}) : '', qc = q.replace(/\s/g,'');
