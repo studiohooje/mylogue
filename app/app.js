@@ -305,7 +305,10 @@ function syncHistory(prevPage,prevModal){
  if(typeof history==='undefined'||typeof history.pushState!=='function')return;
  if($s.navFromPop){$s.navFromPop=false;return}
  const st=history.state||{};
- if(prevModal&&!$s.modal&&st.m){if($s.page!==prevPage)history.replaceState({p:$s.page},'',`#${$s.page}`);else{$s.ignorePop=true;history.back()}return}
+ /* 4.18.1 운동 기록: 종목을 고르면 한 단계 더 쌓아, 뒤로가기(폰 버튼·스와이프·웹)로 종목 고르기로 돌아간다 */const qx=$s.modal==='quick-workout'&&!!$s.quickWorkout?.exerciseId;
+ if(prevModal&&!$s.modal&&st.m){const steps=$s.qxPushed?2:1;$s.qxPushed=false;if($s.page!==prevPage)history.replaceState({p:$s.page},'',`#${$s.page}`);else{$s.ignorePop=true;history.go(-steps)}return}
+ if($s.modal==='quick-workout'&&qx&&!$s.qxPushed&&prevModal){history.pushState({p:$s.page,m:1,qx:1},'');$s.qxPushed=true}
+ if($s.modal==='quick-workout'&&!qx&&$s.qxPushed){$s.qxPushed=false;$s.ignorePop=true;history.back()}
  if(prevPage!==null&&$s.page!==prevPage){history.pushState({p:$s.page},'',`#${$s.page}`);setTimeout(()=>globalThis.scrollTo?.(0,0),0)}
  if(!prevModal&&$s.modal)history.pushState({p:$s.page,m:1},'');
 }
@@ -314,6 +317,7 @@ if(typeof window!=='undefined'&&typeof window.addEventListener==='function'&&typ
  window.addEventListener('popstate',e=>{
   if($s.ignorePop){$s.ignorePop=false;return}
   const st=e.state||{};
+  if($s.modal==='quick-workout'&&$s.qxPushed&&$s.quickWorkout?.exerciseId){$s.qxPushed=false;const q=$s.quickWorkout;q.exerciseId='';q.machineId='';q.editing=false;q.query='';$s.navFromPop=true;render();document.querySelector('.sheet')?.scrollTo?.({top:0});setTimeout(()=>{$s.navFromPop=false},0);return}
   if($s.modal){if($s.sheetDirty&&$s.dirtyModal===$s.modal&&!confirm('작성 중인 내용이 아직 저장되지 않았어요. 닫으면 지금 바꾼 내용이 사라져요. 닫을까요?')){history.pushState({p:$s.page,m:1},'');return}
    $s.sheetDirty=false;$s.navFromPop=true;const x=document.getElementById('close');if(x)x.click();else{$s.modal=null;render()}setTimeout(()=>{$s.navFromPop=false},0);return}
   const next=$s.PAGES.includes(st.p)?st.p:'home';

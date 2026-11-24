@@ -1724,3 +1724,18 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .audit-list li{padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .audit-list b{display:block;font-size:14px;word-break:keep-all}
 .audit-list small{display:block;font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all}
+
+/* 4.18.1 운동 기록: 헬스장 맨 위 · 지난 운동 접기 · 종목 다시 고르기 */
+.q-gym-top{margin:0 0 12px}
+.q-gym-top .field{margin:0}
+.quick-again{padding:0;overflow:hidden}
+.qa-head{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:12px 14px;border:1px solid #8ce4e055;border-radius:14px;background:linear-gradient(90deg,#8ce4e01a,#b8aaf21a);color:var(--text);text-align:left;cursor:pointer}
+.quick-again.open .qa-head{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.qa-ico{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#8ce4e033;color:#8ce4e0;font-size:18px;flex:none}
+.qa-head b{display:block;font-size:16px}
+.qa-head small{display:block;font-size:13px;color:var(--muted);margin-top:2px;word-break:keep-all}
+.qa-caret{margin-left:auto;font-size:13px;color:#8ce4e0;flex:none}
+.quick-again.open .qa-row{padding:10px 14px;border:1px solid #8ce4e033;border-top:0}
+.quick-again.open .qa-row:last-child{border-radius:0 0 14px 14px}
+.q-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px 0 4px;margin:0 0 4px;border:0;background:none;color:#8ce4e0;font-size:15px;font-weight:600;cursor:pointer}
+.q-back span{font-size:22px;line-height:1}

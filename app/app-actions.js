@@ -24,7 +24,8 @@ import {createBackup,recoverInterruptedRestore} from './backup.js';
 import {readSession,clearSession,rawSession} from './session.js';
 import {blankFood,batchSummary} from './meal-batch.js';
 import {loadFoodDB,foodDBReady,findFoodDB} from './food-db.js';
-import {emptyQuickMeal,emptyQuickWorkout,quickTime,quickFoodCandidates,quickMealRecords,quickWorkoutRecord,lastSession,findMachine,usesBar,defaultBar,memoKey,usualQty,yesterdayMeal,mealToRow,recentMealGroups,frequentCombo} from './quick-entry.js';
+import {emptyQuickMeal,emptyQuickWorkout,quickTime,quickFoodCandidates,quickMealRecords,quickWorkoutRecord,lastSession,findMachine,usesBar,defaultBar,memoKey,usualQty,yesterdayMeal,mealToRow,recentMealGroups,frequentCombo,exKeyOf} from './quick-entry.js';
+import {resolveExercise} from './catalog.js';
 import {createRecipe,recipeMeals} from './model-features.js';
 export function quickClick(t){
  if($s.modal==='quick-meal'){
@@ -53,9 +54,10 @@ export function quickClick(t){
   const s=$s.quickWorkout;
   if(t.dataset.qPart){s.part=t.dataset.qPart;$f.render();return true}
   if(t.dataset.qCat){s.cat=t.dataset.qCat;s.part='전체';$f.render();return true}
-  if(t.id==='q-ex-clear'){s.exerciseId='';s.machineId='';s.editing=false;s.query='';$f.render();document.querySelector('.sheet')?.scrollTo?.({top:0});return true}
+  if(t.id==='q-ex-clear'||t.id==='q-ex-back'){s.exerciseId='';s.machineId='';s.editing=false;s.query='';$f.render();document.querySelector('.sheet')?.scrollTo?.({top:0});return true}
   if(t.dataset.qTmin){const m=document.getElementById('q-t-min');if(m){m.value=t.dataset.qTmin;m.dispatchEvent(new Event('input',{bubbles:true}))}document.querySelectorAll('[data-q-tmin]').forEach(b=>b.classList.toggle('active',b===t||b.dataset?.qTmin===t.dataset.qTmin));return true}
   if(t.id==='q-list-toggle'){s.listOpen=!s.listOpen;$f.render();return true}
+  if(t.id==='q-again-toggle'){s.againOpen=!s.againOpen;$f.render();return true}
   if(t.dataset.qPmapp){s.pmApp=t.dataset.qPmapp;$f.render();return true}
   if(t.dataset.qPmove){const [,app]=t.dataset.qPmove.split('|');const cls=pmClassOf(app),item=$f.allExercises().find(x=>x.name===cls);if(!item)return true;Object.assign(s,addPickedMove(s,t.dataset.qPmove));if(s.exerciseId!==(item.id||item.name)){s.exerciseId=item.id||item.name;s.machineId=''}$s.sheetDirty=true;$f.render();$f.toast(`${t.dataset.qPmove.split('|')[0]} 담았어요 · ${cls}`);return true}
   if(t.dataset.qPmoveDel!=null){s.pmoves=(s.pmoves||[]).filter((_,i)=>i!==Number(t.dataset.qPmoveDel));$f.render();return true}
@@ -65,8 +67,8 @@ export function quickClick(t){
   if(t.dataset.sgEx){s.sgEx=s.sgEx===t.dataset.sgEx?null:t.dataset.sgEx;s.sgBrand=null;$f.render();return true}
   if(t.dataset.sgBrand){s.sgBrand=s.sgBrand===t.dataset.sgBrand?null:t.dataset.sgBrand;$f.render();return true}
   if(t.dataset.sgPick!==undefined){const item=$f.allExercises().find(x=>(x.id||x.name)===t.dataset.sgPick);if(!item)return true;s.exerciseId=item.id||item.name;s.machineId=t.dataset.sgMachine||'';const last=$f.quickPreviousSet(s.exerciseId,s.machineId);s.weight=last?.weight??0;s.reps=last?.reps??10;s.unit=last?.unit||findMachine($s.db,$s.sharedCatalog,s.machineId,s)?.unit||'kg';s.editing=false;s.sgEx=null;s.sgBrand=null;$f.render();return true}
-  if(t.dataset.qPlan){const w=($s.db.workouts||[]).find(x=>x.id===t.dataset.qPlan);if(!w)return true;const ids=[];for(const e of w.exercises||[])if(e.kind!=='cardio'&&e.exerciseId&&!ids.includes(e.exerciseId))ids.push(e.exerciseId);if(!ids.length)return true;s.queue=ids.slice(1);if(!s.title&&w.title&&!['오늘의 운동','운동'].includes(w.title))s.title=w.title;t={dataset:{qEx:ids[0]},id:''}}
-  if(t.dataset.qEx){s.queue=(s.queue||[]).filter(x=>x!==t.dataset.qEx);const item=$f.allExercises().find(x=>(x.id||x.name)===t.dataset.qEx);if(!item)return true;s.exerciseId=item.id||item.name;s.machineId=$f.quickMachineFor(s.exerciseId,s.gymName)?.id||'';const last=$f.quickPreviousSet(s.exerciseId,s.machineId);s.weight=last?.weight??0;s.reps=last?.reps??10;s.unit=last?.unit||$s.db.machines.find(m=>m.id===s.machineId)?.unit||'kg';s.editing=false;if(item.kind!=='cardio'&&!s.sets.some(x=>x.exerciseId===s.exerciseId))return quickClick({dataset:{},id:'q-first-set'});$f.render();return true}
+  if(t.dataset.qPlan){const w=($s.db.workouts||[]).find(x=>x.id===t.dataset.qPlan);if(!w)return true;const ids=[];/* 4.18.1 직접 적은 종목도 포함 */for(const e of w.exercises||[]){const k=e.kind!=='cardio'&&e.name?exKeyOf(e,$s.db):'';if(k&&!ids.includes(k))ids.push(k)}if(!ids.length)return true;s.queue=ids.slice(1);if(!s.title&&w.title&&!['오늘의 운동','운동'].includes(w.title))s.title=w.title;t={dataset:{qEx:ids[0]},id:''}}
+  if(t.dataset.qEx){s.queue=(s.queue||[]).filter(x=>x!==t.dataset.qEx);const item=$f.allExercises().find(x=>(x.id||x.name)===t.dataset.qEx)||$f.allExercises().find(x=>x.name===t.dataset.qEx)||(r=>r&&$f.allExercises().find(x=>x.id===r.id))(resolveExercise(t.dataset.qEx));if(!item){$f.toast('이 종목을 찾지 못했어요. 검색해서 골라 주세요.');return true}s.exerciseId=item.id||item.name;s.machineId=$f.quickMachineFor(s.exerciseId,s.gymName)?.id||'';const last=$f.quickPreviousSet(s.exerciseId,s.machineId);s.weight=last?.weight??0;s.reps=last?.reps??10;s.unit=last?.unit||$s.db.machines.find(m=>m.id===s.machineId)?.unit||'kg';s.editing=false;if(item.kind!=='cardio'&&!s.sets.some(x=>x.exerciseId===s.exerciseId))return quickClick({dataset:{},id:'q-first-set'});$f.render();return true}
   if(t.id==='q-new-workout'){$s.quickWorkout=emptyQuickWorkout($f.today(),$s.db.settings.gyms||[]);$f.render();return true}
   if(t.id==='q-new-machine'){$s.machineIndex=null;$s.machineEdit={exerciseId:s.exerciseId,location:s.gymName};$s.machinePhoto='';$s.profileReturn='quick-workout';$s.modal='machine';$f.render();return true}
   if(t.id==='q-draft-resume'){$f.resumeSession();return true}

@@ -53,5 +53,5 @@ test('4.5.0 운동 편의: 지난번 세트(같은 머신 우선)·지난 운동
  const p=lastSession(db,s);assert.equal(p.date,'2026-11-10');assert.equal(p.sets.length,1,'완료 안 한 세트 제외');
  assert.equal(lastSession(db,{...s,machineId:'m9'}).date,'2026-11-15','같은 머신이 없으면 가장 최근');
  assert.match(lastSessionHTML(p),/지난번 11\/10/);
- assert.match(againHTML(db,{date:'2026-11-22'}),/data-q-ex="exercise:레그 프레스"/);
+ assert.match(againHTML(db,{date:'2026-11-22',againOpen:true}),/data-q-ex="exercise:레그 프레스"/);assert.doesNotMatch(againHTML(db,{date:'2026-11-22'}),/data-q-ex=/);
 });
