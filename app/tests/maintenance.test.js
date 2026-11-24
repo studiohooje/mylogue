@@ -44,3 +44,19 @@ test('식단 목표: 내 유지칼로리를 기준으로 칼로리 제안, 기�
   assert.equal(mine.find(o => o.d === 0).kcal, 2800);
   assert.match(useMineHTML({status: 'collecting', halos: 3, weighIns: 2, intakeDays: 3, lastGap: 1}, false), /disabled/);
 });
+
+test('크레아틴 시작(체중 계단)과 튀는 체중을 보정해 실제값에 가깝게', () => {
+  const mk = (flag) => { let sd = 11; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647, g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * 1.41; };
+    const db = {meals: [], body: [], workouts: []};
+    for (let i = 0; i < 42; i++) { const d = new Date(`${TODAY}T12:00:00`); d.setDate(d.getDate() - (41 - i)); const ds = d.toISOString().slice(0, 10);
+      const step = i >= 20 ? 1.5 * Math.min(1, (i - 20) / 5) : 0;
+      db.meals.push({date: ds, calories: 2200 + g() * 200});
+      db.body.push({date: ds, weight: 80 - 0.05 * i + step + g() * 0.4, ...(flag && i === 20 ? {flags: ['creatine']} : {})});
+      db.workouts.push({date: ds}); }
+    return db; };
+  const truth = 2200 + 0.05 * 7700;
+  const raw = estimateAt(mk(false), TODAY, null), fixed = estimateAt(mk(true), TODAY, null);
+  assert.ok(Math.abs(fixed.observed - truth) < Math.abs(raw.observed - truth), `${raw.observed} → ${fixed.observed}`);
+  assert.ok(Math.abs(fixed.observed - truth) < 250, `${fixed.observed}`);
+  assert.ok(fixed.adjusted.step);
+});

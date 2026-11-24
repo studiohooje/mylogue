@@ -99,6 +99,54 @@ const overlap = (a = [], b = []) => a.filter(x => b.includes(x)).length;
 // 유산소: 충격이 비슷한 것끼리(관절이 불편하면 낮은 충격 쪽을 권한다)
 const IMPACT = [['낮은 충격', /걷기|자전거|스피닝|사이클|에어바이크|로잉|수영|스키에르그/], ['계단·오르막', /계단|스텝밀|등산/], ['높은 충격', /달리기|러닝|줄넘기/]];
 const impactOf = n => (IMPACT.find(([, re]) => re.test(n)) || ['기타'])[0];
+// 4.23.0 대체 운동은 '같은 움직임 묶음' 안에서만(근육 구분이 굵어 옆·뒤 어깨, 레그 컬·카프 등이 섞이던 문제).
+// 위에서부터 처음 맞는 묶음. 묶음에 맞는 게 적으면 엉뚱한 걸로 채우지 않고 적게 보여 준다.
+export const FAMILY_RULES = [
+  ['카프', /카프/],
+  ['손목', /리스트 컬/],
+  ['레그 컬', /레그 컬|노르딕|글루트 햄/],
+  ['무릎 펴기', /레그 익스텐션/],
+  ['안쪽 허벅지', /어덕션|이너타이/],
+  ['바깥 엉덩이', /어브덕션|아웃타이/],
+  ['엉덩이 차기', /킥백 머신|케이블 킥백|멀티 힙/],
+  ['엉덩이 들기', /힙 쓰러스트|글루트 브릿지/],
+  ['등 펴기', /백 익스텐션|리버스 하이퍼/],
+  ['슈러그', /슈러그/],
+  ['뒤 어깨', /리어 델트|리버스 펙덱|벤트 ?오버 레터럴|페이스 풀|Y 레이즈/],
+  ['옆 어깨', /레터럴 레이즈|업라이트 로우/],
+  ['앞 어깨', /프론트 레이즈/],
+  ['어깨 밀기', /숄더 프레스|오버헤드 프레스|아놀드|랜드마인 프레스|비하인드 넥|파이크 푸시업|푸시 프레스/],
+  ['몸통 버티기', /플랭크|롤아웃|데드버그|할로우|마운틴 클라이머/],
+  ['한 다리', /런지|스플릿|스텝업|피스톨|싱글 레그 프레스/],
+  ['레그 프레스', /레그 프레스/],
+  ['아랫가슴 밀기', /^딥스$|디클라인 (벤치|덤벨|체스트)/],
+  ['삼두', /트라이셉스|푸시다운|스컬 크러셔|킥백|딥스|다이아몬드|JM 프레스|클로즈그립 벤치|오버헤드 익스텐션/],
+  ['이두', /컬$|컬 |프리처/],
+  ['가슴 모으기', /플라이|펙덱|크로스오버/],
+  ['팔 내리기', /풀오버|스트레이트 암/],
+  ['윗가슴 밀기', /인클라인 (벤치|덤벨 프레스|체스트|프레스)|스미스 인클라인|디클라인 푸시업/],
+  ['가슴 밀기', /벤치프레스|체스트 ?프레스|푸시업/],
+  ['위에서 당기기', /풀다운|풀업|친업/],
+  ['당기기', /로우/],
+  ['데드리프트', /데드리프트|랙 풀|굿모닝/],
+  ['스쿼트', /스쿼트/],
+  ['다리 들기', /레그 레이즈|니 레이즈/],
+  ['몸통 말기', /크런치|싯업/],
+  ['몸통 돌리기', /트위스트|우드찹|로테이션|팔로프/],
+  ['들고 걷기', /캐리|파머스|슬레드/],
+  ['역도', /클린|스내치|쓰러스터/],
+  ['전신 반복', /버피|박스 점프|배틀 로프|월볼|케틀벨 스윙|겟업/],
+];
+const RELATED = {'안쪽 허벅지': ['스모 스쿼트', '사이드 런지']};
+// 어려운 동작은 대체 목록 뒤로(바로 바꿔 하기엔 부담)
+const HARD = /노르딕|글루트 햄|피스톨|스내치|파워 클린|앱 롤아웃|행잉|비하인드 넥|JM 프레스|디클라인 푸시업/;
+// 루마니안·스티프는 데드리프트 묶음보다 '엉덩이 접기'로(햄스트링 위주)
+const HINGE = /루마니안|스티프 레그|굿모닝/;
+export function familyOf(ex){
+  const n = (typeof ex === 'string' ? ex : ex?.name) || '';
+  if (HINGE.test(n)) return '엉덩이 접기';
+  return FAMILY_RULES.find(([, re]) => re.test(n))?.[0] || '';
+}
 export function alternativesFor(ex, {limit = 4, avoidEquipment = null, avoidJoint = null} = {}) {
   const e = typeof ex === 'string' ? findExercise(ex) : ex; if (!e) return [];
   const okJoint = x => !avoidJoint || !cautionsOf(x).includes(avoidJoint);
@@ -113,6 +161,14 @@ export function alternativesFor(ex, {limit = 4, avoidEquipment = null, avoidJoin
     return EXERCISE_CATALOG.filter(x => x.name !== e.name && (x.kind === 'cardio' || x.part === '유산소') && okJoint(x))
       .map(x => ({x, s: (impactOf(x.name) === im ? 4 : impactOf(x.name) === '낮은 충격' ? 2 : 0) + (x.equipment !== e.equipment ? 1 : 0)}))
       .filter(r => r.s >= 2).sort((a, b) => b.s - a.s || a.x.name.localeCompare(b.x.name, 'ko')).slice(0, limit).map(r => r.x);
+  }
+  const fam = familyOf(e);
+  if (fam) {
+    // 같은 묶음에 다른 게 없을 때만: 같은 근육을 함께 쓰는 가까운 동작(검토한 짝만)
+    const near = RELATED[fam]; if (near && !EXERCISE_CATALOG.some(x => x.name !== e.name && familyOf(x) === fam)) return near.map(n => EXERCISE_CATALOG.find(x => x.name === n)).filter(x => x && okJoint(x)).slice(0, limit);
+    // 같은 묶음 · 기구가 다른 것 먼저(기구가 없거나 붐빌 때 바꾸는 용도) · 이름순
+    return EXERCISE_CATALOG.filter(x => x.name !== e.name && x.kind !== 'cardio' && familyOf(x) === fam && okJoint(x) && (!avoidEquipment || x.equipment !== avoidEquipment))
+      .sort((a, b) => (HARD.test(a.name) ? 1 : 0) - (HARD.test(b.name) ? 1 : 0) || (a.equipment === e.equipment ? 1 : 0) - (b.equipment === e.equipment ? 1 : 0) || a.name.localeCompare(b.name, 'ko')).slice(0, limit);
   }
   const p = patternOf(e), prim = e.primaryMuscleIds || [];
   const same = EXERCISE_CATALOG.filter(x => x.name !== e.name && x.kind !== 'cardio' && x.part === e.part)

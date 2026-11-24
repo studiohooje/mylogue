@@ -108,3 +108,35 @@ export function restAlarm(){
     setTimeout(() => ctx.close?.(), 1200);
   } catch {}
 }
+
+// 4.23.0 화면이 꺼지거나 다른 앱에 있어도 휴식 끝을 알린다.
+//  - 안드로이드 앱: 끝나는 시각에 기기 알림을 예약(화면이 꺼져도 울림). 휴식이 바뀌거나 끝나면 취소.
+//  - 웹: 탭이 뒤에 있을 때 시간이 되면 알림(브라우저가 허락한 경우만).
+const REST_NOTI_ID = 5102;
+let notif = null;
+function nativeNotif(){
+  if (!globalThis.Capacitor?.isNativePlatform?.()) return null;
+  try { notif = notif || globalThis.Capacitor.registerPlugin?.('LocalNotifications') || null; } catch { notif = null; }
+  return notif;
+}
+export async function askRestNoticePermission(){
+  const n = nativeNotif();
+  if (n) { try { const p = await n.checkPermissions(); if (p.display !== 'granted') await n.requestPermissions(); } catch {} return; }
+  try { if (globalThis.Notification && Notification.permission === 'default') await Notification.requestPermission(); } catch {}
+}
+export async function scheduleRestNotice(atMs, body){
+  const n = nativeNotif(); if (!n) return;
+  try { await n.cancel({notifications: [{id: REST_NOTI_ID}]}); if (atMs > Date.now() + 1000) await n.schedule({notifications: [{id: REST_NOTI_ID, title: '휴식 끝 · 마이로그', body, schedule: {at: new Date(atMs), allowWhileIdle: true}}]}); } catch {}
+}
+export async function cancelRestNotice(){ const n = nativeNotif(); if (!n) return; try { await n.cancel({notifications: [{id: REST_NOTI_ID}]}); } catch {} }
+// 웹: 탭이 뒤에 있을 때만(앞에 있으면 화면 안 알림으로 충분)
+export function webRestNotice(body){
+  try {
+    if (nativeNotif() || typeof document === 'undefined' || document.visibilityState !== 'hidden') return;
+    if (!globalThis.Notification || Notification.permission !== 'granted') return;
+    const show = r => r?.showNotification ? r.showNotification('휴식 끝 · 마이로그', {body, tag: 'mylogue-rest', renotify: true}) : new Notification('휴식 끝 · 마이로그', {body});
+    if (navigator.serviceWorker?.ready) navigator.serviceWorker.ready.then(show).catch(() => show(null)); else show(null);
+  } catch {}
+}
+// 알림 문구: 다음 세트
+export function restNoticeBody(name, n){ return `${name || '다음 세트'} 준비됐어요 · ${fmt(n?.weight)}${unitText(n?.unit) || 'kg'} × ${n?.reps ?? ''}회. 🔥 버튼을 눌러 시작해요`; }

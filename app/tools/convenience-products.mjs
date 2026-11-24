@@ -14,7 +14,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BASE = path.resolve(HERE, '..', '..', 'research_notes', '마이로그 음식 데이터베이스');
 const SRC = path.join(BASE, 'mfds', 'out', 'foods-processed.jsonl');
 
-export const MAKER = /데리카|델리카|후레쉬|프레시|델리캡|지에프에스|롯데푸드|롯데부산CK|씨케이케이|그린키친|\(주\)대정|가온에프에스|현대푸드시스템/;
+export const MAKER = /데리카|델리카|후레쉬|프레시|델리캡|지에프에스|롯데푸드|롯데부산CK|씨케이케이|그린키친|\(주\)대정|가온에프에스|현대푸드시스템|비지에프푸드|코리아세븐|이마트24|이마트이십사/;
+// 4.23.0 원본 제조사·판매사로 편의점을 알 수 있는 경우만: 비지에프푸드 = CU(BGF리테일 계열 간편식 공장), 코리아세븐 = 세븐일레븐, 이마트24
+export function storeOf(o){ const t = [o.maker, o.distributor, o.importer].filter(Boolean).join(' '); return /비지에프푸드/.test(t) ? 'CU' : /코리아세븐/.test(t) ? '세븐일레븐' : /이마트24|이마트이십사/.test(t) ? '이마트24' : ''; }
+const STORE_ALIAS = {CU: 'CU 씨유', '세븐일레븐': '세븐일레븐 세븐', '이마트24': '이마트24 이마트'};
 export const KIND = [
   [/삼각김밥/, '삼각김밥', '편의점 삼각김밥 삼김'],
   [/주먹밥/, '주먹밥', '편의점 주먹밥'],
@@ -55,7 +58,9 @@ export async function pick(){
   return [...groups.values()].map(list => {
     const s = list.sort((a, b) => a.per100.kcal - b.per100.kcal);
     const o = s[Math.floor(s.length / 2)];
-    return {target: cleanName(o.name), brand: '편의점', aliases: aliasesOf(o.name).join(' '), generic: true, whole: true, makers: list.length, ...o, name: cleanName(o.name)};
+    // 4.23.0 묶인 것이 모두 같은 편의점이면 그 이름, 섞였거나 모르면 '편의점'
+    const stores = new Set(list.map(storeOf)), store = stores.size === 1 ? [...stores][0] : '';
+    return {target: cleanName(o.name), brand: store || '편의점', aliases: [...aliasesOf(o.name), ...(store ? STORE_ALIAS[store].split(' ') : [])].join(' '), generic: true, whole: true, makers: list.length, ...o, name: cleanName(o.name)};
   });
 }
 

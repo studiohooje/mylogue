@@ -106,3 +106,13 @@ export function lastGym(db, date = '', gyms = []){
   const ws = (db.workouts || []).filter(w => !w.planned && w.gymName && gyms.includes(w.gymName) && (!date || w.date <= date)).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.loggedAt || '').localeCompare(String(a.loggedAt || '')));
   return ws[0]?.gymName || gyms[0] || '';
 }
+
+// 4.23.0 웜업 단계 제안(메인 무게의 약 40%·60%·80%, 횟수는 줄여 가며). 버튼이 아니라 참고 제안.
+// 메인이 가벼우면(20kg 미만·숫자 단계) 제안하지 않는다. 2.5 단위로 반올림, 같은 무게가 겹치면 하나만.
+export function warmupLadder(main){
+  if (!main || main.unit === 'level') return [];
+  const w = Number(main.weight); if (!(w >= 20)) return [];
+  const step = main.unit === 'lb' ? 5 : 2.5, round = x => Math.round(x / step) * step, out = [];
+  for (const [pct, reps] of [[0.4, 10], [0.6, 6], [0.8, 3]]) { const kg = round(w * pct); if (kg > 0 && kg < w && !out.some(o => o.weight === kg)) out.push({weight: kg, reps, unit: main.unit || 'kg'}); }
+  return out;
+}

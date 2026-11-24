@@ -50,3 +50,11 @@ test('입력 방식: 오늘은 실시간, 지난 날짜는 소급이 기본, 고
   const h = planTopHTML({workouts: [], settings: {}}, {date: today, sets: [], targets: [], title: ''}, []);
   assert.match(h, /실시간 입력/); assert.match(h, /입력 방식 바꾸기/);
 });
+
+test('한쪽씩 세트 볼륨: 양쪽을 했다고 보고 2배, 이미 한쪽 기준 종목은 두 번 곱하지 않음', async () => {
+  const {workoutTotals} = await import('../domain.js');
+  const one = workoutTotals(cleanWorkout({date: '2026-11-24', exercises: [{name: '레그 익스텐션', sets: [{weight: 30, reps: 10, side: 'single'}, {weight: 50, reps: 10}]}]}));
+  assert.equal(one.volume, 30 * 10 * 2 + 50 * 10); assert.equal(one.reps, 30);
+  const bss = workoutTotals(cleanWorkout({date: '2026-11-24', exercises: [{name: '불가리안 스플릿 스쿼트', repBasis: 'per-side', sets: [{weight: 20, reps: 8, side: 'single'}]}]}));
+  assert.equal(bss.reps, 16);
+});

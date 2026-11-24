@@ -17,6 +17,11 @@ const r50 = n => Math.round(n / 50) * 50;
 // 하루 섭취 합계(예정 기록 제외)
 function intakeByDay(db){ const m = new Map(); for(const x of db.meals||[]){ if(x.planned) continue; const k = Number(x.calories ?? x.kcal); if(!(k >= 0)) continue; m.set(x.date, (m.get(x.date)||0) + k); } return m; }
 function weightsByDay(db){ const m = new Map(); for(const b of db.body||[]) if(Number(b.weight) > 0) m.set(b.date, Number(b.weight)); return m; }
+// 4.23.0 체중이 흔들릴 만한 일: 그날 꼬리표(생리·짠 음식·아픔)는 덜 믿고, 약 용량·크레아틴은 체중 높이가 한 번에 바뀌는 '계단'으로 본다
+const SOFT = new Set(['period', 'salty', 'sick']), STEP = new Set(['med', 'creatine']);
+function flagsByDay(db){ const m = new Map(); for(const b of db.body||[]) if(Array.isArray(b.flags)) m.set(b.date, new Set([...(m.get(b.date)||[]), ...b.flags])); return m; }
+// 가중 최소제곱(작은 연립방정식) — 기울기와 계단 높이를 함께 맞춘다
+function wls(rows, cols){ const k = cols, A = Array.from({length: k}, () => Array(k).fill(0)), y = Array(k).fill(0); for(const {x, kg, w} of rows){ for(let i = 0; i < k; i++){ y[i] += w * x[i] * kg; for(let j = 0; j < k; j++) A[i][j] += w * x[i] * x[j]; } } for(let i = 0; i < k; i++){ let p = i; for(let r = i + 1; r < k; r++) if(Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r; [A[i], A[p]] = [A[p], A[i]]; [y[i], y[p]] = [y[p], y[i]]; if(Math.abs(A[i][i]) < 1e-12) return null; for(let r = 0; r < k; r++){ if(r === i) continue; const f = A[r][i] / A[i][i]; for(let c = i; c < k; c++) A[r][c] -= f * A[i][c]; y[r] -= f * y[i]; } } return y.map((v, i) => v / A[i][i]); }
 // 헤일로: 몸·식사·운동(의도적 휴식 포함) 세 가지를 다 적은 날
 export function haloDays(db, from, to){
  const has = k => new Set(k.filter(Boolean)), body = has((db.body||[]).map(b => b.date)), meal = has((db.meals||[]).filter(m => !m.planned).map(m => m.date)), work = has((db.workouts||[]).filter(w => !w.planned).map(w => w.date));
@@ -38,12 +43,21 @@ export function estimateAt(db, end, formula = null){
  // 가중 평균 섭취
  let sw = 0, si = 0; for(const [d, k] of full){ const x = w(toT(d)); sw += x; si += x * k; } const meanIn = si / sw;
  let sv = 0; for(const [d, k] of full){ const x = w(toT(d)); sv += x * (k - meanIn) ** 2; } const sdIn = Math.sqrt(sv / sw), seIn = sdIn / Math.sqrt(full.length);
- // 가중 회귀(체중 ~ 날짜)
- let W = 0, mt = 0, mk = 0; for(const p of weights){ const x = w(p.t); W += x; mt += x * p.t; mk += x * p.kg; } mt /= W; mk /= W;
- let sxx = 0, sxy = 0; for(const p of weights){ const x = w(p.t), dt = (p.t - mt) / DAY; sxx += x * dt * dt; sxy += x * dt * (p.kg - mk); }
- const slope = sxy / sxx; let rss = 0; for(const p of weights){ const x = w(p.t), dt = (p.t - mt) / DAY; rss += x * (p.kg - mk - slope * dt) ** 2; }
- const sdW = Math.max(0.35, Math.sqrt(rss / W)), neff = W * W / weights.reduce((a, p) => a + w(p.t) ** 2, 0);
- const seSlope = sdW / Math.sqrt(sxx / W * neff);
+ // 가중 회귀(체중 ~ 날짜). 4.23.0: 꼬리표 날은 덜 믿고(0.3), 갑자기 튄 체중은 자동으로 덜 믿고(허버 가중 3회),
+ // 약 용량·크레아틴 시작이 있으면 그 뒤 7일은 빼고 체중 높이가 바뀐 계단을 함께 맞춘다(기울기만 쓴다).
+ const fl = flagsByDay(db), stepDays = [...fl].filter(([d, f]) => d >= from && d <= end && [...f].some(x => STEP.has(x))).map(([d]) => toT(d)).sort((a, b) => a - b);
+ const stepAt = stepDays.at(-1) || 0, pts = weights.filter(p => !stepAt || p.t < stepAt || p.t >= stepAt + 7 * DAY);
+ const useStep = stepAt && pts.some(p => p.t < stepAt) && pts.filter(p => p.t >= stepAt + 7 * DAY).length >= 3;
+ const tm = pts.reduce((a, p) => a + p.t, 0) / pts.length;
+ let rows = pts.map(p => { const d = ymd(p.t), f = fl.get(d); return {x: [1, (p.t - tm) / DAY, ...(useStep ? [p.t >= stepAt ? 1 : 0] : [])], kg: p.kg, base: w(p.t) * (f && [...f].some(x => SOFT.has(x)) ? 0.3 : 1), t: p.t}; });
+ let coef = null;
+ for(let it = 0; it < 4; it++){ rows = rows.map(r => ({...r, w: r.base * (r.hub ?? 1)})); coef = wls(rows, useStep ? 3 : 2); if(!coef) break; rows = rows.map(r => { const res = r.kg - r.x.reduce((a, v, i) => a + v * coef[i], 0); return {...r, res, hub: Math.min(1, 0.8 / Math.max(1e-6, Math.abs(res)))}; }); }
+ if(!coef) return {ok: false, ...facts};
+ const slope = coef[1], W = rows.reduce((a, r) => a + r.w, 0), rss = rows.reduce((a, r) => a + r.w * (r.res ?? 0) ** 2, 0);
+ const mtd = rows.reduce((a, r) => a + r.w * r.x[1], 0) / W, sxx = rows.reduce((a, r) => a + r.w * (r.x[1] - mtd) ** 2, 0);
+ const sdW = Math.max(0.35, Math.sqrt(rss / W)), neff = W * W / rows.reduce((a, r) => a + r.w ** 2, 0);
+ const seSlope = sdW / Math.sqrt(sxx / W * neff) * (useStep ? 1.15 : 1);
+ facts.adjusted = {soft: rows.filter(r => r.base < w(r.t)).length, step: useStep ? ymd(stepAt) : '', dropped: weights.length - pts.length};
  const obs = meanIn - slope * KCAL_PER_KG, seObs = Math.sqrt((seSlope * KCAL_PER_KG) ** 2 + seIn ** 2);
  // 공식 값과 합치기(공식은 ±300kcal 정도 틀릴 수 있다고 봄)
  const prior = Number(formula) > 0 ? Number(formula) : null, sp = 300;
@@ -85,6 +99,7 @@ export function helpHTML(m){
  <span>마이로그는 내가 먹은 것과 체중 흐름을 맞춰 보고 '내 몸이 실제로 쓰는 양'을 계산해요. 완벽하진 않지만 내 진짜 기록으로 만든 값이라 비교적 정확해요.</span>
  <span><b>헤일로 ${HALO_STEPS[0]}번</b>이면 가닥이 잡히고, <b>${HALO_STEPS[1]}번</b>이면 목표를 세울 만큼, <b>${HALO_STEPS[2]}번</b>이면 꽤 정확해져요. 헤일로는 몸·식사·운동(의도적 휴식 포함)을 다 적은 날이에요.</span>
  <span>최근 8주 기록으로 계산해서, 기록을 오래 쉬면 정확도가 내려가요. 식단은 하루치를 다 적고, 체중은 주 3번 이상 재면 좋아요.</span>
+ <span>체중을 적을 때 '생리 중·짠 음식·아픔·약 용량 바뀜·크레아틴 시작'을 골라 두면 그날 출렁임을 걸러서 더 정확해져요.</span>
  <span class="mt-now">지금 최근 8주 헤일로 ${p.halos}번 / ${p.target}번</span></span></span>`;
 }
 export function progressBarHTML(m){
@@ -95,7 +110,7 @@ export function progressBarHTML(m){
 export function maintenanceCardHTML(m){
  const head = `<div class="section-title"><h3>나만의 유지칼로리 ${helpHTML(m)}</h3></div>`;
  const formula = m.formula ? `<p class="hint">계산식(키·체중·나이·활동량) 기준 ${n0(m.formula)}kcal — 참고값이에요.</p>` : '';
- if(m.status === 'ready') return `<section class="section card mt-card">${head}<p class="mt-value"><b>${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range">${n0(m.lo)}~${n0(m.hi)}kcal · ${LEVEL[m.level]} <span class="mt-dots" aria-label="정확도 ${m.level}/3">${'●'.repeat(m.level)}${'○'.repeat(3 - m.level)}</span></p><p class="hint">최근 8주 평균 ${n0(m.meanIntake)}kcal를 먹었고 체중은 주 ${m.slopeKgWeek > 0 ? '+' : ''}${m.slopeKgWeek}kg 흐름이에요. 완벽하진 않지만 내 진짜 기록으로 만든 값이에요.</p>${m.level < 3 ? progressBarHTML(m) : ''}${formula}</section>`;
+ if(m.status === 'ready') return `<section class="section card mt-card">${head}<p class="mt-value"><b>${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range">${n0(m.lo)}~${n0(m.hi)}kcal · ${LEVEL[m.level]} <span class="mt-dots" aria-label="정확도 ${m.level}/3">${'●'.repeat(m.level)}${'○'.repeat(3 - m.level)}</span></p><p class="hint">최근 8주 평균 ${n0(m.meanIntake)}kcal를 먹었고 체중은 주 ${m.slopeKgWeek > 0 ? '+' : ''}${m.slopeKgWeek}kg 흐름이에요. 완벽하진 않지만 내 진짜 기록으로 만든 값이에요.</p>${m.adjusted && (m.adjusted.step || m.adjusted.soft) ? `<p class="hint">${m.adjusted.step ? `${esc(m.adjusted.step.slice(5).replace('-', '/'))}에 바뀐 체중 높이(약·크레아틴)를 따로 맞췄어요. ` : ''}${m.adjusted.soft ? `체중이 흔들릴 만한 날 ${m.adjusted.soft}번은 덜 반영했어요.` : ''}</p>` : ''}${m.level < 3 ? progressBarHTML(m) : ''}${formula}</section>`;
  if(m.status === 'stale') return `<section class="section card mt-card stale">${head}<p class="mt-value"><b>약 ${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range warn">${m.weeksAgo}주 전 기록으로 계산한 값이에요. 최근 기록이 부족해 지금은 부정확할 수 있어요.</p>${progressBarHTML(m)}${formula}</section>`;
  return `<section class="section card mt-card">${head}<p class="hint">내 기록이 쌓이면 계산식이 아닌 진짜 내 유지칼로리를 알려 드려요.</p>${progressBarHTML(m)}${formula}</section>`;
 }

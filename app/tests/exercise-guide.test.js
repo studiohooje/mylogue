@@ -27,6 +27,7 @@ test('기구에 맞는 안전: 무게 운동 · 유산소 · 필라테스가 다
   assert.match(guideFor(ex('러닝머신'), null).safety.join(' '), /안전 키/);
   assert.match(guideFor(ex('필라테스 리포머'), null).safety.join(' '), /편한 범위/);
   assert.match(guideFor(ex('레그 프레스 카프 레이즈'), null, EXERCISE_ENRICH[ex('레그 프레스 카프 레이즈').id].c).steps[0], /위치를 먼저 확인/);
+  assert.ok(guideFor(ex('데드리프트'), null, EXERCISE_ENRICH[ex('데드리프트').id].c).steps.every(x => /요.$/.test(x)), '해요 말투');
 });
 test('유튜브 검색어: 제조사 머신 · 일반 머신 · 프리웨이트', () => {
   const nt = BUILTIN_BRANDS.find(b => /뉴텍/.test(b.manufacturer));
@@ -41,4 +42,17 @@ test('요령 칸: 접혀 있고 안에 사용법·안전·유튜브·안내 문�
   const h = knowHTML(ex('레그 프레스'), x => x, {machine: {id: 'gm:leg-press-45', generic: true}});
   assert.match(h, /<details class="ex-know">/); assert.doesNotMatch(h, /<details class="ex-know" open/);
   assert.match(h, /기본 사용법 · 45° 레그 프레스/); assert.match(h, /안전 걸쇠/); assert.match(h, /yt-link/); assert.match(h, /트레이너/);
+});
+
+test('바꿔 할 운동은 같은 움직임 안에서(옆·뒤 어깨, 레그 컬·카프가 섞이지 않게)', async () => {
+  const {alternativesFor, familyOf} = await import('../exercise-knowledge.js');
+  const alt = n => alternativesFor(n).map(x => x.name);
+  assert.ok(alt('사이드 레터럴 레이즈').every(n => /레터럴|업라이트/.test(n) && !/벤트오버/.test(n)));
+  assert.ok(alt('리버스 펙덱').every(n => familyOf(n) === '뒤 어깨'));
+  assert.ok(!alt('레그 컬').some(n => /카프/.test(n)));
+  assert.ok(!alt('레그 프레스 카프 레이즈').some(n => /스쿼트/.test(n)));
+  assert.ok(!alt('인클라인 벤치프레스').some(n => /디클라인 (벤치|덤벨|체스트)/.test(n)));
+  assert.equal(familyOf('버티컬 레그 프레스'), '레그 프레스');
+  assert.equal(familyOf('할로우 바디 홀드'), '몸통 버티기');
+  assert.equal(alt('레그 컬').at(-1), '노르딕 햄스트링 컬'); // 어려운 동작은 뒤로
 });
