@@ -96,7 +96,7 @@ export function buildPhase(st, today, {heightCm = null, cautions = [], age = nul
   if (DIET_LIKE.has(t.id) && base) target.weight = r1(base - target.loseKg);
   if (DIET_LIKE.has(t.id) && target.loseKg) {
     const ref = base || null;
-    if (ref && target.loseKg / weeks > ref * 0.015) throw Error(`주당 ${(target.loseKg / weeks).toFixed(2)}kg은 체중의 1.5%(주 ${(ref * 0.015).toFixed(2)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
+    if (ref && target.loseKg / weeks > ref * 0.015 + 1e-9) throw Error(`주당 ${(target.loseKg / weeks).toFixed(2)}kg은 체중의 1.5%(주 ${(ref * 0.015).toFixed(2)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
     if (!ref && target.loseKg / weeks > 1) throw Error('주 1kg보다 빠른 감량은 저장하지 않았어요. 체중을 먼저 기록하거나 기간을 늘려 주세요.');
     const h = Number(heightCm) / 100;
     if (ref && h > 1 && (ref - target.loseKg) / (h * h) < 18.5) throw Error(`목표 체중 ${r1(ref - target.loseKg)}kg은 키 대비 저체중(BMI 18.5 미만)이라 저장하지 않았어요. 목표를 줄여 주세요.`);
@@ -106,7 +106,7 @@ export function buildPhase(st, today, {heightCm = null, cautions = [], age = nul
   // 4.27.0 재검사 C-02: 증량도 상한(주당 체중의 1%, 체중을 모르면 주 0.75kg)
   if (GAIN_LIKE.has(t.id) && target.gainKg) {
     const ref = base || null;
-    if (ref && target.gainKg / weeks > ref * 0.01) throw Error(`주당 ${(target.gainKg / weeks).toFixed(2)}kg 증량은 체중의 1%(주 ${(ref * 0.01).toFixed(2)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
+    if (ref && target.gainKg / weeks > ref * 0.01 + 1e-9) throw Error(`주당 ${(target.gainKg / weeks).toFixed(2)}kg 증량은 체중의 1%(주 ${(ref * 0.01).toFixed(2)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
     if (!ref && target.gainKg / weeks > 0.75) throw Error('주 0.75kg보다 빠른 증량은 저장하지 않았어요. 체중을 먼저 기록하거나 기간을 늘려 주세요.');
   }
   if (GAIN_LIKE.has(t.id) && base) target.weight = r1(base + target.gainKg);
