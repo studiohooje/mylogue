@@ -35,7 +35,7 @@ export function prefsOf(db){
  p.sports = Array.isArray(raw.sports) ? [...new Set(raw.sports.filter(x=>ALLOWED.sports.includes(x)))] : [];
  if(p.mealMode==='off' && p.tracks.includes('meal')) p.tracks = p.tracks.filter(x=>x!=='meal');
  if(!p.tracks.includes('meal')) p.mealMode = 'off';
- p.restSec = Math.min(300, Math.max(15, Number(p.restSec)||PREF_DEFAULTS.restSec));
+ p.restSec = Math.min(600, Math.max(15, Number(p.restSec)||PREF_DEFAULTS.restSec));
  p.halo = p.halo !== false;
  p.glp1 = p.glp1 === true || (Array.isArray(db?.settings?.nutritionProfile?.diets) && db.settings.nutritionProfile.diets.includes('glp1'));
  return p;

@@ -1808,3 +1808,80 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .scan-frame.scan-done img{animation:none;filter:none;transition:filter .5s}
 .scan-frame.scan-done .scan-corners i{animation:none;border-color:#8ce4e0;transform:scale(1.04)}
 @media (prefers-reduced-motion:reduce){.scan-beam,.scan-dot,.scan-grid{animation:none;opacity:0}.scan-frame img{animation:scanImg 4s ease-in-out infinite}.scan-corners i{animation:none}.scan-steps b{animation:none}.scan-steps b:first-child{opacity:1}}
+
+/* 4.21.0 휴식 화면: 위 원형 타이머 · 아래 다음 세트 준비 · 🔥 다음 세트 시작 */
+.rest-screen{display:grid;gap:12px;padding-bottom:96px}
+.rt-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.rt-head b{display:block;font-size:18px}.rt-head small{display:block;font-size:13px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.rt-mode{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:#ffffff08}
+.rt-mode button{min-height:34px;padding:0 10px;border:0;border-radius:999px;background:none;color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+.rt-mode button.on{background:#8ce4e033;color:#fff}
+.rt-top{display:grid;justify-items:center;gap:10px;padding:8px 0 14px;border-bottom:1px solid var(--line);background:radial-gradient(60% 70% at 50% 40%,#8ce4e014,transparent 70%),radial-gradient(40% 50% at 72% 28%,#b8aaf214,transparent 70%)}
+.rt-dial{position:relative;width:min(62vw,240px);aspect-ratio:1}
+.rt-dial svg{width:100%;height:100%;overflow:visible}
+.rt-ticks line{stroke:#ffffff26;stroke-width:1.5}.rt-ticks line.big{stroke:#ffffff55;stroke-width:2.5}
+.rt-track{fill:none;stroke:#ffffff12;stroke-width:10}
+.rt-prog{fill:none;stroke:url(#rt-aurora);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .25s linear;filter:drop-shadow(0 0 6px #8ce4e088)}
+.rt-dial.over .rt-prog{stroke:#f2b49b;filter:drop-shadow(0 0 8px #f2b49baa)}
+.rt-hand{transform-origin:130px 130px;transition:transform .25s linear}
+.rt-hand line{stroke:#fff;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 4px #8ce4e0)}.rt-hand circle{fill:#8ce4e0;filter:drop-shadow(0 0 6px #8ce4e0)}
+.rt-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.rt-lbl{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.rt-digits{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1;margin:2px 0}
+.rt-goal{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rt-dial.over .rt-goal{color:#f2b49b}
+.rt-dial.over{animation:rtOver 1.2s ease-in-out 3}
+@keyframes rtOver{50%{transform:scale(1.03)}}
+.rt-presets,.rt-add{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.rt-presets .chip,.rt-add .chip{min-height:38px}
+.rt-bottom{display:grid;gap:10px}
+.rt-h{margin:0;font-size:18px}.rt-sub{margin:0}
+.rt-summary{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,#8ce4e01a,#b8aaf21a);border:1px solid #8ce4e055}
+.rt-summary b{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:16px}.rt-summary small{display:block;font-size:14px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.rt-tag{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:999px;background:#8ce4e033;color:#8ce4e0;white-space:nowrap;flex:none}
+.rt-tag.changed{background:#f2b49b33;color:#f2b49b}
+.rt-opts,.rt-exlist{display:grid;gap:8px}
+.rt-opt,.rt-exopt{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:#ffffff08;color:var(--text);text-align:left;cursor:pointer}
+.rt-opt b,.rt-exopt b{display:block;font-size:15px}.rt-opt small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.rt-opt>span:last-child,.rt-exopt>span:last-child{margin-left:auto;color:var(--muted)}
+.rt-oico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#ffffff0d;flex:none}
+.rt-num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#8ce4e033;color:#8ce4e0;font-size:12px;font-weight:700;flex:none}
+.rt-lbl2{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.rt-stepper{display:grid;grid-template-columns:52px 1fr 52px;gap:8px;align-items:center}
+.rt-stepper button{height:52px;border-radius:14px;border:1px solid var(--line);background:#ffffff0a;color:var(--text);font-size:22px}
+.rt-stepper input{height:52px;border-radius:14px;border:1px solid #8ce4e066;background:#060b16;color:var(--text);font-size:24px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;width:100%}
+.rt-kind .chip{min-height:36px}
+.rt-sides{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rt-side{min-height:64px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:#ffffff08;color:var(--text);text-align:left}
+.rt-side b{display:block;font-size:15px}.rt-side small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.rt-side.on{border-color:#8ce4e0;background:#8ce4e01a}
+.rt-ok{width:100%;min-height:52px}
+.rt-quit{justify-self:center;font-size:13px}
+.rt-fire{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:68px;margin-top:4px;padding:12px 16px;border:0;border-radius:18px;background:linear-gradient(100deg,#ff8a5b,#f2b49b 35%,#b8aaf2 75%,#8ce4e0);color:#0b1220;cursor:pointer;box-shadow:0 10px 30px -8px #ff8a5baa,0 0 0 1px #ffffff40 inset;animation:rtFire 2.4s ease-in-out infinite}
+.rt-fire b{display:block;font-size:18px;font-weight:900}.rt-fire small{display:block;font-size:12px;font-weight:600;opacity:.8}
+.rt-fire-ico{font-size:30px;line-height:1;filter:drop-shadow(0 0 8px #ff8a5b);animation:rtFlame 1.1s ease-in-out infinite alternate}
+@keyframes rtFire{50%{box-shadow:0 14px 36px -6px #ff8a5bcc,0 0 0 1px #ffffff60 inset}}
+@keyframes rtFlame{from{transform:scale(1) rotate(-4deg)}to{transform:scale(1.12) rotate(4deg)}}
+.rest-screen.mode-off .rt-head{padding-bottom:4px;border-bottom:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){.rt-fire,.rt-fire-ico,.rt-dial.over{animation:none}.rt-hand,.rt-prog{transition:none}}
+/* 위 타이머는 아래를 넘겨도 계속 보이게(상하 분할) */
+.rt-top{position:sticky;top:68px;z-index:4;background:linear-gradient(180deg,#162238 0%,#141f33 100%);margin:0 -4px;padding:8px 4px 10px;border-radius:0 0 18px 18px;box-shadow:0 10px 24px -12px #000c}
+.rt-dial{width:min(46vw,190px)}
+.rt-digits{font-size:38px}
+.rt-presets .chip,.rt-add .chip{min-height:34px;padding:0 12px}
+.rt-top{gap:8px}
+@media (max-height:760px){.rt-dial{width:min(38vw,150px)}.rt-digits{font-size:30px}}
+/* 4.21.0 입력 방식: 실시간 / 소급 */
+.q-live{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border-radius:16px;background:#ffffff08;border:1px solid var(--line)}
+.q-live button{display:grid;gap:2px;min-height:56px;padding:8px 10px;border:0;border-radius:12px;background:none;color:var(--muted);text-align:left;cursor:pointer}
+.q-live button b{font-size:15px;color:var(--text)}.q-live button small{font-size:12px}
+.q-live button.on{background:linear-gradient(135deg,#8ce4e033,#b8aaf233);box-shadow:0 0 0 1px #8ce4e077 inset}
+.q-live button[disabled]{opacity:.6;cursor:default}
+.q-live-start{display:grid;gap:12px;padding:8px 0}
+.q-live-start h3{margin:0;font-size:22px}
+.q-live-card{display:flex;align-items:flex-start;gap:14px;width:100%;padding:18px 16px;border-radius:18px;border:1px solid var(--line);background:#ffffff08;color:var(--text);text-align:left;cursor:pointer}
+.q-live-card.live{border-color:#8ce4e077;background:linear-gradient(135deg,#8ce4e01f,#b8aaf21f)}
+.q-live-card b{display:block;font-size:18px}.q-live-card small{display:block;font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5;word-break:keep-all}
+.q-live-ico{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#8ce4e022;color:#8ce4e0;font-size:22px;flex:none}
+.q-live-line{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.q-live-badge{font-size:13px;font-weight:700;color:var(--muted)}.q-live-badge.live{color:#8ce4e0}

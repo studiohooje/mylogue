@@ -27,6 +27,9 @@ import {loadPopularity,bumpPopularity,popId,loadSharedCatalog,mergeCatalogItems,
 import {extractInbody} from './inbody.js';
 import {recognizeInBody270} from './inbody-photo.js';
 import {attachScan} from './scan-fx.js';
+import {restTick,restAlarm,restMode} from './rest-screen.js';
+/* 4.21.0 휴식 화면 시계: 화면에 있을 때만 숫자·초침을 갱신하고, '지정해 두고 쉬기'면 시간이 되면 한 번 알림 */
+if(typeof setInterval==='function'&&typeof document!=='undefined'){const h=setInterval(()=>restTick(()=>{restAlarm();toast('휴식 시간이 끝났어요. 준비되면 🔥 버튼을 눌러 주세요.')}),250);h?.unref?.()}
 import {periodSummary,threeLiftTotal,simpleRecommendation} from './insights.js';
 import {latestEstimate,suggestSets,plateLoadPerSide} from './training.js';
 import {EXERCISE_CATALOG,searchExercises,PROGRAM_TEMPLATES,createRoutineFromProgram,findExercise as findExerciseByName,resolveExercise} from './catalog.js';
@@ -318,7 +321,7 @@ if(typeof window!=='undefined'&&typeof window.addEventListener==='function'&&typ
  window.addEventListener('popstate',e=>{
   if($s.ignorePop){$s.ignorePop=false;return}
   const st=e.state||{};
-  if($s.modal==='quick-workout'&&$s.qxPushed&&$s.quickWorkout?.exerciseId){$s.qxPushed=false;const q=$s.quickWorkout;q.exerciseId='';q.machineId='';q.editing=false;q.query='';$s.navFromPop=true;render();document.querySelector('.sheet')?.scrollTo?.({top:0});setTimeout(()=>{$s.navFromPop=false},0);return}
+  if($s.modal==='quick-workout'&&$s.qxPushed&&$s.quickWorkout?.exerciseId){$s.qxPushed=false;const q=$s.quickWorkout;q.rest=null;q.next=null;q.exerciseId='';q.machineId='';q.editing=false;q.query='';$s.navFromPop=true;render();document.querySelector('.sheet')?.scrollTo?.({top:0});setTimeout(()=>{$s.navFromPop=false},0);return}
   if($s.modal){if($s.sheetDirty&&$s.dirtyModal===$s.modal&&!confirm('작성 중인 내용이 아직 저장되지 않았어요. 닫으면 지금 바꾼 내용이 사라져요. 닫을까요?')){history.pushState({p:$s.page,m:1},'');return}
    $s.sheetDirty=false;$s.navFromPop=true;const x=document.getElementById('close');if(x)x.click();else{$s.modal=null;render()}setTimeout(()=>{$s.navFromPop=false},0);return}
   const next=$s.PAGES.includes(st.p)?st.p:'home';

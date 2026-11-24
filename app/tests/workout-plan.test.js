@@ -61,7 +61,7 @@ test('헬스장 기본값은 그날 기준 마지막으로 쓴 곳, 타깃은 �
 
 test('운동 기록 화면: 오늘 할 운동 → 부위, 이름 추천, 하던 순서', () => {
   const full = {...db, settings: {gyms: ['A', 'B'], workoutTitles: []}, machines: []};
-  const s = {...emptyQuickWorkout('2026-11-20', ['A', 'B'], full), targets: ['웨이트', '웨이트:가슴', '웨이트:삼두']};
+  const s = {...emptyQuickWorkout('2026-11-20', ['A', 'B'], full), live: true, targets: ['웨이트', '웨이트:가슴', '웨이트:삼두']};
   assert.equal(s.gymName, 'B');
   const html = quickWorkoutHTML(full, s, EXERCISE_CATALOG, {}, {});
   assert.match(html, /오늘 할 운동/); assert.match(html, /data-q-target="웨이트:삼두"/); assert.match(html, /data-q-title="Push Day"/);

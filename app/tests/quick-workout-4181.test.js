@@ -22,7 +22,7 @@ test('이 헬스장에서 자주 한 종목이 먼저, 횟수 숫자는 보이�
   ]};
   const f = exerciseFreq(db, 'A');
   assert.equal(f.get('exercise:핵 스쿼트').gym, 2); assert.equal(f.get('exercise:레그 익스텐션').gym, 0);
-  const s = {...emptyQuickWorkout('2026-11-24', ['A', 'B']), gymName: 'A', cat: '웨이트', part: '하체'};
+  const s = {...emptyQuickWorkout('2026-11-24', ['A', 'B']), live: true, gymName: 'A', cat: '웨이트', part: '하체'};
   const html = quickWorkoutHTML(db, s, EXERCISE_CATALOG, {}, {});
   const first = html.match(/class="quick-choice[^"]*" data-q-ex="([^"]+)"/)[1];
   assert.equal(first, 'exercise:핵 스쿼트');
