@@ -124,9 +124,12 @@ export async function askRestNoticePermission(){
   if (n) { try { const p = await n.checkPermissions(); if (p.display !== 'granted') await n.requestPermissions(); } catch {} return; }
   try { if (globalThis.Notification && Notification.permission === 'default') await Notification.requestPermission(); } catch {}
 }
+// 4.27.0 전수검사 AA-04: 정확 알람('알람 및 리마인더')이 허용되지 않았으면 예약할 때마다 설정 화면이 떠 세트 기록이 끊겼다.
+// 허용돼 있을 때만 정확 알람으로, 아니면 일반 알람(화면이 꺼져 있으면 조금 늦을 수 있음)으로 예약한다.
+export async function exactAllowed(n){ try { const r = await n.checkExactNotificationSetting?.(); return r ? r.exact_alarm === 'granted' : true; } catch { return false; } }
 export async function scheduleRestNotice(atMs, body){
   const n = nativeNotif(); if (!n) return;
-  try { await n.cancel({notifications: [{id: REST_NOTI_ID}]}); if (atMs > Date.now() + 1000) await n.schedule({notifications: [{id: REST_NOTI_ID, title: '휴식 끝 · 마이로그', body, schedule: {at: new Date(atMs), allowWhileIdle: true}}]}); } catch {}
+  try { await n.cancel({notifications: [{id: REST_NOTI_ID}]}); if (atMs > Date.now() + 1000) await n.schedule({notifications: [{id: REST_NOTI_ID, title: '휴식 끝 · 마이로그', body, schedule: {at: new Date(atMs), allowWhileIdle: true}, isExactNotification: await exactAllowed(n)}]}); } catch {}
 }
 export async function cancelRestNotice(){ const n = nativeNotif(); if (!n) return; try { await n.cancel({notifications: [{id: REST_NOTI_ID}]}); } catch {} }
 // 웹: 탭이 뒤에 있을 때만(앞에 있으면 화면 안 알림으로 충분)

@@ -1,6 +1,8 @@
 package pro.hooje.mylogue;
 
 import com.getcapacitor.BridgeActivity;
+import android.webkit.WebView;
+import androidx.activity.OnBackPressedCallback;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Base64;
@@ -19,6 +21,17 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(FileSavePlugin.class);
         super.onCreate(savedInstanceState);
         useLightStatusBarIcons(false);
+        // 4.27.0 전수검사 AA-03: 뒤로 버튼/제스처를 웹 기록으로 넘긴다(앱이 창을 열 때 기록을 쌓아 두므로 창만 닫힌다). 기록이 없으면 원래대로 앱을 나간다.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                WebView web = getBridge() != null ? getBridge().getWebView() : null;
+                if (web != null && web.canGoBack()) { web.goBack(); return; }
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+                setEnabled(true);
+            }
+        });
         deliverShare(getIntent(), 1500);
         deliverShortcut(getIntent(), 1500);
     }

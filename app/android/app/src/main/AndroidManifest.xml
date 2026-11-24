@@ -82,6 +82,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 4.27.0 전수검사 AA-06: 웹뷰 navigator.vibrate가 동작하려면 필요 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 3.6.0 헬스장 지도: '내 위치로'를 누를 때만 한 번 쓰고 저장하지 않음 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

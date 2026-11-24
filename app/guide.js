@@ -160,6 +160,6 @@ export async function prepareNativeAlerts(){
 export async function scheduleRestAlert(s){
  const n = nativeNotif(); if(!n||s.phase!=='rest') return;
  const it = current(s);
- try{ await n.cancel({notifications:[{id:NOTI_ID}]}); await n.schedule({notifications:[{id:NOTI_ID, title:'휴식 끝 · 마이로그', body:`${it.name} ${s.set}세트 시작 · ${it.weight}${it.unit} × ${it.reps}회`, schedule:{at:new Date(s.restEnds), allowWhileIdle:true}}]}); }catch{}
+ try{ await n.cancel({notifications:[{id:NOTI_ID}]}); await n.schedule({notifications:[{id:NOTI_ID, title:'휴식 끝 · 마이로그', body:`${it.name} ${s.set}세트 시작 · ${it.weight}${it.unit} × ${it.reps}회`, schedule:{at:new Date(s.restEnds), allowWhileIdle:true}, isExactNotification:await (async()=>{try{const r=await n.checkExactNotificationSetting?.();return r?r.exact_alarm==='granted':true}catch{return false}})()}]}); }catch{} // 4.27.0 AA-04
 }
 export async function cancelRestAlert(){ const n = nativeNotif(); if(!n) return; try{ await n.cancel({notifications:[{id:NOTI_ID}]}); }catch{} }
