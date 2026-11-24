@@ -41,7 +41,17 @@ const LOW_DENSITY_OK = /우유|커피|콜드 ?브루|라떼|아메리카노|티$
 // '열량 0인데 탄수화물 있음'·'검산 차이'·'밀도 낮음'은 라벨상 정상이다(식품 등의 표시기준: 100ml당 4kcal 미만은 0 표시 가능).
 export const SWEETENER = /제로|무설탕|알룰로스|에리스리톨|스테비아|슈가프리|sugar ?free|저칼로리|0kcal|0칼로리|zero/i;
 const sweetenerLike = p => { const n = p.per100g || p.per100ml || {}; return SWEETENER.test(`${p.name || ''} ${p.displayName || ''}`) && (n.sugar ?? 0) <= 1.5 && (n.protein ?? 0) <= 1.5 && (n.fat ?? 0) <= 1.5 && (n.kcal ?? 0) <= 60; };
+// 4.17.2 감미료로 설명되는 검산 차이: 이름이 감미료·저당 계열이고, 표시 열량이 검산보다 낮으며(감미료는 낮추기만 한다)
+// 단백질·지방 열량만으로는 표시 열량을 넘지 않을 때(탄수화물이 검산 열량의 절반 이상인 제품만 — 고기·우유처럼 탄수화물이 적은 건 감미료로 설명 안 됨). 탄수화물 일부가 알룰로스·에리스리톨이면 정상인 라벨이다.
+export const SWEET_NAME = /제로|무설탕|알룰로스|에리스리톨|스테비아|슈가프리|sugar ?free|저칼로리|0 ?kcal|0칼로리|zero|저당|라이트 ?슈가|로우 ?슈가|당 ?제로|키토/i;
+export const sweetenerExplains = (name, kcal, carbs, protein, fat) => {
+  if (kcal == null || !SWEET_NAME.test(name || '')) return false;
+  const calc = (carbs || 0) * 4 + (protein || 0) * 4 + (fat || 0) * 9, rest = (protein || 0) * 4 + (fat || 0) * 9;
+  return (carbs || 0) * 4 >= calc * 0.5 && kcal <= calc + 5 && rest <= kcal * 1.15 + 10;
+};
+const sweetP = p => { const n = p.per100g || p.per100ml || {}; return sweetenerExplains(`${p.name || ''} ${p.displayName || ''}`, n.kcal, n.carbs, n.protein, n.fat); };
 const softDoubt = (c, p) => {
+  if ((c === 'calcCheckMismatch' || c === 'kcalDensityLow' || c === 'zeroKcalWithMacros') && sweetP(p)) return true;
   const kcal = p.label?.kcal ?? p.per100g?.kcal ?? p.per100ml?.kcal;
   if (c === 'calcCheckMismatch') return (p.flags || []).includes('recheckConfirmed') || (kcal != null && kcal <= 30) || sweetenerLike(p);
   if (c === 'kcalDensityLow') return LOW_DENSITY_OK.test(`${p.name || ''} ${p.displayName || ''}`) || sweetenerLike(p) || !!servingAsPer100(p);
@@ -154,6 +164,8 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
 // 큰 통(1.5L 콜라·900ml 아이스크림)은 식약처 1회 섭취참고량(200ml→'잔', 30g→'회')으로, 그것도 없으면 100당.
 const ICE = /빙과|아이스크림|빙菓/;
 export function popularUnit(o){
+  // 4.17.2 편의점 간편식(도시락·김밥 등)은 1개 그대로
+  if (o.whole) { const w = String(o.foodSize || '').match(/^([\d.]+)\s*g$/i); if (w) return {unit: '개', amount: Number(w[1])}; }
   const ml = o.basis === 'ml', m = String(o.foodSize || '').match(/^([\d.]+)\s*(g|ml|kg|l)$/i);
   let size = m ? Number(m[1]) * (/^(kg|l)$/i.test(m[2]) ? 1000 : 1) : 0;
   const cls = Object.values(o.cls || {}).join(' '), ice = ICE.test(cls), noodle = /면류|유탕면|라면/.test(cls), snack = /과자/.test(cls) && !/빙과/.test(cls);
@@ -205,7 +217,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     foodsRaw: read('mfds/out/foods-raw.json'),
     products: read('products_merged/products.json').products,
     recipes: fs.existsSync(path.join(BASE, 'recipes/recipes.json')) ? read('recipes/recipes.json').rows : [],
-    popular: fs.existsSync(path.join(BASE, 'products_popular/popular.json')) ? read('products_popular/popular.json').rows : [],
+    popular: ['popular', 'convenience'].flatMap(f => fs.existsSync(path.join(BASE, `products_popular/${f}.json`)) ? read(`products_popular/${f}.json`).rows : []),
   });
   const flagged = flagDoubts(rows); console.log(`품질 검사: 확인 필요 표시 ${flagged}행 추가 · 불가능한 값 제외 ${dropped.length} · 띄어쓰기 중복 합침 ${merged.length}`);
   const cnt = {}; for (const r of rows) cnt[r[10] || 0] = (cnt[r[10] || 0] || 0) + 1; console.log('표시별 행 수', cnt);

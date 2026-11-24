@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {sweetenerExplains} from './food-bundle.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.resolve(HERE, '..');
@@ -79,6 +80,8 @@ export function flagDoubts(rows){
     if (!doubt && tag !== 'r' && tag !== 'x' && codes.includes('kcal-mismatch')) { const calc = carbs * 4 + protein * 4 + fat * 9; doubt = Math.abs(kcal - calc) > Math.max(40, kcal * 0.4); }
     // 4.17.1 제로·무설탕 이름이고 단백질·지방이 거의 없으면 탄수화물은 감미료(열량 0 표시 가능) — 의심하지 않는다
     if (!doubt && tag !== 'r' && codes.includes('kcal-zero-with-macros')) doubt = (carbs || 0) + (protein || 0) + (fat || 0) > 2 && !(SUGAR_ALCOHOL.test(r[0]) && (protein || 0) <= 1.5 && (fat || 0) <= 1.5);
+    // 4.17.2 감미료로 설명되는 검산 차이·열량 0은 의심하지 않는다(food-bundle의 sweetenerExplains)
+    if (doubt && !codes.includes('negative') && !codes.includes('macro-sum-over-100') && sweetenerExplains(r[0], kcal, carbs, protein, fat)) doubt = false;
     if (doubt) { while (r.length < 10) r.push(''); r[10] = 1; n++; }
   }
   return n;

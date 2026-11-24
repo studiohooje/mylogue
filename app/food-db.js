@@ -63,8 +63,16 @@ export function loadFoodDB({url='food-db.json', fetcher=globalThis.fetch, onMore
 }
 
 // 검색: 먼저 가볍게 걸러서(포함·자판·초성) 300개까지 점수를 매기고, 맞는 정도 → 출처 순위 → 짧은 이름 순
+// 4.17.2 영어로 친 흔한 음식 이름(한/영 자판 실수가 아닌 진짜 영어)은 한국어 이름으로도 찾는다
+const EN = {salad:'샐러드', chicken:'치킨', pizza:'피자', coffee:'커피', americano:'아메리카노', latte:'라떼', bread:'빵', rice:'밥', egg:'계란', milk:'우유', beer:'맥주', soju:'소주', wine:'와인', banana:'바나나', apple:'사과', ramen:'라면', ramyeon:'라면', kimchi:'김치', kimbap:'김밥', gimbap:'김밥', burger:'버거', hamburger:'햄버거', sandwich:'샌드위치', steak:'스테이크', pasta:'파스타', tteokbokki:'떡볶이', bibimbap:'비빔밥', yogurt:'요거트', tofu:'두부', cola:'콜라', coke:'콜라'};
 export function searchFoodDB(query, {limit=30}={}){
- const q = String(query||'').trim(); if(!rows || !q) return [];
+ const q = String(query||'').trim(), en = EN[q.toLowerCase()];
+ if(!en) return searchOne(q, limit);
+ const seen = new Set();
+ return [...searchOne(en, limit), ...searchOne(q, limit)].filter(f => !seen.has(f.id) && seen.add(f.id)).slice(0, limit);
+}
+function searchOne(q, limit){
+ if(!rows || !q) return [];
  const qp = plain(q), qk = keystrokes(q), qh = /[a-z]/i.test(q) ? keystrokes(q, {latinAsHangul:true}) : '', qc = q.replace(/\s/g,'');
  const onlyCons = /^[ㄱ-ㅎ]+$/.test(qc), words = q.split(/\s+/).map(plain).filter(Boolean);
  const hits = [];

@@ -28,6 +28,9 @@ export function keystrokes(text, {latinAsHangul=false}={}){
 export function choseong(text){ let out = ''; for(const ch of String(text||'')){ if(isSyllable(ch)) out += CHO[Math.floor((ch.charCodeAt(0)-0xAC00)/588)]; else if(/[a-z0-9]/i.test(ch)) out += ch.toLowerCase(); } return out; }
 const plain = t => String(t||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/.,]/g,'');
 
+// 검색어가 다른 낱말의 일부일 뿐인 경우(검색어 → 그 낱말들)
+const FALSE_HIT = {콜라:/콜라겐|쇼콜라|콜라비|비콜라/g};
+
 // 이름(별칭 포함)이 검색어와 얼마나 맞는지 0~100
 export function matchScore(query, names){
  const q = String(query||'').trim(); if(!q) return 0;
@@ -49,6 +52,9 @@ export function matchScore(query, names){
   else if(at(nKs, qKs) > 0 && qKs.length >= 2) s = 55;
   else if(qKsHan && qKsHan.length >= 2 && at(nKs, qKsHan) > 0) s = 50;
   else if(onlyCons && q.replace(/\s/g,'').length >= 2 && choseong(name).includes(q.replace(/\s/g,''))) s = 45;
+  // 4.17.2 글자만 겹치는 다른 음식('콜라'→콜라겐·쇼콜라·콜라비)은 맨 뒤로: 그 단어를 지운 뒤에도 검색어가 남을 때만 제 점수
+  const fake = s && FALSE_HIT[qPlain];
+  if(fake && !plain(name).replace(fake, '').includes(qPlain)) s = Math.min(s, 20);
   if(s > best) best = s;
  }
  return best;
