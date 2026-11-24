@@ -21,7 +21,7 @@ export function save(db){ /* db를 바꿔 쓰므로 let처럼 다룸 */
  const raw=localStorage.getItem(STORAGE_KEY);
  let old=null;if(raw){try{old=normalizeDB(JSON.parse(raw),{lenient:true})}catch(error){status={blocked:true,reason:error.message};throw Error('기존 기록을 읽을 수 없어 저장하지 않았습니다. 원본 복구가 필요합니다.')}}
  // 따로 보관한 기록은 다른 화면이 db를 새로 만들어도 잃지 않게 이어 붙인다
- if(old?.quarantine?.length&&!db.quarantine)db={...db,quarantine:old.quarantine};
+ if(old?.quarantine?.length&&!db.quarantine?.length)db={...db,quarantine:old.quarantine};
  const encoded=JSON.stringify(db);try{localStorage.setItem(STORAGE_KEY,encoded)}catch(error){/* 4.27.0 전수검사 DAT-03: 용량 초과가 영어 오류로만 보였다 */if(/quota|exceed/i.test(String(error?.name||'')+String(error?.message||'')))throw Error('이 기기의 저장 공간이 가득 찼어요. 지금 기록은 그대로 있어요. 설정에서 백업 파일을 저장한 뒤 다시 시도해 주세요.');throw error}loadedRaw=encoded;return db;
 }
 export function recoverValidatedDB(db){

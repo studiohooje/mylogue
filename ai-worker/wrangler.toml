@@ -15,8 +15,9 @@ REVIEW_MODEL = "claude-sonnet-5-5"
 PLUS_ALL = "1"
 # 기능별 하루 한도: 무료/플러스
 LIMIT_PHOTO = "1/20"
-LIMIT_REVIEW = "0/3"
-LIMIT_CHAT = "0/20"
+# 4.27.0 재검사 N-7: 월 원가 상한(700원) 안에서 매일 써도 월말까지 가도록 리뷰 하루 1번, 묻기 하루 10개
+LIMIT_REVIEW = "0/1"
+LIMIT_CHAT = "0/10"
 LIMIT_RECIPE = "0/10"
 # 4.27.0 AI 원가 상한(1인 월, 원). 0이면 상한 없음. 기능별 1회 추정 원가(원)는 실제 청구와 비교해 고친다(확인 필요).
 MONTHLY_COST_WON = "700"

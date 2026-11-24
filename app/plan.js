@@ -3,6 +3,7 @@
 // - 슈퍼관리자: '보기 기준' 토글로 일반/플러스 화면·기능을 오가며 확인(이 기기에만 저장, 서버 권한은 바뀌지 않음).
 // - 가짜 AI 모드(관리자): AI 서버 없이 정해진 답으로 흐름을 시험.
 // 원칙: 손 기록·전체 그래프·DB 검색·백 온 트랙·안전 안내는 언제나 무료.
+// 4.27.0 재검사 B-27: '무료 약속'은 위 목록에만 한다. 플러스 기능은 베타 동안만 모두에게 열려 있다고 앱·랜딩에 적는다.
 import {cloudState} from './cloud-sync.js';
 import {isAdminUser} from './admin.js';
 import {scopedKey,storageAccount} from './storage-scope.js';
@@ -20,8 +21,8 @@ export const FEATURES = [
   {id: 'micro-report', name: '영양 심화 리포트', free: 0, plus: Infinity, ai: false, note: '무료도 하루 나트륨·당류 한 줄은 봄'},
   {id: 'program-auto', name: '운동 프로그램 자동 설계', free: 0, plus: Infinity, ai: false},
   {id: 'ai-photo', name: '음식 사진 기록', free: 1, plus: 20, ai: true, note: '하루 횟수, 인식 실패는 빼지 않음'},
-  {id: 'ai-review', name: 'AI 주간 리뷰', free: 0, plus: 3, ai: true, note: '하루 횟수'},
-  {id: 'ai-chat', name: 'AI에게 묻기', free: 0, plus: 20, ai: true, note: '하루 횟수'},
+  {id: 'ai-review', name: 'AI 주간 리뷰', free: 0, plus: 1, ai: true, note: '하루 횟수'},
+  {id: 'ai-chat', name: 'AI에게 묻기', free: 0, plus: 10, ai: true, note: '하루 횟수'},
   {id: 'ai-recipe', name: '레시피 글 자동 분해', free: 0, plus: 10, ai: true, note: '하루 횟수'},
 ];
 const store = k => { try { return globalThis.localStorage?.getItem(scopedKey(k)) || ''; } catch { return ''; } };

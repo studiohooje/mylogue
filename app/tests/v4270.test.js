@@ -53,7 +53,7 @@ test('DAT-10: 선택칸 목록에 없는 지금 값도 선택된 채로 남는�
  const m = mealFormHTML({meal: {date: D, name: '밥', servingQty: 1, servingUnit: '공기', calories: 300, source: 'ai-reviewed'}, date: D});
  assert.match(m, /<option value="ai-reviewed" selected>/);
  const e = exerciseFormHTML({name: '리포머 풋워크', part: '필라테스', equipment: '케틀벨'});
- assert.match(e, /<option selected>필라테스<\/option>/); assert.match(e, /<option selected>케틀벨<\/option>/);
+ assert.match(e, /<option value="필라테스" selected>필라테스<\/option>/); assert.match(e, /<option value="케틀벨" selected>케틀벨<\/option>/);
  assert.match(machineFormHTML({name: 'x', unit: 'level'}), /<option value="level" selected>단계<\/option>/);
  const {workoutFormHTML} = await import('../ui-helpers.js');
  assert.ok(typeof workoutFormHTML === 'function');

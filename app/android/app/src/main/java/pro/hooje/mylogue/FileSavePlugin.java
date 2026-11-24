@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import android.util.Base64;
 
 // 4.27.0 전수검사 AA-01: 웹뷰에는 <a download> 처리기가 없어 APK에서 백업·내보내기 파일이 실제로 저장되지 않았다.
 // 글(JSON·텍스트)을 받아 Android 10 이상은 '다운로드/Mylogue'(권한 필요 없음), 그 아래는 앱 전용 문서 폴더에 저장한다.
@@ -25,7 +26,11 @@ public class FileSavePlugin extends Plugin {
         String name = call.getString("name", "mylogue.json").replaceAll("[\\\\/:*?\"<>|\\n\\r]", "_");
         if (name.length() > 120) name = name.substring(0, 120);
         String mime = call.getString("mime", "application/json");
-        byte[] bytes = call.getString("data", "").getBytes(StandardCharsets.UTF_8);
+        // 4.27.0 재검사 AA-01: 사진·카드 이미지는 base64로 받아 그대로 저장
+        byte[] bytes;
+        try {
+            bytes = Boolean.TRUE.equals(call.getBoolean("base64", false)) ? Base64.decode(call.getString("data", ""), Base64.DEFAULT) : call.getString("data", "").getBytes(StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) { call.reject("파일 내용을 읽지 못했어요"); return; }
         try {
             String where;
             if (Build.VERSION.SDK_INT >= 29) {

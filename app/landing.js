@@ -169,7 +169,7 @@ export function landingHTML({installHTML='', returning=false}={}){
 
  <section class="ld-sec ld-end" id="ld-end">
   <h2>오늘의 한 줄부터.</h2>
-  <p>기록은 지금처럼 무료예요. 더 깊은 분석이 필요해지면, 그때 골라도 충분해요.</p>
+  <p>손 기록·그래프·검색은 계속 무료예요. 더 깊은 분석(플러스)은 베타 동안 모두에게 열려 있고, 정식 출시 뒤에는 필요할 때 골라도 충분해요.</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup2">Google로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo3">먼저 둘러보기</button>

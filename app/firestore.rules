@@ -339,6 +339,9 @@ service cloud.firestore {
         && (resource.data.requesterUid == request.auth.uid || admin());
       allow create: if approved() && validNewRequest()
         && (admin() || getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/meta/requestQuota).data.lastId == requestId);
+      // 4.27.0 재검사 DOC-03: 계정 삭제 때 본인이 남긴 등록 요청(요청자 UID·사진 포함)도 지운다. 공용 도감에 실린 항목에는 요청자 정보가 없다.
+      allow list: if signedIn() && resource.data.requesterUid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.requesterUid == request.auth.uid;
       allow update: if admin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminNote','reviewerUid','updatedAt'])
         && request.resource.data.status in ['in_review','approved','rejected','needs_info']

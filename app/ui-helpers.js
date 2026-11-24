@@ -27,7 +27,7 @@ export function mealFormHTML({meal, date, recent=[], presets=[]}) {
       <label class="field">1회 탄수화물 g<input name="carbs" type="number" min="0" step="0.1" value="${esc(base('carbs'))}"></label>
       <label class="field">1회 단백질 g<input name="protein" type="number" min="0" step="0.1" value="${esc(base('protein'))}"></label>
       <label class="field">1회 지방 g<input name="fat" type="number" min="0" step="0.1" value="${esc(base('fat'))}"></label>
-      <label class="field wide">영양값 출처<select name="source">${(l=>(m.source&&!l.some(x=>x[0]===m.source)?[[m.source,`지금 값 그대로(${m.source})`],...l]:l))([['manual','사용자 직접 입력'],['label','제품 영양 라벨'],['estimate','추정값']]).map(([value,label])=>`<option value="${value}" ${(m.source||'manual')===value?'selected':''}>${label}</option>`).join('')}</select></label><label class="field wide">메모<input name="note" value="${esc(m.note||'')}"></label>
+      <label class="field wide">영양값 출처<select name="source">${(l=>(m.source&&!l.some(x=>x[0]===m.source)?[[m.source,`지금 값 그대로(${m.source})`],...l]:l))([['manual','사용자 직접 입력'],['label','제품 영양 라벨'],['estimate','추정값']]).map(([value,label])=>`<option value="${esc(value)}" ${(m.source||'manual')===value?'selected':''}>${esc(label)}</option>`).join('')}</select></label><label class="field wide">메모<input name="note" value="${esc(m.note||'')}"></label>
       <div id="meal-preview" class="alert wide" role="status"></div>
       <button class="button wide">${meal?'식사 수정 저장':'식사 저장'}</button>
     </form></div>`;

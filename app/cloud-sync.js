@@ -1,8 +1,8 @@
 import {firebaseConfig} from './firebase-config.js';
 import {scopedKey,setStorageAccount,storageAccount} from './storage-scope.js';
-import {cloudRecords,planSync,recordsToDB,validRecordKey,isFreshDevice} from './cloud-model.js';
+import {cloudRecords,planSync,recordsToDB,validRecordKey,isFreshDevice,quarantineKeys} from './cloud-model.js';
 import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
-import {kvSet} from './kv-store.js';
+import {kvSet,kvDel} from './kv-store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
 import {isAdminUser} from './admin.js';
@@ -12,7 +12,7 @@ const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
 export const BOOT_WAIT_MS=4000;
 export function withTimeout(promise,ms=BOOT_WAIT_MS){let t;return Promise.race([promise,new Promise((_,reject)=>{t=setTimeout(()=>reject(Object.assign(Error('시간 초과'),{code:'timeout'})),ms)})]).finally(()=>clearTimeout(t))}
 // 이 기기에서 로그인한 적이 있는지(계정별 저장 키가 있는지). 없으면 계정 확인이 안 돼도 손님으로 연다.
-export function hadAccountOnDevice(){try{for(let i=0;i<localStorage.length;i++){if(/^mylogue\.v1\.user\./.test(localStorage.key(i)||''))return true}}catch{}return false}
+export function hadAccountOnDevice(){try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';/* 4.27.0 재검사 N-6: 둘러보기 예시 칸은 로그인이 아니다 */if(/^mylogue\.v1\.user\./.test(k)&&!k.endsWith('.user.demo-tour'))return true}}catch{}return false}
 export async function refreshApproval(){
   const user=auth?.currentUser;
   if(!user){cloudState.approval='guest';return 'guest'}
@@ -139,6 +139,8 @@ export async function deleteAccount({onStep=()=>{}}={}){
     else{const p=new authSDK.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account',login_hint:user.email||''});await authSDK.reauthenticateWithPopup(user,p)}
   }catch(e){if(String(e?.code||'').includes('user-mismatch'))throw Error('지금 로그인한 계정과 다른 Google 계정을 골랐어요. 같은 계정으로 다시 해 주세요.');if(String(e?.code||'').includes('popup-closed')||String(e?.code||'').includes('cancelled'))throw Error('본인 확인을 취소해서 삭제하지 않았어요.');throw e}
   const uid=user.uid;
+  onStep('등록 요청 삭제');
+  {const snap=await fsSDK.getDocsFromServer(fsSDK.query(fsSDK.collection(firestore,'catalogRequests'),fsSDK.where('requesterUid','==',uid)));for(let i=0;i<snap.docs.length;i+=400){const b=fsSDK.writeBatch(firestore);snap.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}}
   for(const sub of ['records','aiDrafts','accessLog','meta']){
     onStep(sub==='records'?'서버 기록 삭제':'검토함 초안 삭제');
     let snap;try{snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,sub))}catch(e){if(String(e?.code||'').includes('permission'))throw Error('서버가 아직 앱 안 삭제를 받을 준비가 안 됐어요. studiohooje@gmail.com으로 삭제를 요청해 주시면 바로 지워 드릴게요.');throw e}
@@ -158,6 +160,8 @@ export function clearAccountLocal(uid,store=globalThis.localStorage,idb=globalTh
   const tail=`.user.${encodeURIComponent(uid)}`;let n=0;
   try{const keys=[];for(let i=0;i<store.length;i++){const k=store.key(i);if(k&&k.endsWith(tail))keys.push(k)}for(const k of keys){store.removeItem(k);n++}}catch{}
   try{idb?.deleteDatabase?.(`mylogue.photos${tail}`)}catch{}
+  // 4.27.0 재검사 N-3: 동기화 직전 사본(IndexedDB)도 함께 지운다
+  try{Promise.resolve(kvDel(`mylogue.cloud.before-sync${tail}`)).catch(()=>{})}catch{}
   return n;
 }
 export function syncMetadata() {
@@ -189,7 +193,7 @@ export async function synchronize(db, save, choices={}) {
     if(!validRecordKey(doc.id)||!Number.isInteger(value.revision)||value.revision<1||!(typeof value.payload==='string'||value.payload===null))throw Error('서버 기록 형식을 확인해 주세요.');
     remote[doc.id]={revision:value.revision,payload:value.payload};
   });
-  const plan=planSync(current,remote,baseline,choices,{fresh:isFreshDevice(db,baseline)});
+  const plan=planSync(current,remote,baseline,choices,{fresh:isFreshDevice(db,baseline),hold:quarantineKeys(db)});
   cloudState.conflicts=plan.conflicts;
   if(plan.conflicts.length){
     localStorage.setItem(scopedKey('mylogue.cloud.conflicts'),JSON.stringify(plan.conflicts));

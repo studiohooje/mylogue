@@ -85,8 +85,10 @@ export function readPhaseAnswers(st, form) {
 }
 // 저장할 페이즈
 // 4.27.0 전수검사 C-02: 주당 체중의 1.5%보다 빠른 감량, 목표 BMI 18.5 미만은 저장하지 않는다(경고만 띄우고 저장되던 것)
-export function buildPhase(st, today, {heightCm = null} = {}) {
+export function buildPhase(st, today, {heightCm = null, cautions = [], age = null} = {}) {
   const t = typeOf(st.type); if (!t) throw Error('페이즈 종류를 골라 주세요.');
+  // 4.27.0 재검사 C-03: 식단 목표 문답과 같게, 임신·수유 중이거나 18세 이하면 감량·증량 페이즈를 저장하지 않는다
+  if ((DIET_LIKE.has(t.id) || GAIN_LIKE.has(t.id) || t.id === 'recomp') && ((cautions || []).some(c => c === 'pregnant' || c === 'breastfeeding') || (age != null && Number(age) <= 18))) throw Error('임신·수유 중이거나 18세 이하는 체중을 줄이거나 늘리는 페이즈를 시작하지 않아요. 유지 페이즈를 쓰거나 의료진과 먼저 상의해 주세요.');
   const weeks = Math.round(Number(st.weeks)), minW = t.id === 'dietbreak' ? 1 : 2; if (!(weeks >= minW && weeks <= 52)) throw Error(`기간은 ${minW}~52주 사이로 정해 주세요.`);
   const start = st.start || today, w = st.now.weight;
   const target = {...st.answers};
@@ -94,10 +96,18 @@ export function buildPhase(st, today, {heightCm = null} = {}) {
   if (DIET_LIKE.has(t.id) && base) target.weight = r1(base - target.loseKg);
   if (DIET_LIKE.has(t.id) && target.loseKg) {
     const ref = base || null;
-    if (ref && target.loseKg / weeks > ref * 0.015) throw Error(`주당 ${r1(target.loseKg / weeks)}kg은 체중의 1.5%(주 ${r1(ref * 0.015)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
+    if (ref && target.loseKg / weeks > ref * 0.015) throw Error(`주당 ${(target.loseKg / weeks).toFixed(2)}kg은 체중의 1.5%(주 ${(ref * 0.015).toFixed(2)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
     if (!ref && target.loseKg / weeks > 1) throw Error('주 1kg보다 빠른 감량은 저장하지 않았어요. 체중을 먼저 기록하거나 기간을 늘려 주세요.');
     const h = Number(heightCm) / 100;
     if (ref && h > 1 && (ref - target.loseKg) / (h * h) < 18.5) throw Error(`목표 체중 ${r1(ref - target.loseKg)}kg은 키 대비 저체중(BMI 18.5 미만)이라 저장하지 않았어요. 목표를 줄여 주세요.`);
+    // 4.27.0 재검사 C-02: 키를 모르면 저체중 확인을 못 하므로, 한 페이즈에 체중의 15%를 넘는 감량은 키를 먼저 받는다
+    if (ref && !(h > 1) && target.loseKg > ref * 0.15) throw Error('한 번에 체중의 15%가 넘는 감량은 키를 알아야 안전한지 볼 수 있어요. 식단 목표에서 키를 먼저 적거나 목표를 줄여 주세요.');
+  }
+  // 4.27.0 재검사 C-02: 증량도 상한(주당 체중의 1%, 체중을 모르면 주 0.75kg)
+  if (GAIN_LIKE.has(t.id) && target.gainKg) {
+    const ref = base || null;
+    if (ref && target.gainKg / weeks > ref * 0.01) throw Error(`주당 ${(target.gainKg / weeks).toFixed(2)}kg 증량은 체중의 1%(주 ${(ref * 0.01).toFixed(2)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
+    if (!ref && target.gainKg / weeks > 0.75) throw Error('주 0.75kg보다 빠른 증량은 저장하지 않았어요. 체중을 먼저 기록하거나 기간을 늘려 주세요.');
   }
   if (GAIN_LIKE.has(t.id) && base) target.weight = r1(base + target.gainKg);
   return {id: `ph-${Date.now().toString(36)}`, type: t.id, start, weeks, end: addDays(start, weeks * 7), startWeight: st.startAvg ?? w, startFatPct: st.now.fatPct, startMuscle: st.now.muscle, target, perWeek: planCheck(st).perWeek ?? 0, createdAt: new Date().toISOString()};

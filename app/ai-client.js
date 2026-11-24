@@ -11,9 +11,11 @@ import {searchFoodDB, foodDBReady} from './food-db.js';
 const DEMO_SPLIT = /[,，、\n]|그리고|하고 |이랑|랑 |먹고 |마시고 /;
 const DEMO_TAIL = /\s*(을|를|이|가|도|은|는)?\s*(먹었|먹음|마셨|마심|했|조금|많이|반\s|한\s|두\s|세\s).*$/;
 const DEMO_QTY = /[0-9.]+\s*(g|그램|개|팩|봉지|봉|그릇|공기|잔|캔|인분|ml)?/g;
+// 4.27.0 재검사 N-9: 운동·체중 문장은 음식으로 만들지 않는다
+const DEMO_NOT_FOOD = /kg|킬로|체중|몸무게|인바디|체지방|골격근|운동|스쿼트|벤치|데드|프레스|런지|풀업|푸시업|플랭크|러닝|달리|조깅|걷|산책|자전거|수영|필라테스|요가|세트|헬스/;
 const DEMO_WHEN = /^(오늘|어제)?\s*(아침|점심|저녁|간식|야식)?(에|으로|은|는)?\s*/;
 export function demoItems(text = ''){
- const parts = String(text).split(DEMO_SPLIT).map(w => w.replace(DEMO_WHEN, '').replace(DEMO_TAIL, '').replace(DEMO_QTY, '').trim()).filter(w => w.length >= 1 && w.length <= 20).slice(0, 4);
+ const parts = String(text).split(DEMO_SPLIT).map(w => w.replace(DEMO_WHEN, '').replace(DEMO_TAIL, '').replace(DEMO_QTY, '').trim()).filter(w => w.length >= 1 && w.length <= 20 && !DEMO_NOT_FOOD.test(w)).slice(0, 4);
  const items = parts.map(w => {
   const f = foodDBReady() ? (searchFoodDB(w, {limit: 1}) || [])[0] : null;
   if (!f || f.calories == null) return {name: `${w}(예시)`, qty: 1, unit: '회', kcal: null, carbs: null, protein: null, fat: null};
@@ -28,7 +30,7 @@ export const aiUsable = () => aiConnected() || fakeAI() || isDemo();
 const PATHS = ['parse', 'review', 'chat', 'recipe', 'me'];
 
 export function fakeReply(path, body = {}) {
-  if (path === 'me') return {plus: true, admin: true, fake: true, limits: {parse: 30, photo: 20, review: 3, chat: 20, recipe: 10}};
+  if (path === 'me') return {plus: true, admin: true, fake: true, limits: {parse: 30, photo: 20, review: 1, chat: 10, recipe: 10}, month: null};
   if (path === 'review') {
     // 예시 리뷰: 앱이 보낸 요약 숫자로만 만든다(둘러보기·가짜 AI 모드). 요약이 없으면 짧은 기본 문장.
     const sum = String(body.summary || ''), num = re => Number((sum.match(re) || [])[1] || 0);

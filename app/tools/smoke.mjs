@@ -16,13 +16,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.wasm': 'application/wasm'};
 
 if (!fs.existsSync(path.join(ROOT, 'index.html'))) { console.error('dist가 없어요. 먼저 npm run build'); process.exit(1); }
-if (!CHROME) { console.log('크롬을 찾지 못해 연기 시험을 건너뛰어요.'); process.exit(0); }
+// 4.27.0 재검사 N-10: CI(GitHub Actions)에서는 크롬이 없으면 통과가 아니라 실패
+if (!CHROME) { if (process.env.CI) { console.error('CI에서 크롬을 찾지 못했어요(CHROME 환경 변수로 지정).'); process.exit(1); } console.log('크롬을 찾지 못해 연기 시험을 건너뛰어요.'); process.exit(0); }
 
 const server = http.createServer((req, res) => { let name = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (name === '/') name = '/index.html'; const file = path.resolve(ROOT, '.' + name); if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; } fs.readFile(file, (e, d) => { if (e) { res.writeHead(404).end(); return; } res.writeHead(200, {'Content-Type': MIME[path.extname(file)] || 'application/octet-stream'}).end(d); }); });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const port = server.address().port, debug = 9400 + Math.floor(Math.random() * 400);
 const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'mylogue-smoke-'));
-const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${debug}`, `--user-data-dir=${prof}`, '--no-first-run', '--disable-gpu', 'about:blank'], {stdio: 'ignore'});
+const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${debug}`, `--user-data-dir=${prof}`, '--no-first-run', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : []), 'about:blank'], {stdio: 'ignore'});
 let errors = [], code = 0;
 try {
  for (let i = 0; i < 40; i++) { try { await fetch(`http://127.0.0.1:${debug}/json/version`); break; } catch { await wait(250); } }
@@ -44,10 +45,16 @@ try {
   const ok = await c.run(`(()=>{const b=document.querySelector('[data-page="${p}"]');if(!b)return false;b.click();return true})()`); await wait(700); steps.push(`${p}:${ok ? 'ok' : '없음'}`);
  }
  // 기록 창 열고 닫기(식사·운동·수치)
- for (const m of ['batch', 'workout', 'body']) {
-  await c.run(`(()=>{const b=document.querySelector('[data-modal="${m}"]');b?.click();return !!b})()`); await wait(700);
-  await c.run(`(()=>{const x=document.querySelector('.sheet .close, .sheet [aria-label*="닫기"], #modal-close');x?.click();history.back();return true})()`); await wait(500);
+ // 4.27.0 재검사 N-10: 빠른 식사(검색까지)·운동 실시간 입력·AI 입력·무엇을 기록할까 창까지
+ for (const m of ['batch', 'body', 'quick', 'meal', 'workout', 'ai-input']) {
+  // 홈에서 시작하고, 버튼이 홈에 없으면 '무엇을 기록할까요'(quick) 창 안에서 찾는다
+  await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(500);
+  const opened = await c.run(`(()=>{let b=document.querySelector('[data-modal="${m}"]');if(!b&&'${m}'!=='quick'){document.querySelector('[data-modal="quick"]')?.click();b=document.querySelector('.sheet [data-modal="${m}"]')}b?.click();return !!b})()`); await wait(900); steps.push(`창 ${m}:${opened ? 'ok' : '없음'}`);
+  if (m === 'meal') { await c.run(`(()=>{const i=document.getElementById('q-food-search');if(!i)return false;i.value='닭가슴살';i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`); await wait(1200); }
+  await c.run(`(()=>{const x=document.querySelector('.sheet .close, .sheet [aria-label*="닫기"], #modal-close');x?.click();return true})()`); await wait(500);
  }
+ await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(700);
+ steps.push('끝 창:' + await c.run(`document.querySelector('.sheet h2')?.innerText||'없음'`)); if (process.env.SMOKE_DEBUG) console.log(await c.run(`document.querySelector('main')?.innerText.slice(0,400)`));
  await c.run(`(()=>{document.dispatchEvent(new Event('visibilitychange'));dispatchEvent(new Event('pagehide'));return true})()`); await wait(500);
  errors = await c.run(`window.__smokeErr||[]`);
  const text = await c.run(`document.querySelector('main')?.innerText.length||0`);

@@ -100,7 +100,7 @@ export async function route(request, deps) {
       return callAI(messages, opts);
     };
     const model = env.MODEL || 'claude-haiku-5-5';
-    if (path === 'me') return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)]))});
+    if (path === 'me') { const row = await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(user.uid, month, 'cost').first(); const cap = Number(env.MONTHLY_COST_WON ?? '700'); return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null}); }
     if (path === 'parse') {
       const input = readInput(body), feature = input.images.length ? 'photo' : 'parse';
       let quota, repeat = false;
