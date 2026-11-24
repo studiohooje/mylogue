@@ -9,6 +9,7 @@ export function goalSettingsHTML(settings={}){
 
 export function saveGoalSettings(settings={},data={}){
  const mode=data.goalMode==='ratio'?'ratio':'grams';
+ /* 4.27.0 전수검사 C-10: 0이 아닌데 800kcal 미만인 목표는 저장하지 않는다(문답의 하한과 같게) */if(positive(data.calorieGoal)>0&&positive(data.calorieGoal)<800)throw Error('하루 목표 칼로리는 800kcal 이상으로 정해 주세요. 더 낮은 목표는 의료진과 상의해 주세요.');
  const out={...settings,goalMode:mode,calorieGoal:positive(data.calorieGoal),barbellWeightKg:positive(data.barbellWeightKg),carbsPctGoal:positive(data.carbsPctGoal),proteinPctGoal:positive(data.proteinPctGoal),fatPctGoal:positive(data.fatPctGoal)};
  if(mode==='ratio'){
   const sum=out.carbsPctGoal+out.proteinPctGoal+out.fatPctGoal;

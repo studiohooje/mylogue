@@ -32,9 +32,12 @@ export function haloDays(db, from, to){
 export function estimateAt(db, end, formula = null){
  const endT = toT(end), from = ymd(endT - (WINDOW - 1) * DAY);
  const w = t => Math.pow(0.5, (endT - t) / DAY / HALF);
- const intake = [...intakeByDay(db)].filter(([d]) => d >= from && d <= end);
+ // 4.27.0 전수검사 C-05: '의도적 단식'으로 표시한 날은 0kcal로 넣고, '다 적었어요'로 표시한 날은 적게 먹었어도 버리지 않는다(간헐적 단식이면 값이 수백 kcal 높게 나왔다)
+ const states = db.dayStates || {}, byDay = intakeByDay(db);
+ for(const [d, st] of Object.entries(states)) if(st === 'fasting' && d >= from && d <= end && !byDay.has(d)) byDay.set(d, 0);
+ const intake = [...byDay].filter(([d]) => d >= from && d <= end);
  const med = intake.length ? [...intake.map(x => x[1])].sort((a, b) => a - b)[Math.floor(intake.length / 2)] : 0;
- const full = intake.filter(([, k]) => k >= 800 && k >= med * 0.6);
+ const full = intake.filter(([d, k]) => states[d] === 'fasting' || states[d] === 'complete' || (k >= 800 && k >= med * 0.6));
  const weights = [...weightsByDay(db)].filter(([d]) => d >= from && d <= end).map(([d, kg]) => ({t: toT(d), kg})).sort((a, b) => a.t - b.t); // 4.27.0 전수검사 C-01: 날짜순으로(지난 날짜 체중을 나중에 넣거나 동기화 병합 뒤 순서가 섞이면 기간이 음수가 되어 '수집 중'으로 돌아갔다)
  const halos = haloDays(db, from, end);
  const span = weights.length ? Math.round((weights.at(-1).t - weights[0].t) / DAY) : 0, lastGap = weights.length ? Math.round((endT - Math.max(...weights.map(x => x.t))) / DAY) : 99;
@@ -63,8 +66,11 @@ export function estimateAt(db, end, formula = null){
  const prior = Number(formula) > 0 ? Number(formula) : null, sp = 300;
  const kcal = prior ? (prior / sp ** 2 + obs / seObs ** 2) / (1 / sp ** 2 + 1 / seObs ** 2) : obs, se = prior ? Math.sqrt(1 / (1 / sp ** 2 + 1 / seObs ** 2)) : seObs;
  const byHalo = halos >= HALO_STEPS[2] ? 3 : halos >= HALO_STEPS[1] ? 2 : halos >= HALO_STEPS[0] ? 1 : 0, byErr = seObs <= 100 ? 3 : seObs <= 160 ? 2 : seObs <= 260 ? 1 : 0;
- const level = Math.min(byHalo, byErr);
- return {ok: level > 0, level, kcal: r50(kcal), lo: r50(kcal - 1.28 * se), hi: r50(kcal + 1.28 * se), observed: Math.round(obs), seObs: Math.round(seObs), slopeKgWeek: Math.round(slope * 7 * 100) / 100, meanIntake: Math.round(meanIn), ...facts};
+ // 4.27.0 전수검사 C-06: 결과가 공식값의 ±40% 밖이거나 체중이 주 1.5kg 넘게 변하면 계산을 보류(덜 적은 식단·물 체중이면 1,250kcal '꽤 정확' 같은 값이 나왔다)
+ const weeklyKg = Math.abs(slope * 7), implausible = weeklyKg > 1.5 || (prior ? (kcal < prior * 0.6 || kcal > prior * 1.4) : (kcal < 1000 || kcal > 5000));
+ const level = implausible ? 0 : Math.min(byHalo, byErr);
+ if(implausible) facts.implausible = true;
+ return {ok: level > 0, level, kcal: r50(kcal), lo: r50(Math.max(0, kcal - 1.28 * se)), hi: r50(kcal + 1.28 * se), observed: Math.round(obs), seObs: Math.round(seObs), slopeKgWeek: Math.round(slope * 7 * 100) / 100, meanIntake: Math.round(meanIn), ...facts};
 }
 
 // 지금 보여 줄 것: 오늘 기준으로 되면 'ready', 안 되면 예전(최대 26주 전)에 됐던 값을 'stale'로, 그것도 없으면 'collecting'
@@ -85,6 +91,7 @@ export function progressOf(m){
  if(f.weighIns < 10) need.push(`체중 기록 ${10 - f.weighIns}번 더`);
  if(f.intakeDays < 14) need.push(`식단을 다 적은 날 ${14 - f.intakeDays}일 더`);
  if(f.weighIns && f.lastGap > 10) need.push('최근 열흘 안의 체중 기록');
+ if(f.implausible) need.push('값이 평소와 너무 달라 계산을 잠시 미뤘어요(식단을 덜 적었거나 체중이 물로 크게 출렁였을 수 있어요)');
  return {pct, halos: f.halos, target, need};
 }
 

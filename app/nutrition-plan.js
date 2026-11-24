@@ -86,10 +86,13 @@ export function calorieOptions(profile, base = null){
    {d:0, label:'유지', note:'추정 유지 칼로리예요. 2~3주 체중 변화를 보고 조정하세요.', rec:true},
    {d:150, label:'운동량 많은 날 기준', note:'운동을 많이 해서 배고프거나 기운이 없을 때.'},
   ];
- return raw.map(o => {
+ // 4.27.0 전수검사 C-03: 임신·수유 중이거나 18세 이하면 감량 칼로리를 제안하지 않는다(예전엔 '추천'까지 붙었다). 0kcal 이하는 빼고, 바닥 아래는 고를 수 없게 표시.
+ const careful = p.cautions.some(c => c === 'pregnant' || c === 'breastfeeding') || (p.age != null && p.age <= 18);
+ const list = careful && p.goal === 'lose' ? [{d:0, label:'유지', note:'임신·수유 중이거나 18세 이하는 감량 칼로리를 제안하지 않아요. 의료진과 먼저 상의해 주세요.', rec:true}] : raw;
+ return list.map(o => {
   const kcal = r50(e.tdee + o.d), below = kcal < e.floor;
-  return {...o, kcal, below, note: below ? `${o.note} 다만 기초대사량·최소 섭취량(${n0(e.floor)}kcal)보다 낮아 권하지 않아요.` : o.note, rec: !!o.rec && !below};
- });
+  return {...o, kcal, below, disabled: below, note: below ? `${o.note} 다만 기초대사량·최소 섭취량(${n0(e.floor)}kcal)보다 낮아 고를 수 없어요.` : o.note, rec: !!o.rec && !below};
+ }).filter(o => o.kcal > 0);
 }
 
 export function presetOrder(profile){
@@ -154,7 +157,7 @@ export function goalWizardHTML(st){
  if(step==='diet') return `<div class="onb gw">${top}<p class="onb-q">해당되는 게 있나요?</p><p class="onb-s">여러 개 골라도 돼요. 제안할 때 참고해요.</p><div class="onb-chips">${DIETS.map(([v,t,d])=>`<button type="button" class="onb-chip ${(v==='none'?!p.diets.length:p.diets.includes(v))?'on':''}" data-gw-diet="${v}" aria-pressed="${v==='none'?!p.diets.length:p.diets.includes(v)}">${t}${d?` <small>${d}</small>`:''}</button>`).join('')}</div><p class="onb-s gw-caut-q">건강 상태(선택) · 해당되면 감량 제안 대신 안전한 안내를 먼저 드려요</p><div class="onb-chips">${CAUTIONS.map(([v,t])=>`<button type="button" class="onb-chip ${(p.cautions||[]).includes(v)?'on':''}" data-gw-caution="${v}" aria-pressed="${(p.cautions||[]).includes(v)}">${t}</button>`).join('')}</div>${p.diets.includes('glp1')?'<p class="gw-care">약을 쓰는 중이라면 식단·체중 목표는 처방한 의료진의 안내가 먼저예요. 마이로그의 제안은 참고용이에요.</p>':''}${nav(st)}</div>`;
  if(step==='calories'){
   const mineOn = st.useMine && ['ready','stale'].includes(st.mine?.status), list = calorieOptions(p, mineOn ? st.mine.kcal : null);
-  return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p>${useMineHTML(st.mine, st.useMine)}<p class="onb-s">${mineOn ? `내 유지칼로리 <b>${n0(st.mine.kcal)}kcal</b>${st.mine.status==='stale'?' (예전 기록 기준, 부정확할 수 있어요)':''} · 계산식 ${n0(e?.tdee)}kcal` : `추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal`}</p><p class="onb-s gw-basis">${mineOn ? '내가 먹은 것과 체중 흐름으로 계산한 값이에요. 기록이 쌓일수록 정확해져요.' : '2025 한국인 영양소 섭취기준의 에너지필요추정량 식으로 계산한 대략값이에요. 2~3주 체중 변화를 보고 조정하세요.'}</p><div class="onb-opts">${list.map(o=>opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',)).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
+  return `<div class="onb gw">${top}<p class="onb-q">하루 목표 칼로리를 골라 주세요</p>${useMineHTML(st.mine, st.useMine)}<p class="onb-s">${mineOn ? `내 유지칼로리 <b>${n0(st.mine.kcal)}kcal</b>${st.mine.status==='stale'?' (예전 기록 기준, 부정확할 수 있어요)':''} · 계산식 ${n0(e?.tdee)}kcal` : `추정 유지 칼로리 <b>${n0(e?.tdee)}kcal</b> · 기초대사량 ${n0(e?.bmr)}kcal`}</p><p class="onb-s gw-basis">${mineOn ? '내가 먹은 것과 체중 흐름으로 계산한 값이에요. 기록이 쌓일수록 정확해져요.' : '2025 한국인 영양소 섭취기준의 에너지필요추정량 식으로 계산한 대략값이에요. 2~3주 체중 변화를 보고 조정하세요.'}</p><div class="onb-opts">${list.map(o=>(o.disabled?(x=>x.replace('<button type="button"','<button type="button" disabled')):(x=>x))(opt('data-gw-kcal',o.kcal,st.kcal===o.kcal&&!st.custom.kcalOn,`${n0(o.kcal)} kcal <em class="gw-tag">${o.label}</em>${o.rec?'<em class="gw-rec">추천</em>':''}`,o.note,'',))).join('')}</div><details class="gw-custom" ${st.custom.kcalOn?'open':''}><summary>직접 입력</summary><label class="field">목표 칼로리 kcal<input id="gw-kcal-custom" type="number" inputmode="numeric" min="800" max="6000" step="10" value="${h(st.custom.kcal)}" placeholder="${n0(e?.tdee)}"></label></details>${nav(st)}</div>`;
  }
  if(step==='macros'){
   const kcal = st.kcal, {rec, order} = presetOrder(p);

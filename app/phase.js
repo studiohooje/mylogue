@@ -84,13 +84,21 @@ export function readPhaseAnswers(st, form) {
   return a;
 }
 // 저장할 페이즈
-export function buildPhase(st, today) {
+// 4.27.0 전수검사 C-02: 주당 체중의 1.5%보다 빠른 감량, 목표 BMI 18.5 미만은 저장하지 않는다(경고만 띄우고 저장되던 것)
+export function buildPhase(st, today, {heightCm = null} = {}) {
   const t = typeOf(st.type); if (!t) throw Error('페이즈 종류를 골라 주세요.');
   const weeks = Math.round(Number(st.weeks)), minW = t.id === 'dietbreak' ? 1 : 2; if (!(weeks >= minW && weeks <= 52)) throw Error(`기간은 ${minW}~52주 사이로 정해 주세요.`);
   const start = st.start || today, w = st.now.weight;
   const target = {...st.answers};
   const base = st.startAvg ?? w;
   if (DIET_LIKE.has(t.id) && base) target.weight = r1(base - target.loseKg);
+  if (DIET_LIKE.has(t.id) && target.loseKg) {
+    const ref = base || null;
+    if (ref && target.loseKg / weeks > ref * 0.015) throw Error(`주당 ${r1(target.loseKg / weeks)}kg은 체중의 1.5%(주 ${r1(ref * 0.015)}kg)보다 빨라 저장하지 않았어요. 기간을 늘리거나 목표를 줄여 주세요.`);
+    if (!ref && target.loseKg / weeks > 1) throw Error('주 1kg보다 빠른 감량은 저장하지 않았어요. 체중을 먼저 기록하거나 기간을 늘려 주세요.');
+    const h = Number(heightCm) / 100;
+    if (ref && h > 1 && (ref - target.loseKg) / (h * h) < 18.5) throw Error(`목표 체중 ${r1(ref - target.loseKg)}kg은 키 대비 저체중(BMI 18.5 미만)이라 저장하지 않았어요. 목표를 줄여 주세요.`);
+  }
   if (GAIN_LIKE.has(t.id) && base) target.weight = r1(base + target.gainKg);
   return {id: `ph-${Date.now().toString(36)}`, type: t.id, start, weeks, end: addDays(start, weeks * 7), startWeight: st.startAvg ?? w, startFatPct: st.now.fatPct, startMuscle: st.now.muscle, target, perWeek: planCheck(st).perWeek ?? 0, createdAt: new Date().toISOString()};
 }
@@ -148,7 +156,7 @@ export function phaseAdvice(db, today) {
   if (DIET_LIKE.has(t)) {
     const rate = -s.weightChange / (s.day / 7);
     if (p.startWeight && rate > p.startWeight * 0.01) out.push({kind: 'fast', text: `생각보다 빨리 빠지고 있어요(주 ${r1(rate)}kg). 근육을 지키려면 하루 100~200kcal 더 먹거나 단백질을 챙겨도 괜찮아요.`});
-    else if (s.day >= 21 && diff > Math.max(0.5, Math.abs(s.expected) * 0.4)) out.push({kind: 'slow', text: `계획보다 ${r1(diff)}kg 덜 빠졌어요. 하루 100~150kcal를 줄이거나 걷기를 조금 늘려 보는 정도면 충분해요.`});
+    else if (s.day >= 21 && diff > Math.max(0.5, Math.abs(s.expected) * 0.4) && !(p.startWeight && rate >= p.startWeight * 0.005)) out.push({kind: 'slow', text: `계획보다 ${r1(diff)}kg 덜 빠졌어요. 하루 100~150kcal를 줄이거나 걷기를 조금 늘려 보는 정도면 충분해요.`});
     else out.push({kind: 'on', text: `계획대로 가고 있어요. 지금 ${sign(s.weightChange)}kg.`});
     if (s.muscleChange != null && s.muscleChange <= -0.8) out.push({kind: 'muscle', text: `골격근량이 ${s.muscleChange}kg 줄었어요. 단백질(체중 1kg당 1.6g 안팎)과 근력운동을 우선해요.`});
   } else if (GAIN_LIKE.has(t)) {

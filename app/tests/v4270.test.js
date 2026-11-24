@@ -126,3 +126,37 @@ test('M-01: 둘러보기 AI는 적은 말의 음식 이름을 쓰고, 못 찾으
  assert.doesNotMatch(p, /운영자를 포함해 <b>다른 계정은 내 기록을 볼 수 없어요/, 'B-03 처리방침 첫 상자 모순 해소');
  assert.match(p, /헬스 커넥트/); assert.match(p, /카카오 지도/);
 });
+
+test('DAT-04: 동기화 쓰기를 400건씩 나눈다', async () => {
+ const {chunk, SYNC_CHUNK} = await import('../cloud-sync.js');
+ assert.equal(SYNC_CHUNK, 400);
+ const parts = chunk(Array.from({length: 1000}, (_, i) => i), SYNC_CHUNK);
+ assert.deepEqual(parts.map(p => p.length), [400, 400, 200]);
+});
+
+test('C-02·03·05·06·10·11: 위험한 계획·비현실 값 막기', async () => {
+ const {buildPhase} = await import('../phase.js');
+ const st = w => ({type: 'diet', weeks: 2, now: {weight: w}, startAvg: w, answers: {loseKg: 40}});
+ assert.throws(() => buildPhase(st(50), D), /1.5%/);
+ assert.throws(() => buildPhase({type: 'diet', weeks: 12, now: {weight: 45}, startAvg: 45, answers: {loseKg: 6}}, D, {heightCm: 160}), /저체중/);
+ assert.ok(buildPhase({type: 'diet', weeks: 12, now: {weight: 80}, startAvg: 80, answers: {loseKg: 6}}, D, {heightCm: 175}).target.weight === 74);
+ const {calorieOptions} = await import('../nutrition-plan.js');
+ const preg = calorieOptions({sex: 'female', age: 30, heightCm: 160, weightKg: 55, goal: 'lose', cautions: ['pregnant']});
+ assert.deepEqual(preg.map(o => o.label), ['유지']);
+ assert.ok(calorieOptions({sex: 'female', age: 16, heightCm: 160, weightKg: 50, goal: 'lose'}).every(o => o.label === '유지'));
+ const {saveGoalSettings} = await import('../nutrition-goals.js');
+ assert.throws(() => saveGoalSettings({}, {goalMode: 'grams', calorieGoal: 300}), /800/);
+ assert.doesNotThrow(() => saveGoalSettings({}, {goalMode: 'grams', calorieGoal: 0}));
+ const {cleanBody} = await import('../domain.js');
+ assert.throws(() => cleanBody({date: D, weight: 7}), /20~400/);
+ assert.throws(() => cleanBody({date: D, weight: 700}), /20~400/);
+ assert.equal(cleanBody({date: D, weight: 72.4}).weight, 72.4);
+ const {estimateAt} = await import('../maintenance.js');
+ const day = n => { const d = new Date(`${D}T12:00:00`); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+ const body = [], meals = [], dayStates = {};
+ for (let i = 50; i >= 0; i--) { body.push({id: 'b' + i, date: day(i), weight: 75}); if (i % 7 === 1 || i % 7 === 4) dayStates[day(i)] = 'fasting'; else meals.push({id: 'm' + i, date: day(i), name: '식사', servingQty: 1, servingUnit: '회', calories: 2300, loggedAt: `${day(i)}T03:00:00Z`}); }
+ const r = estimateAt({body, meals, workouts: [], dayStates}, D);
+ assert.ok(r.meanIntake < 2000, '단식일을 0kcal로 넣어 평균이 내려감');
+ const under = estimateAt({body, meals: meals.map(m => ({...m, calories: 1000})), workouts: []}, D, 2500);
+ assert.equal(under.ok, false); assert.equal(under.implausible, true);
+});

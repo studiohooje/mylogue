@@ -147,6 +147,9 @@ export function syncMetadata() {
     return value;
   }catch{throw Error('동기화 기준 기록이 손상됐습니다. 원본을 보존하고 복구가 필요합니다.');}
 }
+// 4.27.0 DAT-04: 한 번에 보낼 기록 수(트랜잭션 쓰기 한도 500 아래로)
+export const SYNC_CHUNK=400;
+export const chunk=(list,n)=>{const out=[];for(let i=0;i<list.length;i+=n)out.push(list.slice(i,i+n));return out};
 export async function synchronize(db, save, choices={}) {
   const user=auth?.currentUser;
   if(!user||user.uid!==storageAccount())throw Error('먼저 로그인해 주세요.');
@@ -171,16 +174,17 @@ export async function synchronize(db, save, choices={}) {
     return {conflicts:plan.conflicts};
   }
   const next=recordsToDB(plan.merged,db);
-  if(plan.writes.length>450)throw Error('한 번에 변경할 기록이 너무 많습니다. 현재 기록을 백업한 뒤 관리자에게 문의해 주세요.');
   // Preserve both original sides before any server write or local replacement.
   checkLocal();
   localStorage.setItem(scopedKey('mylogue.cloud.before-sync'),JSON.stringify({date:new Date().toISOString(),local:db,remote}));
-  if(plan.writes.length)await fsSDK.runTransaction(firestore,async tx=>{
-    const refs=plan.writes.map(w=>fsSDK.doc(collection,w.key));
+  // 4.27.0 전수검사 DAT-04: 예전엔 450건을 넘으면 "관리자에게 문의"로 영영 막혔다(게스트로 오래 쓰다 가입, 큰 백업 복원 뒤).
+  // 400건씩 나눠 차례로 보낸다. 중간에 실패해도 이미 보낸 묶음은 서버 값이 이 기기 값과 같아져 다음 동기화가 그대로 이어 간다.
+  for(const part of chunk(plan.writes,SYNC_CHUNK))await fsSDK.runTransaction(firestore,async tx=>{
+    const refs=part.map(w=>fsSDK.doc(collection,w.key));
     const docs=await Promise.all(refs.map(ref=>tx.get(ref)));
-    for(let i=0;i<docs.length;i++)if((docs[i].exists()?docs[i].data().revision:0)!==plan.writes[i].expectedRevision)throw Error('다른 기기에서 기록을 수정했습니다. 다시 동기화하고 변경 내용을 확인해 주세요.');
+    for(let i=0;i<docs.length;i++)if((docs[i].exists()?docs[i].data().revision:0)!==part[i].expectedRevision)throw Error('다른 기기에서 기록을 수정했습니다. 다시 동기화하고 변경 내용을 확인해 주세요.');
     for(let i=0;i<refs.length;i++){
-      const w=plan.writes[i];
+      const w=part[i];
       tx.set(refs[i],{revision:w.expectedRevision+1,payload:w.payload,updatedAt:fsSDK.serverTimestamp()});
     }
   });

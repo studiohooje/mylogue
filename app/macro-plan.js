@@ -112,6 +112,7 @@ export const ruleLabel = (r, weight) => r?.mode==='ratio' ? '비율' : r?.mode==
 export function applyMacroPlan(settings={}, plan, weight){
  const c = computeMacroPlan(plan, weight);
  if(c.errors.length) throw Error(c.errors[0]);
+ if(c.goal > 0 && c.goal < 800) throw Error('하루 목표 칼로리는 800kcal 이상으로 정해 주세요. 더 낮은 목표는 의료진과 상의해 주세요.'); // 4.27.0 전수검사 C-10
  return {...settings, goalMode:'plan', macroPlan:{...structuredClone(plan), weightUsed:weight||null}, calorieGoal:c.goal, carbsGoal:c.g.carbs, proteinGoal:c.g.protein, fatGoal:c.g.fat, carbsPctGoal:c.pct.carbs, proteinPctGoal:c.pct.protein, fatPctGoal:c.pct.fat};
 }
 // 체중 대비 방식이면 최근 체중으로 다시 계산(체중이 바뀌었을 때만). 바뀌지 않으면 같은 객체를 돌려준다.
