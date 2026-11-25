@@ -24,13 +24,25 @@ export function hourChips(mode, date, now = new Date()){
 // 처음 고를 때 기본 시각
 export function applyWhen(s, mode, now = new Date()){
  const today = todayStr(now), hm = nowHM(now), cur = now.getHours()*60 + now.getMinutes();
- s.when = mode;
+ s.when = mode; s.hourOpen = null;
  if (mode === 'now') { s.date = today; s.time = hm; }
  else if (mode === 'past') { s.date = s.date && s.date < today ? s.date : today; s.time = s.date < today ? '12:00' : toHM(Math.max(0, Math.floor(cur/60)*60 - 60)); }
  else if (mode === 'plan') { const next = Math.floor(cur/60)*60 + 60; if (next >= 1440) { s.date = addDays(today, 1); s.time = '08:00'; } else { s.date = today; s.time = toHM(next); } }
  return s;
 }
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 4.29.x 대표님: 시 칩을 누르면 그 시의 10분 단위 칩(10시·10:10·…·10:50)으로 바뀌고, 같은 시를 다시 누르면 처음 시 칩으로.
+// 줄 끝에는 늘 '직접 입력' 칸(지금 고른 시각)이 있어 10:35처럼 바로 고칠 수 있다. 다른 화면에서도 같은 부품을 쓴다.
+// opts: {hours:['10:00',…], time:'HH:MM', openHour:null|숫자, attr:'data-q-when', minuteOk:(분 단위 'HH:MM')=>boolean}
+export function hourMinuteChipsHTML({hours = [], time = '', openHour = null, attr = 'data-q-when', minuteOk = () => true, emptyHint = ''} = {}){
+ const chip = (a, val, label, on) => `<button type="button" class="chip ${on ? 'active' : ''}" ${a}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`;
+ const curH = Number(String(time).slice(0, 2)), manual = `<label class="q-when-manual"><span class="sr-only">시각 직접 입력</span><input type="time" data-no-when ${attr}-manual value="${esc(time)}" step="60" inputmode="numeric"></label>`;
+ if (openHour != null) {
+  const h = pad(openHour), mins = [10, 20, 30, 40, 50].map(m => `${h}:${pad(m)}`).filter(minuteOk);
+  return `<div class="chip-row q-hours q-mins">${chip(`${attr}-hour`, openHour, `${openHour}시`, true)}${mins.map(t => chip(`${attr}-time`, t, `${openHour}시 ${Number(t.slice(3))}분`, time === t)).join('')}${manual}</div>`;
+ }
+ return `<div class="chip-row q-hours">${hours.length ? hours.map(t => { const hh = Number(t.slice(0, 2)); return chip(`${attr}-hour`, hh, `${hh}시`, curH === hh); }).join('') : `<small class="hint">${esc(emptyHint)}</small>`}${manual}</div>`;
+}
 const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
 const hm12 = t => { const [h, m] = t.split(':').map(Number); return `${h < 12 ? '오전' : '오후'} ${h%12 || 12}:${pad(m)}`; };
 
@@ -50,11 +62,24 @@ export function mealWhenBarHTML(s, now = new Date()){
  let rows = '';
  if (s.when === 'now') {
   const n = nowHM(now), top = `${pad(now.getHours())}:00`;
-  rows = `<div class="chip-row">${chip('data-q-when-time', n, `지금 ${n}`, s.time === n && s.date === today)}${top !== n ? chip('data-q-when-time', top, `정각 ${top}`, s.time === top && s.date === today) : ''}${[-10, -30, -60].map(m => chip('data-q-when-shift', m, m === -60 ? '−1시간' : `−${-m}분`, false)).join('')}</div>`;
+  rows = `<div class="chip-row">${chip('data-q-when-time', n, `지금 ${n}`, s.time === n && s.date === today)}${top !== n ? chip('data-q-when-time', top, `정각 ${top}`, s.time === top && s.date === today) : ''}${[-10, -30, -60].map(m => chip('data-q-when-shift', m, m === -60 ? '−1시간' : `−${-m}분`, false)).join('')}<label class="q-when-manual"><span class="sr-only">시각 직접 입력</span><input type="time" data-no-when data-q-when-manual value="${esc(s.time || n)}" step="60"></label></div>`;
  } else if (s.when === 'past' || s.when === 'plan') {
   const days = s.when === 'past' ? [[today, '오늘'], [addDays(today, -1), '어제'], [addDays(today, -2), '그제']] : [[today, '오늘'], [addDays(today, 1), '내일'], [addDays(today, 2), '모레']];
   const hours = s.when === 'past' ? hourChips(s.when, s.date, now).reverse() : hourChips(s.when, s.date, now); // 전에 먹은 것은 가까운 시각부터
-  rows = `<div class="chip-row">${days.map(([d, l]) => chip('data-q-when-date', d, l, s.date === d)).join('')}</div><div class="chip-row q-hours">${hours.length ? hours.map(h => chip('data-q-when-time', h, `${Number(h.slice(0, 2))}시`, s.time === h)).join('') : '<small class="hint">고를 수 있는 시각이 없어요. 날짜를 바꾸거나 아래에서 직접 적어 주세요.</small>'}</div>${s.when === 'plan' ? '<p class="hint q-plan-note">예정으로 저장돼요. 하루 칼로리·탄단지에 \'예정 포함\'으로 미리 더해 볼 수 있고, 먹은 뒤 \'먹었어요\'를 누르면 확정돼요.</p>' : ''}`;
+  const cur = now.getHours()*60 + now.getMinutes(), isToday = s.date === today;
+  const minuteOk = t => !isToday || (s.when === 'plan' ? toMin(t) > cur : toMin(t) <= cur);
+  rows = `<div class="chip-row">${days.map(([d, l]) => chip('data-q-when-date', d, l, s.date === d)).join('')}</div>${hourMinuteChipsHTML({hours, time: s.time, openHour: s.hourOpen ?? null, minuteOk, emptyHint: '고를 수 있는 시각이 없어요. 날짜를 바꾸거나 오른쪽 칸에 직접 적어 주세요.'})}${s.when === 'plan' ? '<p class="hint q-plan-note">예정으로 저장돼요. 하루 칼로리·탄단지에 \'예정 포함\'으로 미리 더해 볼 수 있고, 먹은 뒤 \'먹었어요\'를 누르면 확정돼요.</p>' : ''}`;
  }
  return `<section class="q-plan q-when-bar"><div class="q-live-line"><span class="q-live-badge ${s.when === 'now' ? 'live' : ''}">${s.when === 'now' ? '● ' : ''}${esc(title)}</span>${s.when === 'fixed' ? '' : '<button type="button" class="text-button" data-q-when-reset>입력 방식 바꾸기</button>'}</div><p class="q-when-at">${esc(dateLabel)} ${esc(hm12(s.time || '12:00'))}</p>${rows}</section>`;
+}
+
+// 시 칩·직접 입력 처리(화면 쪽 공용): 같은 시를 다시 누르면 접기, 다른 시면 그 시 정각으로 열기
+export function toggleHour(s, hour){
+ const h = Number(hour);
+ if (s.hourOpen === h) { s.hourOpen = null; return s; }
+ s.hourOpen = h; s.time = `${pad(h)}:00`; return s;
+}
+export function setManualTime(s, value){
+ if (!/^\d{2}:\d{2}$/.test(String(value || ''))) return false;
+ s.time = value; s.hourOpen = Number(value.slice(0, 2)); return true;
 }
