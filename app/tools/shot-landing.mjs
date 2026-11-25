@@ -1,4 +1,4 @@
-// 4.27.0 랜딩·부팅 화면 캡처(412·860 폭). 실행: npm run build && node tools/shot-landing.mjs <저장 폴더>
+// 4.27.0 랜딩·부팅 화면 캡처(4.29.0부터 360·412·860·1280 폭, 페이지 전체). 실행: npm run build && node tools/shot-landing.mjs <저장 폴더>
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,9 +21,11 @@ try {
  for (let i = 0; i < 40; i++) { try { await fetch(`http://127.0.0.1:${debug}/json/version`); break; } catch { await wait(250); } }
  const c = await connect(debug);
  await c.send('Page.enable');
- for (const [w, h] of [[412, 915], [860, 1000]]) {
+ for (const [w, h] of [[360, 740], [412, 915], [860, 1000], [1280, 800]]) {
   await c.send('Emulation.setDeviceMetricsOverride', {width: w, height: h, deviceScaleFactor: 1, mobile: w < 650});
-  await c.send('Page.navigate', {url: `http://127.0.0.1:${port}/`}); await wait(3000);
+  await c.send('Page.navigate', {url: `http://127.0.0.1:${port}/`}); await wait(3500);
+  const full = await c.run(`Math.ceil(document.documentElement.scrollHeight)`);
+  await c.send('Emulation.setDeviceMetricsOverride', {width: w, height: Math.min(full, 9000), deviceScaleFactor: 1, mobile: w < 650}); await wait(600);
   const shot = await c.send('Page.captureScreenshot', {format: 'png'});
   fs.writeFileSync(path.join(OUT, `landing-${w}.png`), Buffer.from(shot.data, 'base64'));
  }

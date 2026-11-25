@@ -102,6 +102,9 @@ export function demoRecords(todayStr, now=new Date()){
 
 // ---- 화면 ----
 const halo = `<svg class="ld-halo" viewBox="0 0 320 210" aria-hidden="true"><defs><linearGradient id="ldhg" x1="0" x2="1"><stop offset="0" stop-color="#f2b49b"/><stop offset=".5" stop-color="#8ce4e0"/><stop offset="1" stop-color="#b48cff"/></linearGradient></defs><path d="M40 150 A120 120 0 0 1 280 150" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round"/><path class="ld-arc" d="M40 150 A120 120 0 0 1 280 150" fill="none" stroke="url(#ldhg)" stroke-width="10" stroke-linecap="round"/><circle class="ld-dot" cx="110" cy="188" r="12" fill="#f2b49b"/><circle class="ld-dot d2" cx="160" cy="188" r="12" fill="#8ce4e0"/><circle class="ld-dot d3" cx="210" cy="188" r="12" fill="#b8aaf2"/></svg>`;
+// 4.29.0 줄바꿈(대표님 2026-11-25): 문장은 줄(ln) 단위로, 줄 안에서는 낱말 묶음(nb) 사이에서만 끊는다.
+// '|'는 묶음 경계, 배열 한 칸이 한 줄. 좁은 폰에서는 묶음 사이에서, 넓은 화면에서는 줄 끝에서만 바뀐다.
+const lines = (...ls) => ls.map(l => `<span class="ln">${l.split('|').map(p => `<span class="nb">${p.trim()}</span>`).join(' ')}</span>`).join('');
 const feature = (k, t, d) => `<article class="ld-feat"><span class="ld-feat-k">${k}</span><h3>${t}</h3><p>${d}</p></article>`;
 
 export function landingHTML({installHTML='', returning=false}={}){
@@ -112,14 +115,14 @@ export function landingHTML({installHTML='', returning=false}={}){
   <div class="ld-sky" aria-hidden="true"></div>
   ${halo}
   <p class="ld-word" aria-label="Mylogue">My<b>log</b>ue</p>
-  <p class="ld-what">체중·식단·운동을 한 줄로 남기는 건강 기록 앱</p>
+  <p class="ld-what">${lines('체중·식단·운동을|한 줄로 남기는|건강 기록 앱')}</p>
   <h1>기록만으로,<br>이미 절반은 해냈어요.</h1>
-  <p class="ld-lead">칼같은 식단, 땀 흘리는 운동이 필요한 날도 오겠지만 — 그 전에 오늘 남긴 한 줄이 먼저예요. 기록하는 사람은 이미 남들보다 한 걸음 앞에 있어요.</p>
+  <p class="ld-lead">${lines('칼같은 식단,|땀 흘리는 운동이|필요한 날도 오겠지만,', '그 전에|오늘 남긴 한 줄이 먼저예요.', '기록하는 사람은|이미 남들보다|한 걸음 앞에 있어요.')}</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup">Google로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo">로그인 전에 둘러보기</button>
   </div>
-  <p class="ld-beta">지금은 소수 베타예요. Google로 시작하면 이용 신청을 하고, 운영자가 승인하면 여러 기기에서 기록이 이어져요. 기다리는 동안엔 둘러보기나 가입 없이 쓰기를 이용할 수 있어요.</p>
+  <p class="ld-beta">${lines('지금은 소수 베타예요.', 'Google로 시작하면 이용 신청을 하고,|운영자가 승인하면|여러 기기에서 기록이 이어져요.', '기다리는 동안엔|둘러보기나 가입 없이 쓰기를|이용할 수 있어요.')}</p>
   ${returning ? '<button type="button" class="ld-link" id="landing-back">내 기록으로 돌아가기</button>' : '<button type="button" class="ld-link" id="landing-more">예시 화면과 이야기 먼저 보기 ↓</button>'}
  </section>
 
@@ -127,30 +130,30 @@ export function landingHTML({installHTML='', returning=false}={}){
   <p class="ld-eb">왜 기록인가요</p>
   <h2>숫자 하나가,<br>당신을 증명해요</h2>
   <div class="ld-quotes">
-   <p><b>“오늘 뭐 먹었더라?”</b>를 아는 사람은 이미 조절을 시작한 사람이에요.</p>
-   <p><b>지난주보다 1kg 더</b> 든 걸 아는 사람은, 다음 주도 들어요.</p>
-   <p><b>빠진 날이 보이는 것</b>만으로, 다시 시작할 이유가 생겨요.</p>
+   <p><span class="nb"><b>“오늘 뭐 먹었더라?”</b>를</span> <span class="nb">아는 사람은</span> <span class="nb">이미 조절을 시작한 사람이에요.</span></p>
+   <p><span class="nb"><b>지난주보다 1kg 더</b> 든 걸</span> <span class="nb">아는 사람은,</span> <span class="nb">다음 주도 들어요.</span></p>
+   <p><span class="nb"><b>빠진 날이 보이는 것</b>만으로,</span> <span class="nb">다시 시작할 이유가 생겨요.</span></p>
   </div>
-  <p class="ld-note">마이로그는 재촉하지 않아요. 먹으라고, 운동하라고 조르는 알림은 없어요. 쓰고 싶을 때 쓰면, 쌓인 기록이 대신 말해 줘요.</p>
+  <p class="ld-note">${lines('마이로그는 재촉하지 않아요.', '먹으라고, 운동하라고|조르는 알림은 없어요.', '쓰고 싶을 때 쓰면,|쌓인 기록이 대신 말해 줘요.')}</p>
  </section>
 
  <section class="ld-sec">
   <p class="ld-eb">로그인하면 이런 것들이</p>
   <h2>몸 · 식사 · 운동,<br>하루가 한 줄로 이어져요</h2>
   <div class="ld-feats">
-   ${feature('헤일로', '오늘의 기록이 원호로', '기록할 때마다 하루의 원호가 이어지고, 몸·식사·운동 세 점이 켜지면 오늘이 완성돼요.')}
-   ${feature('식단', '목표선까지 한눈에', '칼로리와 탄단지를 목표선 막대로. 모자라면 “단백질 30g 부족”처럼 알려 줘요. GLP-1을 쓰는 분은 단백질부터.')}
-   ${feature('운동', '내 헬스장 머신 그대로', '그 헬스장에 있는 머신이 맨 위에. 지난번 무게가 자동으로 채워지고, ‘같은 값으로 한 세트 더’ 한 번이면 끝.')}
-   ${feature('인바디', '결과지 사진 한 장', '인바디 결과지를 찍으면 체중·골격근·체지방이 한 번에. 체중계 기록과 나란히 흐름으로 봐요.')}
-   ${feature('AI', '말하듯 남기면, 초안으로', '“점심 비빔밥, 저녁 닭가슴살” 하고 남기면 AI가 받아 적어요. 확정은 언제나 내가 해요.')}
-   ${feature('코치', '내 강사님과 연결', 'PT·필라테스 강사님이 보낸 수업을 확인하고 확정하면 내 기록이 돼요. 기록의 주인은 나예요. <small>(시험 중)</small>')}
+   ${feature('헤일로', '오늘의 기록이 원호로', lines('기록할 때마다|하루의 원호가 이어지고,', '몸·식사·운동 세 점이 켜지면|오늘이 완성돼요.'))}
+   ${feature('식단', '목표선까지 한눈에', lines('칼로리와 탄단지를|목표선 막대로.', '모자라면|“단백질 30g 부족”처럼|알려 줘요.', 'GLP-1을 쓰는 분은|단백질부터.'))}
+   ${feature('운동', '내 헬스장 머신 그대로', lines('그 헬스장에 있는 머신이|맨 위에.', '지난번 무게가|자동으로 채워지고,', '‘같은 값으로 한 세트 더’|한 번이면 끝.'))}
+   ${feature('인바디', '결과지 사진 한 장', lines('인바디 결과지를 찍으면|체중·골격근·체지방이 한 번에.', '체중계 기록과 나란히|흐름으로 봐요.'))}
+   ${feature('AI', '말하듯 남기면, 초안으로', lines('“점심 비빔밥, 저녁 닭가슴살”|하고 남기면|AI가 받아 적어요.', '확정은 언제나 내가 해요.'))}
+   ${feature('코치', '내 강사님과 연결', lines('PT·필라테스 강사님이|보낸 수업을 확인하고|확정하면 내 기록이 돼요.', '기록의 주인은 나예요. <small>(시험 중)</small>'))}
   </div>
   <div class="ld-try">
-   <p><b>말보다 직접 보는 게 빠르죠.</b><br>예시 기록이 담긴 실제 화면을 마음껏 눌러 보세요. 둘러본 기록은 저장되지 않아요.</p>
+   <p><b>말보다 직접 보는 게 빠르죠.</b><br>${lines('예시 기록이 담긴|실제 화면을 마음껏 눌러 보세요.', '둘러본 기록은 저장되지 않아요.')}</p>
    <button type="button" class="ld-btn primary" id="landing-demo2">예시 기록으로 둘러보기 →</button>
   </div>
   <div class="ld-personas">
-   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>성별·나이·체중·목표가 다른 여덟 명의 120일 예시예요. 누르면 그 사람의 기록으로 앱 전체를 둘러봐요. 분석과 플러스 기능도 모두 열려 있어요.</p>
+   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>${lines('성별·나이·체중·목표가 다른|여덟 명의 120일 예시예요.', '누르면 그 사람의 기록으로|앱 전체를 둘러봐요.', '분석과 플러스 기능도|모두 열려 있어요.')}</p>
    ${personaCardsHTML()}
   </div>
  </section>
@@ -159,23 +162,23 @@ export function landingHTML({installHTML='', returning=false}={}){
   <p class="ld-eb">마이로그 이야기</p>
   <h2>log가 아니라, logue</h2>
   <p class="ld-split"><span>My</span><span class="m">log</span><span class="v">ue</span></p>
-  <p>숫자 하나는 기록(log)이지만, 그 기록이 하루, 한 주, 한 해로 이어지면 이야기(logue)가 돼요. 그리고 logue 안에는 log가 그대로 숨어 있어요.</p>
+  <p>${lines('숫자 하나는 기록(log)이지만,', '그 기록이 하루, 한 주, 한 해로 이어지면|이야기(logue)가 돼요.', '그리고 logue 안에는|log가 그대로 숨어 있어요.')}</p>
   <div class="ld-duo">
-   <div><b class="m">마이</b><span>새벽의 작은 빛. 오늘을 다짐하고, 기록에 “맞아” 하고 도장을 찍어요.</span></div>
-   <div><b class="v">로그</b><span>밤을 적는 부엉이. 하루를 받아 적지만, 혼자 확정하지는 않아요.</span></div>
+   <div><b class="m">마이</b><span>${lines('새벽의 작은 빛.', '오늘을 다짐하고,|기록에 “맞아” 하고|도장을 찍어요.')}</span></div>
+   <div><b class="v">로그</b><span>${lines('밤을 적는 부엉이.', '하루를 받아 적지만,|혼자 확정하지는 않아요.')}</span></div>
   </div>
   <a class="ld-btn" href="story.html">이야기 전체 보기 →</a>
  </section>
 
  <section class="ld-sec ld-end" id="ld-end">
   <h2>오늘의 한 줄부터.</h2>
-  <p>손 기록·그래프·검색은 계속 무료예요. 더 깊은 분석(플러스)은 베타 동안 모두에게 열려 있고, 정식 출시 뒤에는 필요할 때 골라도 충분해요.</p>
+  <p>${lines('손 기록·그래프·검색은|계속 무료예요.', '더 깊은 분석(플러스)은|베타 동안 모두에게 열려 있고,', '정식 출시 뒤에는|필요할 때 골라도 충분해요.')}</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup2">Google로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo3">먼저 둘러보기</button>
   </div>
   ${installHTML}
-  <p class="ld-fine">가입은 베타 기간 동안 운영자 승인 뒤에 열려요. 승인되면 기록이 여러 기기에 이어지고, 가입 없이 쓰면 이 기기에만 저장돼요.</p>
+  <p class="ld-fine">${lines('가입은 베타 기간 동안|운영자 승인 뒤에 열려요.', '승인되면 기록이 여러 기기에 이어지고,|가입 없이 쓰면 이 기기에만 저장돼요.')}</p>
   <button type="button" class="ld-link" id="landing-guest">${returning ? '내 기록으로 돌아가기' : '가입 없이 이 기기에서만 써 볼게요'}</button>
   <p class="legal-foot"><a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a> · <a href="mailto:studiohooje@gmail.com">문의</a><br>© 2026 Studio Hooje. All rights reserved.</p>
  </section>

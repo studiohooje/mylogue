@@ -2,7 +2,7 @@
 // 대표님 방침: 인식에 실패한 사진은 횟수에서 빼지 않음, 같은 사진 재시도 미차감, 한도에 닿아도 손 기록은 계속.
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
-import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, fakeAnswer} from './prompts.js';
+import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
 
 export async function accountOf(user, token, {projectId, fetchImpl = fetch, plusAll = false}) {
   const admin = ADMIN_UIDS.includes(user.uid) || (user.emailVerified && ADMIN_EMAILS.includes(user.email));
@@ -80,18 +80,20 @@ export async function route(request, deps) {
   if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: cors});
   const path = new URL(request.url).pathname.replace(/^\//, '');
   if (request.method === 'GET' && path === 'health') return reply(200, {ok: true, fake: env.FAKE_AI === '1'});
-  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'me'].includes(path)) return reply(404, {error: '없는 주소예요.'});
+  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me'].includes(path)) return reply(404, {error: '없는 주소예요.'});
   try {
     if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
     const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
     const now = deps.now ? deps.now() : Date.now();
     const user = await verifyIdToken(token, {projectId: env.FIREBASE_PROJECT_ID, keys: await googleKeys(deps.fetchImpl, now), now});
-    const acct = await accountOf(user, token, {projectId: env.FIREBASE_PROJECT_ID, fetchImpl: deps.fetchImpl, plusAll: env.PLUS_ALL === '1'});
+    let acct = await accountOf(user, token, {projectId: env.FIREBASE_PROJECT_ID, fetchImpl: deps.fetchImpl, plusAll: env.PLUS_ALL === '1'});
     if (!acct.approved) throw new HttpError(403, '이용 승인 후 쓸 수 있어요.');
     let body; try { body = await request.json(); } catch { throw new HttpError(400, '요청 형식이 올바르지 않아요.'); }
+    // 4.29.0 슈퍼관리자가 앱에서 '일반 사용자'로 보기를 켰으면, 서버도 일반 사용자 권한·하루 한도로 시험한다(낮추기만 가능)
+    if (acct.admin && body?.viewPlan === 'free') acct = {...acct, plus: false, admin: false};
     const day = new Date(now + 9 * 3600_000).toISOString().slice(0, 10); // 한국 날짜 기준
     const month = day.slice(0, 7);
-    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.feature, opts.input), stopReason: 'end_turn', model: 'fake'}) : deps.callClaude(messages, opts);
+    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : deps.callClaude(messages, opts);
     // 운영자 계정은 시험이 많아 시도·월 상한에서 뺀다(하루 한도는 그대로).
     const guard = async (feature, limit) => { if (acct.admin) return; await useAttempt(env.DB, user.uid, day, feature, limit); await useMonthlyBudget(env.DB, user.uid, month, costOf(env, feature), env.MONTHLY_COST_WON ?? '700'); };
     const call = async (messages, opts) => {
@@ -101,6 +103,27 @@ export async function route(request, deps) {
     };
     const model = env.MODEL || 'claude-haiku-5-5';
     if (path === 'me') { const row = await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(user.uid, month, 'cost').first(); const cap = Number(env.MONTHLY_COST_WON ?? '700'); return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null}); }
+    // 4.28.x 'AI 기록' 대화: 앞의 대화(최근 10턴, 글만)를 함께 보내고, 마지막 사용자 말에 사진·기록 요약을 붙인다.
+    // 횟수: 사진이 있으면 사진 한도, 없으면 말 기록 한도(무료도 기록은 되고, 묻기는 지시문이 플러스 안내로 답함).
+    if (path === 'converse') {
+     const hist = Array.isArray(body?.messages) ? body.messages.slice(-10) : [];
+     const turns = hist.map(m => ({role: m?.role === 'assistant' ? 'assistant' : 'user', text: String(m?.text || '').trim().slice(0, 1500)})).filter(m => m.text);
+     const last = turns.at(-1);
+     const input = readInput({...body, text: last?.role === 'user' ? last.text : ''});
+     const feature = input.images.length ? 'photo' : 'parse';
+     let quota;
+     if (feature === 'photo') quota = await useFeature(env.DB, user.uid, day, 'photo', limitOf(env, 'photo', acct.plus));
+     else quota = await useQuota(env.DB, user.uid, day, Number(env.DAILY_LIMIT || 30));
+     const msgs = turns.slice(0, -1).map(t => ({role: t.role, content: t.text}));
+     while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+     const lastMsg = buildMessages(input)[0];
+     lastMsg.content.at(-1).text = `<plan>${acct.plus ? 'plus' : 'free'}</plan>\n` + lastMsg.content.at(-1).text;
+     const merged = [];
+     for (const m of [...msgs, lastMsg]) { if (merged.length && merged.at(-1).role === m.role) { const prev = merged.at(-1); prev.content = [...(typeof prev.content === 'string' ? [{type: 'text', text: prev.content}] : prev.content), ...(typeof m.content === 'string' ? [{type: 'text', text: m.content}] : m.content)]; } else merged.push(m); }
+     const out = await call(merged, {model, system: CONVERSE_SYSTEM, feature: feature === 'photo' ? 'photo' : 'parse', input: {...input, text: input.text}, effort: 'low', limit: feature === 'photo' ? limitOf(env, 'photo', acct.plus) : Number(env.DAILY_LIMIT || 30)});
+     if (out.stopReason === 'refusal') { if (feature === 'photo') await refundFeature(env.DB, user.uid, day, 'photo'); throw new HttpError(422, 'AI가 이 내용을 정리하지 못했어요. 표현을 바꿔 다시 해 주세요.'); }
+     return reply(200, {text: out.text, model: out.model, left: quota.left});
+    }
     if (path === 'parse') {
       const input = readInput(body), feature = input.images.length ? 'photo' : 'parse';
       let quota, repeat = false;

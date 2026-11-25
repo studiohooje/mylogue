@@ -1324,6 +1324,7 @@ a.story-link.card,button.story-link.card{display:grid;width:100%;text-align:left
 .ld-hero h1{position:relative;font-size:clamp(28px,7vw,46px);line-height:1.3;letter-spacing:-.02em;margin:22px 0 0;font-weight:700}
 .ld-what{position:relative;text-wrap:balance;font-size:16px;font-weight:600;line-height:1.5;color:#dfe7f2;margin:8px auto 0;max-width:560px;word-break:keep-all}
 .ld-beta{position:relative;text-wrap:balance;font-size:13px;line-height:1.6;color:#a9bbce;max-width:480px;margin:14px auto 0;word-break:keep-all}
+.ln{display:block}.nb{display:inline-block;max-width:100%}
 .ld-lead{position:relative;font-size:17px;line-height:1.75;color:#a9bbce;max-width:560px;margin:18px auto 0}
 .ld-cta{position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:30px}
 .ld-btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border-radius:999px;border:1px solid rgba(169,187,206,.35);background:rgba(255,255,255,.04);color:#edf4f8;font:inherit;font-weight:700;font-size:16px;text-decoration:none;cursor:pointer}

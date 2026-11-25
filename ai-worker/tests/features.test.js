@@ -99,3 +99,44 @@ test('1인 월 원가 상한(MONTHLY_COST_WON)을 넘으면 그 달은 AI를 부
   const r = await route(await post('parse', {text: '저녁'}, tok), s.deps);
   assert.match((await r.json()).error, /다음 달 1일/);
 });
+
+// 4.28.x 'AI 기록' 대화(converse): 앞의 대화를 함께 보내고, 사진이면 사진 한도·글이면 말 기록 한도
+test('대화: 앞의 대화(최근 10턴)가 Claude에 함께 가고, 역할이 번갈아 맞으며, 마지막 말에 플랜 표시', async () => {
+ resetKeyCache(); const s = setup({plan: 'plus'}); const tok = await token();
+ const messages = [{role: 'assistant', text: '안녕하세요'}, ...Array.from({length: 12}, (_, i) => ({role: i % 2 ? 'assistant' : 'user', text: `말 ${i}`})), {role: 'user', text: '아 콜라는 제로였어'}];
+ const r = await route(await post('converse', {messages, today: '2026-11-23', now: '12:40'}, tok), s.deps);
+ assert.equal(r.status, 200);
+ const sent = s.calls[0].messages;
+ assert.equal(sent[0].role, 'user');
+ for (let i = 1; i < sent.length; i++) assert.notEqual(sent[i].role, sent[i - 1].role);
+ const lastText = sent.at(-1).content.at(-1).text;
+ assert.match(lastText, /<plan>plus<\/plan>/); assert.match(lastText, /콜라는 제로였어/);
+ assert.ok(sent.length <= 10);
+ assert.match(s.calls[0].opts.system, /대화 규칙/);
+});
+test('대화: 사진이 있으면 사진 한도(무료 하루 1번)를 쓴다', async () => {
+ resetKeyCache(); const s = setup(); const tok = await token();
+ assert.equal((await route(await post('converse', {messages: [{role: 'user', text: '점심'}], images: [img('a')]}, tok), s.deps)).status, 200);
+ assert.equal((await route(await post('converse', {messages: [{role: 'user', text: '저녁'}], images: [img('b')]}, tok), s.deps)).status, 429);
+ assert.equal((await route(await post('converse', {messages: [{role: 'user', text: '글로만 기록'}]}, tok), s.deps)).status, 200);
+});
+test('대화(가짜 AI): 질문이면 글 답, 기록이면 마이로그 코드', async () => {
+ resetKeyCache(); const s = setup({fake: '1', plan: 'plus'}); const tok = await token();
+ const q = await (await route(await post('converse', {messages: [{role: 'user', text: '오늘 저녁 뭐 먹지?'}]}, tok), s.deps)).json();
+ assert.doesNotMatch(q.text, /```/);
+ const rec = await (await route(await post('converse', {messages: [{role: 'user', text: '점심 비빔밥'}]}, tok), s.deps)).json();
+ assert.match(rec.text, /```json/);
+});
+// 4.29.0 슈퍼관리자 '일반 사용자로 보기': 서버도 일반 한도로(낮추기만), 일반 계정이 'plus'를 보내도 올라가지 않는다
+test('슈퍼관리자 보기 기준: 일반이면 무료 한도, 아니면 운영자 그대로, 일반 계정은 올릴 수 없음', async () => {
+ resetKeyCache(); const s = setup(); const admin = await token('bulbnZbmC4PgH8tUAOjfPPLE7pA3');
+ const photo = (t, view) => post('converse', {messages: [{role: 'user', text: t}], images: [img(t)], ...(view ? {viewPlan: view} : {})}, admin);
+ assert.equal((await route(await photo('a1', 'free'), s.deps)).status, 200);
+ assert.equal((await route(await photo('a2', 'free'), s.deps)).status, 429);
+ assert.equal((await route(await photo('a3'), s.deps)).status, 200);
+ assert.equal((await route(await photo('a4', 'plus'), s.deps)).status, 200);
+ resetKeyCache(); const s2 = setup(); const user = await token('u9');
+ const up = (t) => post('converse', {messages: [{role: 'user', text: t}], images: [img(t)], viewPlan: 'plus'}, user);
+ assert.equal((await route(await up('b1'), s2.deps)).status, 200);
+ assert.equal((await route(await up('b2'), s2.deps)).status, 429);
+});

@@ -108,5 +108,5 @@ test('S-08·DOC-02·B-27·AA-01·N-10: 문구와 경로', () => {
  assert.match(app, /function downloadBlob\(name,blob\)/);
  assert.doesNotMatch(app, /a\.href=item\.url;a\.download/);
  assert.match(readFileSync(new URL('../../.github/workflows/pages.yml', import.meta.url), 'utf8'), /run: npm run smoke/);
- assert.match(src('tools/smoke.mjs'), /'meal', 'workout', 'ai-input'/);
+ assert.match(src('tools/smoke.mjs'), /'meal', 'workout', 'ai-chat'/);
 });

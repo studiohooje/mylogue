@@ -46,10 +46,13 @@ try {
  }
  // 기록 창 열고 닫기(식사·운동·수치)
  // 4.27.0 재검사 N-10: 빠른 식사(검색까지)·운동 실시간 입력·AI 입력·무엇을 기록할까 창까지
- for (const m of ['batch', 'body', 'quick', 'meal', 'workout', 'ai-input']) {
+ for (const m of ['batch', 'body', 'quick', 'meal', 'workout', 'ai-chat']) {
   // 홈에서 시작하고, 버튼이 홈에 없으면 '무엇을 기록할까요'(quick) 창 안에서 찾는다
   await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(500);
   const opened = await c.run(`(()=>{let b=document.querySelector('[data-modal="${m}"]');if(!b&&'${m}'!=='quick'){document.querySelector('[data-modal="quick"]')?.click();b=document.querySelector('.sheet [data-modal="${m}"]')}b?.click();return !!b})()`); await wait(900); steps.push(`창 ${m}:${opened ? 'ok' : '없음'}`);
+  // 4.29.0 AI 기록 대화창: 말 보내기 → 답(연결 전이면 안내, 둘러보기면 예시 카드)
+  // 4.29.0 'AI로 입력'은 방식 고르기 창이 먼저 → 대화하듯 입력 · 이번만
+  if (m === 'ai-chat') { await c.run(`(()=>{document.querySelector('[data-ai-mode="chat"]')?.click();return 1})()`); await wait(400); await c.run(`(()=>{document.querySelector('[data-ai-once="chat"]')?.click();return 1})()`); await wait(700); steps.push(`대화창:${await c.run(`!!document.getElementById('chat-text')`) ? 'ok' : '없음'}`); await c.run(`(()=>{const t=document.getElementById('chat-text');if(!t)return false;t.value='점심 김밥 한 줄';t.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('chat-send')?.click();return true})()`); await wait(2500); }
   if (m === 'meal') { await c.run(`(()=>{const i=document.getElementById('q-food-search');if(!i)return false;i.value='닭가슴살';i.dispatchEvent(new Event('input',{bubbles:true}));return true})()`); await wait(1200); }
   await c.run(`(()=>{const x=document.querySelector('.sheet .close, .sheet [aria-label*="닫기"], #modal-close');x?.click();return true})()`); await wait(500);
  }

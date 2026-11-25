@@ -2,7 +2,8 @@
 // - AI 서버 주소(ai-config.js)가 있으면 로그인 표와 함께 보낸다. 키는 서버에만 있다(앱에는 없음).
 // - 관리자 '가짜 AI 모드'면 서버 없이 정해진 답을 준다(흐름 시험용, 비용 0).
 import {aiWorkerUrl} from './ai-config.js';
-import {fakeAI, isDemo} from './plan.js';
+import {fakeConverse} from './ai-chat-fake.js';
+import {fakeAI, isDemo, adminView} from './plan.js';
 import {firestoreContext} from './ai-drafts.js';
 import {searchFoodDB, foodDBReady} from './food-db.js';
 
@@ -27,9 +28,10 @@ export function demoItems(text = ''){
 
 export const aiConnected = () => !!aiWorkerUrl();
 export const aiUsable = () => aiConnected() || fakeAI() || isDemo();
-const PATHS = ['parse', 'review', 'chat', 'recipe', 'me'];
+const PATHS = ['parse', 'review', 'chat', 'recipe', 'converse', 'me'];
 
 export function fakeReply(path, body = {}) {
+  if (path === 'converse') return fakeConverse(body, demoItems);
   if (path === 'me') return {plus: true, admin: true, fake: true, limits: {parse: 30, photo: 20, review: 1, chat: 10, recipe: 10}, month: null};
   if (path === 'review') {
     // 예시 리뷰: 앱이 보낸 요약 숫자로만 만든다(둘러보기·가짜 AI 모드). 요약이 없으면 짧은 기본 문장.
@@ -58,6 +60,8 @@ export function fakeReply(path, body = {}) {
 export async function aiRequest(path, body = {}, {fetchImpl = globalThis.fetch, token = null} = {}) {
   if (!PATHS.includes(path)) throw Error('없는 AI 기능이에요.');
   if (fakeAI() || isDemo()) return fakeReply(path, body);
+  // 슈퍼관리자 '보기 기준'(일반/플러스)을 서버에도 알린다. 서버는 일반으로 낮추는 것만 받아들인다.
+  if (adminView() === 'free') body = {...body, viewPlan: 'free'};
   const url = aiWorkerUrl();
   if (!url) throw Error('AI가 아직 연결되지 않았어요. 연결되면 바로 쓸 수 있어요.');
   const tok = token || await (await firestoreContext()).user.getIdToken();
