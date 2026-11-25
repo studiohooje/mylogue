@@ -87,7 +87,8 @@ export async function refundGlobal(db, day, month, won) {
 // Fable H-2: 예산 장부가 1회 고정 추정값만 쓰던 것 → 답이 온 뒤 실제 토큰 사용량(usage)으로 다시 계산해,
 // 추정보다 더 들었으면 그 차이를 전체 예산과 개인 월 상한에 더한다(덜 들었으면 그대로 둠 = 보수적). 실패해도 답은 그대로 돌려준다.
 // 가격(달러/100만 토큰, 입력·출력)은 MODEL_PRICES="모델=입력/출력;…"로 바꿀 수 있고, 모르는 모델은 비싼 쪽(2/10)으로 친다.
-export const DEFAULT_PRICES = Object.freeze({'claude-haiku-5-5': [0.10, 0.50], 'claude-sonnet-5-5': [2, 10]});
+// 2026-11-25 각 회사 공식 가격표 확인값(달러/100만 토큰 입력/출력). DeepSeek은 비싼 시간대 기준. 바뀌면 MODEL_PRICES로 덮어쓴다.
+export const DEFAULT_PRICES = Object.freeze({'claude-haiku-5-5': [0.10, 0.50], 'claude-sonnet-5-5': [2, 10], 'gpt-5-nano': [0.05, 0.40], 'gpt-5-mini': [0.25, 2.00], 'gpt-5.4-nano': [0.20, 1.25], 'gpt-6-luna': [0.10, 0.50], 'gemini-3.1-flash-lite': [0.25, 1.50], 'gemini-3.5-flash-lite': [0.30, 2.50], 'deepseek-flash': [0.15, 0.60]});
 export function priceOf(env, model) {
   const table = {...DEFAULT_PRICES};
   for (const part of String(env?.MODEL_PRICES || '').split(';')) { const [k, v] = part.split('='); const [i, o] = String(v || '').split('/').map(x => safeNum(x, NaN)); if (k?.trim() && Number.isFinite(i) && Number.isFinite(o)) table[k.trim()] = [i, o]; }
