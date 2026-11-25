@@ -1,8 +1,17 @@
 // 4.17.0 AI 코치(플러스): 이번 주 리뷰, AI에게 묻기, 레시피 글 자동 분해.
-// 숫자는 앱이 계산해 요약으로 보내고, AI는 그 숫자로 말만 만든다(지어내지 않게). 결과는 저장하지 않고 보여 주기만.
+// 숫자는 앱이 계산해 요약으로 보내고, AI는 그 숫자로 말만 만든다(지어내지 않게). 주간 리뷰 결과만 이 기기에 남긴다(4.29.3).
 import {isPlus, lockHTML} from './plan.js';
 import {aiUsable, aiConnected} from './ai-client.js';
 import {fakeAI} from './plan.js';
+import {scopedKey} from './storage-scope.js';
+
+// 4.29.3 대표님(2026-11-25): 분석은 '분석받기'를 눌렀을 때만 새로 만든다(자동·실시간 호출 없음).
+// 마지막 결과를 이 기기에 남겨 새로고침해도 다시 부르지 않게 하고, 기록이 그때와 같으면 다시 부르지 않는다.
+const REVIEW_KEY = () => scopedKey('mylogue.aiReview');
+export function lastReview(){ try{ const v = JSON.parse(globalThis.localStorage?.getItem(REVIEW_KEY()) || 'null'); return v && typeof v.text === 'string' ? v : null; }catch{ return null; } }
+export function saveReview(text, summary){ try{ globalThis.localStorage?.setItem(REVIEW_KEY(), JSON.stringify({text: String(text || ''), summary: String(summary || ''), at: Date.now()})); }catch{} }
+export const reviewUnchanged = summary => { const r = lastReview(); return !!r && r.summary === String(summary || ''); };
+const when = ms => { const d = new Date(ms); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 const DAY = 86400000;
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -57,10 +66,10 @@ const note = () => fakeAI() ? '<p class="hint">가짜 AI 모드예요. 정해진
 export function aiCoachCardHTML(st, esc) {
   if (!isPlus()) return `<section class="section card ai-coach"><h3>AI 코치</h3>${lockHTML('ai-review', esc)}${lockHTML('ai-chat', esc)}</section>`;
   if (!aiUsable()) return `<section class="section card ai-coach"><h3>AI 코치 <span class="status-badge info">플러스</span></h3><p class="hint">AI가 아직 연결되지 않았어요. 연결되면 이번 주 리뷰와 묻기를 바로 쓸 수 있어요.</p></section>`;
-  const busy = st.busy;
+  const busy = st.busy, saved = lastReview(), review = st.review || saved?.text || '';
   return `<section class="section card ai-coach"><h3>AI 코치 <span class="status-badge info">플러스</span></h3>${note()}
-  <div class="actions"><button type="button" class="button" id="ai-review-run" ${busy ? 'disabled' : ''}>${busy === 'review' ? '리뷰 만드는 중…' : '이번 주 리뷰 받기'}</button><button type="button" class="button secondary" id="ai-recipe-open">레시피 글로 음식 만들기</button></div>
-  ${st.review ? `<div class="ai-answer" role="status">${esc(st.review).replace(/\n/g, '<br>')}</div>` : ''}
+  <div class="actions"><button type="button" class="button" id="ai-review-run" ${busy ? 'disabled' : ''}>${busy === 'review' ? '분석하는 중…' : review ? '다시 분석받기' : '이번 주 분석받기'}</button><button type="button" class="button secondary" id="ai-recipe-open">레시피 글로 음식 만들기</button></div>
+  ${review ? `<div class="ai-answer" role="status">${saved?.at ? `<small class="hint">${esc(when(saved.at))} 분석 · 누를 때만 새로 만들어요</small><br>` : ''}${esc(review).replace(/\n/g, '<br>')}</div>` : '<p class="hint">분석은 버튼을 누를 때만 만들어요. 저절로 바뀌지 않아요.</p>'}
   <form id="ai-chat-form" class="ai-chat"><label for="ai-chat-q">AI에게 묻기</label><textarea id="ai-chat-q" rows="2" maxlength="500" placeholder="예: 오늘 저녁 뭐 먹으면 좋을까요?">${esc(st.q || '')}</textarea><button type="submit" class="button secondary" ${busy ? 'disabled' : ''}>${busy === 'chat' ? '답 기다리는 중…' : '묻기'}</button></form>
   ${(st.chat || []).slice(-3).map(c => `<div class="ai-qa"><b>${esc(c.q)}</b><p>${esc(c.a).replace(/\n/g, '<br>')}</p></div>`).join('')}
   ${st.msg ? `<p class="hint warn">${esc(st.msg)}</p>` : ''}

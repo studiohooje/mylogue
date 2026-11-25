@@ -76,7 +76,7 @@ import {myMaintenance} from './maintenance.js';
 import {newPhaseWizard,phaseWizardHTML,phaseStatus,phaseBadgeHTML,phaseSettingsHTML,readPhaseAnswers,buildPhase,kcalDelta,nutritionGoalOf,phaseRecap,endPhase} from './phase.js';
 import {estimate as phaseEstimate,cleanProfile as phaseProfile} from './nutrition-plan.js';
 import {allowance,lockHTML as plusLockHTML} from './plan.js';
-import {aiCoachCardHTML,recipeModalHTML,weekSummaryText,chatContext,matchRecipe,recipeFoodPreset} from './ai-coach-ui.js';
+import {aiCoachCardHTML,recipeModalHTML,saveReview,reviewUnchanged,weekSummaryText,chatContext,matchRecipe,recipeFoodPreset} from './ai-coach-ui.js';
 import {coachHTML} from './coach-ui.js';
 import {scheduleCalendarHTML,planFormHTML,planTitle} from './schedule-view.js';
 import {createCoachController} from './coach-controller.js';
@@ -503,7 +503,7 @@ $s.root.addEventListener('click',async event=>{
   if(target.dataset.planView){setAdminView(target.dataset.planView);toast(target.dataset.planView==='plus'?'플러스 사용자 기준으로 보고 있어요.':'일반 사용자 기준으로 보고 있어요.');render();return}
   if(target.id==='plan-fake-ai'){setFakeAI(target.getAttribute('aria-pressed')!=='true');render();return}
   if(target.id==='plan-ai-check'){aiRequest('me').then(r=>{$s.aiMe=r;if(r?.global)refreshCostInfo(()=>Promise.resolve(r),{force:true});render()}).catch(error=>toast(error.message));return}
-  if(target.id==='ai-review-run'){if($s.aiCoach.busy)return;$s.aiCoach={...$s.aiCoach,busy:'review',msg:''};render();aiRequest('review',{summary:weekSummaryText(actualDB($s.db),today())}).then(r=>{$s.aiCoach={...$s.aiCoach,busy:'',review:String(r.text||''),left:r.left??$s.aiCoach.left};render()}).catch(error=>{$s.aiCoach={...$s.aiCoach,busy:'',msg:error.message};render()});return}
+  if(target.id==='ai-review-run'){if($s.aiCoach.busy)return;const summary=weekSummaryText(actualDB($s.db),today());/* 4.29.3 기록이 지난 분석 때와 같으면 다시 부르지 않는다(비용) */if(reviewUnchanged(summary)){toast('지난 분석 뒤로 기록이 바뀌지 않았어요. 기록을 더 남긴 뒤 다시 받아 보세요.');return}$s.aiCoach={...$s.aiCoach,busy:'review',msg:''};render();aiRequest('review',{summary}).then(r=>{const text=String(r.text||'');if(text)saveReview(text,summary);$s.aiCoach={...$s.aiCoach,busy:'',review:text,left:r.left??$s.aiCoach.left};render()}).catch(error=>{$s.aiCoach={...$s.aiCoach,busy:'',msg:error.message};render()});return}
   if(target.id==='ai-recipe-open'){$s.aiRecipe={text:'',busy:false,msg:'',match:null};$s.modal='ai-recipe';render();return}
   if(target.id==='ai-recipe-save'){const m=$s.aiRecipe.match;if(!m)return;$s.db=save({...$s.db,foods:upsertFoodPreset($s.db.foods||[],recipeFoodPreset(m))});toast(`'${m.name}' 1인분을 내 음식에 저장했어요.`);$s.modal=null;render();return}
   if(target.id==='ai-code-clear'){$s.aiInput={text:'',msg:'',busy:false};$s.aiChat=newChat();$s.sheetDirty=false;render();return}

@@ -52,9 +52,9 @@ export const lockHTML = (id, esc = s => s) => { const f = feature(id); return `<
 export function adminPlanCardHTML(esc, {serverInfo = null, aiConnected = false} = {}) {
   if (!isSuperAdmin()) return '';
   const v = adminView() || 'plus', fake = fakeAI();
-  return `<section class="section card plus-admin" id="plus-admin"><h3>플러스 미리보기 <span class="status-badge info">슈퍼관리자</span></h3>
-  <p class="hint">화면과 기능을 일반 사용자 또는 플러스 사용자 기준으로 바꿔 봐요. 이 기기에만 적용되고, 실제 계정 권한은 바뀌지 않아요.</p>
-  <div class="seg" role="group" aria-label="보기 기준">${[['free', '일반 사용자'], ['plus', '플러스 사용자']].map(([k, l]) => `<button type="button" class="${v === k ? 'active' : ''}" data-plan-view="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>
+  return `<section class="section card plus-admin" id="plus-admin"><h3>프리미엄 모드 <span class="status-badge info">슈퍼관리자</span></h3>
+  <p class="hint">이 관리자 계정을 프리미엄(플러스) 모드 또는 일반 사용자 모드로 써 봐요. 이 기기에만 적용되고, 실제 계정 권한은 바뀌지 않아요.</p>
+  <div class="seg" role="group" aria-label="보기 기준">${[['plus', '프리미엄 모드로 하기'], ['free', '일반 사용자 모드로 하기']].map(([k, l]) => `<button type="button" class="${v === k ? 'active' : ''}" data-plan-view="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>
   <div class="actions"><button type="button" class="button ${fake ? '' : 'secondary'}" id="plan-fake-ai" aria-pressed="${fake}">가짜 AI 모드 ${fake ? '켜짐' : '꺼짐'}</button>${aiConnected ? '<button type="button" class="button secondary" id="plan-ai-check">AI 서버 상태 확인</button>' : ''}</div>
   <p class="hint">가짜 AI 모드: AI 서버 없이 정해진 답으로 흐름만 시험해요(비용 없음).</p>
   ${aiConnected ? costLineHTML(serverInfo?.global || undefined, esc) : ''}
