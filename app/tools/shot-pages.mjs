@@ -19,6 +19,7 @@ try {
   await c.send('Page.navigate', {url: base}); await wait(1500); await c.run(`(()=>{localStorage.clear();return 1})()`);
   await c.send('Page.navigate', {url: base}); await wait(2500);
   await c.run(`(()=>{document.getElementById('landing-demo')?.click();return 1})()`); await wait(4000);
+  if (process.env.SIMPLE) { await c.run(`(()=>{localStorage.setItem('mylogue.simpleDraft','1');return 1})()`); }
   if (process.env.LIGHT) { await c.run(`(()=>{localStorage.setItem('mylogue.theme','light');document.documentElement.dataset.theme='light';return 1})()`); await wait(300); }
   for (const item of list.split(',')) {
     const [page, ...clicks] = item.split('+');

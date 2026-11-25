@@ -2223,3 +2223,17 @@ html[data-theme="light"] svg rect[fill^="#"],html[data-theme="light"] svg circle
 html[data-theme="light"] .ml-bar i,html[data-theme="light"] .meal-legend i,html[data-theme="light"] .df-parts i,html[data-theme="light"] .pa-badge,html[data-theme="light"] .mlg-avatar.av-plus{filter:invert(1) hue-rotate(180deg)}
 html[data-theme="light"] .macro-bar b,html[data-theme="light"] .macro-bar s,html[data-theme="light"] .macrobar i,html[data-theme="light"] .mini-bar b,html[data-theme="light"] .mini-bar s{filter:invert(1) hue-rotate(180deg)}
 html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,html[data-theme="light"] .nutrition-goal-label i{filter:invert(1) hue-rotate(180deg)}
+/* 5.0.6 심플 모드 초안(숨김 스위치) */
+.simple-box{display:grid;gap:10px;padding:2px 14px 14px}
+.simple-band{margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#f7c27022;border:1px solid #f7c27066;color:#f7d9a8;font-size:13px}
+.simple-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:4px}.simple-head b{font-size:15px}.simple-head small{color:#a6bbcb;font-size:12.5px}
+.simple-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.simple-opt{display:grid;gap:3px;align-content:start;min-height:64px;padding:10px 12px;border-radius:14px;border:1px solid #ffffff1a;background:#1d2a44;color:#eaf4ff;text-align:left;cursor:pointer;font:inherit}
+.simple-opt strong{font-size:14px;line-height:1.3}.simple-opt small{font-size:12.5px;color:#a6bbcb}
+.simple-opt.on{border-color:#8ce4e0;background:#1f3550}
+.simple-text{width:100%;min-height:48px;font-size:16px}
+.simple-guess{margin:0;padding:0;list-style:none;display:grid;gap:6px}.simple-guess li{display:grid;gap:2px;padding:8px 10px;border-radius:10px;background:#0f1729}.simple-guess small{color:#a6bbcb;font-size:12.5px}
+.simple-box .chips{display:flex;flex-wrap:wrap;gap:6px}
+.simple-save{min-height:52px;margin-top:6px}
+.simple-rest{justify-self:center}
+@media (max-width:379px){.simple-opts{grid-template-columns:1fr}}
