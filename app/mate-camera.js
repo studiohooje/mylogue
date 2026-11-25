@@ -39,13 +39,40 @@ export async function capture(video, {at = new Date()} = {}){
   if(!out) throw Error('사진을 만들지 못했어요. 다시 찍어 주세요.');
   return {blob: out, at: at.getTime(), w, h};
 }
+// 5.0.4 대표님: 왼쪽 위 도장을 마이로그 스타일로. 반투명 유리 알약 + 헤일로 링(마이로그 그라데이션) + 큰 시각 + 날짜 · mylogue.
+// 미리보기(.mate-stamp)와 저장되는 사진이 같은 모양이 되도록 stampParts를 함께 쓴다.
+export const STAMP_GRAD = ['#8ce4e0', '#9fd2ee', '#b8aaf2', '#d4a6dc', '#f2a98a'];
+export const stampParts = (d = new Date()) => ({time: `${p2(d.getHours())}:${p2(d.getMinutes())}`, date: `${p2(d.getMonth() + 1)}.${p2(d.getDate())} ${DAYS[d.getDay()]}`});
+function pill(g, x, y, w, h, r){
+  g.beginPath();
+  if(g.roundRect){ g.roundRect(x, y, w, h, r); return; }
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
 export function drawStamp(g, w, at){
-  const s = Math.max(16, Math.round(w * 0.045)), pad = Math.round(s * 0.7);
+  const {time, date} = stampParts(at);
+  const s = Math.max(16, Math.round(w * 0.05)); // 시각 글자 크기
+  const m = Math.round(s * 0.6), pad = Math.round(s * 0.45), orb = Math.round(s * 1.5), gap = Math.round(s * 0.45);
+  const fam = 'SUIT, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
   g.save();
-  g.font = `800 ${s}px SUIT, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
-  g.textBaseline = 'top'; g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.75)'; g.shadowBlur = Math.round(s * 0.35); g.shadowOffsetY = Math.round(s * 0.06);
-  g.fillText(stampText(at), pad, pad);
-  g.font = `600 ${Math.round(s * 0.62)}px SUIT, sans-serif`; g.globalAlpha = 0.85;
-  g.fillText('mylogue', pad, pad + Math.round(s * 1.15));
+  g.font = `800 ${s}px ${fam}`; const tw = g.measureText(time).width;
+  const small = Math.round(s * 0.56);
+  g.font = `600 ${small}px ${fam}`; const dw = g.measureText(`${date} · mylogue`).width;
+  const bw = pad * 2 + orb + gap + Math.max(tw, dw), bh = pad * 2 + Math.max(orb, Math.round(s * 1.62)), r = bh / 2;
+  // 유리 알약
+  g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = Math.round(s * 0.5); g.shadowOffsetY = Math.round(s * 0.08);
+  pill(g, m, m, bw, bh, r); g.fillStyle = 'rgba(11,17,33,.55)'; g.fill();
+  g.shadowColor = 'transparent';
+  const grad = g.createLinearGradient(m, m, m + bw, m + bh); STAMP_GRAD.forEach((c, i) => grad.addColorStop(i / (STAMP_GRAD.length - 1), c));
+  g.lineWidth = Math.max(1, s * 0.07); g.strokeStyle = grad; g.globalAlpha = 0.7; pill(g, m, m, bw, bh, r); g.stroke(); g.globalAlpha = 1;
+  // 헤일로 링(마이로그 표시)
+  const cx = m + pad + orb / 2, cy = m + bh / 2;
+  g.lineWidth = Math.max(2, orb * 0.14); g.strokeStyle = grad; g.beginPath(); g.arc(cx, cy, orb / 2 - g.lineWidth / 2, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.arc(cx, cy, orb * 0.14, 0, Math.PI * 2); g.fill();
+  // 글자
+  const tx = m + pad + orb + gap, ty = m + bh / 2;
+  g.textBaseline = 'alphabetic'; g.fillStyle = '#fff';
+  g.font = `800 ${s}px ${fam}`; g.fillText(time, tx, ty + s * 0.12);
+  g.font = `600 ${small}px ${fam}`; g.fillStyle = 'rgba(234,244,255,.82)'; const dt = `${date} · `; g.fillText(dt, tx, ty + s * 0.72);
+  g.fillStyle = grad; g.fillText('mylogue', tx + g.measureText(dt).width, ty + s * 0.72);
   g.restore();
 }

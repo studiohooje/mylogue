@@ -9,7 +9,9 @@ import {qrMatrix} from './qr.js';
 import {scopedKey} from './storage-scope.js';
 import {cleanBody} from './domain.js';
 import {MATE_KINDS, MATE_KIND_LABEL} from './mate-share.js';
-import {stampText, openCamera, closeCamera, capture, cameraSupported} from './mate-camera.js';
+import {stampText, stampParts, openCamera, closeCamera, capture, cameraSupported} from './mate-camera.js';
+// 5.0.4 카메라 미리보기 도장: 저장되는 사진(drawStamp)과 같은 모양
+const stampHTML = () => { const t = stampParts(); return `<div class="mate-stamp" id="mate-stamp" aria-label="찍은 시각 ${esc(stampText())}"><i aria-hidden="true"></i><p><b>${t.time}</b><span>${t.date} · <em>mylogue</em></span></p></div>`; };
 import {MATE_MAX, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
 import {openChatWithPhoto} from './app-chat.js';
 import {TAG_RE, tagProblem, loadMyTag, myTagCached, tagAvailable, setMyTag, inviteByTag, listDirectInvites, dropDirectInvite} from './mytag.js';
@@ -128,7 +130,7 @@ function roomView(){
 function camView(){
   const s = st(), modes = [['food', '음식'], ['scale', '체중계'], ['etc', '운동·기타']];
   return `<div class="mate-cam" role="dialog" aria-label="사진 찍기"><div class="mate-cam-top"><button type="button" class="mate-ib" data-mate-camclose aria-label="닫기">✕</button><span>앱 안에서 찍은 사진만 올라가요</span><span style="width:44px"></span></div>
-  <div class="mate-vf"><video id="mate-video" playsinline muted></video><div class="mate-stamp" id="mate-stamp">${esc(stampText())}<small>mylogue</small></div>${s.camErr ? `<p class="mate-cam-err">${esc(s.camErr)}</p>` : ''}</div>
+  <div class="mate-vf"><video id="mate-video" playsinline muted></video>${stampHTML()}${s.camErr ? `<p class="mate-cam-err">${esc(s.camErr)}</p>` : ''}</div>
   <div class="mate-modes">${modes.map(([k, l]) => `<button type="button" class="${s.mode === k ? 'on' : ''}" data-mate-mode="${k}">${l}</button>`).join('')}</div>
   <div class="mate-shutter-row"><span></span><button type="button" class="mate-shutter" data-mate-snap aria-label="찍기"></button><span></span></div></div>`;
 }
@@ -252,7 +254,7 @@ async function startCam(){
   await new Promise(r => globalThis.requestAnimationFrame ? requestAnimationFrame(r) : setTimeout(r, 0));
   const v = document.getElementById('mate-video'); if(!v) return;
   try{ await openCamera(v); }catch(e){ s.camErr = e.message; $f.render(); }
-  clearInterval(stampTimer); stampTimer = setInterval(() => { const el = document.getElementById('mate-stamp'); if(!el){ clearInterval(stampTimer); return; } el.firstChild.textContent = stampText(); }, 15000);
+  clearInterval(stampTimer); stampTimer = setInterval(() => { const el = document.getElementById('mate-stamp'); if(!el){ clearInterval(stampTimer); return; } const t = stampParts(); el.querySelector('b').textContent = t.time; el.querySelector('span').firstChild.textContent = `${t.date} · `; }, 15000);
 }
 function stopCam(){ closeCamera(); clearInterval(stampTimer); }
 function go(view){

@@ -2054,7 +2054,13 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .mate-cam{position:fixed;inset:0;z-index:200;background:#000;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 .mate-cam-top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;color:#fff;font-size:13px}.mate-cam-top .mate-ib{background:#ffffff22;border:0}
 .mate-vf{position:relative;flex:1;overflow:hidden;display:grid;place-items:center}.mate-vf video{width:100%;height:100%;object-fit:cover}
-.mate-stamp{position:absolute;left:12px;top:10px;color:#fff;font-weight:800;font-size:18px;text-shadow:0 1px 4px #000c;font-variant-numeric:tabular-nums;pointer-events:none}.mate-stamp small{display:block;font-size:11px;font-weight:600;opacity:.85}
+.mate-stamp{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;background:rgba(11,17,33,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 14px #0006;pointer-events:none;color:#fff;isolation:isolate}
+.mate-stamp::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;background:linear-gradient(135deg,#8ce4e0,#9fd2ee,#b8aaf2,#d4a6dc,#f2a98a);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7;z-index:-1}
+.mate-stamp i{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle,#fff 0 4px,transparent 4.5px),conic-gradient(from 200deg,#8ce4e0,#9fd2ee,#b8aaf2,#d4a6dc,#f2a98a,#8ce4e0);-webkit-mask:radial-gradient(circle,#000 0 4.5px,transparent 5px 10.5px,#000 11px);mask:radial-gradient(circle,#000 0 4.5px,transparent 5px 10.5px,#000 11px);flex:none}
+.mate-stamp p{margin:0;display:grid;line-height:1.1}
+.mate-stamp b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.mate-stamp span{font-size:11px;font-weight:600;color:#eaf4ffd1;font-variant-numeric:tabular-nums;margin-top:2px}
+.mate-stamp em{font-style:normal;background:linear-gradient(90deg,#8ce4e0,#b8aaf2,#f2a98a);-webkit-background-clip:text;background-clip:text;color:transparent}
 .mate-cam-err{position:absolute;left:16px;right:16px;bottom:16px;color:#fff;background:#000a;border-radius:12px;padding:10px 12px;margin:0}
 .mate-modes{display:flex;justify-content:center;gap:8px;padding:8px}.mate-modes button{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #ffffff55;background:transparent;color:#fff;cursor:pointer}.mate-modes button.on{background:#fff;color:#000;font-weight:800}
 .mate-shutter-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 0 18px}
@@ -2156,7 +2162,8 @@ button.chat-cam{border:0;cursor:pointer}
 .coach .coach-week span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8796b3}
 .coach-live .coach-when{margin:6px 0 0}
 /* 5.0.4 프로필 아이콘(기본 10개) + 테두리 2종: 일반 / 플러스면 자동으로 마이로그 그라데이션 프리미엄 테두리 */
-.mlg-avatar{position:relative;display:inline-grid;place-items:center;flex:none;border-radius:50%!important;padding:2px;background:#3a4d6e;overflow:visible!important}
+/* 5.0.4 대표님: 일반 테두리는 바탕과 어울리는 단색, 플러스만 마이로그 그라데이션 */
+.mlg-avatar{position:relative;display:inline-grid;place-items:center;flex:none;border-radius:50%!important;padding:2px;background:#2c3c5c;box-shadow:0 0 0 1px #ffffff0d;overflow:visible!important}
 .mlg-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;background:#16223b}
 .mlg-avatar.av-plus{padding:2.5px;background:conic-gradient(from 210deg,#8ce4e0,#9fd2ee,#b8aaf2,#d4a6dc,#f2a98a,#8ce4e0);box-shadow:0 0 0 1px #ffffff22,0 0 12px #b8aaf266}
 .mlg-avatar.av-plus::after{content:"";position:absolute;right:-1px;bottom:-1px;width:30%;height:30%;min-width:10px;min-height:10px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#f2a98a 45%,#b8aaf2);box-shadow:0 0 0 2px #101625}
