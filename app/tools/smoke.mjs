@@ -63,6 +63,7 @@ try {
   await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(500);
   await c.run(`(()=>{let b=document.querySelector('main [data-modal="workout"]');if(!b){document.querySelector('[data-input-toggle]')?.click();b=document.querySelector('.nav6-pop [data-modal="workout"]')}b?.click();return !!b})()`); await wait(900);
   await c.run(`(()=>{document.querySelector('[data-q-live]')?.click();return true})()`); await wait(700);
+  await c.run(`(()=>{const m=document.querySelector('[data-q-plan-more]');if(m&&m.getAttribute('aria-expanded')!=='true')m.click();return 1})()`); await new Promise(r => setTimeout(r, 400));
   const opened = await c.run(`(()=>{const b=document.getElementById('q-gym-add-open');if(b){b.click();return 'btn'}const sel=document.querySelector('select[data-q-work="gymName"]');if(!sel)return 'none';sel.value='__new__';sel.dispatchEvent(new Event('change',{bubbles:true}));return 'select'})()`); await wait(600);
   const added = await c.run(`(()=>{const i=document.getElementById('q-gym-new');if(!i)return 'no-input';i.value='연기시험짐';document.getElementById('q-gym-save').click();return 'saved'})()`); await wait(700);
   const picked = await c.run(`[...document.querySelectorAll('select[data-q-work="gymName"]')].some(x=>x.value==='연기시험짐')`);

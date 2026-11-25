@@ -24,17 +24,27 @@ export const METRICS = [
  ['fat','지방','g','#ff7b93'],
 ];
 
+// 5.0.4 대표님: 증량(벌크업) 중이 아니면 조금 덜 먹은 날은 깎지 않는다 — 칼로리·탄수·지방의 '괜찮은 범위'를 아래쪽으로 넓게.
+//  칼로리: 목표의 75%~110%면 만점(아래로 35%에서 0점), 넘치는 쪽은 그대로(+10% 만점, +60% 0점)
+//  탄수·지방: 목표의 70%~115%면 만점(아래로 30%에서 0점). 단백질은 모자라면 회복에 안 좋아 그대로.
+//  증량 중(페이즈 벌크·린벌크 또는 목표 '증량')이면 예전처럼 위아래 같은 폭.
+export const isGainPhase = (s = {}) => { const t = s.phase?.type, id = typeof t === 'object' ? t?.id : t; return ['bulk', 'leanbulk'].includes(id) || s.nutritionProfile?.goal === 'gain'; };
+export const RANGE = (s = {}) => isGainPhase(s)
+ ? {calories:[0.9, 1.1], carbs:[0.85, 1.15], fat:[0.85, 1.15], protein:[0.95, 1.35]}
+ : {calories:[0.75, 1.1], carbs:[0.7, 1.15], fat:[0.7, 1.15], protein:[0.95, 1.35]};
+const side = (r, [lo, hi], loZero, hiZero) => r < lo ? clamp(1 - (lo - r) / (lo - loZero)) : r > hi ? clamp(1 - (r - hi) / (hiZero - hi)) : 1;
 export function dietScore(t, s = {}){
  const goal = Number(s.calorieGoal)||0;
  if(!t || !goal || !(t.calories>0)) return null;
+ const gain = isGainPhase(s), R = RANGE(s);
  // 4.28.0 대표님: 목표 근처에서 조금 넘친 날(칼로리 +11%·탄수 +18%)이 91점은 짜다 → 만점 구간과 감점 폭을 넓힘. 저장값이 아니라 그때그때 계산이라 지난 날짜에도 그대로 적용된다.
- const cal = band(Math.abs(t.calories/goal - 1), 0.10, 0.6);
+ const cal = side(t.calories/goal, R.calories, gain ? 0.4 : 0.35, 1.6);
  const g = k => Number(s[`${k}Goal`])||0;
  if(!g('carbs') || !g('protein') || !g('fat')) return {total:Math.round(cal*100), parts:{calories:Math.round(cal*100)}};
  const pm = t.protein/g('protein');
  const pro = clamp(1 - Math.max(0, 0.95-pm)/0.65 - Math.max(0, pm-1.35)/1.0);
- const carb = band(Math.abs(t.carbs/g('carbs') - 1), 0.15, 0.7);
- const fat = band(Math.abs(t.fat/g('fat') - 1), 0.15, 0.7);
+ const carb = side(t.carbs/g('carbs'), R.carbs, gain ? 0.3 : 0.3, 1.7);
+ const fat = side(t.fat/g('fat'), R.fat, gain ? 0.3 : 0.3, 1.7);
  const parts = {calories:Math.round(cal*40), protein:Math.round(pro*25), carbs:Math.round(carb*20), fat:Math.round(fat*15)};
  return {total:parts.calories + parts.protein + parts.carbs + parts.fat, parts};
 }
@@ -60,7 +70,7 @@ const color = k => METRICS.find(m => m[0]===k)[3];
 function tile(series, k, s, big){
  const [, label, unit, c] = METRICS.find(m => m[0]===k);
  const goal = k==='score' ? null : k==='calories' ? Number(s.calorieGoal)||null : Number(s[`${k}Goal`])||null;
- const lo = k==='score' ? 80 : goal ? goal*0.9 : null, hi = k==='score' ? 100 : goal ? goal*1.1 : null;
+ const rg = RANGE(s)[k], lo = k==='score' ? 80 : goal ? goal*rg[0] : null, hi = k==='score' ? 100 : goal ? goal*rg[1] : null;
  const vals = series.map(x => x[k]), rec = vals.filter(v => v!=null), last = series.at(-1), v = last[k], n = series.length;
  const live = last.date===ymd(new Date()) && new Date().getHours()<21, done = live ? series.slice(0, -1).map(x => x[k]).filter(v => v!=null) : rec;
  const hit = lo!=null ? done.filter(x => x>=lo && x<=hi).length : null;

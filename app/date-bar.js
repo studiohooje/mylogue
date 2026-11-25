@@ -22,8 +22,10 @@ function miniCalendar(date, today, month, marked){
 }
 
 // marked: 점을 찍을 날짜 Set
-export function dateBarHTML(date, today, {open=false, month=null, marked=new Set()}={}){
+// 5.0.4 대표님: 식단·운동은 날짜 바가 자리를 많이 차지해서 머리글(제목 아래) 안에 작게(mini).
+export function dateBarHTML(date, today, {open=false, month=null, marked=new Set(), mini=false}={}){
  const other = date!==today;
+ if(mini) return `<div class="db-wrap db-mini${other?' other':''}"><div class="datebar" data-datebar><button type="button" class="db-arrow" data-db-step="-1" aria-label="하루 전">‹</button><button type="button" class="db-mid" data-db-open aria-expanded="${open}" aria-label="날짜 고르기, 지금 ${dateLabel(date)}">${dateLabel(date)}<span class="db-rel">${other?relLabel(date, today):'오늘'}</span></button><button type="button" class="db-arrow" data-db-step="1" aria-label="다음 날">›</button></div>${other?'<button type="button" class="db-today" data-db-today>오늘로</button>':''}${open?miniCalendar(date, today, month, marked):''}</div>`;
  return `<div class="db-wrap"><div class="datebar${other?' other':''}" data-datebar><button type="button" class="db-arrow" data-db-step="-1" aria-label="하루 전">‹</button><button type="button" class="db-mid" data-db-open aria-expanded="${open}" aria-label="날짜 고르기, 지금 ${dateLabel(date)}"><span class="db-cal-ico" aria-hidden="true">▦</span>${dateLabel(date)}${other?'':' · 오늘'}</button><button type="button" class="db-arrow" data-db-step="1" aria-label="다음 날">›</button></div>${other?`<div class="db-other"><span>${eulReul(relLabel(date, today))} 보고 있어요</span><button type="button" class="db-today" data-db-today>오늘로</button></div>`:''}${open?miniCalendar(date, today, month, marked):''}</div>`;
 }
 

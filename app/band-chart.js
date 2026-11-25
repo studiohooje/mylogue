@@ -16,20 +16,30 @@ const wrap = (svg, {xs, ys, tips, kind, color, h, dateL, dateR, label}) =>
  `<div class="gc" style="--gc:${color}" data-kind="${kind}" data-x="${xs.join(',')}" data-y="${ys.join(',')}" data-h="${h}" data-tips="${esc(JSON.stringify(tips))}">${svg}<i class="gc-cross" aria-hidden="true"></i><i class="gc-dot" aria-hidden="true"></i><div class="gc-tip" role="status"></div>${dateL||dateR?`<div class="gc-x"><span>${esc(dateL||'')}</span><span>${esc(dateR||'')}</span></div>`:''}</div>`;
 
 // 선 그래프(+목표 띠). vals에 null이 있으면 끊어 그린다. line을 주면 선은 line(예: 7일 평균), 점은 vals.
-export function lineChart({vals, line, lo = null, hi = null, color, h = 120, tips = [], dateL, dateR, label = '그래프', dots = true}){
+// 5.0.4 대표님(수치 그래프 시안 A): grid=옅은 격자 칸(가로 kg·세로 주), goal=목표선(점선), band=7일 평균 둘레의 흐름 띠, grad=평균선 마이로그 그라데이션
+export function lineChart({vals, line, lo = null, hi = null, color, h = 120, tips = [], dateL, dateR, label = '그래프', dots = true, grid = false, goal = null, band = 0, grad = false}){
  const n = vals.length;
- const all = [...vals, ...(line||[]), lo, hi].filter(v => v!=null && Number.isFinite(v));
+ const all = [...vals, ...(line||[]), lo, hi, goal].filter(v => v!=null && Number.isFinite(v));
  if(!all.length) return '';
  let a = Math.min(...all), b = Math.max(...all); const p = (b-a)*0.14 || Math.max(1, Math.abs(a)*0.05); a -= p; b += p;
  const T = 10, B = 10, x = i => n===1 ? 50 : 2 + i*96/(n-1), y = v => T + (h-T-B)*(1 - (v-a)/(b-a));
- let g = '';
+ let g = '', ylab = '';
+ if(grid){
+  const span = b - a, step = span < 3 ? 0.5 : span < 8 ? 1 : span < 20 ? 2 : 5;
+  for(let v = Math.ceil(a/step)*step; v <= b; v += step){ g += `<line x1="0" x2="100" y1="${f(y(v))}" y2="${f(y(v))}" stroke="#fff" stroke-opacity=".07" vector-effect="non-scaling-stroke"/>`; ylab += `<span style="top:${f(y(v))}px">${Number.isInteger(v) ? v : v.toFixed(1)}</span>`; }
+  for(let i = n-1; i > 0; i -= 7) g += `<line x1="${f(x(i))}" x2="${f(x(i))}" y1="0" y2="${h}" stroke="#fff" stroke-opacity=".06" vector-effect="non-scaling-stroke"/>`;
+ }
+ if(band && line){ const up = [], dn = []; line.forEach((v, i) => { if(v==null) return; up.push(`${f(x(i))} ${f(y(v+band))}`); dn.unshift(`${f(x(i))} ${f(y(v-band))}`); }); if(up.length > 1) g += `<path d="M${up.join(' L')} L${dn.join(' L')} Z" fill="${color}" opacity=".12"/>`; }
+ if(goal!=null) g += `<line x1="0" x2="100" y1="${f(y(goal))}" y2="${f(y(goal))}" stroke="#f2a98a" stroke-opacity=".8" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>`;
  if(lo!=null && hi!=null){
   g += `<rect x="0" width="100" y="${f(y(hi))}" height="${f(Math.max(1, y(lo)-y(hi)))}" fill="${color}" opacity=".13"/>`;
   for(const v of [lo, hi]) g += `<line x1="0" x2="100" y1="${f(y(v))}" y2="${f(y(v))}" stroke="${color}" stroke-opacity=".35" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>`;
  }
  const L = line||vals; let d = '', open = false;
  L.forEach((v, i) => { if(v==null){ open = false; return; } d += `${open?'L':'M'}${f(x(i))} ${f(y(v))} `; open = true; });
- if(d) g += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${line?2.2:1.6}" stroke-opacity="${line?.95:.55}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+ const gid = `lg${Math.random().toString(36).slice(2, 8)}`;
+ if(d && grad) g += `<defs><linearGradient id="${gid}" x1="0" x2="1"><stop offset="0" stop-color="#8ce4e0"/><stop offset=".55" stop-color="#b8aaf2"/><stop offset="1" stop-color="#f2a98a"/></linearGradient></defs>`;
+ if(d) g += `<path d="${d}" fill="none" stroke="${grad ? `url(#${gid})` : color}" stroke-width="${line?(grad?3:2.2):1.6}" stroke-opacity="${line?.95:.55}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
  const last = vals.reduce((k, v, i) => v!=null ? i : k, -1);
  const r = n>45 ? 3.4 : n>14 ? 4.8 : 6.4;
  if(dots) vals.forEach((v, i) => {
@@ -40,7 +50,8 @@ export function lineChart({vals, line, lo = null, hi = null, color, h = 120, tip
  });
  if(last>=0){ const lx = x(last), ly = y(vals[last]); g += `<path d="${dotPath(lx, ly)}" stroke="${color}" stroke-width="18" stroke-linecap="round" opacity=".18" vector-effect="non-scaling-stroke"/><path d="${dotPath(lx, ly)}" stroke="#0c1220" stroke-width="12" stroke-linecap="round" vector-effect="non-scaling-stroke"/><path d="${dotPath(lx, ly)}" stroke="${color}" stroke-width="9" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`; }
  const xs = vals.map((_, i) => f(x(i))), ys = vals.map((v, i) => v==null ? (line&&line[i]!=null ? f(y(line[i])) : -1) : f(y(v)));
- return wrap(`<svg class="gc-svg" viewBox="0 0 100 ${h}" preserveAspectRatio="none" style="height:${h}px" role="img" aria-label="${esc(label)}">${g}</svg>`, {xs, ys, tips, kind:'line', color, h, dateL, dateR, label});
+ const out = wrap(`<svg class="gc-svg" viewBox="0 0 100 ${h}" preserveAspectRatio="none" style="height:${h}px" role="img" aria-label="${esc(label)}">${g}</svg>`, {xs, ys, tips, kind:'line', color, h, dateL, dateR, label});
+ return grid || goal!=null ? `<div class="gc-grid">${out}${ylab ? `<div class="gc-ylab" aria-hidden="true">${ylab}</div>` : ''}${goal!=null ? `<span class="gc-goal" style="top:${f(y(goal))}px">목표 ${goal}</span>` : ''}</div>` : out;
 }
 
 // 막대 그래프. bars: [{v, color}] 또는 쌓기 [{stack:[{v,color}]}]. signed면 0을 가운데 두고 위아래로.

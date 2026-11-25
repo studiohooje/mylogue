@@ -62,7 +62,7 @@ export function fakeReply(path, body = {}) {
 export async function aiRequest(path, body = {}, {fetchImpl = globalThis.fetch, token = null} = {}) {
   if (!PATHS.includes(path)) throw Error('없는 AI 기능이에요.');
   if (fakeAI() || isDemo()) return fakeReply(path, body);
-  // 슈퍼관리자 '보기 기준'(일반/플러스)을 서버에도 알린다. 서버는 일반으로 낮추는 것만 받아들인다.
+  // 슈퍼관리자 '보기 기준'(일반/프리미엄)을 서버에도 알린다. 서버는 일반으로 낮추는 것만 받아들인다.
   if (adminView() === 'free') body = {...body, viewPlan: 'free'};
   const url = aiWorkerUrl();
   if (!url) throw Error('AI가 아직 연결되지 않았어요. 연결되면 바로 쓸 수 있어요.');

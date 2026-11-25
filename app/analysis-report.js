@@ -88,7 +88,7 @@ export function headline(r){
 }
 const timeWord = d => { const now = new Date(), days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate()))/86400000); const part = d.getHours() < 12 ? '오전' : d.getHours() < 18 ? '오후' : '저녁'; return `${days<=0?'오늘':days===1?'내일':days===2?'모레':`${days}일 뒤`} ${part}`; };
 
-export function reportHTML(r, {exerciseOptions=[], grass=''}={}){
+export function reportHTML(r, {exerciseOptions=[], grass='', only=null}={}){
  const w = r.week, tons = v => v >= 1000 ? `${n0(v/1000, 1)}t` : `${n0(v)}kg`;
  const story = `<section class="ar-card ar-hi"><p class="ar-eyebrow">이번 주 리포트 · 최근 7일</p><h2 class="ar-h">${h(headline(r))}</h2>${w.sessions?`<p class="ar-big">${w.sessions}회 · ${n0(w.sets)}세트 · ${tons(w.volume)}</p><p>${w.volDelta===null?'지난주 기록이 없어 비교는 다음 주부터예요.':`지난주보다 볼륨 <b class="${w.volDelta>=0?'up':'down'}">${w.volDelta>=0?'+':''}${w.volDelta}%</b>.`}${r.prs[0]?` ${h(r.prs[0].name)} 추정 최대 <b class="up">+${n0(r.prs[0].gain,1)}kg</b>.`:''}</p>`:''}${w.rested?`<p class="ar-warn">${h(w.rested[0])}${josa(w.rested[0])} ${w.rested[1]}일째 쉬고 있어요. 오늘은 ${h(w.rested[0])} 운동이 좋아요.</p>`:''}<div class="ar-actions"><button type="button" class="button" id="apply-recommendation">오늘 추천 운동으로 시작</button></div></section>`;
  const recover = `<section class="ar-card"><div class="ar-head"><b>회복 지도</b><small>최근 자극 · 지난 시간</small></div>${r.recovery.length?`<div class="ar-body">${anatomySvg([], [], {side:'front', mode:'load', loads:r.recLoads, key:'ar-f'})}${anatomySvg([], [], {side:'back', mode:'load', loads:r.recLoads, key:'ar-b'})}</div><p class="ar-legend"><i class="d r"></i>회복 중(2일 안) <i class="d o"></i>거의 회복 <i class="d g"></i>준비됨</p>${r.soonest[0]?`<p class="ar-hint">${(t=>h(t)+josa(t))([...new Set(r.soonest.slice(0,2).map(x => MUSCLE_LABELS[x.muscleId]))].join('·'))} ${timeWord(r.soonest[0].readyAt)}쯤 다시 준비돼요.</p>`:'<p class="ar-hint">지금은 모든 부위가 준비돼 있어요.</p>'}`:'<p class="ar-hint">운동을 기록하면 부위별 회복 상태가 보여요.</p>'}<p class="ar-note">마지막 자극 뒤 48시간은 ‘회복 중’, 72시간까지 ‘거의 회복’으로 보는 일반적인 기준이에요.</p></section>`;
@@ -103,7 +103,9 @@ export function reportHTML(r, {exerciseOptions=[], grass=''}={}){
  const card = `<section class="ar-card ar-share" id="ar-share-card"><p class="ar-eyebrow">${h(r.month.label)} 리포트 카드</p><p class="ar-big">이번 달 들어 올린 무게</p><p class="ar-huge">${tons(r.month.volume)}</p>${suv>=1?`<p>= 중형 SUV ${suv}대 🚙</p>`:''}<p class="ar-hint">새 기록 ${r.month.prs}개${r.month.topEx?` · 가장 많이 한 운동 ${h(r.month.topEx)}`:''}</p><button type="button" class="button secondary" id="ar-share">이미지로 저장</button></section>`;
  const d = r.diet;
  const diet = `<section class="ar-card"><div class="ar-head"><b>식단·수치와 함께 보기</b><small>최근 30일</small></div><p>${d.goal?`단백질 목표를 채운 날 <b>${d.proteinHit}/${d.mealDays||0}일</b>`:'단백질 목표를 정하면 채운 날을 세어 줘요'}${d.smmChange!==null?(d.smmChange===0?' · 골격근량 변화 없음':` · 골격근량 <b class="${d.smmChange>0?'up':'down'}">${d.smmChange>0?'+':''}${n0(d.smmChange,1)}kg</b>`):''}</p>${d.bodyPts.length>=2?lineChart({vals:d.bodyPts.map(b => b.skeletalMuscle), color:'#6fd6a3', h:80, tips:d.bodyPts.map(b => `<span class="d">${Number(b.date.slice(5,7))}/${Number(b.date.slice(8,10))}</span><b>골격근량 ${n0(b.skeletalMuscle,1)}kg</b>`), label:'최근 30일 골격근량 그래프'}):'<p class="ar-hint">인바디(골격근량)를 두 번 이상 기록하면 운동·식단과 함께 변화를 보여 줘요.</p>'}</section>`;
- return `<div class="ar">${story}${recover}${prs}${growth}${balance}${heat}${card}${diet}</div>`;
+ // 5.0.4 only: 분석 페이지는 리포트 카드만(나머지는 운동 페이지로)
+ const parts = {story, recover, prs, growth, balance, heat, card, diet};
+ return `<div class="ar">${(only || Object.keys(parts)).map(k => parts[k] || '').join('')}</div>`;
 }
 
 // 리포트 카드를 PNG로 그린다(브라우저 전용).

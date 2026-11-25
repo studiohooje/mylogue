@@ -81,7 +81,7 @@ export async function reviewApplicants(uids,status){
   for(let i=0;i<list.length;i+=400){const b=fsSDK.writeBatch(firestore);for(const uid of list.slice(i,i+400))b.update(profileRef(uid),{status,reviewerUid:auth.currentUser.uid,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});await b.commit();markReviewed(list.slice(i,i+400),status)}
   return cloudState.applicants;
 }
-// 4.17.0 플러스 전환(관리자 전용): 계정 문서의 plan을 바꾼다. 결제가 붙으면 같은 칸을 결제 기록이 채운다.
+// 4.17.0 프리미엄 전환(관리자 전용): 계정 문서의 plan을 바꾼다. 결제가 붙으면 같은 칸을 결제 기록이 채운다.
 // 5.0.2 관리자가 코치 권한 켜고 끄기
 export async function setAccountCoach(uid,on){
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 코치 권한을 바꿀 수 있습니다.');
@@ -89,7 +89,7 @@ export async function setAccountCoach(uid,on){
   return listApplicants();
 }
 export async function setAccountPlan(uid,plan){
-  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 플러스를 바꿀 수 있습니다.');
+  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 프리미엄을 바꿀 수 있습니다.');
   if(!uid||!['free','plus'].includes(plan))throw Error('플랜을 확인해 주세요.');
   await fsSDK.updateDoc(profileRef(uid),{plan,planBy:auth.currentUser.uid,planAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
   return listApplicants();

@@ -219,7 +219,7 @@ function healthApply(picked,auto){const {workouts,body,replace}=healthRecords(pi
 async function healthAutoOnOpen(){const p=healthPlugin();if(!p||!$s.db.settings?.healthAuto)return;await healthState();if(!$s.hc.granted?.steps&&!$s.hc.granted?.weight)return;try{const c=healthCandidates(await p.read({days:7}),$s.db,today());if(c.fresh.length)healthApply(c.fresh,true)}catch{}}
 function save(next){const result=saveLocal(next);queueAutoSync();return result}
 // 4.2.0 날짜 바: 홈·식단·운동이 같은 '보는 날'(selectedDate)을 쓴다. 점은 그 화면의 기록이 있는 날.
-function dateBar(kind){const src=kind==='food'?$s.db.meals:kind==='workout'?$s.db.workouts:[...$s.db.meals,...$s.db.workouts,...$s.db.body];return dateBarHTML($s.selectedDate,today(),{open:$s.dbOpen,month:$s.dbMonth,marked:new Set((src||[]).filter(x=>!x.planned).map(x=>x.date))})}
+function dateBar(kind,mini=true){/* 5.0.4 대표님: 날짜 선택은 모든 페이지에서 같은 작은 모양 */const src=kind==='food'?$s.db.meals:kind==='workout'?$s.db.workouts:[...$s.db.meals,...$s.db.workouts,...$s.db.body];return dateBarHTML($s.selectedDate,today(),{open:$s.dbOpen,month:$s.dbMonth,marked:new Set((src||[]).filter(x=>!x.planned).map(x=>x.date)),mini})}
 // 4.0.0 코치 모드(마스터 계정만)
 $s.coach=createCoachController({getDB:()=>$s.db,save:next=>{$s.db=save(next);return $s.db},render:()=>render(),toast:m=>toast(m),setPage:p=>{$s.page=p;$s.modal=null;render();globalThis.scrollTo?.(0,0)},getPage:()=>$s.page,today:()=>today(),user:()=>cloudState.user,profileName:()=>{try{return profileOf($s.db,cloudState.user).name}catch{return ''}}});
 function add(current,kind,item){return save({...current,[kind]:[...(current[kind]||[]),item]})}
@@ -284,6 +284,7 @@ function gwReadBasic(){const f=document.getElementById('gw-basic');if(!f||!$s.go
 function gwEnter(){const st=$s.goalWiz,step=WIZ_STEPS[st.step];if(step==='calories'&&!st.kcal){const o=calorieOptions(st.profile,st.useMine&&['ready','stale'].includes(st.mine?.status)?st.mine.kcal:null);st.kcal=(o.find(x=>x.rec)||o.find(x=>!x.below)||o[0])?.kcal||null}if(step==='macros'&&!st.preset&&!st.custom.on)st.preset=presetOrder(st.profile).rec}
 
 
+$s.root.addEventListener('change',event=>{const t=event.target;if(t.name==='measure'&&t.closest('#body-form')){/* 5.0.4 인바디를 고르면 체성분 칸을 펼친다 */const d=document.querySelector('#body-form .b-more');if(d&&t.value==='inbody')d.open=true}});
 $s.root.addEventListener('change',async event=>{if(event.target.id!=='pf-photo'||!$s.pfEdit)return;const file=event.target.files?.[0];if(!file)return;try{const v=document.getElementById('pf-name');if(v)$s.pfEdit.nickname=v.value;$s.pfEdit.photo=await shrinkPhoto(file);$s.pfEdit.type='photo';render()}catch(e){toast(e.message)}});
 globalThis.addEventListener?.('mylogue-fooddb-more',()=>{/* 4.17.0 브랜드 메뉴가 뒤이어 붙으면 열린 검색 결과를 다시 계산 */const inp=document.getElementById('q-food-search')||document.getElementById('batch-db-search');if(inp&&inp.value.trim())inp.dispatchEvent(new Event('input',{bubbles:true}))});
 $s.root.addEventListener('input',event=>{if(event.target.dataset?.rangeOut!==undefined&&event.target.nextElementSibling)event.target.nextElementSibling.textContent=event.target.value});/* 4.17.0 CSP: 인라인 oninput 대신 */
@@ -429,6 +430,11 @@ $s.root.addEventListener('click',async event=>{
   if(['workEdit','program','reload','routine'].some(k=>target.dataset[k]!==undefined)||(target.id==='codex-confirm'&&$s.codexDraft?.kind==='workouts')){const pending=readSession();if(pending?.exercises?.some(e=>e.name)&&!confirm('작성 중인 임시 운동이 있습니다. 새로 선택한 운동으로 교체할까요? 취소하면 기존 초안을 유지합니다.'))return;clearSession();$s.savedDraft=null}
   if(target.dataset.insightRun!==undefined){/* 5.0.4 AI 인사이트: 누를 때만, 기록이 그대로면 다시 부르지 않음 */if($s.insight?.busy)return;const facts=coachFactsText(actualDB($s.db),today());if(insightUnchanged(facts)){toast('지난 인사이트 뒤로 기록이 바뀌지 않았어요. 기록을 더 남긴 뒤 다시 받아 보세요.');return}$s.insight={busy:true,msg:''};render();aiRequest('insight',{facts}).then(r=>{if(r?.insight)saveInsight(r.insight,facts);$s.insight={busy:false,msg:'',left:r?.left??null};render()}).catch(e=>{$s.insight={busy:false,msg:e.message||'인사이트를 만들지 못했어요.'};render()});return}
   if(target.dataset.setSec){$s.setSec=target.dataset.setSec;$s.modal='settings-sec';render();return}
+  if(target.dataset.qMoreFoods!==undefined&&$s.quickMeal){$s.quickMeal.moreFoods=true;render();return}
+  if(target.dataset.qPlanMore!==undefined&&$s.quickWorkout){$s.quickWorkout.planMore=!$s.quickWorkout.planMore;render();return}
+  if(target.dataset.pgSec){$s.pgSec=target.dataset.pgSec;$s.modal='page-sec';render();return}
+  if(target.dataset.mealOpen!==undefined){$s.mealOpen=$s.mealOpen===target.dataset.mealOpen?null:target.dataset.mealOpen;render();return}
+  if(target.dataset.logAll!==undefined){$s.logAll=true;render();return}
   if(target.dataset.graphToggle!==undefined){$s.graphOpen=!$s.graphOpen;$s.inputOpen=false;render();return}
   if(target.dataset.inputToggle!==undefined){$s.inputOpen=!$s.inputOpen;$s.graphOpen=false;render();return}
   if(($s.graphOpen||$s.inputOpen)&&!target.closest?.('.nav6-pop')){$s.graphOpen=false;$s.inputOpen=false;render()}
@@ -512,7 +518,7 @@ $s.root.addEventListener('click',async event=>{
   if(target.dataset.wteMood){$s.wte.mood=target.dataset.wteMood;render();return}
   if(target.dataset.wtePlace){$s.wte.place=target.dataset.wtePlace;render();return}
   if(target.dataset.wteAdd!=null){const x=($s.wte.results||[])[Number(target.dataset.wteAdd)];if(!x)return;const food=findFoodDB(`fooddb:${x.row[8]}:${x.row[1]}|${x.row[0]}|${x.row[2]}`);if(!food)return toast('음식을 찾지 못했어요.');$s.modal='quick-meal';$s.quickMeal=emptyQuickMeal(today(),new Date().toTimeString().slice(0,5));$s.quickMeal.picked=structuredClone(food);$s.quickMeal.share=1;$s.quickMeal.editIndex=-1;$s.quickMeal.usual=usualQty($s.db.meals,food.name,food.servingUnit);$s.quickMeal.qty=MASS.has(food.servingUnit)?Math.round(x.qty):x.factor;$s.quickMeal.gramOptions=[100,200,250,300];render();return}
-  if(target.dataset.planView){setAdminView(target.dataset.planView);toast(target.dataset.planView==='plus'?'플러스 사용자 기준으로 보고 있어요.':'일반 사용자 기준으로 보고 있어요.');render();return}
+  if(target.dataset.planView){setAdminView(target.dataset.planView);toast(target.dataset.planView==='plus'?'프리미엄 사용자 기준으로 보고 있어요.':'일반 사용자 기준으로 보고 있어요.');render();return}
   if(target.id==='plan-fake-ai'){setFakeAI(target.getAttribute('aria-pressed')!=='true');render();return}
   if(target.id==='plan-ai-check'){aiRequest('me').then(r=>{$s.aiMe=r;if(r?.global)refreshCostInfo(()=>Promise.resolve(r),{force:true});render()}).catch(error=>toast(error.message));return}
   if(target.id==='ai-review-run'){if($s.aiCoach.busy)return;const summary=weekSummaryText(actualDB($s.db),today());/* 4.29.3 기록이 지난 분석 때와 같으면 다시 부르지 않는다(비용) */if(reviewUnchanged(summary)){toast('지난 분석 뒤로 기록이 바뀌지 않았어요. 기록을 더 남긴 뒤 다시 받아 보세요.');return}$s.aiCoach={...$s.aiCoach,busy:'review',msg:''};render();aiRequest('review',{summary}).then(r=>{const text=String(r.text||'');if(text)saveReview(text,summary);$s.aiCoach={...$s.aiCoach,busy:'',review:text,left:r.left??$s.aiCoach.left};render()}).catch(error=>{$s.aiCoach={...$s.aiCoach,busy:'',msg:error.message};render()});return}

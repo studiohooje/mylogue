@@ -1,17 +1,17 @@
-// 4.17.0 프리미엄(마이로그 플러스) 구조 — 무료/플러스 판단을 이 한 곳에서 한다.
-// - 실제 사용자: 서버 계정 문서의 plan('plus') 또는 베타 전체 플러스(BETA_ALL_PLUS). 비용 드는 AI 기능은 서버(AI 서버)가 다시 확인한다.
-// - 슈퍼관리자: '보기 기준' 토글로 일반/플러스 화면·기능을 오가며 확인(이 기기에만 저장, 서버 권한은 바뀌지 않음).
+// 4.17.0 프리미엄(마이로그 프리미엄) 구조 — 무료/프리미엄 판단을 이 한 곳에서 한다.
+// - 실제 사용자: 서버 계정 문서의 plan('plus') 또는 베타 전체 프리미엄(BETA_ALL_PLUS). 비용 드는 AI 기능은 서버(AI 서버)가 다시 확인한다.
+// - 슈퍼관리자: '보기 기준' 토글로 일반/프리미엄 화면·기능을 오가며 확인(이 기기에만 저장, 서버 권한은 바뀌지 않음).
 // - 가짜 AI 모드(관리자): AI 서버 없이 정해진 답으로 흐름을 시험.
 // 원칙: 손 기록·전체 그래프·DB 검색·백 온 트랙·안전 안내는 언제나 무료.
-// 4.27.0 재검사 B-27: '무료 약속'은 위 목록에만 한다. 플러스 기능은 베타 동안만 모두에게 열려 있다고 앱·랜딩에 적는다.
+// 4.27.0 재검사 B-27: '무료 약속'은 위 목록에만 한다. 프리미엄 기능은 베타 동안만 모두에게 열려 있다고 앱·랜딩에 적는다.
 import {cloudState} from './cloud-sync.js';
 import {isAdminUser} from './admin.js';
 import {scopedKey,storageAccount} from './storage-scope.js';
 import {costLineHTML} from './cost-alert.js';
 
-export const BETA_ALL_PLUS = false; // 5.0.2 대표님: 신청 없이 누구나 가입 → 프리미엄은 관리자가 지정한 계정만(서버 PLUS_ALL도 0) // 베타 동안 승인된 모든 계정을 플러스로(AI 서버의 PLUS_ALL과 함께 바꾼다)
+export const BETA_ALL_PLUS = false; // 5.0.2 대표님: 신청 없이 누구나 가입 → 프리미엄은 관리자가 지정한 계정만(서버 PLUS_ALL도 0) // 베타 동안 승인된 모든 계정을 프리미엄으로(AI 서버의 PLUS_ALL과 함께 바꾼다)
 export const PRICE = {monthly: 4900};
-// 플러스 기능 목록: free = 무료에서 쓸 수 있는 정도(0이면 잠금, 숫자면 개수·횟수), ai = AI 서버가 필요한지
+// 프리미엄 기능 목록: free = 무료에서 쓸 수 있는 정도(0이면 잠금, 숫자면 개수·횟수), ai = AI 서버가 필요한지
 export const FEATURES = [
   {id: 'better-choice', name: '더 나은 선택 제안', free: 1, plus: Infinity, ai: false, note: '무료는 한 끼에 대안 1개'},
   {id: 'what-to-eat', name: '오늘 남은 걸로 뭐 먹지', free: 0, plus: Infinity, ai: false},
@@ -31,7 +31,7 @@ const put = (k, v) => { try { v ? globalThis.localStorage?.setItem(scopedKey(k),
 export const isSuperAdmin = () => isAdminUser(cloudState.user);
 export const adminView = () => { if (!isSuperAdmin()) return null; const v = store('mylogue.viewPlan'); return v === 'free' || v === 'plus' ? v : null; };
 export const setAdminView = v => { if (isSuperAdmin()) put('mylogue.viewPlan', v === 'free' || v === 'plus' ? v : ''); };
-export const isDemo = () => storageAccount() === 'demo-tour'; // 둘러보기(예시 기록): 대표님 지시로 분석·플러스를 모두 보여 준다
+export const isDemo = () => storageAccount() === 'demo-tour'; // 둘러보기(예시 기록): 대표님 지시로 분석·프리미엄을 모두 보여 준다
 export function planOf() {
   const v = adminView(); if (v) return v;
   if (isDemo()) return 'plus';
@@ -47,17 +47,17 @@ export const fakeAI = () => isSuperAdmin() && store('mylogue.fakeAI') === '1';
 export const setFakeAI = on => { if (isSuperAdmin()) put('mylogue.fakeAI', on ? '1' : ''); };
 // 잠금 안내(재촉 없이 한 줄)
 export const topic = w => { const c = String(w).trim().slice(-1).charCodeAt(0); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '은' : '는'); };
-export const lockHTML = (id, esc = s => s) => { const f = feature(id); return `<p class="plus-lock"><b>플러스</b> ${esc(topic(f?.name || '이 기능'))} 마이로그 플러스에서 쓸 수 있어요.${f?.note && f.free > 0 ? ` <small>${esc(f.note)}</small>` : ''}</p>`; };
+export const lockHTML = (id, esc = s => s) => { const f = feature(id); return `<p class="plus-lock"><b>프리미엄</b> ${esc(topic(f?.name || '이 기능'))} 마이로그 프리미엄에서 쓸 수 있어요.${f?.note && f.free > 0 ? ` <small>${esc(f.note)}</small>` : ''}</p>`; };
 // 관리자 설정 카드
 export function adminPlanCardHTML(esc, {serverInfo = null, aiConnected = false} = {}) {
   if (!isSuperAdmin()) return '';
   const v = adminView() || 'plus', fake = fakeAI();
   return `<section class="section card plus-admin" id="plus-admin"><h3>프리미엄 모드 <span class="status-badge info">슈퍼관리자</span></h3>
-  <p class="hint">이 관리자 계정을 프리미엄(플러스) 모드 또는 일반 사용자 모드로 써 봐요. 이 기기에만 적용되고, 실제 계정 권한은 바뀌지 않아요.</p>
+  <p class="hint">이 관리자 계정을 프리미엄(프리미엄) 모드 또는 일반 사용자 모드로 써 봐요. 이 기기에만 적용되고, 실제 계정 권한은 바뀌지 않아요.</p>
   <div class="seg" role="group" aria-label="보기 기준">${[['plus', '프리미엄 모드로 하기'], ['free', '일반 사용자 모드로 하기']].map(([k, l]) => `<button type="button" class="${v === k ? 'active' : ''}" data-plan-view="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>
   <div class="actions"><button type="button" class="button ${fake ? '' : 'secondary'}" id="plan-fake-ai" aria-pressed="${fake}">가짜 AI 모드 ${fake ? '켜짐' : '꺼짐'}</button>${aiConnected ? '<button type="button" class="button secondary" id="plan-ai-check">AI 서버 상태 확인</button>' : ''}</div>
   <p class="hint">가짜 AI 모드: AI 서버 없이 정해진 답으로 흐름만 시험해요(비용 없음).</p>
   ${aiConnected ? costLineHTML(serverInfo?.global || undefined, esc) : ''}
-  <p class="hint">AI 서버:${aiConnected ? (serverInfo ? `연결됨 · ${serverInfo.fake ? '서버도 가짜 AI' : '실제 AI'} · 플러스 ${serverInfo.plus ? '켜짐' : '꺼짐'}` : '연결됨(상태 확인 전)') : '아직 연결 전(키 연결 후 주소를 넣으면 바로 동작)'}</p>
-  <details><summary>플러스 기능 ${FEATURES.length}가지</summary><ul class="plus-list">${FEATURES.map(f => `<li><b>${esc(f.name)}</b> <small>무료 ${f.free === 0 ? '잠금' : f.free === Infinity ? '전부' : f.free} · 플러스 ${f.plus === Infinity ? '전부' : f.plus}${f.ai ? ' · AI' : ''}</small></li>`).join('')}</ul></details></section>`;
+  <p class="hint">AI 서버:${aiConnected ? (serverInfo ? `연결됨 · ${serverInfo.fake ? '서버도 가짜 AI' : '실제 AI'} · 프리미엄 ${serverInfo.plus ? '켜짐' : '꺼짐'}` : '연결됨(상태 확인 전)') : '아직 연결 전(키 연결 후 주소를 넣으면 바로 동작)'}</p>
+  <details><summary>프리미엄 기능 ${FEATURES.length}가지</summary><ul class="plus-list">${FEATURES.map(f => `<li><b>${esc(f.name)}</b> <small>무료 ${f.free === 0 ? '잠금' : f.free === Infinity ? '전부' : f.free} · 프리미엄 ${f.plus === Infinity ? '전부' : f.plus}${f.ai ? ' · AI' : ''}</small></li>`).join('')}</ul></details></section>`;
 }

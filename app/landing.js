@@ -153,7 +153,7 @@ export function landingHTML({installHTML='', returning=false}={}){
    <button type="button" class="ld-btn primary" id="landing-demo2">예시 기록으로 둘러보기 →</button>
   </div>
   <div class="ld-personas">
-   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>${lines('성별·나이·체중·목표가 다른|여덟 명의 120일 예시예요.', '누르면 그 사람의 기록으로|앱 전체를 둘러봐요.', '분석과 플러스 기능도|모두 열려 있어요.')}</p>
+   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>${lines('성별·나이·체중·목표가 다른|여덟 명의 120일 예시예요.', '누르면 그 사람의 기록으로|앱 전체를 둘러봐요.', '분석과 프리미엄 기능도|모두 열려 있어요.')}</p>
    ${personaCardsHTML()}
   </div>
  </section>
@@ -172,7 +172,7 @@ export function landingHTML({installHTML='', returning=false}={}){
 
  <section class="ld-sec ld-end" id="ld-end">
   <h2>오늘의 한 줄부터.</h2>
-  <p>${lines('손 기록·그래프·검색은|계속 무료예요.', '더 깊은 분석(플러스)은|베타 동안 모두에게 열려 있고,', '정식 출시 뒤에는|필요할 때 골라도 충분해요.')}</p>
+  <p>${lines('손 기록·그래프·검색은|계속 무료예요.', '더 깊은 분석(프리미엄)은|베타 동안 모두에게 열려 있고,', '정식 출시 뒤에는|필요할 때 골라도 충분해요.')}</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup2">Google로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo3">먼저 둘러보기</button>

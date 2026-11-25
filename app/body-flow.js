@@ -52,9 +52,10 @@ export function summary(points, goal, today){
 const BODY = '#f2b49b', DOWN = '#6fd6a3', UP = '#ff7b93';
 function mainChart(rows, view, goal, dayAvg){
  if(!rows.length) return '<p class="hint bf-empty">체중을 기록하면 여기에 흐름이 그려져요.</p>';
- const vals = rows.map(r => r.w), lo = goal ? goal-1 : null, hi = goal ? goal+1 : null;
+ const vals = rows.map(r => r.w);
  const tips = rows.map((r, i) => `<span class="d">${esc(view==='day'?md(r.key):view==='week'?`${r.label} 주`:r.label)}</span><b>${f1(r.w)}kg</b>${view==='day'&&dayAvg[i]!=null?`<span class="d">7일 평균 ${f1(dayAvg[i])}kg</span>`:''}${view!=='day'?`<span class="d">${r.n}번 잰 평균</span>`:''}${goal?`<span class="s">${Math.abs(r.w-goal)<=1?'목표 범위 안':`목표까지 ${f1(Math.abs(r.w-goal))}kg`}</span>`:''}`);
- return lineChart({vals, line:view==='day' ? dayAvg : null, lo, hi, color:BODY, h:170, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중 흐름'});
+ // 5.0.4 대표님: 시안 A — 점은 옅게, 7일 평균 흐름을 굵은 그라데이션 선 + 띠로, 목표 체중은 점선, 옅은 격자 칸
+ return lineChart({vals, line:view==='day' ? dayAvg : null, goal, band:view==='day' ? 0.35 : 0, grad:true, grid:true, color:BODY, h:190, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중 흐름'});
 }
 function changeBars(ch, goalDir){
  if(ch.length<2) return '';
@@ -109,7 +110,7 @@ export function bodyOverviewHTML(db, {view = 'day', today}){
  <form id="goal-weight-form" class="bf-goal-form" hidden><label class="field">목표 체중(kg)<input name="goalWeight" type="number" inputmode="decimal" step="0.1" min="20" max="300" value="${esc(goal||'')}"></label><button class="button small">저장</button></form>
  <div class="bf-head"><b class="bf-title">체중</b><div class="df-tools"><div class="df-period" role="group" aria-label="보기 단위">${[['day','일간'],['week','주간'],['month','월간']].map(([k, l]) => `<button type="button" class="${k===view?'on':''}" data-bf-view="${k}" aria-pressed="${k===view}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
  ${mainChart(rows, view, goal, dayAvg)}
- ${view==='day'?`<p class="hint bf-note">점은 매일 잰 값, 선은 최근 7일 평균이에요.${goal?' 띠는 목표 체중 ±1kg이에요.':''} 인바디 체중은 기계가 달라 섞지 않아요.</p>`:''}
+ ${view==='day'?`<p class="hint bf-note">점은 매일 잰 값, 선은 최근 7일 평균이에요.${goal?' 점선은 목표 체중이에요.':''} 인바디 체중은 기계가 달라 섞지 않아요.</p>`:''}
  ${changeBars(weeklyChanges(points), goalDir)}
  ${goal?'<p class="hint"><button type="button" class="text-button" data-goal-weight-open>목표 체중 바꾸기</button></p>':''}
  </section>${compositionCard(db)}${dietWithWeight(db, points, today)}${weekdayCard(points, today)}`;

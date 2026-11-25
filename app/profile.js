@@ -3,7 +3,7 @@
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const AVATAR_COLORS = ['#8ce4e0','#b8aaf2','#f2b49b','#f3c27a','#9cc8ed','#77d7b0'];
 // 5.0.4 대표님: 프로필 아이콘은 마이로그 기본 아이콘 10개(남 5 · 여 5) 중에서만. 내 사진·Google/카카오 사진·글자 아이콘은 없앰.
-// 테두리는 두 가지뿐이고 자동: 일반 / 플러스(마이로그 그라데이션 프리미엄 테두리) — 유튜브 프리미엄처럼 구독하면 저절로 바뀜.
+// 테두리는 두 가지뿐이고 자동: 일반 / 프리미엄(마이로그 그라데이션 프리미엄 테두리) — 유튜브 프리미엄처럼 구독하면 저절로 바뀜.
 export const AVATARS = ['m1','m2','m3','m4','m5','f1','f2','f3','f4','f5'];
 export const avatarSrc = id => `art/avatar/${AVATARS.includes(id) ? id : 'm1'}.webp`;
 export const defaultAvatar = db => db?.settings?.nutritionProfile?.sex === 'female' ? 'f1' : 'm1';
@@ -28,7 +28,7 @@ export function profileEditHTML(st, {email='', statusText='', prefsHTML='', admi
 ${tagReady?`<div class="field pf-tag"><label for="pf-tag">마이태그</label><div class="pf-tagrow"><span class="pf-at">@</span><input id="pf-tag" maxlength="16" value="${h(st.tag||'')}" placeholder="예: Moon" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" class="button secondary" id="pf-tagcheck">확인</button></div>${st.tagMsg?`<p class="hint ${st.tagOk?'':'warn'}" role="status">${h(st.tagMsg)}</p>`:'<p class="hint">나만 쓰는 이름이에요. 한글 2자·영어 3자부터. 영어는 전부 소문자·전부 대문자·첫 글자만 대문자로만 써요(예: Moon · moon · MOON). 바꾸면 이전 태그는 다른 사람이 쓸 수 있게 풀려요.</p>'}${(st.tagOptions||[]).length?`<div class="pf-tagopts">${st.tagOptions.map(x=>`<button type="button" class="chip" data-pf-tagpick="${h(x)}">@${h(x)}</button>`).join('')}</div>`:''}</div>`:`<label class="field">표시 이름<input id="pf-name" maxlength="20" value="${h(st.nickname)}" placeholder="${h(st.fallback||'예: 문')}" autocomplete="nickname"></label><p class="hint">로그인하고 이용 승인을 받으면 나만 쓰는 이름 '마이태그'를 정할 수 있어요.</p>`}
 <p class="pf-label">아이콘</p>
 <div class="pf-avatars" role="radiogroup" aria-label="프로필 아이콘">${AVATARS.map(id=>`<button type="button" class="pf-av ${st.id===id?'on':''}" data-pf-avatar="${id}" role="radio" aria-checked="${st.id===id}" aria-label="아이콘 ${id}"><img src="${avatarSrc(id)}" alt="" loading="lazy"></button>`).join('')}</div>
-<p class="hint">${plus?'플러스라서 프리미엄 테두리가 둘러져요.':'테두리는 자동이에요. 마이로그 플러스를 쓰면 프리미엄 테두리로 바뀌어요.'}</p>
+<p class="hint">${plus?'프리미엄 계정이라 마이로그 테두리가 둘러져요.':'테두리는 자동이에요. 마이로그 프리미엄을 쓰면 프리미엄 테두리로 바뀌어요.'}</p>
 <div class="actions"><button type="button" class="button" id="pf-save">${tagReady?'마이태그·아이콘 저장':'이름·아이콘 저장'}</button></div>
 ${prefsHTML?`<div class="pf-prefs">${prefsHTML}<button type="button" class="button secondary pf-wide" id="gw-open">식단 목표 다시 정하기</button></div>`:''}
 <button type="button" class="button secondary pf-wide pf-more" data-page="settings">그 외 설정으로 이동 ›<small>계정·동기화, 운동 장소, AI 연결, 백업 등</small></button></div>`;
