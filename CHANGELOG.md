@@ -4,6 +4,12 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.0.0 — 2026-11-25 (배포됨)
+
+- 로그메이트: 메이트 탭(내 방·친구 방 최대 8명), 앱 안 촬영(찍은 시각 워터마크, 720px WebP), 초대 링크·QR(멤버 누구나, 7일), 방장 넘기기, 메이트 대시보드(체중·식단·운동 보기 전용 요약), 공개 범위 종류별·전원 동의, 방 대화·사진 90일 보관, 식단으로 가져오기·메이트로그에서 가져오기(N명 나눠 먹기 → AI 대화창).
+- Firestore 규칙 rooms/posts/shares/proposals/mateInvites 추가·배포. AI 서버 mate/upload·photo·delete(R2 mylogue-mate, 한 장 400KB·하루 30장·전체 9GB 상한, 멤버 확인 10분 기억), R2 90일 자동 삭제.
+- 하단 메뉴 6칸: 홈·그래프(수치·식단·운동·일정)·입력·메이트·분석·설정, 마이로그 그라데이션. Android CAMERA 권한. 버전 5.0.0(versionCode 93).
+
 ## Mylogue Beta 4.29.2 — 2026-11-25 (배포됨)
 
 - AI 서버(Cloudflare Workers `mylogue-ai`) 첫 배포·연결, 앱 AI_WORKER_URL 설정. 서비스 전체 월 상한 10,000원(알림 기준 같음), 하루 1,000원.

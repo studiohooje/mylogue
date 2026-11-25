@@ -1,6 +1,6 @@
 {
   "name": "mylogue",
-  "version": "4.29.2",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
   "scripts": {
