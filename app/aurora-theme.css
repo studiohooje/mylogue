@@ -1974,3 +1974,14 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .remote-notice,.operator-notice{margin:0 0 12px}.remote-notice{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.remote-notice p{margin:0;flex:1 1 220px;word-break:keep-all}.remote-notice.warn{border-color:#f0c074}.remote-notice .chip{min-height:44px}
 .help-errors .actions{display:flex;flex-wrap:wrap;gap:8px}
 .promote-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #2c3a5c;min-height:44px}.promote-row input{margin-top:4px;width:20px;height:20px}.promote-row span{display:grid;gap:2px}.promote-row.muted b{opacity:.75}.promote-row small.warn{color:#f0c074}
+
+/* 4.29.0 페이즈 시작 정리 화면(누르면 닫힘) */
+.ph-done{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;padding:8px 4px 4px;background:none;border:0;color:#edf4f8;font:inherit;text-align:center;cursor:pointer}
+.ph-done-mark{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:28px;font-weight:700;color:#0b1020;background:linear-gradient(120deg,#8ce4e0,#b48cff)}
+.ph-done-title{font-size:22px;line-height:1.35;font-weight:700}
+.ph-done-list{display:grid;gap:8px;width:100%;text-align:left;padding:14px 16px;border-radius:16px;background:#16223a;border:1px solid #2c3d63}
+.ph-done-list>span{display:grid;grid-template-columns:72px 1fr;gap:8px;font-size:15px;line-height:1.5;color:#dfe7f2}.ph-done-list b{color:#8ce4e0;font-weight:600}
+.ph-done-sub{align-self:flex-start;font-size:13px;font-weight:700;color:#b8aaf2;margin-top:4px}
+.ph-done-tips{display:grid;gap:6px;width:100%;text-align:left}.ph-done-tips span{font-size:14px;line-height:1.55;color:#c9d6e6;padding-left:14px;position:relative}.ph-done-tips span::before{content:'·';position:absolute;left:2px;color:#8ce4e0}
+.ph-done-cheer{font-size:16px;line-height:1.55;font-weight:600;margin-top:4px}
+.ph-done-tap{font-size:13px;color:#7f91aa}

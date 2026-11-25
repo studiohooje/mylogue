@@ -209,6 +209,19 @@ export function endPhase(settings, recap, today) {
   return {...rest, phaseHistory: history};
 }
 
+// 4.29.0 페이즈 시작 정리 화면의 '앞으로 이렇게'(보수적인 일반 안내, 점수·단정 없이)
+const DONE_TIPS = {
+  lose: ['체중은 하루하루 오르내려요. 주 평균으로 흐름을 볼게요.', '단백질을 끼니마다 챙기면 근육을 지키며 빼기 좋아요.', '2주쯤 지나면 속도를 보고 칼로리를 조금씩 맞춰 드려요.'],
+  gain: ['체중이 천천히 오르는지 주 평균으로 볼게요.', '운동은 무게·횟수를 조금씩 늘려 가는 게 핵심이에요.', '2주쯤 지나면 늘어나는 속도를 보고 칼로리를 맞춰 드려요.'],
+  recomp: ['체중보다 체지방률·골격근량 변화를 함께 볼게요.', '단백질과 꾸준한 근력 운동이 가장 중요해요.', '인바디를 2~4주마다 재면 변화가 잘 보여요.'],
+  reverse: ['칼로리를 조금씩 올려도 체중이 크게 늘지 않는지 볼게요.', '체중이 빠르게 오르면 올리는 속도를 늦춰 드려요.', '먹는 양이 늘어난 만큼 운동 컨디션도 함께 기록해 보세요.'],
+  hold: ['정한 범위 안에서 지내는지 주 평균으로 볼게요.', '먹는 양과 운동 리듬을 지키는 게 목표예요.', '범위를 벗어나면 부드럽게 알려 드려요.'],
+};
+function goalText(p) {
+  const a = p?.target || {}, parts = [];
+  if (a.loseKg) parts.push(`${a.loseKg}kg 감량`); if (a.gainKg) parts.push(`${a.gainKg}kg 증가`); if (a.fatPct) parts.push(`체지방률 ${a.fatPct}%`); if (a.muscleKg) parts.push(`골격근량 +${a.muscleKg}kg`); if (a.rangeKg) parts.push(`±${a.rangeKg}kg 안에서 유지`);
+  return parts.join(' · ');
+}
 // 문답 화면
 export function phaseWizardHTML(st, db, today) {
   const s = phaseStatus(db, today);
@@ -220,6 +233,15 @@ export function phaseWizardHTML(st, db, today) {
     <p class="ph-line">${esc(progressLine(s))}</p>${(s.fatChange || s.muscleChange) ? `<p class="hint">인바디: ${s.fatChange != null ? `체지방률 ${sign(s.fatChange)}%p` : ''}${s.fatChange != null && s.muscleChange != null ? ' · ' : ''}${s.muscleChange != null ? `골격근량 ${sign(s.muscleChange)}kg` : ''} (시작 대비)</p>` : ''}
     ${adv.length ? `<ul class="ph-advice">${adv.map(a => `<li class="k-${a.kind}">${esc(a.text)}</li>`).join('')}</ul>` : '<p class="hint">2주쯤 지나면 흐름을 보고 제안해 드려요.</p>'}
     <div class="onb-btns"><button type="button" class="button secondary" id="ph-new">다른 페이즈로 바꾸기</button><button type="button" class="button" id="ph-end">이 페이즈 마치기</button></div></div>`;
+  }
+  // 4.29.0 대표님: 페이즈를 정하면 '이렇게 정했어요' 정리와 응원 한마디를 보여 주고, 화면 아무 데나 누르면 닫는다(저장은 이미 끝남)
+  if (st.step === 'done' && s) {
+    const tips = DONE_TIPS[DIET_LIKE.has(s.type.id) ? 'lose' : GAIN_LIKE.has(s.type.id) ? 'gain' : s.type.id === 'recomp' ? 'recomp' : s.type.id === 'reverse' ? 'reverse' : 'hold'];
+    const goal = goalText(s.phase);
+    return `<button type="button" class="ph-done" data-ph-done aria-label="정리 화면 닫기"><span class="ph-done-mark" aria-hidden="true">✓</span><span class="ph-done-title">${esc(s.type.name)} 페이즈를<br>시작했어요</span>
+    <span class="ph-done-list"><span><b>기간</b><span><span class="nb">${esc(s.phase.start)} ~ ${esc(s.phase.end)}</span> <span class="nb">· ${s.weeks}주</span></span></span>${goal ? `<span><b>목표</b><span>${esc(goal)}</span></span>` : ''}${st.kcal ? `<span><b>하루 목표</b><span>${Number(st.kcal).toLocaleString('ko-KR')}kcal로 맞췄어요</span></span>` : '<span><b>식단 목표</b><span>설정 › 식단 목표에서 맞출 수 있어요</span></span>'}</span>
+    <span class="ph-done-sub">앞으로 이렇게 함께 볼게요</span><span class="ph-done-tips">${tips.map(t => `<span>${esc(t)}</span>`).join('')}</span>
+    <span class="ph-done-cheer">하루하루보다 흐름이 중요해요. 기록만 이어 가면 충분해요. 화이팅!</span><span class="ph-done-tap">화면을 누르면 닫혀요</span></button>`;
   }
   if (st.step === 'recap') return `${recapHTML(st.recap)}${shareButtonsHTML('phase')}<div class="onb-btns"><button type="button" class="button" id="ph-after-recap">다음 페이즈 정하기</button><button type="button" class="button secondary" id="ph-close">닫기</button></div>`;
   if (st.step === 'type') return `<div class="onb gw"><p class="onb-q">지금 어떤 페이즈예요?</p><p class="onb-s">페이즈마다 목표와 기간을 정하고, 기록에 맞춰 제안해 드려요.</p>${err}<div class="onb-opts">${PHASE_TYPES.map(t => `<button type="button" class="onb-opt ${st.type === t.id ? 'on' : ''}" data-ph-type="${t.id}"><span><b>${t.name}</b><small>${t.short}</small></span></button>`).join('')}</div></div>`;
