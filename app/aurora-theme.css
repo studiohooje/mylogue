@@ -2216,3 +2216,10 @@ button.chat-cam{border:0;cursor:pointer}
 .mt-help{width:32px;height:32px}
 .home-stat .stat-head{min-width:0}
 .home-stat .stat-head small{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 5.0.6 밝은 화면: 화면 전체를 뒤집는 방식이라 영양 막대·그래프 색(노랑·초록·분홍·민트)이 탁하게(흙갈색) 보였다.
+   색으로 뜻을 전하는 막대·점·선만 다시 뒤집어 원래 밝은 색으로 보이게 한다(글자·배경은 그대로 밝은 화면). */
+html[data-theme="light"] [style*="background:#"],html[data-theme="light"] [style*="background: #"],
+html[data-theme="light"] svg rect[fill^="#"],html[data-theme="light"] svg circle[fill^="#"],html[data-theme="light"] svg path[stroke^="#"],html[data-theme="light"] svg polyline[stroke^="#"],
+html[data-theme="light"] .ml-bar i,html[data-theme="light"] .meal-legend i,html[data-theme="light"] .df-parts i,html[data-theme="light"] .pa-badge,html[data-theme="light"] .mlg-avatar.av-plus{filter:invert(1) hue-rotate(180deg)}
+html[data-theme="light"] .macro-bar b,html[data-theme="light"] .macro-bar s,html[data-theme="light"] .macrobar i,html[data-theme="light"] .mini-bar b,html[data-theme="light"] .mini-bar s{filter:invert(1) hue-rotate(180deg)}
+html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,html[data-theme="light"] .nutrition-goal-label i{filter:invert(1) hue-rotate(180deg)}
