@@ -38,3 +38,18 @@ test('회사 고르기: 기본은 Anthropic, gemini·openai·deepseek은 OpenAI 
  assert.equal((await call([{role: 'user', content: 'x'}], {model: 'm', system: 's'})).text, 'ok');
  assert.equal(hit, 1);
 });
+test('Fable L-5: Anthropic 호출은 재시도 0번·45초 제한(지우면 이 시험이 잡는다)', async () => {
+ const {ANTHROPIC_CLIENT_OPTIONS, TIMEOUT_MS} = await import('../src/providers.js');
+ assert.equal(ANTHROPIC_CLIENT_OPTIONS.maxRetries, 0); assert.equal(ANTHROPIC_CLIENT_OPTIONS.timeout, TIMEOUT_MS); assert.ok(TIMEOUT_MS <= 60_000);
+});
+test('Fable L-6: 시간 초과면 504, 빈 답은 502, 모르는 회사 이름은 503', async () => {
+ const env = {AI_BASE_URL: 'https://api.example.com/v1', AI_API_KEY: 'k', AI_TIMEOUT_MS: '20'};
+ const slow = (url, init) => new Promise((_, no) => init.signal.addEventListener('abort', () => no(Object.assign(Error('aborted'), {name: 'AbortError'}))));
+ await assert.rejects(() => callOpenAICompatible(env, [{role: 'user', content: 'x'}], {model: 'm', system: 's'}, slow), e => e.status === 504);
+ await assert.rejects(() => callOpenAICompatible(env, [{role: 'user', content: 'x'}], {model: 'm', system: 's'}, async () => new Response(JSON.stringify({choices: [{finish_reason: 'stop', message: {content: ''}}]}))), e => e.status === 502);
+ await assert.rejects(() => pickProvider({AI_PROVIDER: 'antropic'})([], {}), e => e.status === 503);
+});
+test('Fable M-5: 생각 노력 정도·토큰 칸 이름을 설정대로 보낸다', async () => {
+ let body; await callOpenAICompatible({AI_BASE_URL: 'https://a.example/', AI_API_KEY: 'k', AI_TOKEN_FIELD: 'max_completion_tokens', AI_REASONING_EFFORT: 'minimal'}, [{role: 'user', content: 'x'}], {model: 'gpt-5-nano', system: 's', maxTokens: 900}, async (u, init) => { body = JSON.parse(init.body); return new Response(JSON.stringify({choices: [{finish_reason: 'stop', message: {content: 'ok'}}]})); });
+ assert.equal(body.max_completion_tokens, 900); assert.equal(body.max_tokens, undefined); assert.equal(body.reasoning_effort, 'minimal');
+});

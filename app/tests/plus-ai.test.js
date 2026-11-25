@@ -76,3 +76,22 @@ test('사진 예시 답: 양이 애매한 음식을 짚어 줌', async () => {
   assert.match(uncertainHTML(r.text), /양을 확인해 주세요/);
   assert.equal(uncertainHTML(fakeReply('parse', {}).text), '');
 });
+
+// 4.29.x Fable L-5: aiRequest가 실제로 호출 방지 장치를 거친다(같은 요청 동시 두 번 → 서버 1번, 바로 이어 다른 요청 → 간격으로 막힘)
+test('실서버 요청은 호출 방지 장치를 거친다', async () => {
+  const {setAIGuardForTest} = await import('../ai-client.js');
+  const {createAIGuard} = await import('../ai-guard.js');
+  let t = 5_000_000; const store = new Map();
+  setAIGuardForTest(createAIGuard({now: () => t, storage: {getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, v), removeItem: k => store.delete(k)}}));
+  globalThis.location = {hostname: 'localhost'}; mem.set('mylogue.aiWorkerUrl', 'https://ai.example/');
+  let hits = 0, release;
+  const fetchImpl = async () => { hits++; await new Promise(r => { release = r; }); return new Response(JSON.stringify({text: 'a'}), {status: 200}); };
+  const a = aiRequest('chat', {question: '같은 질문'}, {token: 't', fetchImpl}), b = aiRequest('chat', {question: '같은 질문'}, {token: 't', fetchImpl});
+  await new Promise(r => setTimeout(r, 0)); release();
+  assert.deepEqual(await a, await b); assert.equal(hits, 1);
+  await assert.rejects(aiRequest('chat', {question: '다른 질문'}, {token: 't', fetchImpl}), e => e.guard === 'gap');
+  t += 2000;
+  const c = aiRequest('chat', {question: '다른 질문'}, {token: 't', fetchImpl}); await new Promise(r => setTimeout(r, 0)); release(); await c;
+  assert.equal(hits, 2);
+  setAIGuardForTest(null); mem.delete('mylogue.aiWorkerUrl'); delete globalThis.location;
+});

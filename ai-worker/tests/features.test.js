@@ -192,3 +192,63 @@ test('답 길이 상한: 기능별 최대 출력 토큰을 모델 호출에 넘�
  assert.equal(s.calls[0].opts.maxTokens, 1500);
  assert.equal(s.calls[1].opts.maxTokens, 800);
 });
+
+// ── Fable 전수조사 반영(2026-11-25) ──
+const noGuards = {DUP_WINDOW_SEC: '0', RATE_PER_MIN: '0', RATE_PER_HOUR: '0', ADMIN_RATE_PER_MIN: '0', ADMIN_RATE_PER_HOUR: '0'};
+test('H-1: 숫자 칸에 쉼표·원이 섞여도 장치가 꺼지지 않는다(기본값으로)', async () => {
+ resetKeyCache(); const s = setup({guards: {DUP_WINDOW_SEC: '20초', RATE_PER_MIN: '3,000', RATE_PER_HOUR: 'abc', ADMIN_RATE_PER_MIN: '', ADMIN_RATE_PER_HOUR: ''}}); s.deps.env.GLOBAL_DAILY_COST_WON = '3,000원'; s.deps.env.DAILY_LIMIT = '30번'; const tok = await token();
+ const st = []; for (let i = 0; i < 8; i++) st.push((await route(await post('converse', say('같은 말'), tok), s.deps)).status);
+ assert.equal(st[0], 200); assert.ok(st.slice(1).every(x => x === 429), st.join(','));
+ assert.equal(s.calls.length, 1);
+});
+test('H-1: 전체 예산은 0으로도 끌 수 없다', async () => {
+ const {guardValue} = await import('../src/guards.js');
+ assert.equal(guardValue({GLOBAL_DAILY_COST_WON: '0'}, 'GLOBAL_DAILY_COST_WON'), 3000);
+ assert.equal(guardValue({RATE_PER_MIN: '0'}, 'RATE_PER_MIN'), 0);
+});
+test('M-1: 운영자도 돌려받기를 끝없이 받지 못한다(시도 상한 = 하루 한도×3)', async () => {
+ resetKeyCache(); const s = setup({plan: 'plus', guards: noGuards, answer: () => '레시피 아님'}); s.deps.env.LIMIT_RECIPE = '0/2'; const admin = await token('bulbnZbmC4PgH8tUAOjfPPLE7pA3');
+ for (let i = 0; i < 12; i++) await route(await post('recipe', {text: `레시피 ${i}`}, admin), s.deps);
+ assert.equal(s.calls.length, 6); // 2 × 3
+});
+test('M-2: 같은 요청이 동시에 와도 하나만 통과', async () => {
+ resetKeyCache(); const s = setup({guards: {...noGuards, DUP_WINDOW_SEC: '20'}}); const tok = await token();
+ const rs = await Promise.all([1, 2, 3].map(async () => (await route(await post('converse', say('동시에 같은 말'), tok), s.deps)).status));
+ assert.equal(rs.filter(x => x === 200).length, 1);
+});
+test('H-2: 실제 사용량이 추정보다 크면 전체 예산 장부에 차이를 더한다', async () => {
+ resetKeyCache(); const s = setup({plan: 'plus', guards: noGuards}); const tok = await token();
+ s.deps.callClaude = async (messages, opts) => ({text: '```json\n{"mylogue":1,"records":[]}\n```', stopReason: 'end_turn', model: 'claude-haiku-5-5', usage: {input_tokens: 40000, output_tokens: 1500}});
+ s.deps.env.GLOBAL_DAILY_COST_WON = '8'; s.deps.env.COST_WON = 'parse:2';
+ assert.equal((await route(await post('converse', say('긴 대화 1'), tok), s.deps)).status, 200); // 실제 약 6.9원
+ assert.equal((await route(await post('converse', say('긴 대화 2'), tok), s.deps)).status, 503); // 장부 6.9(실제) + 2(다음 추정) = 8.9 > 8
+});
+test('H-2: 실제 비용 계산(모델 가격·환율)', async () => {
+ const {usageWon, priceOf} = await import('../src/guards.js');
+ assert.deepEqual(priceOf({}, 'claude-haiku-5-5-20261015'), [0.10, 0.50]);
+ assert.deepEqual(priceOf({MODEL_PRICES: 'gpt-5-nano=0.05/0.40'}, 'gpt-5-nano'), [0.05, 0.40]);
+ assert.deepEqual(priceOf({}, '모르는-모델'), [2, 10]);
+ assert.equal(Math.round(usageWon({USD_KRW: '1450'}, 'claude-haiku-5-5', {input_tokens: 7500, output_tokens: 700}) * 100) / 100, 1.6);
+ assert.equal(usageWon({}, 'x', null), null);
+});
+test('시간당 상한과 전체 월 예산', async () => {
+ resetKeyCache(); const s = setup({guards: {...noGuards, RATE_PER_HOUR: '3'}}); const tok = await token();
+ let t = NOW; s.deps.now = () => t; const st = [];
+ for (let i = 0; i < 4; i++) { st.push((await route(await post('converse', say(`시간 ${i}`), tok), s.deps)).status); t += 61_000; }
+ assert.deepEqual(st, [200, 200, 200, 429]);
+ resetKeyCache(); const s2 = setup({plan: 'plus', guards: noGuards}); s2.deps.env.GLOBAL_MONTHLY_COST_WON = '3'; s2.deps.env.COST_WON = 'parse:2'; const tok2 = await token();
+ assert.equal((await route(await post('converse', say('월 1'), tok2), s2.deps)).status, 200);
+ assert.equal((await route(await post('converse', say('월 2'), tok2), s2.deps)).status, 503);
+});
+test('읽기 전 413: content-length가 크면 본문을 읽지 않는다', async () => {
+ resetKeyCache(); const s = setup(); s.deps.env.MAX_BODY_BYTES = '100'; const tok = await token();
+ const req = new Request('https://ai.example/converse', {method: 'POST', headers: {origin: 'https://studiohooje.github.io', 'content-type': 'application/json', 'content-length': '5000', authorization: `Bearer ${tok}`}, body: JSON.stringify(say('가'))});
+ assert.equal((await route(req, s.deps)).status, 413); assert.equal(req.bodyUsed, false);
+});
+test('승인 안 된 계정은 D1(횟수·속도·예산)을 건드리지 않는다', async () => {
+ resetKeyCache(); const s = setup(); const tok = await token('u-new');
+ s.deps.fetchImpl = async url => String(url).includes('service_accounts') ? new Response(JSON.stringify({keys: [jwk]})) : new Response('{}', {status: 404});
+ let touched = 0; const db = s.deps.env.DB; s.deps.env.DB = {prepare: sql => { touched++; return db.prepare(sql); }};
+ assert.equal((await route(await post('converse', say('점심'), tok), s.deps)).status, 403);
+ assert.equal(touched, 0); assert.equal(s.calls.length, 0);
+});

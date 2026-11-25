@@ -10,13 +10,30 @@ export const AI_GUARD = Object.freeze({minGapMs: 1500, perMinute: 8, perTenMinut
 const KEY = 'mylogue.aiGuard';
 
 export function createAIGuard({now = () => Date.now(), storage = globalThis.localStorage, limits = AI_GUARD} = {}) {
-  const load = () => { try { const v = JSON.parse(storage?.getItem(KEY) || '{}'); return {stamps: Array.isArray(v.stamps) ? v.stamps.filter(Number.isFinite) : [], fails: Number(v.fails) || 0, pausedUntil: Number(v.pausedUntil) || 0, cool: v.cool && typeof v.cool === 'object' ? v.cool : {}, last: v.last && typeof v.last === 'object' ? v.last : {}}; } catch { return {stamps: [], fails: 0, pausedUntil: 0, cool: {}, last: {}}; } };
-  const save = s => { try { storage?.setItem(KEY, JSON.stringify(s)); } catch {} };
+  // Fable M-4: 기기 저장소가 막히거나 깨져도 장치가 꺼지지 않게, 이 탭 안의 기억(mem)을 함께 쓰고 둘 중 더 엄한 쪽을 따른다.
+  let mem = {stamps: [], fails: 0, pausedUntil: 0, cool: {}, last: {}};
+  const clean = v => ({stamps: Array.isArray(v?.stamps) ? v.stamps.filter(Number.isFinite) : [], fails: Number(v?.fails) || 0, pausedUntil: Number(v?.pausedUntil) || 0, cool: v?.cool && typeof v.cool === 'object' ? {...v.cool} : {}, last: v?.last && typeof v.last === 'object' ? {...v.last} : {}});
+  const load = () => {
+    let disk = null; try { const raw = storage?.getItem(KEY); disk = raw ? clean(JSON.parse(raw)) : null; } catch { disk = null; }
+    const m = clean(mem); if (!disk) return m;
+    const last = {...disk.last}; for (const [k, v] of Object.entries(m.last)) last[k] = Math.max(Number(last[k]) || 0, v);
+    const cool = {...disk.cool}; for (const [k, v] of Object.entries(m.cool)) cool[k] = Math.max(Number(cool[k]) || 0, v);
+    return {stamps: [...new Set([...disk.stamps, ...m.stamps])].sort((a, b) => a - b), fails: Math.max(disk.fails, m.fails), pausedUntil: Math.max(disk.pausedUntil, m.pausedUntil), cool, last};
+  };
+  const save = s => { mem = clean(s); try { storage?.setItem(KEY, JSON.stringify(s)); } catch {} };
+  // Fable L-7: 기기 시계를 앞뒤로 바꿔도 쉬는 시간이 정해진 길이보다 길게 남지 않게(그보다 멀면 지금 기준으로 다시 자른다)
+  const clampFuture = (s, t) => {
+    if (s.pausedUntil > t + limits.failPauseMs) s.pausedUntil = t + limits.failPauseMs;
+    for (const k of Object.keys(s.cool)) if (s.cool[k] > t + limits.coolMs) s.cool[k] = t + limits.coolMs;
+    s.stamps = s.stamps.filter(x => x <= t + 1000);
+    for (const k of Object.keys(s.last)) if (s.last[k] > t + 1000) s.last[k] = t;
+    return s;
+  };
   const inflight = new Map();
   const wait = ms => Math.max(1, Math.ceil(ms / 1000));
   const err = (msg, code) => Object.assign(Error(msg), {guard: code});
   function check(path) {
-    const t = now(), s = load();
+    const t = now(), s = clampFuture(load(), t); save(s);
     s.stamps = s.stamps.filter(x => t - x < 10 * 60_000);
     if (s.pausedUntil > t) throw err(`AI 서버가 잠시 답하지 않아 기다리는 중이에요. ${wait(s.pausedUntil - t)}초 뒤에 다시 해 주세요.`, 'paused');
     if ((s.cool[path] || 0) > t) throw err(`조금 뒤에 다시 해 주세요(${wait(s.cool[path] - t)}초).`, 'cool');

@@ -3,7 +3,10 @@
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
-import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, MAX_OUTPUT_TOKENS} from './guards.js';
+import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, MAX_OUTPUT_TOKENS} from './guards.js';
+// Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
+export const dailyLimit = env => safeNum(env.DAILY_LIMIT, 30);
+export const monthlyCapWon = env => safeNum(env.MONTHLY_COST_WON, 700);
 
 export async function accountOf(user, token, {projectId, fetchImpl = fetch, plusAll = false}) {
   const admin = ADMIN_UIDS.includes(user.uid) || (user.emailVerified && ADMIN_EMAILS.includes(user.email));
@@ -19,9 +22,9 @@ export const FEATURES = Object.freeze({parse: 'DAILY_LIMIT', photo: 'LIMIT_PHOTO
 const FEATURE_NAME = {photo: '사진 기록', review: 'AI 주간 리뷰', chat: 'AI에게 묻기', recipe: '레시피 자동 분해'};
 const topic = w => { const c = String(w).slice(-1).charCodeAt(0); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '은' : '는'); };
 export function limitOf(env, feature, plus) {
-  if (feature === 'parse') return Number(env.DAILY_LIMIT || 30);
-  const [free, paid] = String(env[FEATURES[feature]] || '0/0').split('/').map(Number);
-  return plus ? (paid || 0) : (free || 0);
+  if (feature === 'parse') return dailyLimit(env);
+  const [free, paid] = String(env[FEATURES[feature]] || '0/0').split('/').map(v => safeNum(v, 0));
+  return plus ? paid : free;
 }
 export async function refundFeature(db, uid, day, feature) {
   await db.prepare('UPDATE usage_feature SET n = MAX(0, n - 1) WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(uid, day, feature).first();
@@ -104,15 +107,19 @@ export async function route(request, deps) {
     const callModel = deps.callModel || deps.callClaude;
     const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : callModel(messages, {...opts, maxTokens: opts.maxTokens || MAX_OUTPUT_TOKENS[opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature] || 1500});
     // 운영자 계정은 시험이 많아 시도·월 상한에서 뺀다(하루 한도는 그대로).
-    const guard = async (feature, limit) => { if (acct.admin) return; await useAttempt(env.DB, user.uid, day, feature, limit); await useMonthlyBudget(env.DB, user.uid, month, costOf(env, feature), env.MONTHLY_COST_WON ?? '700'); };
+    // Fable M-1: 운영자도 시도 상한(하루 한도의 3배)은 지킨다 — 돌려받기를 끝없이 받아 무한히 부르지 않게. 월 상한만 운영자 예외.
+    const guard = async (feature, limit) => { await useAttempt(env.DB, user.uid, day, feature, limit); if (acct.admin) return; await useMonthlyBudget(env.DB, user.uid, month, costOf(env, feature), monthlyCapWon(env)); };
     const call = async (messages, opts) => {
       // ⑤ 서비스 전체 예산은 운영자도 예외 없음(가짜 AI는 비용이 없으니 세지 않음)
       try { await guard(opts.feature, opts.limit); if (env.FAKE_AI !== '1') await useGlobalBudget(env.DB, day, month, costOf(env, opts.feature), env); }
       catch (e) { if (opts.feature !== 'parse' && !opts.repeat) await refundFeature(env.DB, user.uid, day, opts.feature); throw e; }
-      return callAI(messages, opts);
+      const out = await callAI(messages, opts);
+      // Fable H-2: 실제 사용량으로 장부 맞추기(추정보다 더 든 만큼 더함)
+      if (env.FAKE_AI !== '1') await settleCost(env.DB, {uid: user.uid, day, month, admin: acct.admin}, costOf(env, opts.feature), out.model || opts.model, out.usage, env);
+      return out;
     };
     const model = env.MODEL || 'claude-haiku-5-5';
-    if (path === 'me') { const row = await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(user.uid, month, 'cost').first(); const cap = Number(env.MONTHLY_COST_WON ?? '700'); return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null}); }
+    if (path === 'me') { const row = await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(user.uid, month, 'cost').first(); const cap = Number(monthlyCapWon(env)); return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null}); }
     // 4.28.x 'AI 기록' 대화: 앞의 대화(최근 10턴, 글만)를 함께 보내고, 마지막 사용자 말에 사진·기록 요약을 붙인다.
     // 횟수: 사진이 있으면 사진 한도, 없으면 말 기록 한도(무료도 기록은 되고, 묻기는 지시문이 플러스 안내로 답함).
     if (path === 'converse') {
@@ -123,14 +130,14 @@ export async function route(request, deps) {
      const feature = input.images.length ? 'photo' : 'parse';
      let quota;
      if (feature === 'photo') quota = await useFeature(env.DB, user.uid, day, 'photo', limitOf(env, 'photo', acct.plus));
-     else quota = await useQuota(env.DB, user.uid, day, Number(env.DAILY_LIMIT || 30));
+     else quota = await useQuota(env.DB, user.uid, day, dailyLimit(env));
      const msgs = turns.slice(0, -1).map(t => ({role: t.role, content: t.text}));
      while (msgs.length && msgs[0].role !== 'user') msgs.shift();
      const lastMsg = buildMessages(input)[0];
      lastMsg.content.at(-1).text = `<plan>${acct.plus ? 'plus' : 'free'}</plan>\n` + lastMsg.content.at(-1).text;
      const merged = [];
      for (const m of [...msgs, lastMsg]) { if (merged.length && merged.at(-1).role === m.role) { const prev = merged.at(-1); prev.content = [...(typeof prev.content === 'string' ? [{type: 'text', text: prev.content}] : prev.content), ...(typeof m.content === 'string' ? [{type: 'text', text: m.content}] : m.content)]; } else merged.push(m); }
-     const out = await call(merged, {model, system: CONVERSE_SYSTEM, feature: feature === 'photo' ? 'photo' : 'parse', input: {...input, text: input.text}, effort: 'low', limit: feature === 'photo' ? limitOf(env, 'photo', acct.plus) : Number(env.DAILY_LIMIT || 30)});
+     const out = await call(merged, {model, system: CONVERSE_SYSTEM, feature: feature === 'photo' ? 'photo' : 'parse', input: {...input, text: input.text}, effort: 'low', limit: feature === 'photo' ? limitOf(env, 'photo', acct.plus) : dailyLimit(env)});
      if (out.stopReason === 'refusal') { if (feature === 'photo') await refundFeature(env.DB, user.uid, day, 'photo'); throw new HttpError(422, 'AI가 이 내용을 정리하지 못했어요. 표현을 바꿔 다시 해 주세요.'); }
      return reply(200, {text: out.text, model: out.model, left: quota.left});
     }
@@ -138,8 +145,8 @@ export async function route(request, deps) {
       const input = readInput(body), feature = input.images.length ? 'photo' : 'parse';
       let quota, repeat = false;
       if (feature === 'photo') { repeat = await photoSeen(env.DB, user.uid, day, await sha256(input.images.map(i => i.data).join('|'))); quota = repeat ? {left: null} : await useFeature(env.DB, user.uid, day, 'photo', limitOf(env, 'photo', acct.plus)); }
-      else quota = await useQuota(env.DB, user.uid, day, Number(env.DAILY_LIMIT || 30));
-      const out = await call(buildMessages(input), {model, system: SYSTEM, feature, input, repeat, effort: 'low', limit: feature === 'photo' ? limitOf(env, 'photo', acct.plus) : Number(env.DAILY_LIMIT || 30)});
+      else quota = await useQuota(env.DB, user.uid, day, dailyLimit(env));
+      const out = await call(buildMessages(input), {model, system: SYSTEM, feature, input, repeat, effort: 'low', limit: feature === 'photo' ? limitOf(env, 'photo', acct.plus) : dailyLimit(env)});
       if (out.stopReason === 'refusal') { if (feature === 'photo' && !repeat) await refundFeature(env.DB, user.uid, day, 'photo'); throw new HttpError(422, 'AI가 이 내용을 정리하지 못했어요. 표현을 바꿔 다시 해 주세요.'); }
       if (out.stopReason === 'max_tokens') throw new HttpError(422, '내용이 너무 길어요. 나눠서 보내 주세요.');
       if (feature === 'photo' && !repeat && recordsIn(out.text) === 0) { await refundFeature(env.DB, user.uid, day, 'photo'); return reply(200, {text: out.text, model: out.model, left: (quota.left ?? 0) + 1, refunded: true}); }

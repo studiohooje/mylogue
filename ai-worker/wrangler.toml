@@ -36,9 +36,18 @@ RATE_PER_HOUR = "60"
 ADMIN_RATE_PER_MIN = "15"
 ADMIN_RATE_PER_HOUR = "200"
 DUP_WINDOW_SEC = "20"
-# 서비스 전체 예산(원, 추정 원가 합계). 넘으면 운영자 포함 그날·그달 AI 멈춤
-GLOBAL_DAILY_COST_WON = "3000"
+# 서비스 전체 예산(원). 넘으면 운영자 포함 그날·그달 AI 멈춤. 0이나 글자는 무시되고 기본값(하루 3,000·한 달 30,000)으로.
+# Fable 권고: 첫 주는 하루 1,000원으로 낮게 시작하고 콘솔 실제 청구액과 매일 비교한 뒤 올린다.
+GLOBAL_DAILY_COST_WON = "1000"
 GLOBAL_MONTHLY_COST_WON = "30000"
+# 숫자 칸에는 숫자만(쉼표·'원' 금지 — 섞이면 기본값으로 바뀜)
+# 실제 사용량으로 장부 맞추기: 모델 가격(달러/100만 토큰 입력/출력, 기본 Haiku 5.5·Sonnet 5.5만 앎, 모르는 모델은 2/10으로 비싸게 침)
+MODEL_PRICES = ""
+USD_KRW = "1450"
+# OpenAI 형식 회사 전용: 추론형 모델이면 "max_completion_tokens"·생각 노력 "minimal" 등, 시간 제한(밀리초)
+AI_TOKEN_FIELD = ""
+AI_REASONING_EFFORT = ""
+AI_TIMEOUT_MS = "45000"
 
 # 사용자별 하루 사용 횟수. `wrangler d1 create mylogue-ai`로 만든 뒤 나온 database_id를 아래에 넣는다.
 [[d1_databases]]

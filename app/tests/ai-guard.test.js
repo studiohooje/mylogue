@@ -57,3 +57,16 @@ test('요청 열쇠: 내용이 다르면 다르고, 같으면 같다', () => {
  assert.notEqual(requestKey('chat', {q: 'a'}), requestKey('chat', {q: 'b'}));
  assert.notEqual(requestKey('chat', {q: 'a'}), requestKey('review', {q: 'a'}));
 });
+test('Fable M-4: 저장소가 막혀도(쓰기 실패) 탭 안 기억으로 1분 상한이 지켜진다', async () => {
+ const c = clock(), dead = {getItem: () => null, setItem: () => { throw Error('blocked'); }};
+ const g = createAIGuard({now: c.now, storage: dead}); let sent = 0;
+ for (let i = 0; i < 50; i++) { try { await g.run(`p${i % 3}`, `k${i}`, async () => { sent++; }); } catch {} c.add(10); }
+ assert.ok(sent <= 3, `보낸 수 ${sent}`);
+});
+test('Fable L-7: 기기 시계를 뒤로 돌려도 쉬는 시간이 정해진 길이를 넘지 않는다', async () => {
+ const c = clock(10_000_000), st = mem(); const g = createAIGuard({now: c.now, storage: st});
+ for (const s of [500, 0, 502]) { await g.run('converse', `f${s}`, async () => { throw Object.assign(Error('x'), {status: s}); }).catch(() => {}); c.add(2000); }
+ c.add(-5_000_000); // 시계를 크게 뒤로
+ assert.throws(() => g.check('chat'), e => e.guard === 'paused');
+ c.add(61_000); assert.doesNotThrow(() => g.check('chat'));
+});

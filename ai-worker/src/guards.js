@@ -15,7 +15,16 @@ export const GUARD_DEFAULTS = Object.freeze({
   DUP_WINDOW_SEC: 20,
   GLOBAL_DAILY_COST_WON: 3000, GLOBAL_MONTHLY_COST_WON: 30000, // 서비스 전체(테스터 5명 3배 시험 예상 월 약 1.5만 원의 2배)
 });
-const num = (env, k) => { const v = env?.[k]; return v === undefined || v === '' ? GUARD_DEFAULTS[k] : Number(v); };
+// Fable 전수조사 H-1: 설정 값에 쉼표·'원' 같은 글자가 섞이면 Number()가 NaN이 되어 장치가 조용히 꺼졌다.
+// 숫자가 아니거나 음수면 기본값을 쓴다. 전체 예산은 0으로도 끌 수 없다(마지막 방어선).
+const NO_ZERO = new Set(['GLOBAL_DAILY_COST_WON', 'GLOBAL_MONTHLY_COST_WON', 'MAX_BODY_BYTES']);
+export function safeNum(v, def, {allowZero = true} = {}) {
+  if (v === undefined || v === null || String(v).trim() === '') return def;
+  const n = Number(String(v).trim());
+  if (!Number.isFinite(n) || n < 0 || (!allowZero && n === 0)) return def;
+  return n;
+}
+const num = (env, k) => safeNum(env?.[k], GUARD_DEFAULTS[k], {allowZero: !NO_ZERO.has(k)});
 export const guardValue = num;
 
 export function aiEnabled(env) { return String(env?.AI_ENABLED ?? '1') !== '0'; }
@@ -40,6 +49,8 @@ export async function rateLimit(db, uid, now, env, {admin = false} = {}) {
   const iso = new Date(now).toISOString(), minKey = `m:${iso.slice(0, 16)}`, hourKey = `h:${iso.slice(0, 13)}`;
   const perMin = num(env, admin ? 'ADMIN_RATE_PER_MIN' : 'RATE_PER_MIN'), perHour = num(env, admin ? 'ADMIN_RATE_PER_HOUR' : 'RATE_PER_HOUR');
   const m = await bump(db, uid, minKey, 'rate');
+  // Fable L-2: 속도 제한 줄이 쌓이지 않게, 그 분의 첫 요청 때 2시간 지난 줄을 지운다
+  if (m === 1) { const old = new Date(now - 2 * 3600_000).toISOString(); await db.prepare("DELETE FROM usage_feature WHERE uid = ?1 AND feature = 'rate' AND ((day LIKE 'm:%' AND day < ?2) OR (day LIKE 'h:%' AND day < ?3))").bind(uid, `m:${old.slice(0, 16)}`, `h:${old.slice(0, 13)}`).first(); }
   if (perMin > 0 && m > perMin) throw new HttpError(429, '너무 빠르게 여러 번 보냈어요. 1분쯤 뒤에 다시 해 주세요.');
   const h = await bump(db, uid, hourKey, 'rate');
   if (perHour > 0 && h > perHour) throw new HttpError(429, '한 시간 동안 AI를 너무 많이 불렀어요. 잠시 쉬었다가 다시 해 주세요.');
@@ -51,9 +62,9 @@ export async function rejectDuplicate(db, uid, hash, now, env) {
   const win = num(env, 'DUP_WINDOW_SEC'); if (!(win > 0)) return false;
   const t = Math.floor(now / 1000);
   await db.prepare('DELETE FROM recent_req WHERE uid = ?1 AND at < ?2').bind(uid, t - Math.max(win, 60)).first();
-  const prev = await db.prepare('SELECT at FROM recent_req WHERE uid = ?1 AND hash = ?2').bind(uid, hash).first();
-  if (prev && t - Number(prev.at) < win) throw new HttpError(429, '같은 내용을 방금 보냈어요. 답을 기다려 주세요.');
-  await db.prepare('INSERT INTO recent_req (uid, hash, at) VALUES (?1, ?2, ?3) ON CONFLICT(uid, hash) DO UPDATE SET at = excluded.at').bind(uid, hash, t).first();
+  // Fable M-2: '읽고 → 쓰기' 두 단계 사이로 동시 요청이 새던 것을 한 문장(있으면 오래된 경우에만 고침)으로. 줄이 안 돌아오면 되풀이.
+  const row = await db.prepare('INSERT INTO recent_req (uid, hash, at) VALUES (?1, ?2, ?3) ON CONFLICT(uid, hash) DO UPDATE SET at = excluded.at WHERE recent_req.at <= ?4 RETURNING at').bind(uid, hash, t, t - win).first();
+  if (!row) throw new HttpError(429, '같은 내용을 방금 보냈어요. 답을 기다려 주세요.');
   return false;
 }
 
@@ -71,6 +82,36 @@ export async function useGlobalBudget(db, day, month, won, env) {
 export async function refundGlobal(db, day, month, won) {
   const sub = Math.max(1, Math.ceil(Number(won) * 10));
   await unbump(db, GLOBAL_UID, day, 'cost', sub); await unbump(db, GLOBAL_UID, month, 'cost', sub);
+}
+
+// Fable H-2: 예산 장부가 1회 고정 추정값만 쓰던 것 → 답이 온 뒤 실제 토큰 사용량(usage)으로 다시 계산해,
+// 추정보다 더 들었으면 그 차이를 전체 예산과 개인 월 상한에 더한다(덜 들었으면 그대로 둠 = 보수적). 실패해도 답은 그대로 돌려준다.
+// 가격(달러/100만 토큰, 입력·출력)은 MODEL_PRICES="모델=입력/출력;…"로 바꿀 수 있고, 모르는 모델은 비싼 쪽(2/10)으로 친다.
+export const DEFAULT_PRICES = Object.freeze({'claude-haiku-5-5': [0.10, 0.50], 'claude-sonnet-5-5': [2, 10]});
+export function priceOf(env, model) {
+  const table = {...DEFAULT_PRICES};
+  for (const part of String(env?.MODEL_PRICES || '').split(';')) { const [k, v] = part.split('='); const [i, o] = String(v || '').split('/').map(x => safeNum(x, NaN)); if (k?.trim() && Number.isFinite(i) && Number.isFinite(o)) table[k.trim()] = [i, o]; }
+  const key = Object.keys(table).find(k => String(model || '').startsWith(k));
+  return key ? table[key] : [2, 10];
+}
+export function usageWon(env, model, usage) {
+  if (!usage || typeof usage !== 'object') return null;
+  const inTok = Number(usage.input_tokens ?? usage.prompt_tokens ?? 0) + Number(usage.cache_creation_input_tokens || 0) * 1.25 + Number(usage.cache_read_input_tokens || 0) * 0.1;
+  const outTok = Number(usage.output_tokens ?? usage.completion_tokens ?? 0);
+  if (!Number.isFinite(inTok) || !Number.isFinite(outTok) || inTok + outTok <= 0) return null;
+  const [pi, po] = priceOf(env, model), rate = safeNum(env?.USD_KRW, 1450, {allowZero: false});
+  return (inTok * pi + outTok * po) / 1e6 * rate;
+}
+export async function settleCost(db, {uid, day, month, admin}, estimateWon, model, usage, env) {
+  try {
+    const actual = usageWon(env, model, usage); if (actual == null) return null;
+    const extra = Math.ceil((actual - Number(estimateWon || 0)) * 10);
+    if (extra > 0) {
+      await bump(db, GLOBAL_UID, day, 'cost', extra); await bump(db, GLOBAL_UID, month, 'cost', extra);
+      if (!admin) await bump(db, uid, month, 'cost', extra);
+    }
+    return actual;
+  } catch (e) { console.error('settleCost', e?.message); return null; }
 }
 
 // 기능별 답 길이 상한(출력 토큰이 비용의 큰 몫). 기록 코드·짧은 답에 충분한 정도.
