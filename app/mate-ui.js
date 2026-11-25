@@ -10,7 +10,7 @@ import {scopedKey} from './storage-scope.js';
 import {cleanBody} from './domain.js';
 import {MATE_KINDS, MATE_KIND_LABEL} from './mate-share.js';
 import {stampText, openCamera, closeCamera, capture, cameraSupported} from './mate-camera.js';
-import {MATE_MAX, MATE_KEEP_DAYS, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
+import {MATE_MAX, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
 import {openChatWithPhoto} from './app-chat.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
@@ -50,6 +50,7 @@ async function loadRoom(id){
     s.rooms = [fresh, ...(s.rooms || []).filter(r => r.id !== id)];
     const [posts, props] = await Promise.all([listPosts(id), fresh.type === 'friends' ? listProposals(id) : Promise.resolve([])]);
     s.posts[id] = posts; s.props[id] = props; s.err = '';
+    sweepExpired(id).catch(() => {});
   }catch(e){ s.err = e.message || '방을 불러오지 못했어요.'; }
   s.loading = ''; $f.render(); scrollFeedEnd(); fillPhotos();
 }

@@ -439,7 +439,9 @@ service cloud.firestore {
           && request.resource.data.expireAt > request.time + duration.value(89, 'd')
           && request.resource.data.expireAt < request.time + duration.value(91, 'd');
         allow update: if false;
-        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+        // 쓴 사람은 언제든, 보관 기간(expireAt)이 지난 글은 방 메이트 누구나 지운다(TTL은 결제 요금제가 필요해 앱이 정리 — 2026-11-25)
+        allow delete: if signedIn() && (resource.data.uid == request.auth.uid
+          || (inRoom() && resource.data.expireAt is timestamp && resource.data.expireAt < request.time));
       }
       // 메이트에게 보여 줄 요약: 문서 이름은 '{uid}_{종류}'. 방이 그 종류를 공개할 때만 남이 읽는다(비공개로 바뀌면 바로 못 읽음).
       match /shares/{shareId} {

@@ -67,6 +67,16 @@ export async function listPosts(roomId, n = 80){
   const since = Date.now() - MATE_KEEP_DAYS * 864e5;
   return snap.docs.map(d => { const x = d.data(); return {id: d.id, ...x, takenAt: ms(x.takenAt), createdAt: ms(x.createdAt) || Date.now()}; }).filter(p => p.createdAt >= since).reverse();
 }
+// 보관 기간이 지난 글 정리: 방을 열 때 한 번(이 실행 동안 방마다 한 번). 지울 게 없으면 읽기 1번만 든다.
+const swept = new Set();
+export async function sweepExpired(roomId){
+  if(swept.has(roomId)) return 0; swept.add(roomId);
+  const c = await firestoreContext(), fs = c.fs;
+  const snap = await fs.getDocs(fs.query(fs.collection(c.db, 'rooms', roomId, 'posts'), fs.where('expireAt', '<', fs.Timestamp.now()), fs.limit(30)));
+  let n = 0;
+  for(const d of snap.docs){ try{ await fs.deleteDoc(d.ref); n++; }catch{} }
+  return n;
+}
 export async function addPost(roomId, {kind = 'photo', text = '', photoKey = '', photoKind = '', takenAt = Date.now(), rec = ''} = {}){
   const c = await firestoreContext(), fs = c.fs, id = randomId(20);
   await fs.setDoc(fs.doc(c.db, 'rooms', roomId, 'posts', id), {uid: c.user.uid, name: myMateName(c.user), kind, text: String(text).slice(0, 500), photoKey, photoKind, takenAt: fs.Timestamp.fromMillis(Math.min(takenAt, Date.now())), rec: String(rec).slice(0, 80), createdAt: fs.serverTimestamp(), expireAt: fs.Timestamp.fromMillis(Date.now() + MATE_KEEP_DAYS * 864e5)});

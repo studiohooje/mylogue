@@ -49,6 +49,11 @@ test('5.0.0 로그메이트 규칙', {skip: !host}, async () => {
   await assertFails(post(b, B, {expireAt: exp(400)}), '보관 기간은 90일');
   await assertSucceeds(post(c, C, {kind: 'text', text: '오늘 하체?', photoKey: '', photoKind: ''}));
   await assertFails(getDocs(collection(x, 'rooms', R, 'posts')));
+  // 보관 기간: 남의 글은 기한이 지나야만 지울 수 있다(TTL 대신 앱이 정리)
+  await env.withSecurityRulesDisabled(async ctx => { const d = ctx.firestore(); await setDoc(doc(d, 'rooms', R, 'posts', 'oldPost'), {uid: B, kind: 'text', text: 'old', expireAt: Timestamp.fromDate(new Date(Date.now() - 864e5))}); await setDoc(doc(d, 'rooms', R, 'posts', 'newPost'), {uid: B, kind: 'text', text: 'new', expireAt: exp(80)}); });
+  await assertFails(deleteDoc(doc(c, 'rooms', R, 'posts', 'newPost')));
+  await assertFails(deleteDoc(doc(x, 'rooms', R, 'posts', 'oldPost')));
+  await assertSucceeds(deleteDoc(doc(c, 'rooms', R, 'posts', 'oldPost')));
   await assertSucceeds(getDocs(collection(a, 'rooms', R, 'posts')));
   // 요약: 공개한 종류만 쓰고 읽는다(운동은 비공개)
   const share = (ctx, uid, kind) => setDoc(doc(ctx, 'rooms', R, 'shares', `${uid}_${kind}`), {uid, kind, name: uid, data: {kg: 70}, updatedAt: serverTimestamp()});
