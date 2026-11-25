@@ -36,7 +36,7 @@ test('M-02: 랜딩 첫 화면에 무슨 앱인지와 베타 승인제가 보인�
  const html = landingHTML();
  const hero = html.slice(0, html.indexOf('</section>'));
  assert.match(hero, /건강 기록 앱/);
- assert.match(hero, /운영자가 승인하면/);
+ assert.match(hero, /가입하면 바로 쓸 수 있고/);
 });
 test('E-01: 서버 확인에 시간 제한, 로그인한 적 없는 기기 판별', async () => {
  await assert.rejects(withTimeout(new Promise(() => {}), 20), e => e.code === 'timeout');
