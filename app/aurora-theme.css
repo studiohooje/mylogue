@@ -2151,3 +2151,7 @@ button.chat-cam{border:0;cursor:pointer}
 .set-txt small{font-size:13px;line-height:1.4;color:#a6bbcb;word-break:keep-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .set-sheet .set-pop{display:grid;gap:12px}
 .set-sheet .set-pop>.section{margin:0}
+/* 5.0.4 AI 인사이트 요일 줄: 다른 화면의 .coach-week(일정 카드)와 겹치지 않게 */
+.coach .coach-week{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:4px 0 8px}
+.coach .coach-week span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8796b3}
+.coach-live .coach-when{margin:6px 0 0}

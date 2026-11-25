@@ -13,6 +13,7 @@ import {isAdminUser} from './admin.js';
 import {emptyAdminLog,adminLogHTML,validatePayload,newMeal,newBody} from './admin-log.js';
 import {yearRecap,yearRecapHTML,lastWeek,lastWeekHTML,nextGoals,nextGoalsHTML,weekHeroHTML,recoveryHTML,overreachNote,prGalleryHTML,growthHTML,milestoneHTML,resultCardHTML,masteryHTML} from './workout-story.js';
 import {exArtHTML,setMachineResolver} from './exercise-art-ui.js';
+import {coachFactsText,saveInsight,insightUnchanged} from './coach-ui.js';
 import {openAuth,authSheetHTML,authClick,authSubmit,finishKakaoFromHash} from './auth-ui.js';
 import {matePageHTML,mateOverlayHTML,mateClick,mateSubmit,mateBootHash,mateAfterLogin,openMatePicker,openMateJoin} from './mate-ui.js';
 import {missingBases,missingBaseMessage,setBaseContext} from './exercise-base.js';
@@ -426,6 +427,7 @@ $s.root.addEventListener('click',async event=>{
   if(target.id==='close')$s.sheetDirty=false;
   if(getStorageStatus().blocked&&!target.dataset.page&&!['cloud-logout','cloud-archive-export','cloud-conflicts-export','recovery-export','retry-recovery','restore-preview','restore-confirm','close','draft-export','draft-archive-export'].includes(target.id)&&target.dataset.modal!=='restore')throw Error('기존 기록 보호를 위해 복구가 필요합니다.');
   if(['workEdit','program','reload','routine'].some(k=>target.dataset[k]!==undefined)||(target.id==='codex-confirm'&&$s.codexDraft?.kind==='workouts')){const pending=readSession();if(pending?.exercises?.some(e=>e.name)&&!confirm('작성 중인 임시 운동이 있습니다. 새로 선택한 운동으로 교체할까요? 취소하면 기존 초안을 유지합니다.'))return;clearSession();$s.savedDraft=null}
+  if(target.dataset.insightRun!==undefined){/* 5.0.4 AI 인사이트: 누를 때만, 기록이 그대로면 다시 부르지 않음 */if($s.insight?.busy)return;const facts=coachFactsText(actualDB($s.db),today());if(insightUnchanged(facts)){toast('지난 인사이트 뒤로 기록이 바뀌지 않았어요. 기록을 더 남긴 뒤 다시 받아 보세요.');return}$s.insight={busy:true,msg:''};render();aiRequest('insight',{facts}).then(r=>{if(r?.insight)saveInsight(r.insight,facts);$s.insight={busy:false,msg:'',left:r?.left??null};render()}).catch(e=>{$s.insight={busy:false,msg:e.message||'인사이트를 만들지 못했어요.'};render()});return}
   if(target.dataset.setSec){$s.setSec=target.dataset.setSec;$s.modal='settings-sec';render();return}
   if(target.dataset.graphToggle!==undefined){$s.graphOpen=!$s.graphOpen;$s.inputOpen=false;render();return}
   if(target.dataset.inputToggle!==undefined){$s.inputOpen=!$s.inputOpen;$s.graphOpen=false;render();return}

@@ -8,7 +8,45 @@ import {todayMuscleLoads} from './timeline-view.js';
 import {MUSCLE_LABELS} from './exercise-ui.js';
 import {scaleRecords, inbodyRecords} from './body-series.js';
 
-export const COACH_ENABLED = false;
+export const COACH_ENABLED = false; // 예전 버튼형 틀(쓰지 않음). 5.0.4부터 플러스는 아래 liveInsight로 실제 AI
+import {scopedKey} from './storage-scope.js';
+
+// 5.0.4 대표님: AI 인사이트를 실제 AI로. 플러스 계정이 '인사이트 받기'를 눌렀을 때만 부른다(자동·실시간 없음, 하루 3번).
+// 보내는 것: 앱이 계산한 숫자 요약(coachFacts)뿐. 결과는 이 기기에 남겨 새로고침해도 다시 부르지 않는다. 기록이 그대로면 다시 부르지 않는다.
+const INSIGHT_KEY = () => scopedKey('mylogue.aiInsight');
+export function lastInsight(){ try{ const v = JSON.parse(globalThis.localStorage?.getItem(INSIGHT_KEY()) || 'null'); return v && v.insight ? v : null; }catch{ return null; } }
+export function saveInsight(insight, facts){ try{ globalThis.localStorage?.setItem(INSIGHT_KEY(), JSON.stringify({insight, facts, at: Date.now()})); }catch{} }
+export const insightUnchanged = facts => { const v = lastInsight(); return !!v && v.facts === facts && Date.now() - v.at < 864e5 * 2; };
+export function coachFactsText(db = {}, today){
+ const f = coachFacts(db, today), n = v => v == null ? '모름' : Math.round(v * 10) / 10;
+ return [
+  `오늘 ${today}`,
+  `최근 14일 기록: 식사 ${f.meals14}끼, 운동 ${f.works14}회, 체중 ${f.weigh14}회, 인바디 ${f.inbody}회`,
+  `오늘 먹은 양: ${Math.round(f.eaten.calories || 0)}kcal, 탄수 ${Math.round(f.eaten.carbs || 0)}g, 단백질 ${Math.round(f.eaten.protein || 0)}g, 지방 ${Math.round(f.eaten.fat || 0)}g`,
+  `하루 목표: ${f.goal.kcal}kcal, 탄수 ${f.goal.carbs}g, 단백질 ${f.goal.protein}g, 지방 ${f.goal.fat}g`,
+  `오늘 남은 양: ${Math.round(f.left.kcal)}kcal, 단백질 ${Math.round(f.left.protein)}g, 탄수 ${Math.round(f.left.carbs)}g, 지방 ${Math.round(f.left.fat)}g`,
+  `최근 3일 많이 쓴 부위(회복 중): ${f.tired.join(', ') || '없음'}`,
+  `최근 4주 가장 자주 한 근력 종목: ${f.top ? `${f.top.name}(최근 최고 ${n(f.top.best)}${f.top.unit})` : '없음'}`,
+  `이번 주(7일) 운동: ${f.days7.map(d => `${d.wd}${d.done ? '○' : d.rest ? '휴식' : '-'}`).join(' ')}`,
+  `체중: 지금 ${n(f.nowW)}kg, 7일 평균 변화 ${f.trend == null ? '모름' : (f.trend > 0 ? '+' : '') + n(f.trend) + 'kg'}, 목표 ${n(f.target)}kg`,
+  `골격근: 지금 ${n(f.muscleNow)}kg, 3주 전 ${n(f.muscleOld)}kg`,
+ ].join('\n');
+}
+const whenText = ms => { const d = new Date(ms); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+export function liveInsightHTML({db = {}, today = '', busy = false, msg = '', left = null} = {}){
+ const f = coachFacts(db, today || new Date().toISOString().slice(0, 10)), saved = lastInsight(), it = saved?.insight;
+ const basis = `<div class="coach-basis"><span>분석 근거</span><i>식사 ${f.meals14}끼</i><i>운동 ${f.works14}회</i><i>체중 ${f.weigh14}회</i><i>인바디 ${f.inbody}회</i><small>최근 14일</small></div>`;
+ const btn = `<button type="button" class="button coach-run" data-insight-run ${busy ? 'disabled' : ''}>${busy ? '인사이트를 만드는 중…' : it ? '다시 받기' : '오늘 인사이트 받기'}</button>`;
+ const li = xs => (xs || []).filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('');
+ const body = it ? `<p class="coach-line">“${esc(it.headline)}”</p>
+ ${it.meal?.title ? `<article class="coach-block"><h4><span class="coach-num">1</span>${esc(it.meal.title)}</h4><p class="coach-left">남은 목표 &nbsp;칼로리 ${n0(f.left.kcal)} · 단백질 ${n0(f.left.protein)}g · 탄수 ${n0(f.left.carbs)}g · 지방 ${n0(f.left.fat)}g</p>${it.meal.items?.length ? `<div class="coach-pick"><b>추천 구성</b><ul>${li(it.meal.items)}</ul></div>` : ''}${it.meal.note ? `<p class="coach-sub">${esc(it.meal.note)}</p>` : ''}</article>` : ''}
+ ${it.workout?.title ? `<article class="coach-block"><h4><span class="coach-num">2</span>${esc(it.workout.title)}</h4>${it.workout.note ? `<p>${esc(it.workout.note)}</p>` : ''}${it.workout.plan?.length ? `<table class="coach-plan"><tbody>${it.workout.plan.map(([x, y]) => `<tr><td>${esc(x)}</td><td>${esc(y || '')}</td></tr>`).join('')}</tbody></table>` : ''}</article>` : ''}
+ ${it.week?.length ? `<article class="coach-block"><h4><span class="coach-num">3</span>이번 주 코칭</h4><div class="coach-week">${f.days7.map(d => `<span class="${d.done ? 'done' : d.rest ? 'rest' : ''}${d.today ? ' today' : ''}"><b>${d.wd}</b><i></i></span>`).join('')}</div><ul>${li(it.week)}</ul></article>` : ''}
+ ${it.weight?.length ? `<article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul>${li(it.weight)}</ul></article>` : ''}
+ <p class="hint coach-when">${esc(whenText(saved.at))} 분석 · 버튼을 누를 때만 새로 만들어요${left != null ? ` · 오늘 ${left}번 더` : ''}</p>`
+ : `<p class="coach-line">식단·운동·수치 기록을 읽고 <b>오늘 남은 식단</b>, <b>다음 운동</b>, <b>이번 주 코칭</b>, <b>체중 흐름</b>을 내 몸에 맞춰 알려 드려요.</p><p class="hint">버튼을 눌렀을 때만 만들어요(하루 3번).</p>`;
+ return `<section class="section coach coach-live" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div>${basis}${body}${msg ? `<p class="hint warn" role="alert">${esc(msg)}</p>` : ''}<div class="actions">${btn}</div><p class="hint">AI 답은 참고용이에요. 진단이나 처방이 아니에요.</p></section>`;
+}
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const n0 = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
 const n1 = v => (Math.round((Number(v)||0)*10)/10).toLocaleString('ko-KR');
@@ -62,7 +100,7 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
  const trendTxt = f.trend!=null ? `7일 평균 ${f.trend>0?'+':''}${n1(f.trend)}kg` : '7일 평균 −0.4kg';
  const eta = f.target && f.nowW && f.trend && f.trend<0 ? (() => { const weeks = (f.nowW-f.target)/(-f.trend); if(!(weeks>0 && weeks<104)) return ''; const d = shift(date, Math.round(weeks*7)); return `지금 속도면 <b>${Number(d.slice(5,7))}월 ${Number(d.slice(8,10))}일</b>쯤 목표 ${n1(f.target)}kg에 닿아요`; })() : '지금 속도면 <b>12월 말</b>쯤 목표 체중에 닿아요';
  const bar = ([l, v, g, u]) => { const pct = g ? Math.round(v/g*100) : 0; return `<div class="cbar"><span>${l}</span><i><b style="width:${Math.min(100, pct)}%"></b></i><em>${pct}%</em></div>`; };
- return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">프리미엄 · 추후 공개</span></div>
+ return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div>
 <div class="coach-paper" aria-hidden="true">
 <div class="coach-report-head"><div><small>${esc(dLabel)} · 오늘의 맞춤 코칭</small><b>${esc(who)} 몸에 맞춘 리포트</b></div><span class="coach-example">예시 화면</span></div>
 <div class="coach-basis"><span>분석 근거</span><i>식사 ${f.meals14}끼</i><i>운동 ${f.works14}회</i><i>체중 ${f.weigh14}회</i><i>인바디 ${f.inbody}회</i><small>최근 14일</small></div>
@@ -72,6 +110,6 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
 <article class="coach-block"><h4><span class="coach-num">3</span>이번 주 코칭</h4><div class="coach-week">${f.days7.map(d => `<span class="${d.done?'done':d.rest?'rest':''}${d.today?' today':''}"><b>${d.wd}</b><i></i></span>`).join('')}</div><ul><li>이번 주 ${f.days7.filter(d => d.done).length}회 운동 · 목표 주 4회까지 ${Math.max(0, 4-f.days7.filter(d => d.done).length)}회 남았어요</li><li>가슴 세트가 지난주보다 줄었어요. 금요일에 가슴·삼두를 넣어 볼까요?</li><li>잠이 짧았던 날은 무게를 10% 낮추는 걸 권해요</li></ul></article>
 <article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul><li>${trendTxt} · 목표 속도(주 −0.5kg) 안에 있어요</li><li>${eta}</li><li>${f.muscleNow!=null&&f.muscleOld!=null?`인바디 골격근량 ${f.muscleNow-f.muscleOld>=0?'+':''}${n1(f.muscleNow-f.muscleOld)}kg(3주 전 대비)`:'탄수화물이 많은 다음 날 체중이 오르는 패턴(수분)이 보여요'}</li></ul></article>
 </div>
-<div class="coach-veil"><span class="coach-spark big" aria-hidden="true">✦</span><b>프리미엄 · 추후 공개</b><p>${esc(who==='내'?'내':who+'의')} 식단·운동·수치 기록을 매일 읽고, 오늘 남은 식단과 다음 운동을 ${esc(whoSub)} 몸에 맞춰 코칭해 드려요.</p><ul class="coach-perks"><li>남은 끼니 메뉴 · 탄단지 맞춤</li><li>회복 부위를 피한 운동 플랜</li><li>내 기록 기반 무게 진행</li><li>체중 목표 도달 예측</li></ul><span class="coach-soon">준비 중이에요</span></div>
+<div class="coach-veil"><span class="coach-spark big" aria-hidden="true">✦</span><b>마이로그 플러스</b><p>${esc(who==='내'?'내':who+'의')} 식단·운동·수치 기록을 매일 읽고, 오늘 남은 식단과 다음 운동을 ${esc(whoSub)} 몸에 맞춰 코칭해 드려요.</p><ul class="coach-perks"><li>남은 끼니 메뉴 · 탄단지 맞춤</li><li>회복 부위를 피한 운동 플랜</li><li>내 기록 기반 무게 진행</li><li>체중 목표 도달 예측</li></ul><span class="coach-soon">플러스에서 쓸 수 있어요</span></div>
 </section>`;
 }

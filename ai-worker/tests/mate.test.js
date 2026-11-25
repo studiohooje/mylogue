@@ -74,3 +74,17 @@ test('로그메이트 사진 비용 장치: 하루 장수·전체 저장량 상�
   assert.equal((await route(await post('mate/delete', {key: 'rooms/roomAAAABBBBCCCC/u1/aaaaBBBB0001.webp'}, t1), s.deps)).status, 200);
   assert.equal((await route(up(t1, 'roomAAAABBBBCCCC', 'aaaaBBBB0006', 300_000), s.deps)).status, 200);
 });
+
+test('5.0.4 AI 인사이트: 플러스만, 요약이 짧으면 거절, JSON을 정리해 돌려줌', async () => {
+  resetKeyCache(); clearMemberCache();
+  const s = setup({plan: 'plus', answer: () => '```json\n{"headline":"좋아요","meal":{"title":"저녁","items":["닭가슴살 150g","현미밥"],"note":"단백질"},"workout":{"title":"등","plan":[["랫풀다운","4x10"]],"note":"하체 회복"},"week":["3번"],"weight":["유지"]}\n```'});
+  s.deps.env.LIMIT_INSIGHT = '0/3';
+  const tok = await token('u9');
+  const short = await route(await post('insight', {facts: '짧음'}, tok), s.deps); assert.equal(short.status, 400);
+  const r = await route(await post('insight', {facts: '최근 14일 식사 30끼, 운동 6회, 체중 10회. 오늘 남은 단백질 60g, 칼로리 700kcal.'}, tok), s.deps);
+  assert.equal(r.status, 200);
+  const j = await r.json(); assert.equal(j.insight.meal.items.length, 2); assert.equal(j.insight.workout.plan[0][0], '랫풀다운'); assert.equal(j.left, 2);
+  const free = setup({}); free.deps.env.LIMIT_INSIGHT = '0/3';
+  const f = await route(await post('insight', {facts: '최근 14일 식사 30끼, 운동 6회, 체중 10회. 오늘 남은 단백질 60g, 칼로리 700kcal.'}, await token('u8')), free.deps);
+  assert.equal(f.status, 402, '무료는 플러스 안내');
+});

@@ -7,7 +7,7 @@ import {cleanWorkout} from '../domain.js';
 test('AI 코치: 지금은 잠긴 미리보기만(누를 버튼 없음), 켜면 프리미엄에게만 버튼', () => {
  assert.equal(COACH_ENABLED, false);
  const locked = coachHTML();
- assert.match(locked, /프리미엄 · 추후 공개/);
+ assert.match(locked, /마이로그 플러스/);
  assert.match(locked, /예시 화면/);
  assert.match(coachHTML({db:{settings:{proteinGoal:150}, meals:[{date:"2026-11-21", name:"닭", protein:60, calories:300}]}, today:"2026-11-21", name:"홍"}), /단백질이 오늘 목표의 <b>40%<\/b>/);
  assert.match(coachHTML({db:{}, today:'2026-11-21', name:'내 계정'}), /내 몸에 맞춘 리포트/);

@@ -4,7 +4,7 @@ import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {mateRoute} from './mate.js';
 import {kakaoRoute} from './kakao.js';
-import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
+import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, INSIGHT_SYSTEM, fakeAnswer} from './prompts.js';
 import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, guardValue, GLOBAL_UID, MAX_OUTPUT_TOKENS} from './guards.js';
 // Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
 export const dailyLimit = env => safeNum(env.DAILY_LIMIT, 30);
@@ -20,8 +20,8 @@ export async function accountOf(user, token, {projectId, fetchImpl = fetch, plus
   return {approved, plus: approved && (plusAll || doc?.fields?.plan?.stringValue === 'plus'), admin: false};
 }
 // 기능별 하루 한도: LIMIT_X = "무료/플러스"
-export const FEATURES = Object.freeze({parse: 'DAILY_LIMIT', photo: 'LIMIT_PHOTO', review: 'LIMIT_REVIEW', chat: 'LIMIT_CHAT', recipe: 'LIMIT_RECIPE'});
-const FEATURE_NAME = {photo: '사진 기록', review: 'AI 주간 리뷰', chat: 'AI에게 묻기', recipe: '레시피 자동 분해'};
+export const FEATURES = Object.freeze({parse: 'DAILY_LIMIT', photo: 'LIMIT_PHOTO', review: 'LIMIT_REVIEW', chat: 'LIMIT_CHAT', recipe: 'LIMIT_RECIPE', insight: 'LIMIT_INSIGHT'});
+const FEATURE_NAME = {photo: '사진 기록', review: 'AI 주간 리뷰', chat: 'AI에게 묻기', recipe: '레시피 자동 분해', insight: 'AI 인사이트'};
 const topic = w => { const c = String(w).slice(-1).charCodeAt(0); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '은' : '는'); };
 export function limitOf(env, feature, plus) {
   if (feature === 'parse') return dailyLimit(env);
@@ -51,7 +51,7 @@ export async function useAttempt(db, uid, day, feature, limit) {
 // 4.27.0 전수검사 B-10: 사업계획의 'AI 원가 상한 1인 월 700원'을 코드로. 부를 때마다 기능별 추정 원가(COST_WON)를 월 누적에 더하고,
 // 상한(MONTHLY_COST_WON)을 넘으면 그 달은 AI를 부르지 않는다. 금액은 0.1원 단위 정수로 usage_feature(day=YYYY-MM, feature='cost')에 둔다.
 // 추정 원가는 공식 가격표 기반 계산(전수조사 보고서)이고, 실제 청구서와 비교해 wrangler.toml에서 고친다.
-export const DEFAULT_COST_WON = Object.freeze({parse: 2, photo: 2.5, chat: 2, recipe: 2, review: 40}) // 4.29.x 비용 예측 보고서(2026-11-25): Haiku 5.5 실제 1회 약 1.6~1.8원, 리뷰(Sonnet) 약 39원에 여유;
+export const DEFAULT_COST_WON = Object.freeze({parse: 2, photo: 2.5, chat: 2, recipe: 2, review: 40, insight: 4}) // 4.29.x 비용 예측 보고서(2026-11-25): Haiku 5.5 실제 1회 약 1.6~1.8원, 리뷰(Sonnet) 약 39원에 여유;
 export function costOf(env, feature) {
   const table = {...DEFAULT_COST_WON};
   for (const part of String(env.COST_WON || '').split(',')) { const [k, v] = part.split(':').map(s => s.trim()); if (k in table && Number.isFinite(Number(v)) && Number(v) >= 0) table[k] = Number(v); }
@@ -106,7 +106,7 @@ export async function route(request, deps) {
       return reply(502, {error: '사진을 처리하지 못했어요. 잠시 뒤 다시 해 주세요.'});
     }
   }
-  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me'].includes(path)) return reply(404, {error: '없는 주소예요.'});
+  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight'].includes(path)) return reply(404, {error: '없는 주소예요.'});
   try {
     if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
     // 4.29.x 불필요한 호출 막기 ①② — 로그인 확인·JSON 읽기 전에 값싼 것부터
@@ -183,6 +183,18 @@ export async function route(request, deps) {
       if (out.stopReason === 'max_tokens') throw new HttpError(422, '내용이 너무 길어요. 나눠서 보내 주세요.');
       if (feature === 'photo' && !repeat && recordsIn(out.text) === 0) { await refundFeature(env.DB, user.uid, day, 'photo'); return reply(200, {text: out.text, model: out.model, left: (quota.left ?? 0) + 1, refunded: true}); }
       return reply(200, {text: out.text, model: out.model, left: quota.left});
+    }
+    // 5.0.4 AI 인사이트(플러스, 버튼을 눌렀을 때만): 앱이 계산한 요약 → 오늘의 맞춤 코칭 JSON
+    if (path === 'insight') {
+      const facts = String(body?.facts || '').trim().slice(0, LIMITS.contextChars);
+      if (facts.length < 40) throw new HttpError(400, '인사이트를 만들 기록이 부족해요. 며칠 더 기록한 뒤 해 주세요.');
+      const quota = await useFeature(env.DB, user.uid, day, 'insight', limitOf(env, 'insight', acct.plus));
+      const out = await call([{role: 'user', content: `<facts>\n${facts}\n</facts>`}], {model, system: INSIGHT_SYSTEM, feature: 'insight', input: {}, effort: 'low', limit: limitOf(env, 'insight', acct.plus)});
+      let parsed = null; try { parsed = JSON.parse(String(out.text).match(/\{[\s\S]*\}/)?.[0] || ''); } catch {}
+      const arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, n).map(x => Array.isArray(x) ? x.slice(0, 2).map(y => String(y).slice(0, 40)) : String(x).slice(0, 120));
+      if (!parsed || typeof parsed !== 'object') { await refundFeature(env.DB, user.uid, day, 'insight'); throw new HttpError(422, '인사이트를 만들지 못했어요. 잠시 뒤 다시 해 주세요.'); }
+      const insight = {headline: String(parsed.headline || '').slice(0, 80), meal: {title: String(parsed.meal?.title || '').slice(0, 40), items: arr(parsed.meal?.items, 4), note: String(parsed.meal?.note || '').slice(0, 120)}, workout: {title: String(parsed.workout?.title || '').slice(0, 40), plan: arr(parsed.workout?.plan, 6), note: String(parsed.workout?.note || '').slice(0, 120)}, week: arr(parsed.week, 3), weight: arr(parsed.weight, 3)};
+      return reply(200, {insight, model: out.model, left: quota.left});
     }
     if (path === 'review') {
       const summary = String(body?.summary || '').trim().slice(0, LIMITS.contextChars);

@@ -21,9 +21,11 @@ LIMIT_PHOTO = "1/20"
 LIMIT_REVIEW = "0/1"
 LIMIT_CHAT = "0/10"
 LIMIT_RECIPE = "0/10"
+# 5.0.4 AI 인사이트(분석 맨 위): 플러스 하루 3번, 버튼을 눌렀을 때만
+LIMIT_INSIGHT = "0/3"
 # 4.27.0 AI 원가 상한(1인 월, 원). 0이면 상한 없음. 기능별 1회 추정 원가(원)는 실제 청구와 비교해 고친다(확인 필요).
 MONTHLY_COST_WON = "700"
-COST_WON = "parse:2,photo:2.5,chat:2,recipe:2,review:40"
+COST_WON = "parse:2,photo:2.5,chat:2,recipe:2,review:40,insight:4"
 # "1"이면 Claude 대신 정해진 답(시험·개발용). 실제 배포에서는 꼭 "0"
 FAKE_AI = "0"
 # 4.29.x 어느 회사 AI를 쓸지: "anthropic"(기본) | "openai-compatible"(OpenAI·Gemini·DeepSeek 등 OpenAI 형식)
