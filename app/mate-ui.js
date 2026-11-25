@@ -26,7 +26,7 @@ const LAST_KEY = () => scopedKey('mylogue.mateLastRooms');
 const lastRooms = () => { try { const v = JSON.parse(globalThis.localStorage?.getItem(LAST_KEY()) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
 const saveLast = ids => { try { globalThis.localStorage?.setItem(LAST_KEY(), JSON.stringify(ids)); } catch {} };
 
-const st = () => ($s.mate ||= {view: 'rooms', rooms: null, roomId: '', posts: {}, props: {}, loading: '', err: '', sheet: null, create: null, invite: null, join: null, mate: null, shares: null, detail: null, cap: null, mode: 'scale'});
+const st = () => ($s.mate ||= {view: 'rooms', rooms: null, roomId: '', posts: {}, props: {}, loading: '', err: '', sheet: null, create: null, invite: null, join: null, mate: null, shares: null, detail: null, cap: null, mode: 'food'});
 const ready = () => !!cloudState.user && cloudState.approval === 'approved';
 const me = () => cloudState.user?.uid || '';
 const roomById = id => (st().rooms || []).find(r => r.id === id) || null;
@@ -106,7 +106,7 @@ function roomView(){
   <form class="mate-compose" data-mate-form="say"><button type="button" class="mate-shoot" data-mate-go="cam" aria-label="사진 찍기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button><input id="mate-say" maxlength="500" placeholder="메시지 보내기" aria-label="메시지" autocomplete="off"><button type="submit" class="button secondary">보내기</button></form>`;
 }
 function camView(){
-  const s = st(), modes = [['scale', '체중계'], ['food', '먹은 것'], ['etc', '운동·기타']];
+  const s = st(), modes = [['food', '음식'], ['scale', '체중계'], ['etc', '운동·기타']];
   return `<div class="mate-cam" role="dialog" aria-label="사진 찍기"><div class="mate-cam-top"><button type="button" class="mate-ib" data-mate-camclose aria-label="닫기">✕</button><span>앱 안에서 찍은 사진만 올라가요</span><span style="width:44px"></span></div>
   <div class="mate-vf"><video id="mate-video" playsinline muted></video><div class="mate-stamp" id="mate-stamp">${esc(stampText())}<small>mylogue</small></div>${s.camErr ? `<p class="mate-cam-err">${esc(s.camErr)}</p>` : ''}</div>
   <div class="mate-modes">${modes.map(([k, l]) => `<button type="button" class="${s.mode === k ? 'on' : ''}" data-mate-mode="${k}">${l}</button>`).join('')}</div>
