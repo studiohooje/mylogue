@@ -4,6 +4,7 @@
 import {firestoreContext} from './ai-drafts.js';
 import {aiWorkerUrl} from './ai-config.js';
 import {sharesFor, shareKey, MATE_KINDS} from './mate-share.js';
+import {myTagCached} from './mytag.js';
 
 export const MATE_MAX = 8;
 // 대표님(2026-11-25): 방의 대화·사진은 90일만 보관(지나면 자동 삭제). '내 기록에 남기기'로 옮긴 숫자는 기록으로 영구히 남는다.
@@ -12,7 +13,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789';
 export const randomId = (n = 16, chars = ID_CHARS) => { const a = new Uint8Array(n); (globalThis.crypto || {getRandomValues: x => x.map(() => Math.floor(Math.random() * 256))}).getRandomValues(a); return Array.from(a, v => chars[v % chars.length]).join(''); };
 export const newMateCode = () => randomId(8, CODE_CHARS);
-export const myMateName = user => String(user?.displayName || (user?.email || '').split('@')[0] || '나').trim().slice(0, 20) || '나';
+export const myMateName = user => String(myTagCached() || user?.displayName || (user?.email || '').split('@')[0] || '나').trim().slice(0, 20) || '나';
 const ms = t => t?.toMillis ? t.toMillis() : (typeof t === 'number' ? t : Date.parse(t || '') || 0);
 const roomOf = snap => { const d = snap.data() || {}; return {id: snap.id, name: d.name, type: d.type, ownerUid: d.ownerUid, memberIds: d.memberIds || [], memberNames: d.memberNames || {}, scope: {body: false, meal: false, work: false, ...(d.scope || {})}, appliedProposal: d.appliedProposal || '', updatedAt: ms(d.updatedAt)}; };
 

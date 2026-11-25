@@ -2113,3 +2113,9 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .mate-bigcode{display:grid;gap:2px;justify-items:center;padding:10px 18px;border-radius:14px;background:#0f1729;border:1px solid #3a4d6e}
 .mate-bigcode small{color:#a6bbcb;font-size:13px}
 .mate-bigcode b{font-size:32px;letter-spacing:4px;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#eaf4ff;user-select:all}
+
+/* 5.0.1 마이태그 */
+.mate-at{font-size:20px;font-weight:800;color:#8ce4e0}
+.mate-tagchip{display:inline-block;padding:4px 12px;border-radius:999px;background:#16353a;color:#8ce4e0;font-size:16px}
+.mate-direct{border-color:#4a4f86;background:#1b2440}
+.mate-top .mate-ib + .mate-ib{margin-left:-2px}
