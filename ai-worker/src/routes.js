@@ -2,6 +2,7 @@
 // 대표님 방침: 인식에 실패한 사진은 횟수에서 빼지 않음, 같은 사진 재시도 미차감, 한도에 닿아도 손 기록은 계속.
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
+import {mateRoute} from './mate.js';
 import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
 import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, guardValue, GLOBAL_UID, MAX_OUTPUT_TOKENS} from './guards.js';
 // Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
@@ -85,6 +86,23 @@ export async function route(request, deps) {
   if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: cors});
   const path = new URL(request.url).pathname.replace(/^\//, '');
   if (request.method === 'GET' && path === 'health') return reply(200, {ok: true, fake: env.FAKE_AI === '1'});
+  // 5.0.0 로그메이트 사진(R2). AI를 부르지 않으므로 AI 끄기 스위치·비용 장부와 따로.
+  if (request.method === 'POST' && ['mate/upload', 'mate/photo', 'mate/delete'].includes(path)) {
+    try {
+      if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
+      const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+      const now = deps.now ? deps.now() : Date.now();
+      const user = await verifyIdToken(token, {projectId: env.FIREBASE_PROJECT_ID, keys: await googleKeys(deps.fetchImpl, now), now});
+      const acct = await accountOf(user, token, {projectId: env.FIREBASE_PROJECT_ID, fetchImpl: deps.fetchImpl, plusAll: env.PLUS_ALL === '1'});
+      if (!acct.approved) throw new HttpError(403, '이용 승인 후 쓸 수 있어요.');
+      reply.cors = cors;
+      return await mateRoute(path, request, {env, user, token, fetchImpl: deps.fetchImpl, now, reply});
+    } catch (error) {
+      if (error instanceof HttpError) return reply(error.status, {error: error.message});
+      console.error(error);
+      return reply(502, {error: '사진을 처리하지 못했어요. 잠시 뒤 다시 해 주세요.'});
+    }
+  }
   if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me'].includes(path)) return reply(404, {error: '없는 주소예요.'});
   try {
     if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');

@@ -21,6 +21,8 @@ export async function loadChat() {
 }
 function persist() { const s = st(); try { kvSet(KEY(), JSON.stringify(s.msgs.slice(-CHAT_MAX))); } catch {} }
 function scrollEnd() { globalThis.requestAnimationFrame?.(() => { const l = document.getElementById('chat-log'); const sheet = l?.closest('.sheet'); if (sheet) sheet.scrollTop = sheet.scrollHeight; }); }
+// 5.0.0 로그메이트 '식단으로 가져오기': 메이트에 올린 사진(JPEG base64)과 말을 채워 대화창을 연다. 보내기는 사람이 누른다(AI는 누를 때만).
+export function openChatWithPhoto(data, thumb, text = '') { const s = st(); s.photos = [data]; s.thumbs = [thumb]; s.input = String(text || ''); $s.modal = 'ai-chat'; $f.render(); loadChat(); scrollEnd(); }
 export function openChat(text = '') { const s = st(); if (text) s.input = text; $s.modal = 'ai-chat'; $f.render(); loadChat(); scrollEnd(); }
 async function thumb(file) {
  const url = URL.createObjectURL(file);

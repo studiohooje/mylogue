@@ -41,8 +41,9 @@ try {
  // 둘러보기(데모) 시작 — 버튼이 있으면 누르고, 없으면 지금 화면 그대로
  await c.run(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>/둘러보기/.test(x.innerText));b?.click();return !!b})()`); await wait(2500);
  const steps = [];
- for (const p of ['home', 'body', 'food', 'workout', 'analysis', 'calendar', 'settings', 'home']) {
-  const ok = await c.run(`(()=>{const b=document.querySelector('[data-page="${p}"]');if(!b)return false;b.click();return true})()`); await wait(700); steps.push(`${p}:${ok ? 'ok' : '없음'}`);
+ // 5.0.0 하단 메뉴: 홈·그래프·입력·메이트·분석·설정. 수치·식단·운동·일정은 '그래프'를 눌러 뜨는 팝업 안에 있다.
+ for (const p of ['home', 'body', 'food', 'workout', 'analysis', 'calendar', 'mate', 'settings', 'home']) {
+  const ok = await c.run(`(()=>{let b=document.querySelector('.nav [data-page="${p}"]')||document.querySelector('[data-page="${p}"]');if(!b){document.querySelector('[data-graph-toggle]')?.click();b=document.querySelector('.nav6-pop [data-page="${p}"]')}if(!b)return false;b.click();return true})()`); await wait(700); steps.push(`${p}:${ok ? 'ok' : '없음'}`);
  }
  // 기록 창 열고 닫기(식사·운동·수치)
  // 4.27.0 재검사 N-10: 빠른 식사(검색까지)·운동 실시간 입력·AI 입력·무엇을 기록할까 창까지

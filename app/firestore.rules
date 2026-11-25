@@ -350,5 +350,157 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
     }
+    // ---- 5.0.0 로그메이트: 방 멤버끼리만, 방에 올린 것과 공개한 종류의 요약만 본다. 원본 기록(users/{uid})은 계속 본인만 ----
+    function mateScopeOk(sc) {
+      return sc is map && sc.keys().hasOnly(['body','meal','work']) && sc.keys().hasAll(['body','meal','work'])
+        && sc.body is bool && sc.meal is bool && sc.work is bool;
+    }
+    function mateKind(k) { return k in ['body','meal','work']; }
+    function mateNameOk(n) { return n is string && n.size() >= 1 && n.size() <= 30; }
+    function mateMemberNamesOk(m) { return m is map && m.size() <= 8 && (!(request.auth.uid in m) || (m[request.auth.uid] is string && m[request.auth.uid].size() <= 20)); }
+    function mateInvite(code) { return get(/databases/$(database)/documents/mateInvites/$(code)).data; }
+    function mateProposal(roomId, pid) { return getAfter(/databases/$(database)/documents/rooms/$(roomId)/proposals/$(pid)).data; }
+    function mateJoinOk(roomId, was, now) {
+      return !(request.auth.uid in was.memberIds) && was.type == 'friends'
+        && now.diff(was).affectedKeys().hasOnly(['memberIds','memberNames','joinCode','updatedAt'])
+        && now.memberIds == was.memberIds.concat([request.auth.uid]) && now.memberIds.size() <= 8
+        && now.memberNames.diff(was.memberNames).affectedKeys().hasOnly([request.auth.uid]) && mateMemberNamesOk(now.memberNames)
+        && exists(/databases/$(database)/documents/mateInvites/$(now.joinCode))
+        && mateInvite(now.joinCode).roomId == roomId
+        && mateInvite(now.joinCode).expiresAt > request.time;
+    }
+    function mateLeaveOk(was, now) {
+      return request.auth.uid in was.memberIds && request.auth.uid != was.ownerUid
+        && now.diff(was).affectedKeys().hasOnly(['memberIds','memberNames','updatedAt'])
+        && now.memberIds == was.memberIds.removeAll([request.auth.uid])
+        && now.memberNames.diff(was.memberNames).affectedKeys().hasOnly([request.auth.uid]);
+    }
+    function mateOwnerOk(was, now) {
+      return request.auth.uid == was.ownerUid && (
+        (now.diff(was).affectedKeys().hasOnly(['ownerUid','updatedAt']) && now.ownerUid in was.memberIds)
+        || (now.diff(was).affectedKeys().hasOnly(['name','updatedAt']) && mateNameOk(now.name)));
+    }
+    function mateMyNameOk(was, now) {
+      return request.auth.uid in was.memberIds
+        && now.diff(was).affectedKeys().hasOnly(['memberNames','updatedAt'])
+        && now.memberNames.diff(was.memberNames).affectedKeys().hasOnly([request.auth.uid]) && mateMemberNamesOk(now.memberNames);
+    }
+    function mateScopeChangeOk(was, now, p) {
+      return request.auth.uid in was.memberIds
+        && now.diff(was).affectedKeys().hasOnly(['scope','appliedProposal','updatedAt'])
+        && mateScopeOk(now.scope) && now.appliedProposal != was.appliedProposal
+        && p.status == 'done' && p.yes.hasAll(was.memberIds)
+        && now.scope[p.kind] == p.to
+        && (p.kind == 'body' || now.scope.body == was.scope.body)
+        && (p.kind == 'meal' || now.scope.meal == was.scope.meal)
+        && (p.kind == 'work' || now.scope.work == was.scope.work);
+    }
+    match /rooms/{roomId} {
+      allow get, list: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if approved()
+        && roomId.matches('^[A-Za-z0-9]{12,24}$')
+        && request.resource.data.keys().hasOnly(['name','type','ownerUid','memberIds','memberNames','scope','joinCode','appliedProposal','createdAt','updatedAt'])
+        && mateNameOk(request.resource.data.name) && request.resource.data.type in ['friends','mine']
+        && request.resource.data.ownerUid == request.auth.uid && request.resource.data.memberIds == [request.auth.uid]
+        && mateMemberNamesOk(request.resource.data.memberNames) && request.resource.data.memberNames.keys().hasOnly([request.auth.uid])
+        && mateScopeOk(request.resource.data.scope)
+        && request.resource.data.joinCode == '' && request.resource.data.appliedProposal == ''
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+      // 들어오기(초대 코드)·나가기(방장은 먼저 넘김)·방장 넘기기·방 이름·내 이름·공개 범위(전원 동의한 요청대로 한 종류만)
+      allow update: if approved() && request.resource.data.updatedAt == request.time && (
+        mateJoinOk(roomId, resource.data, request.resource.data)
+        || mateLeaveOk(resource.data, request.resource.data)
+        || mateOwnerOk(resource.data, request.resource.data)
+        || mateMyNameOk(resource.data, request.resource.data)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasAny(['scope'])
+          && mateScopeChangeOk(resource.data, request.resource.data, mateProposal(roomId, request.resource.data.appliedProposal)))
+      );
+      allow delete: if signedIn() && request.auth.uid == resource.data.ownerUid && resource.data.memberIds.size() == 1;
+
+      function room() { return get(/databases/$(database)/documents/rooms/$(roomId)).data; }
+      function inRoom() { return signedIn() && request.auth.uid in room().memberIds; }
+      match /posts/{postId} {
+        allow get, list: if inRoom();
+        allow create: if approved() && inRoom()
+          && request.resource.data.keys().hasOnly(['uid','name','kind','text','photoKey','photoKind','takenAt','rec','createdAt','expireAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.name is string && request.resource.data.name.size() <= 20
+          && request.resource.data.kind in ['photo','text']
+          && request.resource.data.text is string && request.resource.data.text.size() <= 500
+          && request.resource.data.rec is string && request.resource.data.rec.size() <= 80
+          && request.resource.data.photoKind in ['scale','food','etc','']
+          && request.resource.data.takenAt is timestamp && request.resource.data.takenAt <= request.time + duration.value(5, 'm')
+          && request.resource.data.photoKey is string
+          && ((request.resource.data.kind == 'text' && request.resource.data.photoKey == '' && request.resource.data.text.size() >= 1)
+            || (request.resource.data.kind == 'photo' && request.resource.data.photoKey.matches('^rooms/' + roomId + '/' + request.auth.uid + '/[A-Za-z0-9_-]{8,40}[.](webp|jpg)$')))
+          && request.resource.data.createdAt == request.time
+          // 대표님(2026-11-25): 방의 대화·사진은 보관 기간(90일)만. 지나면 자동 삭제(Firestore TTL 'expireAt')
+          && request.resource.data.expireAt is timestamp
+          && request.resource.data.expireAt > request.time + duration.value(89, 'd')
+          && request.resource.data.expireAt < request.time + duration.value(91, 'd');
+        allow update: if false;
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
+      // 메이트에게 보여 줄 요약: 문서 이름은 '{uid}_{종류}'. 방이 그 종류를 공개할 때만 남이 읽는다(비공개로 바뀌면 바로 못 읽음).
+      match /shares/{shareId} {
+        allow get: if inRoom() && (resource == null || resource.data.uid == request.auth.uid || room().scope[resource.data.kind] == true);
+        allow create, update: if approved() && inRoom()
+          && request.resource.data.keys().hasOnly(['uid','kind','name','data','updatedAt'])
+          && request.resource.data.uid == request.auth.uid && mateKind(request.resource.data.kind)
+          && shareId == request.auth.uid + '_' + request.resource.data.kind
+          && room().scope[request.resource.data.kind] == true
+          && request.resource.data.name is string && request.resource.data.name.size() <= 20
+          && request.resource.data.data is map
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
+      // 공개 범위 변경 요청: 한 종류씩. 모두 동의하면 done, 한 명이라도 거절하면 rejected
+      match /proposals/{pid} {
+        allow get, list: if inRoom();
+        allow create: if approved() && inRoom()
+          && pid.matches('^[A-Za-z0-9]{8,24}$')
+          && request.resource.data.keys().hasOnly(['kind','to','byUid','byName','yes','no','status','createdAt'])
+          && mateKind(request.resource.data.kind) && request.resource.data.to is bool
+          && request.resource.data.to != room().scope[request.resource.data.kind]
+          && request.resource.data.byUid == request.auth.uid
+          && request.resource.data.byName is string && request.resource.data.byName.size() <= 20
+          && request.resource.data.yes == [request.auth.uid] && request.resource.data.no == []
+          && (request.resource.data.status == 'open' || (request.resource.data.status == 'done' && [request.auth.uid].hasAll(room().memberIds)))
+          && request.resource.data.createdAt == request.time;
+        allow update: if inRoom() && resource.data.status == 'open'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['yes','no','status'])
+          && (
+            (!(request.auth.uid in resource.data.yes) && !(request.auth.uid in resource.data.no)
+              && request.resource.data.yes == resource.data.yes.concat([request.auth.uid]) && request.resource.data.no == resource.data.no
+              && (request.resource.data.status == 'open' || (request.resource.data.status == 'done' && request.resource.data.yes.hasAll(room().memberIds))))
+            || (!(request.auth.uid in resource.data.yes) && !(request.auth.uid in resource.data.no)
+              && request.resource.data.no == resource.data.no.concat([request.auth.uid]) && request.resource.data.yes == resource.data.yes
+              && request.resource.data.status == 'rejected')
+            || (request.resource.data.yes == resource.data.yes && request.resource.data.no == resource.data.no
+              && request.resource.data.status == 'done' && resource.data.yes.hasAll(room().memberIds))
+          );
+        allow delete: if signedIn() && resource.data.byUid == request.auth.uid && resource.data.status == 'open';
+      }
+    }
+    // 초대 링크·QR: 방 멤버 누구나 만든다(7일). 코드를 아는 승인된 사람만 읽는다.
+    match /mateInvites/{code} {
+      allow get: if approved();
+      allow create: if approved()
+        && code.matches('^[A-Z2-9]{8}$')
+        && request.resource.data.keys().hasOnly(['code','roomId','roomName','scope','inviterUid','inviterName','memberCount','expiresAt','createdAt'])
+        && request.resource.data.code == code
+        && request.resource.data.inviterUid == request.auth.uid
+        && request.auth.uid in get(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)).data.memberIds
+        && get(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)).data.type == 'friends'
+        && request.resource.data.roomName is string && request.resource.data.roomName.size() <= 30
+        && request.resource.data.inviterName is string && request.resource.data.inviterName.size() <= 20
+        && mateScopeOk(request.resource.data.scope)
+        && request.resource.data.memberCount is int && request.resource.data.memberCount <= 8
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt <= request.time + duration.value(8, 'd')
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.inviterUid == request.auth.uid;
+    }
   }
 }
