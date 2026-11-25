@@ -58,3 +58,8 @@ AI_TIMEOUT_MS = "45000"
 binding = "DB"
 database_name = "mylogue-ai"
 database_id = "a6e0775c-3127-458f-8588-9be59fafedaf"
+
+# 5.0.0 로그메이트 사진 저장소(R2, 비공개 버킷). 사진은 이 서버를 거쳐 방 멤버 확인 후에만 올리고 본다.
+[[r2_buckets]]
+binding = "MATE"
+bucket_name = "mylogue-mate"
