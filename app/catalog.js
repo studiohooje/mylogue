@@ -127,8 +127,8 @@ export function resolveExercise(name){
 // 직접 만든 종목의 타깃 추정: 도감 일치 → 이름 규칙 → 부위 기본값. 사용자가 고르지 않아도 채운다.
 export function inferTargets(name,part=''){const hit=findExercise(name);if(hit&&hit.kind!=='cardio')return {primary:[...hit.primaryMuscleIds],secondary:[...hit.secondaryMuscleIds],source:'catalog'};const n=String(name||'');for(const [re,p,s] of NAME_RULES)if(re.test(n))return {primary:[...p],secondary:s.filter(x=>!p.includes(x)),source:'name'};const p=primary[part]||[];return {primary:[...p],secondary:(secondary[part]||[]).filter(x=>!p.includes(x)),source:p.length?'part':'none'}}
 export function searchExercises(query='',part=''){
- const q=String(query).trim().toLocaleLowerCase('ko');
- return EXERCISE_CATALOG.filter(x=>(!part||part==='전체'||x.part===part)&&(!q||[x.name,...x.aliases].some(name=>name.toLocaleLowerCase('ko').includes(q))));
+ const q=String(query).trim().toLocaleLowerCase('ko').replace(/\s+/g,'');/* 5.0.5 띄어쓰기 없이 쳐도(시티드로우·덤벨프레스) */
+ return EXERCISE_CATALOG.filter(x=>(!part||part==='전체'||x.part===part)&&(!q||[x.name,...x.aliases].some(name=>name.toLocaleLowerCase('ko').replace(/\s+/g,'').includes(q))));
 }
 const session=(title,names)=>({title,exercises:names.map(name=>{const x=EXERCISE_CATALOG.find(e=>e.name===name);return {exerciseId:x?.id,primaryMuscleIds:x?.primaryMuscleIds,secondaryMuscleIds:x?.secondaryMuscleIds,name,part:x?.part||'기타',kind:x?.kind||'strength',sets:[{weight:0,reps:8,type:'본세트',completed:true},{weight:0,reps:8,type:'본세트',completed:true},{weight:0,reps:8,type:'본세트',completed:true}]}})});
 // Generic original templates. Zero weight explicitly means the user must choose a safe working load.
