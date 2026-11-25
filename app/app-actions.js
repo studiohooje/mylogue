@@ -6,7 +6,7 @@ import {myTagCached,loadMyTag,tagAvailable,setMyTag} from './mytag.js';
 import {QUESTIONS,prefsOf,withPrefs,onboardingPick,onboardingMove,newOnboarding,finishOnboarding,skipOnboarding,applyPrefClick,emptyAfterWorkout,afterWorkoutFromLast,readAfterWorkoutForm} from './prefs.js';
 import {emptyPlan,planFromWorkout,planFromRoutine,readPlanForm,completeSet,skipExercise,finishRun,addRest,endRest,editCurrent,current as guideCurrent,scheduleRestAlert,cancelRestAlert} from './guide.js';
 import {addGymPlace,removeGym,centerFor} from './places.js';
-import {cloudState,cloudLogin,cloudLogout,synchronize,refreshApproval,applyForAccess,reviewApplicant,reviewApplicants,setAccountPlan,deleteAccount} from './cloud-sync.js';
+import {cloudState,cloudLogin,cloudLogout,synchronize,refreshApproval,applyForAccess,reviewApplicant,reviewApplicants,setAccountPlan,setAccountCoach,deleteAccount} from './cloud-sync.js';
 import {planItems} from './admin-panel.js';
 import {scopedKey} from './storage-scope.js';
 import {gymKeyOf,levelToKg} from './gym-machines.js';
@@ -271,9 +271,13 @@ export async function cloudClick(target){
  if(id==='cloud-approval-refresh'){await refreshApproval();$f.render();if(cloudState.approval==='approved'){await $f.refreshCatalog();$f.queueAutoSync()}return true}
  if(id==='cloud-applicants-refresh'){await $f.refreshApplicants();return true}
  if(id.startsWith('cloud-plan-')){
-  const match=/^cloud-plan-(plus|free)-([A-Za-z0-9]+)$/.exec(id);
+  const match=/^cloud-plan-(plus|free)-([A-Za-z0-9:_-]+)$/.exec(id);
   if(!match)throw Error('계정을 확인해 주세요.');
   await setAccountPlan(match[2],match[1]);$f.render();const who=cloudState.applicants.find(a=>a.uid===match[2])?.email||'이 계정';$f.toast(match[1]==='plus'?`${who} 플러스 켜짐`:`${who} 플러스 꺼짐`);return true;
+ }
+ if(id.startsWith('cloud-coach-')){
+  const m=/^cloud-coach-(on|off)-([A-Za-z0-9:_-]+)$/.exec(id);if(!m)throw Error('계정을 확인해 주세요.');
+  await setAccountCoach(m[2],m[1]==='on');$f.render();const a=cloudState.applicants.find(x=>x.uid===m[2]);const who=a?.email||a?.name||'이 계정';$f.toast(m[1]==='on'?`${who} 코치 권한 켜짐`:`${who} 코치 권한 꺼짐`);return true;
  }
  if(id==='cloud-review-all-approved'){
   const uids=cloudState.applicants.filter(a=>a.status==='pending').map(a=>a.uid);

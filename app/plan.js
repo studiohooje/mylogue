@@ -9,7 +9,7 @@ import {isAdminUser} from './admin.js';
 import {scopedKey,storageAccount} from './storage-scope.js';
 import {costLineHTML} from './cost-alert.js';
 
-export const BETA_ALL_PLUS = true; // 베타 동안 승인된 모든 계정을 플러스로(AI 서버의 PLUS_ALL과 함께 바꾼다)
+export const BETA_ALL_PLUS = false; // 5.0.2 대표님: 신청 없이 누구나 가입 → 프리미엄은 관리자가 지정한 계정만(서버 PLUS_ALL도 0) // 베타 동안 승인된 모든 계정을 플러스로(AI 서버의 PLUS_ALL과 함께 바꾼다)
 export const PRICE = {monthly: 4900};
 // 플러스 기능 목록: free = 무료에서 쓸 수 있는 정도(0이면 잠금, 숫자면 개수·횟수), ai = AI 서버가 필요한지
 export const FEATURES = [

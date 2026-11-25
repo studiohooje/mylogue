@@ -1,7 +1,7 @@
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {initializeTestEnvironment, assertFails, assertSucceeds} from '@firebase/rules-unit-testing';
-import {doc, setDoc, serverTimestamp} from 'firebase/firestore';
+import {doc, setDoc, updateDoc, serverTimestamp} from 'firebase/firestore';
 
 // 5.0.1 카카오·이메일 가입: 카카오(커스텀 토큰)는 이메일 없이 신청, 이메일(비밀번호) 가입은 메일 인증 뒤에만 신청.
 const host = process.env.FIRESTORE_EMULATOR_HOST;
@@ -17,5 +17,13 @@ test('5.0.1 카카오·이메일 가입 신청 규칙', {skip: !host}, async () 
     await assertSucceeds(apply('pw-2', {email: 'b@x.test', email_verified: true, firebase: {sign_in_provider: 'password'}}, 'b@x.test'));
     await assertSucceeds(apply('g-1', {email: 'c@x.test', email_verified: true, firebase: {sign_in_provider: 'google.com'}}, 'c@x.test'));
     await assertFails(apply('g-2', {email: 'd@x.test', email_verified: true, firebase: {sign_in_provider: 'google.com'}}, 'd@x.test', {name: 'x'.repeat(31)}));
+    // 5.0.2 신청 없이 바로 승인: 처음부터 approved로 만들 수 있고, 대기 중이면 스스로 승인. 반려된 계정·남의 계정은 안 됨
+    await assertSucceeds(apply('g-3', {email: 'e@x.test', email_verified: true, firebase: {sign_in_provider: 'google.com'}}, 'e@x.test', {status: 'approved'}));
+    await assertFails(apply('pw-3', {email: 'f@x.test', email_verified: false, firebase: {sign_in_provider: 'password'}}, 'f@x.test', {status: 'approved'}), '메일 인증 전엔 승인 불가');
+    const ctx = uid => env.authenticatedContext(uid, {email: `${uid}@x.test`, email_verified: true, firebase: {sign_in_provider: 'google.com'}}).firestore();
+    await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'users', 'old-p'), {uid: 'old-p', email: 'old-p@x.test', status: 'pending'}); await setDoc(doc(c.firestore(), 'users', 'old-r'), {uid: 'old-r', email: 'old-r@x.test', status: 'rejected'}); });
+    await assertSucceeds(updateDoc(doc(ctx('old-p'), 'users', 'old-p'), {status: 'approved', updatedAt: serverTimestamp()}));
+    await assertFails(updateDoc(doc(ctx('old-r'), 'users', 'old-r'), {status: 'approved', updatedAt: serverTimestamp()}), '반려된 계정');
+    await assertFails(updateDoc(doc(ctx('g-1'), 'users', 'old-p'), {status: 'approved', updatedAt: serverTimestamp()}), '남의 계정');
   } finally { await env.cleanup(); }
 });

@@ -3,6 +3,7 @@
 // 코치 쪽 데이터(회원·템플릿·보낸 수업·그룹·예약·알림 설정)는 코치 본인 settings 키로 저장해 기존 동기화를 그대로 탄다.
 // 계정 사이 데이터(초대·연동·수업 초안·회신)는 coach-cloud.js가 Firestore로 주고받는다.
 import {isAdminUser} from './admin.js';
+import {cloudState} from './cloud-sync.js';
 import {cleanMoves, movesForMember, movesSummary, pilatesRowHTML, moveNamesDatalist, readMoves, lastMove, briefingHTML, assessmentHTML} from './pilates.js';
 
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -16,7 +17,8 @@ export const COACH_PAGES = ['coach-clients','coach-dash','coach-schedule','coach
 
 // 지금은 마스터 계정만. 로컬 개발 화면 확인용(localhost + ?coach=demo)만 예외 — 배포 주소에서는 동작하지 않는다.
 export function coachDemo(){ try{ return ['localhost','127.0.0.1'].includes(location.hostname) && new URLSearchParams(location.search).get('coach')==='demo'; }catch{ return false; } }
-export const coachAllowed = user => isAdminUser(user) || coachDemo();
+// 5.0.2 관리자가 코치 권한을 준 계정도(cloudState.coach)
+export const coachAllowed = user => isAdminUser(user) || coachDemo() || (!!user && cloudState.coach === true && cloudState.approval === 'approved');
 
 // ---- 코치 데이터 ----
 export function coachData(db={}){

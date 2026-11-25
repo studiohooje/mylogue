@@ -21,6 +21,7 @@ export async function refreshApproval(){
     const snapshot=await withTimeout(fsSDK.getDocFromServer(profileRef(user.uid)));
     cloudState.approval=snapshot.exists()?snapshot.data().status:'not_applied';
     cloudState.plan=snapshot.exists()&&snapshot.data().plan==='plus'?'plus':'free';
+    cloudState.coach=snapshot.exists()&&snapshot.data().coach===true;
     cloudState.approvalError='';
   }catch(error){cloudState.approval='unknown';cloudState.approvalError=error.message||'상태 확인 실패'}
   return cloudState.approval;
@@ -46,10 +47,11 @@ export async function applyForAccess(consent){
   if(isAdminUser(user))return 'approved';
   if(consent!==true)throw Error('건강 기록의 서버 저장 안내를 확인하고 동의해 주세요.');
   /* 5.0.1 이메일 가입은 메일 인증을 마친 뒤에 신청 */if(isEmailAccount(user)&&!(await emailVerified()))throw Error('가입한 이메일의 인증 메일에서 링크를 눌러 주세요. 메일이 없으면 스팸함을 보거나 \'인증 메일 다시 받기\'를 눌러 주세요.');
+  /* 5.0.2 신청 없이 바로 승인(대기 중이던 계정은 스스로 승인으로) */
   await fsSDK.runTransaction(firestore,async tx=>{
     const ref=profileRef(user.uid),before=await tx.get(ref);
-    if(before.exists())throw Error('이미 신청한 계정입니다. 상태를 새로 확인해 주세요.');
-    tx.set(ref,{uid:user.uid,email:user.email||'',...(user.displayName?{name:String(user.displayName).slice(0,30)}:{}),status:'pending',consentAt:fsSDK.serverTimestamp(),createdAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
+    if(before.exists()){const st=before.data().status;if(st==='pending')tx.update(ref,{status:'approved',updatedAt:fsSDK.serverTimestamp()});else if(st==='rejected')throw Error('이 계정은 사용이 제한됐어요. 운영자에게 문의해 주세요.');return}
+    tx.set(ref,{uid:user.uid,email:user.email||'',...(user.displayName?{name:String(user.displayName).slice(0,30)}:{}),status:'approved',consentAt:fsSDK.serverTimestamp(),createdAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
   });
   return refreshApproval();
 }
@@ -80,6 +82,12 @@ export async function reviewApplicants(uids,status){
   return cloudState.applicants;
 }
 // 4.17.0 플러스 전환(관리자 전용): 계정 문서의 plan을 바꾼다. 결제가 붙으면 같은 칸을 결제 기록이 채운다.
+// 5.0.2 관리자가 코치 권한 켜고 끄기
+export async function setAccountCoach(uid,on){
+  if(!isAdminUser(auth?.currentUser))throw Error('관리자만 코치 권한을 바꿀 수 있습니다.');
+  await fsSDK.updateDoc(profileRef(uid),{coach:!!on,coachBy:auth.currentUser.uid,coachAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
+  return listApplicants();
+}
 export async function setAccountPlan(uid,plan){
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 플러스를 바꿀 수 있습니다.');
   if(!uid||!['free','plus'].includes(plan))throw Error('플랜을 확인해 주세요.');
@@ -179,6 +187,14 @@ export async function signInWithKakaoToken(token, name = '') {
     const nm = String(name || '').trim().slice(0, 20);
     if (nm && !cred.user.displayName) await authSDK.updateProfile(cred.user, {displayName: nm});
   } catch (e) { throw authError(e); }
+}
+// 5.0.2 동의를 마친 계정은 앱이 켜질 때 저절로 승인(신청 버튼 없음). 이메일 인증 전이면 조용히 기다린다.
+let autoTried=false;
+export async function autoApprove(){
+  const user=auth?.currentUser;
+  if(!user||autoTried||!['not_applied','pending'].includes(cloudState.approval))return cloudState.approval;
+  autoTried=true;
+  try{return await applyForAccess(true)}catch{return cloudState.approval}
 }
 export async function cloudLogout() { if(cloudState.native)await signOutNativeGoogle();if(auth)await authSDK.signOut(auth);location.reload(); }
 // 4.11.0 계정 삭제: 본인 확인(Google 다시 로그인) → 서버 기록·검토함 초안·계정 문서 삭제 → 이 기기의 이 계정 기록 삭제 → 로그인 계정 삭제.

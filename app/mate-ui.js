@@ -198,7 +198,7 @@ function inviteView(){
 }
 function joinView(){
   const s = st(), j = s.join;
-  if(!ready()){ if(j?.code) rememberInvite(j.code); return `${head('초대받았어요')}<div class="mate-card"><b>${cloudState.user ? '이용 승인을 받으면 바로 들어갈 수 있어요' : '로그인하거나 가입하면 바로 들어갈 수 있어요'}</b><p class="hint">${cloudState.user ? '설정 → 내 계정에서 이용 신청을 해 주세요. 승인되면 이 초대가 자동으로 다시 열려요.' : '처음이면 아래에서 바로 가입돼요. 로그인하면 이 초대가 다시 열려요(3일 동안 기억).'}</p>${cloudState.user ? '' : authInlineHTML()}</div>`; }
+  if(!ready()){ if(j?.code) rememberInvite(j.code); return `${head('초대받았어요')}<div class="mate-card"><b>${cloudState.user ? '계정 준비를 마치면 바로 들어갈 수 있어요' : '로그인하거나 가입하면 바로 들어갈 수 있어요'}</b><p class="hint">${cloudState.user ? '처음 동의 화면에서 동의하고, 이메일로 가입했다면 인증 메일의 링크를 눌러 주세요. 그다음 앱을 다시 열면 이 초대가 자동으로 열려요.' : '처음이면 아래에서 바로 가입돼요. 로그인하면 이 초대가 다시 열려요(3일 동안 기억).'}</p>${cloudState.user ? '' : authInlineHTML()}</div>`; }
   if(!j || j.loading) return `${head('초대받았어요')}<p class="hint">초대 정보를 불러오는 중…</p>`;
   if(j.err) return `${head('초대받았어요', '', {back: 'rooms'})}<div class="mate-card"><b>${esc(j.err)}</b></div>`;
   const inv = j.inv;

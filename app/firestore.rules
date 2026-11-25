@@ -20,10 +20,16 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.get('email', '')
         && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 30))
         && (request.auth.token.get('firebase', {}).get('sign_in_provider', '') != 'password' || request.auth.token.get('email_verified', false) == true)
-        && request.resource.data.status == 'pending'
+        // 5.0.2 대표님(2026-11-25): 이용 신청 없이 가입하면 바로 쓴다(동의하면 곧바로 approved). 반려는 관리자만.
+        && request.resource.data.status in ['pending','approved']
         && request.resource.data.consentAt == request.time
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
+      // 5.0.2 예전에 '승인 대기'로 남은 본인은 스스로 승인으로 바꿀 수 있다(반려된 계정은 안 됨). 이메일 가입은 메일 인증 뒤에만.
+      allow update: if owner(uid) && !admin() && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+        && request.resource.data.status == 'approved' && request.resource.data.updatedAt == request.time
+        && (request.auth.token.get('firebase', {}).get('sign_in_provider', '') != 'password' || request.auth.token.get('email_verified', false) == true);
       allow update: if admin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedAt','reviewerUid','updatedAt'])
         && request.resource.data.status in ['pending','approved','rejected']
@@ -36,6 +42,13 @@ service cloud.firestore {
         && request.resource.data.plan in ['free','plus']
         && request.resource.data.planBy == request.auth.uid
         && request.resource.data.planAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      // 5.0.2 대표님: 관리자가 가입한 사람 중에서 코치 권한을 준다(테스트·코치 회원)
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coach','coachBy','coachAt','updatedAt'])
+        && request.resource.data.coach is bool
+        && request.resource.data.coachBy == request.auth.uid
+        && request.resource.data.coachAt == request.time
         && request.resource.data.updatedAt == request.time;
       // 4.11.0 계정 삭제: 본인은 자기 계정 문서를 지울 수 있다(하위 기록·초안을 먼저 지운 뒤).
       allow delete: if owner(uid);
@@ -175,7 +188,8 @@ service cloud.firestore {
       allow delete: if owner(uid);
     }
     // ---- 4.0.0 코치 모드: 대표님 결정으로 지금은 마스터 계정끼리만 쓴다(나중에 강사 승인 roles.trainer로 넓힘) ----
-    function coachMaster() { return admin(); }
+    // 5.0.2 관리자 또는 관리자가 코치 권한을 준 승인 계정
+    function coachMaster() { return admin() || (signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('coach', false) == true && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'); }
     function linkPath(t, m) { return /databases/$(database)/documents/links/$(t + '_' + m); }
     function activeLink(t, m) { return exists(linkPath(t, m)) && get(linkPath(t, m)).data.status == 'active'; }
     match /invites/{code} {

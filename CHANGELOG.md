@@ -4,6 +4,12 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.0.2 — 2026-11-25 (배포됨)
+
+- 이용 신청·관리자 승인 없이 바로 사용(대표님 지시): users 생성 시 status approved 허용, 대기(pending) 본인은 스스로 approved로(반려 계정 제외, 이메일은 인증 뒤). 앱은 동의 직후·부팅 때 autoApprove.
+- 관리자가 가입자에게 코치 권한(users.coach, 규칙 coachMaster 확장)·플러스 지정. 베타 전체 플러스 끔(BETA_ALL_PLUS=false, 서버 PLUS_ALL=0) → 지정한 계정만 플러스.
+- 관리자 목록에서 카카오 가입자 이름 표시, uid에 ':' 허용. 버전 5.0.2(versionCode 95).
+
 ## Mylogue Beta 5.0.1 — 2026-11-25 (배포됨)
 
 - 카카오·이메일 가입(auth-ui.js 로그인 창, 이메일 인증 후 신청 — 규칙으로 강제, AI 서버 /kakao/start·callback → Firebase 커스텀 토큰). 관리자 규칙 token.email을 get()으로.

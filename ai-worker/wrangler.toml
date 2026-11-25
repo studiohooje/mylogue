@@ -14,7 +14,7 @@ DAILY_LIMIT = "30"
 MODEL = "claude-haiku-5-5"
 REVIEW_MODEL = "claude-sonnet-5-5"
 # 베타 동안 승인된 모든 계정을 플러스로(결제가 붙으면 "0"으로 바꾸고 계정별 plan을 쓴다)
-PLUS_ALL = "1"
+PLUS_ALL = "0"
 # 기능별 하루 한도: 무료/플러스
 LIMIT_PHOTO = "1/20"
 # 4.27.0 재검사 N-7: 월 원가 상한(700원) 안에서 매일 써도 월말까지 가도록 리뷰 하루 1번, 묻기 하루 10개
