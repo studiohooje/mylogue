@@ -27,7 +27,8 @@ export function rowToFood(r){
  return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, ...micro, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt===2?{dbMaybeGone:true}:doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
 }
 
-const indexRow = r => { const text = [r[0], r[1], ...(String(r[9]||'').split(' '))].filter(Boolean); return {p:plain(text.join(' ')), k:text.map(t => keystrokes(t)).join('|'), c:text.map(t => choseong(t).replace(/\s/g,'')).join('|'), names:text}; };
+// 5.0.5 '(집밥)' 같은 꼬리표가 붙은 이름도 꼬리표 없는 이름으로 똑같이 찾히게(돼지불고기 → 돼지불고기(집밥))
+const indexRow = r => { const base = String(r[0]||'').replace(/\(집밥\)$/, '').trim(); const text = [r[0], base !== r[0] ? base : '', r[1], ...(String(r[9]||'').split(' '))].filter(Boolean); return {p:plain(text.join(' ')), k:text.map(t => keystrokes(t)).join('|'), c:text.map(t => choseong(t).replace(/\s/g,'')).join('|'), names:text}; };
 export function setFoodRows(list){
  rows = Array.isArray(list) ? list : [];
  index = rows.map(indexRow);

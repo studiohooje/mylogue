@@ -26,6 +26,11 @@ const FIX = {
  'Pull Up': 'plank',               // 체어 풀업: 손으로 짚고 엉덩이를 들어 올림(매달리지 않음)
  'Pull Up — One Arm': 'plank',
  'Neck Roll': 'prone',             // 엎드린 스완 뒤에 하는 목 돌리기
+ // 5.0.5 자세를 못 정하던 11개
+ 'Long Box Series': 'prone', 'Feet Pulling Straps (STOTT Advanced)': 'supinelegs',
+ 'Push Thru Bar': 'seated', 'Rollback Bar': 'seated', 'Push Thru Bar — Reverse Push Thru': 'seated', 'Forward Push-Thru': 'seated',
+ 'Tuck Into Flexion & Extension (Trapeze)': 'supinelegs', 'Tendon Stretch + Front, Side, Back & Combo': 'plank',
+ 'Front Balance Control (Going Up — Front)': 'stand', 'Side Balance Control (Going Up — Side)': 'stand', 'One arm prep hand on floor': 'plank',
 };
 // 자세 → 그림 이름(exercise-art.js 키). 누워 상체 말기는 기존 헌드레드 그림을 쓴다.
 const POSE_ART = {supinecurl: '필라테스 매트'};
@@ -48,12 +53,16 @@ export function poseOf(name, apparatus = '') {
  return hit ? hit[0] : null;
 }
 // 그림 파일 이름(없으면 '')
+// 5.0.5 대표님: 자세 그림을 기구별로 더 나눔(리포머 위 풋워크, 체어 위 플랭크…). 기구별 그림이 있으면 그것을, 없으면 지금처럼 자세 그림.
+export const appPoseKey = (apparatus, pose) => `필라테스 ${apparatus}:${pose}`;
+const appPose = (move, p) => p && move.apparatus && move.apparatus !== '매트' && artFile(appPoseKey(move.apparatus, p)) ? appPoseKey(move.apparatus, p) : '';
 export function pilatesArtFile(move = {}) {
- const p = poseOf(move.name, move.apparatus);
- return (p && artFile(POSE_ART[p])) || artFile(APP_ART[move.apparatus] || '') || artFile('필라테스 매트');
+ const p = poseOf(move.name, move.apparatus), ap = appPose(move, p);
+ return (ap && artFile(ap)) || (p && artFile(POSE_ART[p])) || artFile(APP_ART[move.apparatus] || '') || artFile('필라테스 매트');
 }
 export function pilatesArtHTML(move = {}, cls = 'ex-art-sm') {
  const p = poseOf(move.name, move.apparatus);
- const key = (p && artFile(POSE_ART[p])) ? POSE_ART[p] : (APP_ART[move.apparatus] && artFile(APP_ART[move.apparatus]) ? APP_ART[move.apparatus] : '필라테스 매트');
+ const ap = appPose(move, p);
+ const key = ap ? ap : (p && artFile(POSE_ART[p])) ? POSE_ART[p] : (APP_ART[move.apparatus] && artFile(APP_ART[move.apparatus]) ? APP_ART[move.apparatus] : '필라테스 매트');
  return exArtHTML(key, cls);
 }

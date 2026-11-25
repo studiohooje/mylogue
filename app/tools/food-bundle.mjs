@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {flagDoubts} from './food-db-check.mjs';
+import {deepFix} from './food-deep-audit.mjs';
 import {normalizeUnit} from './unit-normalize.mjs';
 // 4.27.0 전수검사 F-01: 근거 없이 값을 바꾸지 않고(대표님 원칙) '값 확인 필요'로 내려 검색 뒤로.
 // 한식 대표(k·e) 중 1회 무게가 0인 그릇·인분 행과, 1회분 열량이 3~10배 낮게 들어간 것으로 확인된 행.
@@ -250,7 +251,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     recipes: fs.existsSync(path.join(BASE, 'recipes/recipes.json')) ? read('recipes/recipes.json').rows : [],
     popular: ['popular', 'convenience'].flatMap(f => fs.existsSync(path.join(BASE, `products_popular/${f}.json`)) ? read(`products_popular/${f}.json`).rows : []),
   });
-  const flagged = flagDoubts(rows); console.log(`품질 검사: 확인 필요 표시 ${flagged}행 추가 · 불가능한 값 제외 ${dropped.length} · 띄어쓰기 중복 합침 ${merged.length}`);
+  const flagged = flagDoubts(rows); console.log('5.0.5 깊은 검산', JSON.stringify(deepFix(rows))); console.log(`품질 검사: 확인 필요 표시 ${flagged}행 추가 · 불가능한 값 제외 ${dropped.length} · 띄어쓰기 중복 합침 ${merged.length}`);
   const cnt = {}; for (const r of rows) cnt[r[10] || 0] = (cnt[r[10] || 0] || 0) + 1; console.log('표시별 행 수', cnt);
   const out = {v: 1, builtAt: new Date().toISOString().slice(0, 10), source: '식품의약품안전처 식품영양성분 데이터베이스(공공데이터포털)·농촌진흥청 국가표준식품성분표·제조사 라벨', rows};
   const json = JSON.stringify(out);

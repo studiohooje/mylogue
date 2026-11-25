@@ -67,6 +67,7 @@ export const GENERIC_MACHINES = ([
  M('shrug','슈러그 머신','머신 슈러그','plate','both'),
  M('cable-station','케이블 스테이션 (단일)','케이블 레터럴 레이즈','cable','single'),
  // 팔
+ M('biceps-curl','바이셉스 컬 머신 (시티드)','머신 바이셉스 컬','stack','both',['암 컬 머신']),
  M('preacher-curl','프리처 컬 머신','머신 프리처 컬','stack','both',['바이셉스 컬 머신']),
  M('tricep-ext','트라이셉스 익스텐션 머신','트라이셉스 익스텐션 머신','stack','both'),
  M('seated-dip','시티드 딥 머신','트라이셉스 딥 머신','stack','both'),
@@ -90,7 +91,7 @@ const T = {
  'lat-pulldown':[['back'],['biceps','shoulders']], 'lat-pulldown-iso':[['back'],['biceps']], 'seated-row':[['back'],['biceps','traps']], 'row-machine':[['back','traps'],['biceps','shoulders']], 'row-iso':[['back'],['biceps','traps']],
  'low-row':[['back'],['biceps']], 'high-row':[['back'],['biceps','shoulders']], 't-bar-row':[['back'],['biceps','erectors']], 'pullup-assist':[['back'],['biceps']], 'back-extension':[['erectors','glutes'],['hamstrings']],
  'lower-back':[['erectors'],['glutes']], 'pullover':[['back'],['chest','triceps']], 'shoulder-press':[['shoulders'],['triceps']], 'shoulder-press-iso':[['shoulders'],['triceps']], 'lateral-raise':[['shoulders'],['traps']],
- 'rear-delt':[['shoulders'],['back','traps']], 'shrug':[['traps'],['forearms']], 'preacher-curl':[['biceps'],['forearms']], 'tricep-ext':[['triceps'],[]], 'seated-dip':[['triceps'],['chest']], 'cable-pushdown':[['triceps'],[]],
+ 'rear-delt':[['shoulders'],['back','traps']], 'shrug':[['traps'],['forearms']], 'preacher-curl':[['biceps'],['forearms']], 'biceps-curl':[['biceps'],['forearms']], 'tricep-ext':[['triceps'],[]], 'seated-dip':[['triceps'],['chest']], 'cable-pushdown':[['triceps'],[]],
  'ab-crunch':[['abs'],['obliques']], 'torso-rotation':[['obliques'],['abs']], 'captains-chair':[['abs'],['obliques']],
 };
 for(const m of GENERIC_MACHINES){ const t = T[m.id.slice(3)]; if(t){ m.primaryMuscleIds = t[0]; m.secondaryMuscleIds = t[1]; } }
@@ -112,6 +113,11 @@ const ALSO = {
  '케이블 컬':CABLE, '로프 푸시다운':['cable-pushdown','cable-station'], '원암 케이블 푸시다운':['cable-pushdown','cable-station'], '케이블 푸시다운':['cable-station'],
  '케이블 트라이셉스 익스텐션':CABLE, '케이블 우드찹':CABLE, '팔로프 프레스':CABLE, '페이스 풀':CABLE, '케이블 레터럴 레이즈':['cable-crossover'],
  '스미스 벤치프레스':['smith'], '스미스 인클라인 프레스':['smith'], '스미스 런지':['smith'], '스미스 숄더 프레스':['smith'],
+ // 5.0.5 세분화 종목
+ '로우 로우 머신':['low-row'], '풀오버 머신':['pullover'], '펜듈럼 스쿼트':['v-squat'], '리버스 핵 스쿼트':['hack-squat'], '아이소래터럴 인클라인 체스트 프레스':['incline-press-iso'], '아이소래터럴 디클라인 체스트 프레스':['decline-press'], '머신 바이셉스 컬':['biceps-curl','preacher-curl'],
+ '인클라인 케이블 플라이':['cable-crossover'], '싱글 암 케이블 플라이':CABLE, '와이드 그립 시티드 로우':['seated-row','cable-station'], '비하인드 넥 풀다운':['lat-pulldown'], '케이블 슈러그':CABLE, '케이블 풀스루':CABLE, '케이블 힙 어덕션':CABLE, '케이블 업라이트 로우':CABLE, '케이블 Y 레이즈':['cable-crossover'],
+ '로프 해머 컬':CABLE, '베이지안 컬':CABLE, '하이 케이블 컬':['cable-crossover'], '리버스 그립 푸시다운':['cable-pushdown','cable-station'], '케이블 트라이셉스 킥백':CABLE,
+ '스미스 디클라인 프레스':['smith'], '스미스 로우':['smith'], '스미스 힙 쓰러스트':['smith'], '스미스 카프 레이즈':['smith'], '스미스 불가리안 스플릿 스쿼트':['smith'],
 };
 const MACHINE_ONLY = new Set(['머신','케이블','스미스']);
 // 머신 없이는 할 수 없는 종목(레그 프레스, 케이블 운동, 스미스 운동 등)
