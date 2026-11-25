@@ -1,3 +1,4 @@
+import {baseExerciseOf} from './exercise-base.js';
 import {EXERCISE_ART} from './exercise-art.js';
 import {EXERCISE_CATALOG, findExercise, resolveExercise} from './catalog.js';
 // 4.18.0 머신 기록은 머신 종류(상위 종목)의 그림으로: app이 머신 찾는 함수를 넣어 준다(공용 도감의 제조사 모델까지)
@@ -15,6 +16,8 @@ export function artFile(x){
  // 머신 종류(상위 종목)의 그림
  const mid = typeof x === 'object' ? x?.machineId : null;
  if(mid){ let m = null; try{ m = machineOf(mid); }catch{} const ex = m?.exercise || (m?.exerciseId ? EXERCISE_CATALOG.find(e => e.id === m.exerciseId)?.name : '') || ''; if(ex && EXERCISE_ART[ex]) return EXERCISE_ART[ex]; const r = ex ? resolveExercise(ex) : null; if(r && EXERCISE_ART[r.name]) return EXERCISE_ART[r.name]; }
+ // 4.29.3 직접 만든 종목은 고른 기준 종목의 그림으로
+ { const b = baseExerciseOf(x); if(b && EXERCISE_ART[b.name]) return EXERCISE_ART[b.name]; }
  return '';
 }
 export const hasExerciseArt = x => !!artFile(x);

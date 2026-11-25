@@ -25,8 +25,9 @@ export function promoteCandidates(db = {}, {sharedFoods = [], sharedExercises = 
  const exercises = [], seenEx = new Set();
  for (const e of db.customExercises || []) {
   const key = norm(e.name); if (!key || seenEx.has(key)) continue; seenEx.add(key);
-  const item = {id: `ex:mine:${idPart(e.name)}`, name: String(e.name).trim(), part: e.part || '기타', equipment: e.equipment || '기타', kind: e.kind === 'cardio' ? 'cardio' : 'strength', aliases: (e.aliases || []).slice(0, 12), primaryMuscleIds: e.primaryMuscleIds || [], secondaryMuscleIds: e.secondaryMuscleIds || []};
-  const reason = haveEx.has(key) ? '기본·공용 종목에 같은 이름이 있어요' : '';
+  const item = {id: `ex:mine:${idPart(e.name)}`, name: String(e.name).trim(), part: e.part || '기타', equipment: e.equipment || '기타', kind: e.kind === 'cardio' ? 'cardio' : 'strength', aliases: (e.aliases || []).slice(0, 12), primaryMuscleIds: e.primaryMuscleIds || [], secondaryMuscleIds: e.secondaryMuscleIds || [], baseExerciseId: e.baseExerciseId || ''};
+  // 4.29.3 기준 종목이 없는 종목은 공용으로 올리지 않는다
+  const reason = haveEx.has(key) ? '기본·공용 종목에 같은 이름이 있어요' : item.kind !== 'cardio' && !item.baseExerciseId ? '기준 종목을 먼저 골라 주세요' : '';
   exercises.push({kind: 'exercises', item, ok: !reason, reason, note: ''});
  }
  return {foods, exercises};

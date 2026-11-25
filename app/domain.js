@@ -105,7 +105,8 @@ export function cleanMachine(raw){
 function exerciseTargets(raw,name,known){const p=cleanIds(raw.primaryMuscleIds),s=cleanIds(raw.secondaryMuscleIds);if(p.length)return {primaryMuscleIds:p,secondaryMuscleIds:s};if(known&&known.primaryMuscleIds?.length)return {primaryMuscleIds:cleanIds(known.primaryMuscleIds),secondaryMuscleIds:cleanIds(known.secondaryMuscleIds)};if(raw.kind==='cardio')return {primaryMuscleIds:[],secondaryMuscleIds:[]};const t=inferTargets(name,String(raw.part||''));return {primaryMuscleIds:t.primary,secondaryMuscleIds:t.secondary}}
 export function cleanCustomExercise(raw){
  const name=String(raw.name||'').trim();if(!name)throw Error('종목 이름을 입력해 주세요.');
- return {id:raw.id||uid(),name,part:String(raw.part||'기타').slice(0,20),kind:raw.kind==='cardio'?'cardio':'strength',equipment:String(raw.equipment||'기타').slice(0,20),aliases:cleanIds(raw.aliases),...exerciseTargets(raw,name,null),targetSource:cleanIds(raw.primaryMuscleIds).length?'user':'auto',anatomyMapVersion:1};
+ /* 4.29.3 기준 종목(도감 종목) 하나에 속한다: 그림·성장 기록은 그 종목으로 */const base=EXERCISE_CATALOG.find(x=>x.id===String(raw.baseExerciseId||''))||null;
+ return {id:raw.id||uid(),name,part:String(raw.part||'기타').slice(0,20),kind:raw.kind==='cardio'?'cardio':'strength',equipment:String(raw.equipment||'기타').slice(0,20),aliases:cleanIds(raw.aliases),baseExerciseId:base?base.id:'',...exerciseTargets(raw,name,base),targetSource:cleanIds(raw.primaryMuscleIds).length?'user':'auto',anatomyMapVersion:1};
 }
 export function cleanCheckin(raw){
  const out={};for(const k of ['sleep','energy','soreness']){const n=number(raw[k]);if(n!==null&&(n<1||n>5))throw Error('컨디션은 1~5 사이여야 합니다.');out[k]=n;}

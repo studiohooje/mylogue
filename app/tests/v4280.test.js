@@ -140,7 +140,7 @@ test('내 값 → 공용 도감: 같은 이름은 빼고, 빈 값·검산 어긋
   {id: 'f2', name: '엄마 김밥', servingQty: 1, servingUnit: '줄', calories: 420, carbs: 70, protein: 12, fat: 10},
   {id: 'f3', name: '모르는 메뉴', servingQty: 1, servingUnit: '개', calories: 500, carbs: null, protein: 20, fat: null},
   {id: 'f4', name: '이미있는거', servingQty: 1, servingUnit: '개', calories: 100, carbs: 10, protein: 5, fat: 4},
- ], customExercises: [{id: 'e1', name: '리포머 풋워크', part: '하체', equipment: '기타'}, {id: 'e2', name: '스쿼트', part: '하체'}]};
+ ], customExercises: [{id: 'e1', name: '리포머 풋워크', part: '하체', equipment: '기타', baseExerciseId: 'exercise:레그 프레스'}, {id: 'e2', name: '스쿼트', part: '하체'}]};
  const c = promoteCandidates(db, {sharedFoods: [{name: '이미있는거'}], baseExercises: [{name: '스쿼트'}]});
  const by = n => c.foods.find(x => x.item.name.startsWith(n));
  assert.equal(by('킹닭').ok, true); assert.equal(by('킹닭').item.servingUnit, 'g');

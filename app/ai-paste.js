@@ -4,7 +4,7 @@ import {scanHTML} from './scan-fx.js';
 // 해석은 너그럽게: 코드 블록·앞뒤 설명·둥근 따옴표·끝 쉼표·한글 키 이름을 받아 준다. 값을 지어내지 않고 모르는 값은 비운다.
 import {cleanMeal, cleanWorkout, cleanBody} from './domain.js';
 import {foodIssue} from './food-check.js';
-import {findExercise} from './catalog.js';
+import {findExercise, resolveExercise} from './catalog.js';
 import {GENERIC_MACHINES, BUILTIN_BRANDS} from './machines-catalog.js';
 
 import {AI_PROMPT} from './ai-prompt.js';
@@ -83,7 +83,7 @@ function mealDraft(r, said){
 function workoutDraft(r){
  const date = dateOk(r.date) ? r.date : today(), time = hm(r.time);
  const exercises = (pick(r, 'exercises', '운동') || []).map(e => {
-  const name = String(pick(e, 'name', '이름')||'').trim(), known = findExercise(name);
+  const name = String(pick(e, 'name', '이름')||'').trim(), known = findExercise(name) || resolveExercise(name);
   const minutes = num(pick(e, 'minutes', 'durationMin', '분')), km = num(pick(e, 'km', 'distanceKm'));
   if(known?.kind==='cardio' || (minutes!=null || km!=null) && !e.sets) return {name:known?.name||name, exerciseId:known?.id||null, part:known?.part||'유산소', kind:'cardio', durationMin:minutes, distanceKm:km, sets:[]};
   let sets = e.sets;

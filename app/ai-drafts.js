@@ -1,6 +1,8 @@
 import {firebaseConfig} from './firebase-config.js';
 import {cleanBody,cleanMeal,cleanWorkout,cleanFoodPreset,cleanMachine,cleanCustomExercise,isFuture} from './domain.js';
 import {stableJSON} from './cloud-model.js';
+import {missingBases,missingBaseMessage,machineBase} from './exercise-base.js';
+import {resolveExercise} from './catalog.js';
 import {cloudState} from './cloud-sync.js';
 import {scopedKey} from './storage-scope.js';
 import {deriveKey,proof,newNonce,sameHex} from './bridge-proof.js';
@@ -119,16 +121,17 @@ function draftRecords(draft,reviewedData){
       return {kind:'meals',record:m};
     }));
   }
-  if(draft.type==='workout'){const times=[raw.loggedAt,...(raw.exercises||[]).flatMap(e=>[e.completedAt,...(e.sets||[]).map(s=>s.completedAt)])].filter(Boolean),at=raw.loggedAtTime&&raw.date?`${raw.date}T${raw.loggedAtTime}:00`:null;const planned=String(raw.date||'')>localToday()||(at?isFuture(at):times.length>0&&times.every(t=>isFuture(t)));return finalized([{kind:'workouts',record:cleanWorkout({...raw,planned,id:`ai-${draft.id}`,sourceDraftId:`ai-${draft.id}`})}])}
+  if(draft.type==='workout'){const times=[raw.loggedAt,...(raw.exercises||[]).flatMap(e=>[e.completedAt,...(e.sets||[]).map(s=>s.completedAt)])].filter(Boolean),at=raw.loggedAtTime&&raw.date?`${raw.date}T${raw.loggedAtTime}:00`:null;/* 4.29.3 기준 종목 없는 운동은 확정하지 않는다 */{const miss=missingBases(raw.exercises||[]);if(miss.length)throw Error(missingBaseMessage(miss))}const planned=String(raw.date||'')>localToday()||(at?isFuture(at):times.length>0&&times.every(t=>isFuture(t)));return finalized([{kind:'workouts',record:cleanWorkout({...raw,planned,id:`ai-${draft.id}`,sourceDraftId:`ai-${draft.id}`})}])}
   if(draft.type==='body')return finalized([{kind:'body',record:cleanBody({...raw,id:`ai-${draft.id}`,source:'ai-reviewed'})}]);
   if(draft.type==='food')return finalized([{kind:'foods',record:cleanFoodPreset({...raw,id:`ai-${draft.id}`,source:'ai-reviewed',aiEvidence:evidenceFor(raw,draft)})}]);
   if(draft.type==='machine'){
     const roles=new Set((draft.evidence?.photos||[]).map(x=>x?.role));
     if(!roles.has('whole')||!roles.has('nameplate'))throw Error('머신 전체와 명판 사진 두 장을 AI에게 제공해 주세요.');
     if(!raw.manufacturer||!raw.model||['모름','unknown',''].includes(String(raw.manufacturer).trim().toLowerCase())||['모름','unknown',''].includes(String(raw.model).trim().toLowerCase()))throw Error('제조사와 모델을 확인한 뒤 등록해 주세요.');
-    return finalized([{kind:'machines',record:cleanMachine({...raw,id:`ai-${draft.id}`})}]);
+    const mach=cleanMachine({...raw,id:`ai-${draft.id}`});/* 4.29.3 머신도 기준 종목 밑으로 */if(!machineBase(mach)){const r=[raw.exercise,raw.name,raw.model,...(mach.aliases||[])].filter(Boolean).map(v=>resolveExercise(String(v))).find(Boolean);if(r)mach.exerciseId=r.id;else throw Error('이 머신이 어떤 운동 머신인지(기준 종목) 골라 주세요.')}
+    return finalized([{kind:'machines',record:mach}]);
   }
-  return finalized([{kind:'customExercises',record:cleanCustomExercise({...raw,id:`ai-${draft.id}`})}]);
+  {const ce=cleanCustomExercise({...raw,baseExerciseId:raw.baseExerciseId||(raw.kind==='cardio'?'':resolveExercise(raw.base||raw.name)?.id||''),id:`ai-${draft.id}`});if(ce.kind!=='cardio'&&!ce.baseExerciseId)throw Error(`‘${ce.name}’가 어떤 운동인지(기준 종목) 골라 주세요.`);return finalized([{kind:'customExercises',record:ce}])}
 }
 export function validateDraftRecords(draft,reviewedData){return draftRecords(draft,reviewedData)}
 // 4.4.3 점검 C-13: 중복 확인은 앱이 넘겨주는 이 기기 기록(existing)으로 한다(확정마다 서버 기록 전체를 받지 않음). 넘겨주지 않으면 예전처럼 서버에서 읽는다.
