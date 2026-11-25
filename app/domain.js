@@ -156,7 +156,9 @@ export function importBody(raw){if(!['mylogue.body','myweightlog.body'].includes
 export function bodyImportFile(measurement){return {type:'mylogue.body',version:1,measurement:cleanBody(measurement)}}
 
 // 3.18.0 예정 기록(아직 먹지·하지 않음)은 합계·헤일로·분석에서 뺀다. 확정하면 planned가 사라진다.
-export const actualDB=db=>({...db,meals:(db.meals||[]).filter(m=>!m.planned),workouts:(db.workouts||[]).filter(w=>!w.planned)});
+/* 5.0.6 속도: 같은 기록이면 같은 사본을 돌려준다(화면마다 새 사본을 만들어 그 뒤 계산을 재사용하지 못했다). 기록은 바뀔 때마다 새 객체로 바꿔 끼우므로 안전 */
+const ACTUAL=new WeakMap();
+export const actualDB=db=>{if(!db||typeof db!=='object')return {...db,meals:[],workouts:[]};let a=ACTUAL.get(db);if(a&&a.__m===db.meals&&a.__w===db.workouts)return a;a={...db,meals:(db.meals||[]).filter(m=>!m.planned),workouts:(db.workouts||[]).filter(w=>!w.planned)};Object.defineProperty(a,'__m',{value:db.meals});Object.defineProperty(a,'__w',{value:db.workouts});ACTUAL.set(db,a);return a};
 export function plannedMeals(db,date){const list=(db.meals||[]).filter(m=>m.planned&&m.date===date);return {count:new Set(list.map(m=>m.mealGroupId||m.id)).size,totals:mealTotals(list)}}
 // 4.0.0 지금보다 1분 넘게 미래 시각이면 '예정'(어느 경로로 넣든: 직접·AI 검토함·붙여넣기·수정)
 export const isFuture=(t,now=Date.now())=>{const v=new Date(t).getTime();return Number.isFinite(v)&&v>now+60000};

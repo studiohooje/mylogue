@@ -5,6 +5,8 @@ import {STORAGE_KEY,RESTORE_PENDING_KEY,getLoadedRaw} from './store.js';
 import {kvSet,kvDel} from './kv-store.js';
 import {isNative,signInNativeGoogle,signOutNativeGoogle} from './native-auth.js';
 let auth, authSDK, firestore, fsSDK;
+// 5.0.6 Firestore SDK(약 175KB)는 첫 화면 뒤에 받는다. 서버를 쓰는 함수는 준비될 때까지 기다린다(실패해도 풀려서 예전처럼 오류).
+let fsReadyResolve; const fsReadyP = new Promise(r => { fsReadyResolve = r; }); export const fsReady = () => fsReadyP;
 import {isAdminUser} from './admin.js';
 export const cloudState = {configured:!!firebaseConfig,user:null,error:'',native:isNative(),conflicts:[],approval:'guest',approvalError:'',applicants:[],plan:'free',consent:null,consentLoaded:false};
 const profileRef=uid=>fsSDK.doc(firestore,'users',uid);
@@ -13,7 +15,7 @@ export const BOOT_WAIT_MS=4000;
 export function withTimeout(promise,ms=BOOT_WAIT_MS){let t;return Promise.race([promise,new Promise((_,reject)=>{t=setTimeout(()=>reject(Object.assign(Error('시간 초과'),{code:'timeout'})),ms)})]).finally(()=>clearTimeout(t))}
 // 이 기기에서 로그인한 적이 있는지(계정별 저장 키가 있는지). 없으면 계정 확인이 안 돼도 손님으로 연다.
 export function hadAccountOnDevice(){try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';/* 4.27.0 재검사 N-6: 둘러보기 예시 칸은 로그인이 아니다 */if(/^mylogue\.v1\.user\./.test(k)&&!k.endsWith('.user.demo-tour'))return true}}catch{}return false}
-export async function refreshApproval(){
+export async function refreshApproval(){await fsReady();
   const user=auth?.currentUser;
   if(!user){cloudState.approval='guest';return 'guest'}
   if(isAdminUser(user)){cloudState.approval='approved';cloudState.approvalError='';return 'approved'}
@@ -24,11 +26,34 @@ export async function refreshApproval(){
     cloudState.coach=snapshot.exists()&&snapshot.data().coach===true;
     cloudState.approvalError='';
   }catch(error){cloudState.approval='unknown';cloudState.approvalError=error.message||'상태 확인 실패'}
+  saveAccountCache();
   return cloudState.approval;
 }
 // 4.17.0 동의는 계정 단위(대표님: 다른 기기에서 로그인할 때마다 다시 뜸). users/{uid}/meta/consent에 본인만 쓰고 읽는다.
 const consentRef=uid=>fsSDK.doc(firestore,'users',uid,'meta','consent');
-export async function loadAccountConsent(){
+// 5.0.6 계정 상태 기억(기기별·계정별). 승인 상태를 서버에서 확실히 읽었을 때만 저장한다.
+const ACCOUNT_CACHE = uid => `mylogue.accountCache.${uid}`;
+export function readAccountCache(uid){
+  if(!uid) return null;
+  try{ const v = JSON.parse(localStorage.getItem(ACCOUNT_CACHE(uid)) || 'null'); return v && typeof v.approval === 'string' && v.approval !== 'unknown' ? v : null; }catch{ return null; }
+}
+export function saveAccountCache(){
+  const uid = auth?.currentUser?.uid; if(!uid || cloudState.approval === 'unknown' || !cloudState.consentLoaded) return;
+  try{ localStorage.setItem(ACCOUNT_CACHE(uid), JSON.stringify({approval: cloudState.approval, plan: cloudState.plan, coach: !!cloudState.coach, consent: cloudState.consent, at: Date.now()})); }catch{}
+}
+// 뒤에서 서버 확인: 읽기에 성공한 값만 바꾸고(실패하면 기억한 값 유지), 바뀌었으면 화면을 다시 그린다.
+export async function refreshAccountInBackground(){
+  const user = auth?.currentUser; if(!user) return;
+  const before = JSON.stringify([cloudState.approval, cloudState.plan, cloudState.coach, cloudState.consent]);
+  const keep = {approval: cloudState.approval, plan: cloudState.plan, coach: cloudState.coach, consent: cloudState.consent};
+  await Promise.all([
+    refreshApproval().then(v => { if(v === 'unknown') Object.assign(cloudState, {approval: keep.approval, plan: keep.plan, coach: keep.coach}); }),
+    withTimeout(fsSDK.getDocFromServer(consentRef(user.uid)), 10000).then(snap => { if(snap?.exists()){ const d = snap.data(); cloudState.consent = {version: String(d.version || ''), items: d.items || {}, at: d.at?.toDate ? d.at.toDate().toISOString() : ''}; } else cloudState.consent = null; cloudState.consentLoaded = true; }).catch(() => {}),
+  ]);
+  saveAccountCache();
+  if(JSON.stringify([cloudState.approval, cloudState.plan, cloudState.coach, cloudState.consent]) !== before){ try{ window.dispatchEvent(new Event('mylogue-cloud-refresh')); }catch{} }
+}
+export async function loadAccountConsent(){await fsReady();
   const user=auth?.currentUser;cloudState.consent=null;cloudState.consentLoaded=false;
   if(!user)return null;
   // 4.18.0 서버에서 못 읽으면 기기에 남은 사본으로(일시적인 통신 실패로 동의 화면이 다시 뜨지 않게)
@@ -36,12 +61,12 @@ export async function loadAccountConsent(){
   try{read(await withTimeout(fsSDK.getDocFromServer(consentRef(user.uid))))}catch(error){cloudState.consentError=String(error?.code||error);console.warn('동의 기록을 읽지 못했어요',error?.code||error);try{read(await withTimeout(fsSDK.getDoc(consentRef(user.uid)),2000))}catch{}}
   cloudState.consentLoaded=true;return cloudState.consent;
 }
-export async function saveAccountConsent(record){
+export async function saveAccountConsent(record){await fsReady();
   const user=auth?.currentUser;if(!user||!record?.version)return false;
   await fsSDK.setDoc(consentRef(user.uid),{version:String(record.version),items:Object.fromEntries(Object.entries(record.items||{}).map(([k,v])=>[k,v===true])),at:fsSDK.serverTimestamp()});
-  cloudState.consent={version:record.version,items:record.items,at:new Date().toISOString()};return true;
+  cloudState.consent={version:record.version,items:record.items,at:new Date().toISOString()};cloudState.consentLoaded=true;saveAccountCache();return true;
 }
-export async function applyForAccess(consent){
+export async function applyForAccess(consent){await fsReady();
   const user=auth?.currentUser;
   if(!user)throw Error('먼저 로그인해 주세요.');
   if(isAdminUser(user))return 'approved';
@@ -55,13 +80,13 @@ export async function applyForAccess(consent){
   });
   return refreshApproval();
 }
-export async function listApplicants(){
+export async function listApplicants(){await fsReady();
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 신청 목록을 볼 수 있습니다.');
   const snapshot=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users'));
   cloudState.applicants=snapshot.docs.map(doc=>({uid:doc.id,...doc.data()}));
   return cloudState.applicants;
 }
-export async function reviewApplicant(uid,status){
+export async function reviewApplicant(uid,status){await fsReady();
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 가입을 승인할 수 있습니다.');
   if(!uid||!['pending','approved','rejected'].includes(status))throw Error('신청 상태를 확인해 주세요.');
   await fsSDK.updateDoc(profileRef(uid),{status,reviewerUid:auth.currentUser.uid,reviewedAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
@@ -74,7 +99,7 @@ export function markReviewed(uids,status,list=cloudState.applicants){
   return cloudState.applicants;
 }
 // 대기 중인 여러 계정을 한 번에(400건씩 나눠 일괄 저장)
-export async function reviewApplicants(uids,status){
+export async function reviewApplicants(uids,status){await fsReady();
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 가입을 승인할 수 있습니다.');
   const list=[...new Set((uids||[]).filter(u=>typeof u==='string'&&/^[A-Za-z0-9]+$/.test(u)))];
   if(!list.length||!['approved','rejected'].includes(status))throw Error('처리할 신청을 확인해 주세요.');
@@ -83,12 +108,12 @@ export async function reviewApplicants(uids,status){
 }
 // 4.17.0 프리미엄 전환(관리자 전용): 계정 문서의 plan을 바꾼다. 결제가 붙으면 같은 칸을 결제 기록이 채운다.
 // 5.0.2 관리자가 코치 권한 켜고 끄기
-export async function setAccountCoach(uid,on){
+export async function setAccountCoach(uid,on){await fsReady();
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 코치 권한을 바꿀 수 있습니다.');
   await fsSDK.updateDoc(profileRef(uid),{coach:!!on,coachBy:auth.currentUser.uid,coachAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
   return listApplicants();
 }
-export async function setAccountPlan(uid,plan){
+export async function setAccountPlan(uid,plan){await fsReady();
   if(!isAdminUser(auth?.currentUser))throw Error('관리자만 프리미엄을 바꿀 수 있습니다.');
   if(!uid||!['free','plus'].includes(plan))throw Error('플랜을 확인해 주세요.');
   await fsSDK.updateDoc(profileRef(uid),{plan,planBy:auth.currentUser.uid,planAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
@@ -98,13 +123,14 @@ export async function initializeCloud() {
   if (!firebaseConfig || typeof window === 'undefined') return;
   let timeout;
   try {
+    const fsImport = import('./vendor/firebase/firebase-firestore.js');
+    fsImport.catch(() => {});
     const sdk = await Promise.race([Promise.all([
       import('./vendor/firebase/firebase-app.js'),
       import('./vendor/firebase/firebase-auth.js'),
-      import('./vendor/firebase/firebase-firestore.js')
     ]),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('timeout')),8000)})]);
     clearTimeout(timeout);
-    authSDK=sdk[1];fsSDK=sdk[2];
+    authSDK=sdk[1];
     const app=sdk[0].initializeApp(firebaseConfig);
     auth=authSDK.initializeAuth(app,cloudState.native
       ? {persistence:authSDK.indexedDBLocalPersistence}
@@ -114,13 +140,26 @@ export async function initializeCloud() {
     clearTimeout(timeout);
     cloudState.user=auth.currentUser;
     setStorageAccount(auth.currentUser?.uid || '');
-    firestore=fsSDK.getFirestore(app);
-    await refreshApproval();
-    await loadAccountConsent();
+    const fsInit = fsImport.then(m => { fsSDK = m; firestore = fsSDK.getFirestore(app); fsReadyResolve(true); });
+    fsInit.catch(() => fsReadyResolve(false));
+    // 5.0.6 속도(대표님 '획기적으로'): 예전엔 첫 화면 전에 서버 읽기 2번(승인·동의)을 차례로, 각각 최대 4초 기다렸다(로그인한 사람은 매번 1~8초 '기록을 여는 중').
+    // 지난번 확인한 상태를 기기에 기억해 두고 그걸로 바로 그린 뒤, 서버 확인은 뒤에서 한다. 기억이 없으면(처음 이 기기) 둘을 동시에 기다린다.
+    // 실제 권한은 서버 규칙이 다시 확인하므로 화면을 먼저 그려도 안전하다.
+    const cached = readAccountCache(auth.currentUser?.uid);
+    if (cached) {
+      Object.assign(cloudState, {approval: cached.approval, plan: cached.plan === 'plus' ? 'plus' : 'free', coach: cached.coach === true, consent: cached.consent || null, consentLoaded: true, approvalError: ''});
+      setTimeout(() => { refreshAccountInBackground().catch(() => {}); }, 0);
+    } else if (auth.currentUser) {
+      await Promise.race([fsInit, new Promise((_, reject) => { timeout = setTimeout(() => reject(Error('timeout')), 8000); })]);
+      clearTimeout(timeout);
+      await Promise.all([refreshApproval(), loadAccountConsent()]);
+      saveAccountCache();
+    }
     if(cloudState.approval==='unknown')setTimeout(()=>refreshApproval().then(()=>{try{window.dispatchEvent(new Event('mylogue-cloud-refresh'))}catch{}}).catch(()=>{}),3000);
     // Cross-tab auth changes never leave a previous user's records on the screen.
     authSDK.onAuthStateChanged(auth,user=>{if((user?.uid||'')!==storageAccount())location.reload();});
   } catch {
+    fsReadyResolve(false);
     if(!auth?.currentUser&&!hadAccountOnDevice()){cloudState.error='';cloudState.offline=true;return}
     cloudState.error='계정 상태를 확인하지 못해 기록 화면을 잠갔습니다. 기존 기록은 보존되어 있습니다. 앱을 다시 열어 주세요.';
     const root=document.getElementById('app');
@@ -199,7 +238,7 @@ export async function autoApprove(){
 export async function cloudLogout() { if(cloudState.native)await signOutNativeGoogle();if(auth)await authSDK.signOut(auth);location.reload(); }
 // 4.11.0 계정 삭제: 본인 확인(Google 다시 로그인) → 서버 기록·검토함 초안·계정 문서 삭제 → 이 기기의 이 계정 기록 삭제 → 로그인 계정 삭제.
 // 하나라도 실패하면 거기서 멈추고 알린다(다시 누르면 남은 것부터 이어서 지운다).
-export async function deleteAccount({onStep=()=>{}}={}){
+export async function deleteAccount({onStep=()=>{}}={}){await fsReady();
   const user=auth?.currentUser;
   if(!user)throw Error('로그인한 계정만 삭제할 수 있어요.');
   if(isAdminUser(user))throw Error('관리자 계정은 앱에서 삭제할 수 없어요.');
@@ -246,7 +285,7 @@ export function syncMetadata() {
 // 4.27.0 DAT-04: 한 번에 보낼 기록 수(트랜잭션 쓰기 한도 500 아래로)
 export const SYNC_CHUNK=400;
 export const chunk=(list,n)=>{const out=[];for(let i=0;i<list.length;i+=n)out.push(list.slice(i,i+n));return out};
-export async function synchronize(db, save, choices={}) {
+export async function synchronize(db, save, choices={}) {await fsReady();
   const user=auth?.currentUser;
   if(!user||user.uid!==storageAccount())throw Error('먼저 로그인해 주세요.');
   if(cloudState.approval!=='approved')throw Error('계정 이용 승인 후 동기화를 사용할 수 있습니다.');
@@ -298,7 +337,7 @@ export async function synchronize(db, save, choices={}) {
 // 4.15.0 관리로그(베타 동안 관리자 전체 열람·수정 — 대표님 결정 2026-11-23, 정식 서비스 때 '허락받은 동안만'으로 전환 예정)
 // 모든 수정은 같은 트랜잭션 안에서 users/{uid}/accessLog/{기록키}__r{리비전}을 남긴다(보안 규칙이 강제). 고치기 전 내용도 함께 저장해 되돌릴 수 있다.
 const adminUser=()=>{const u=auth?.currentUser;if(!isAdminUser(u))throw Error('관리자만 관리로그를 쓸 수 있습니다.');return u};
-export async function adminLoadUser(uid){
+export async function adminLoadUser(uid){await fsReady();
   adminUser();
   if(!uid)throw Error('계정을 골라 주세요.');
   let snap;try{snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,'records'))}catch(e){if(e?.code==='permission-denied')throw Error('이 사용자는 운영자 열람에 동의하지 않았어요(동의는 사용자 설정에서만 바꿀 수 있어요).');throw e}
@@ -306,11 +345,11 @@ export async function adminLoadUser(uid){
   snap.forEach(doc=>{const v=doc.data();if(!validRecordKey(doc.id))return;records[doc.id]={revision:v.revision,payload:v.payload??null};payloads[doc.id]=v.payload??null});
   return {records,db:recordsToDB(payloads)};
 }
-export async function adminLogView(uid,reason){
+export async function adminLogView(uid,reason){await fsReady();
   const u=adminUser();
   await fsSDK.setDoc(fsSDK.doc(firestore,'users',uid,'accessLog',`view_${u.uid}_${Date.now()}`),{adminUid:u.uid,adminEmail:u.email||'',action:'view',reason:String(reason||'').slice(0,300),at:fsSDK.serverTimestamp()});
 }
-export async function adminWriteRecord(uid,key,payload,action,reason){
+export async function adminWriteRecord(uid,key,payload,action,reason){await fsReady();
   const u=adminUser();
   if(!validRecordKey(key))throw Error('기록 키를 확인해 주세요.');
   if(!String(reason||'').trim())throw Error('수정 사유를 적어 주세요.');
@@ -329,7 +368,7 @@ export async function adminWriteRecord(uid,key,payload,action,reason){
     throw e;
   }
 }
-export async function adminAccessLog(uid){
+export async function adminAccessLog(uid){await fsReady();
   adminUser();
   const snap=await fsSDK.getDocsFromServer(fsSDK.collection(firestore,'users',uid,'accessLog'));
   return snap.docs.map(d=>({id:d.id,...d.data(),at:d.data().at?.toDate?.()?.toISOString?.()||''})).sort((a,b)=>b.at.localeCompare(a.at));

@@ -41,6 +41,21 @@ export function addFoodRows(list){
  rows = rows.concat(list); index = index.concat(list.map(indexRow));
  return rows.length;
 }
+// 5.0.6 속도: 브랜드 메뉴 3.9만 행 색인을 한 번에 만들면 폰에서 0.5초쯤 화면이 멈췄다(하필 검색어를 치는 중에).
+// 2,000행씩 나눠 만들고 사이사이 화면에 양보한다. 다 붙기 전 검색은 지금까지 붙은 행에서만.
+export function addFoodRowsChunked(list, size = 2000){
+ if(!Array.isArray(list) || !list.length) return Promise.resolve(rows?.length || 0);
+ if(!rows) setFoodRows([]);
+ return new Promise(resolve => {
+  let i = 0;
+  const step = () => {
+   const part = list.slice(i, i + size); i += size;
+   rows = rows.concat(part); index = index.concat(part.map(indexRow));
+   if(i < list.length) (globalThis.requestIdleCallback ? requestIdleCallback(step, {timeout: 200}) : setTimeout(step, 16)); else resolve(rows.length);
+  };
+  step();
+ });
+}
 let fullLoaded = false;
 export const foodDBFull = () => fullLoaded;
 export const foodDBReady = () => !!rows;
@@ -55,7 +70,7 @@ export function loadFoodDB({url='food-db.json', fetcher=globalThis.fetch, onMore
  if(!loading) loading = (url === 'food-db.json'
   ? get('food-db-core.json').then(core => {
      setFoodRows(core.rows);
-     get('food-db-more.json').then(more => { addFoodRows(more.rows); fullLoaded = true; try{ onMore?.(); }catch{} try{ globalThis.dispatchEvent?.(new Event('mylogue-fooddb-more')); }catch{} }).catch(() => {});
+     get('food-db-more.json').then(more => addFoodRowsChunked(more.rows)).then(() => { fullLoaded = true; try{ onMore?.(); }catch{} try{ globalThis.dispatchEvent?.(new Event('mylogue-fooddb-more')); }catch{} }).catch(() => {});
      return rows.length;
     }, () => get(url).then(j => { fullLoaded = true; return setFoodRows(j.rows); }))
   : get(url).then(j => { fullLoaded = true; return setFoodRows(j.rows); })

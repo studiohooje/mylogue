@@ -15,6 +15,8 @@ const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(r1(v)).toFixed(1)
 const n0 = v => Math.round(Number(v) || 0).toLocaleString('ko-KR');
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
 const md = s => `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}`;
+// 5.0.6 속도: 기록(db)이 바뀌지 않으면 다시 계산하지 않는다(화면을 다시 그릴 때마다 8주치 계산을 반복했다). db는 바뀔 때마다 새 객체라 WeakMap으로 충분.
+const memo = fn => { const cache = new WeakMap(); return (db = {}, today) => { if (!db || typeof db !== 'object') return fn(db, today); let m = cache.get(db); if (!m) cache.set(db, m = new Map()); if (!m.has(today)) m.set(today, fn(db, today)); return m.get(today); }; };
 
 // 목표 체중: 진행 중인 페이즈 목표 > 설정 목표 > 영양 프로필 목표
 export function goalWeight(db = {}){
@@ -34,7 +36,7 @@ function dailyAvg(db, today, days){
 }
 
 // 목표 도달 예측: 최근 4주 7일 평균의 기울기(최소제곱)로 앞으로 5주. 범위는 시간이 갈수록 넓게.
-export function forecast(db = {}, today){
+export const forecast = memo(function forecast(db = {}, today){
   const series = dailyAvg(db, today, 56), pts = series.map((p, i) => ({...p, i})).filter(p => p.v != null);
   const recent = pts.filter(p => p.i >= 56 - 28);
   if(recent.length < 8) return null;
@@ -44,7 +46,7 @@ export function forecast(db = {}, today){
   let etaDays = null;
   if(goal && Math.abs(slope) > 0.003 && Math.sign(goal - now) === Math.sign(slope)) { const d = (goal - now) / slope; if(d > 0 && d < 365) etaDays = Math.round(d); }
   return {series, slope, weekly: slope * 7, now, goal, etaDays, eta: etaDays != null ? shift(today, etaDays) : null, reached: goal != null && Math.abs(goal - now) < 0.3};
-}
+});
 
 export function forecastHTML(f, {today} = {}){
   if(!f) return `<section class="section card pa-card"><div class="section-title"><h3>목표 도달 예측</h3><span class="pa-badge">프리미엄</span></div><p class="hint">체중계 체중이 최근 4주에 8번 넘게 있으면, 지금 흐름으로 앞으로 5주를 그려 드려요.</p></section>`;
@@ -65,7 +67,7 @@ export function forecastHTML(f, {today} = {}){
 }
 
 // 무엇이 내 체중을 움직였나: 그날의 습관이 '다음 날 체중 - 그 전 7일 평균'과 어떻게 함께 움직였는지(최근 8주).
-export function weightDrivers(db = {}, today){
+export const weightDrivers = memo(function weightDrivers(db = {}, today){
   const s = db.settings || {}, sc = scaleRecords(db), byDate = new Map(sc.map(x => [x.date, Number(x.weight)]));
   const meals = (db.meals || []).filter(m => !m.planned), works = new Set((db.workouts || []).filter(w => !w.planned && !w.rest).map(w => w.date));
   const days = [];
@@ -94,7 +96,7 @@ export function weightDrivers(db = {}, today){
     out.push({label, delta, n: yes.length});
   }
   return {rows: out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 4), days: days.length};
-}
+});
 
 export function driversHTML(r){
   const rows = r?.rows || [];
@@ -104,7 +106,7 @@ export function driversHTML(r){
 }
 
 // 이번 달 vs 지난 달(같은 날짜까지)
-export function monthCompare(db = {}, today){
+export const monthCompare = memo(function monthCompare(db = {}, today){
   const d = Number(today.slice(8, 10)), ym = today.slice(0, 7), last = (() => { const x = at(`${ym}-01`); x.setMonth(x.getMonth() - 1); return ymd(x).slice(0, 7); })();
   const range = m => [`${m}-01`, `${m}-${pad(Math.min(d, new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0).getDate()))}`];
   const sc = scaleRecords(db);
@@ -117,7 +119,7 @@ export function monthCompare(db = {}, today){
     return {kcal: avg(perDay.map(t => t.calories)), protein: avg(perDay.map(t => t.protein)), workDays: new Set(ws.map(w => w.date)).size, volume: ws.reduce((s, w) => s + (workoutTotals(w).volume || 0), 0), weight: ww.length > 1 ? ww.at(-1).weight - ww[0].weight : null};
   };
   return {now: stat(ym), prev: stat(last), label: [Number(ym.slice(5)), Number(last.slice(5))], day: d};
-}
+});
 
 export function monthHTML(c, {lose = true} = {}){
   const tons = v => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${n0(v)}kg`;
