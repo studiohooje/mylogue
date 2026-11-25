@@ -13,6 +13,7 @@ import {stampText, openCamera, closeCamera, capture, cameraSupported} from './ma
 import {MATE_MAX, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
 import {openChatWithPhoto} from './app-chat.js';
 import {TAG_RE, tagProblem, loadMyTag, myTagCached, tagAvailable, setMyTag, inviteByTag, listDirectInvites, dropDirectInvite} from './mytag.js';
+import {newProfileEdit} from './profile.js';
 import {openAuth, authInlineHTML, rememberInvite, pendingInvite, clearPendingInvite} from './auth-ui.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
@@ -93,7 +94,7 @@ function roomsView(){
   const s = st(), list = s.rooms || [];
   const rows = list.map(r => `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b><span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
   const dir = (s.direct || []).map(d => `<div class="mate-card mate-direct"><b>@${esc(d.fromTag || '메이트')} 님이 '${esc(d.roomName)}'에 초대했어요</b><div class="mate-row"><button type="button" class="button" data-mate-dirok="${esc(d.id)}">보고 들어가기</button><button type="button" class="button secondary" data-mate-dirno="${esc(d.id)}">거절</button></div></div>`).join('');
-  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib" data-mate-tagedit aria-label="마이태그 바꾸기">@</button><button type="button" class="mate-ib" data-mate-go="create" aria-label="방 만들기">＋</button>`})}${dir}
+  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib" data-mate-tagedit aria-label="마이태그 바꾸기">@</button><button type="button" class="mate-ib" data-mate-go="create" aria-label="방 만들기">＋</button>`})}${!myTagCached() && s.tagState === 'none' ? `<div class="mate-card mate-direct"><b>마이태그를 정해 주세요</b><p class="hint">메이트에게 보이는 나만의 이름이에요. 마이태그가 있으면 메이트가 @태그로 나를 초대할 수 있어요.</p><button type="button" class="button" data-mate-tagedit>마이태그 정하기</button></div>` : ''}${dir}
   ${s.loading === 'rooms' && !s.rooms ? '<p class="hint">방을 불러오는 중…</p>' : ''}
   ${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
   ${codeCardHTML()}
@@ -236,8 +237,6 @@ export function matePageHTML(){
   if($s.DEMO) return `<section class="mate-page">${head('메이트', '사진으로 함께 기록해요')}<div class="mate-card"><b>둘러보기에서는 메이트를 쓸 수 없어요</b><p class="hint">로그인하면 내 방·친구 방을 만들고, 앱 안에서 찍은 사진(찍은 시각이 새겨짐)을 메이트와 나눠요. 메이트의 체중·식단·운동은 방에서 공개한 것만 보기 전용으로 볼 수 있어요.</p></div></section>`;
   if(!ready()) return `<section class="mate-page">${head('메이트', '사진으로 함께 기록해요')}<div class="mate-card"><b>${cloudState.user ? '이용 승인 후 쓸 수 있어요' : '로그인하면 쓸 수 있어요'}</b><p class="hint">메이트는 사진과 기록 요약을 서버에 올려 메이트와 나누는 기능이라 로그인과 이용 승인이 필요해요.</p>${cloudState.user ? '' : '<button type="button" class="button" data-mate-login>로그인</button>'}</div></section>`;
   if(s.tagState === undefined){ s.tagState = 'loading'; loadMyTag().then(t => { s.tagState = t ? 'set' : 'none'; $f.render(); }).catch(() => { s.tagState = 'set'; $f.render(); }); listDirectInvites().then(x => { s.direct = x; $f.render(); }).catch(() => {}); }
-  if(s.tagState === 'loading') return `<section class="mate-page">${head('메이트')}<p class="hint">불러오는 중…</p></section>`;
-  if(s.tagState === 'none' || s.view === 'tag') return `<section class="mate-page">${tagView(s.tagState === 'none')}</section>`;
   if(s.rooms === null && s.loading !== 'rooms') queueMicrotask(() => loadRooms());
   const v = s.view;
   const main = v === 'room' || v === 'cam' ? roomView() : v === 'detail' ? detailView() : v === 'settings' ? settingsView() : v === 'invite' ? inviteView() : v === 'create' ? createView() : roomsView();
@@ -300,7 +299,7 @@ export function openMateJoin(code){ const s = st(); $s.page = 'mate'; s.view = '
 export async function mateClick(t){
   if(!t?.closest) return false;
   const d = t.dataset || {}, s = st();
-  if(d.mateTagedit !== undefined){ s.tag = {value: myTagCached(), msg: '', ok: false}; s.view = 'tag'; if($s.page !== 'mate') $s.page = 'mate'; $f.render(); return true; }
+  if(d.mateTagedit !== undefined){ $s.pfEdit = newProfileEdit($s.db, cloudState.user, myTagCached()); $s.modal = 'profile-edit'; $f.render(); return true; }
   if(d.mateTagcheck !== undefined){ const v = document.getElementById('mate-tag')?.value || ''; s.tag = {value: v, msg: '확인하는 중…', ok: false}; $f.render(); tagAvailable(v).then(r => { s.tag = {value: v, msg: r.msg, ok: r.ok}; $f.render(); }).catch(e => { s.tag = {value: v, msg: e.message, ok: false}; $f.render(); }); return true; }
   if(d.mateTagsave !== undefined){ const v = document.getElementById('mate-tag')?.value || ''; const p = tagProblem(v); if(p){ s.tag = {value: v, msg: p, ok: false}; $f.render(); return true; } s.busy = true; $f.render(); try{ const t = await setMyTag(v, {rooms: s.rooms || []}); s.busy = false; s.tagState = 'set'; s.view = 'rooms'; s.tag = null; $f.toast(`마이태그를 @${t}(으)로 정했어요.`); $f.render(); }catch(e){ s.busy = false; s.tag = {value: v, msg: e.message, ok: false}; $f.render(); } return true; }
   if(d.mateDirok){ const x = (s.direct || []).find(i => i.id === d.mateDirok); if(x){ s.direct = s.direct.filter(i => i.id !== x.id); dropDirectInvite(x.id); openMateJoin(x.code); } return true; }
@@ -420,6 +419,6 @@ export async function mateSubmit(form){
   return false;
 }
 // 앱이 켜질 때 주소가 '#mate-코드'면 초대받은 화면으로
-export function mateBootHash(){ if(ready()) loadMyTag().then(() => $f.render()).catch(() => {}); const m = /^#mate-([A-Z2-9]{8})$/i.exec(globalThis.location?.hash || ''); if(m){ openMateJoin(m[1].toUpperCase()); return true; } const p = pendingInvite(); if(p){ if(ready()) clearPendingInvite(); openMateJoin(p); return true; } return false; }
+export function mateBootHash(){ if(ready()) loadMyTag().then(t => { const nk = $s.db?.settings?.profile?.nickname || ''; if(t && nk !== t) $s.db = $f.save({...$s.db, settings: {...$s.db.settings, profile: {...($s.db.settings?.profile || {}), nickname: t}}}); $f.render(); }).catch(() => {}); const m = /^#mate-([A-Z2-9]{8})$/i.exec(globalThis.location?.hash || ''); if(m){ openMateJoin(m[1].toUpperCase()); return true; } const p = pendingInvite(); if(p){ if(ready()) clearPendingInvite(); openMateJoin(p); return true; } return false; }
 // 로그인·승인이 끝난 뒤 초대 화면을 다시 불러온다
 export function mateAfterLogin(){ const s = st(); if(s.view === 'join' && s.join?.code && !s.join.inv) openMateJoin(s.join.code); }

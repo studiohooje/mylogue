@@ -2,6 +2,7 @@
 import {markCostSeen} from './cost-alert.js';
 import {$s,$f} from './app-state.js';
 import {openAuth} from './auth-ui.js';
+import {myTagCached,loadMyTag,tagAvailable,setMyTag} from './mytag.js';
 import {QUESTIONS,prefsOf,withPrefs,onboardingPick,onboardingMove,newOnboarding,finishOnboarding,skipOnboarding,applyPrefClick,emptyAfterWorkout,afterWorkoutFromLast,readAfterWorkoutForm} from './prefs.js';
 import {emptyPlan,planFromWorkout,planFromRoutine,readPlanForm,completeSet,skipExercise,finishRun,addRest,endRest,editCurrent,current as guideCurrent,scheduleRestAlert,cancelRestAlert} from './guide.js';
 import {addGymPlace,removeGym,centerFor} from './places.js';
@@ -228,12 +229,14 @@ export async function adminClick(t){
  return true;
 }
 export function quickEditClick(t){
- if(t.id==='profile-open'){$s.pfEdit=newProfileEdit($s.db,cloudState.user);$s.modal='profile-edit';$f.render();return true}
+ if(t.id==='profile-open'){$s.pfEdit=newProfileEdit($s.db,cloudState.user,myTagCached());if(cloudState.approval==='approved')loadMyTag().then(tg=>{if($s.pfEdit&&!$s.pfEdit.tag){$s.pfEdit.tag=tg;$f.render()}}).catch(()=>{});$s.modal='profile-edit';$f.render();return true}
  if($s.pfEdit&&$s.modal==='profile-edit'){
   const keepName=()=>{const v=document.getElementById('pf-name');if(v)$s.pfEdit.nickname=v.value};
   if(t.dataset.pfType){keepName();$s.pfEdit.type=t.dataset.pfType;$f.render();if($s.pfEdit.type==='photo'&&!$s.pfEdit.photo)document.getElementById('pf-photo')?.click();return true}
   if(t.dataset.pfColor){keepName();$s.pfEdit.color=t.dataset.pfColor;$f.render();return true}
-  if(t.id==='pf-save'){keepName();$s.db=$f.save(applyProfile($s.db,$s.pfEdit));$s.pfEdit=null;$s.modal=null;$f.render();$f.toast('프로필을 바꿨어요.');return true}
+  if(t.id==='pf-tagcheck'){const v=document.getElementById('pf-tag')?.value||'';$s.pfEdit.tag=v;$s.pfEdit.tagMsg='확인하는 중…';$s.pfEdit.tagOptions=[];$f.render();tagAvailable(v).then(r=>{if(!$s.pfEdit)return;$s.pfEdit.tagMsg=r.msg;$s.pfEdit.tagOk=r.ok;$s.pfEdit.tagOptions=r.options||[];$f.render()}).catch(e=>{if($s.pfEdit){$s.pfEdit.tagMsg=e.message;$f.render()}});return true}
+ if(t.dataset.pfTagpick){$s.pfEdit.tag=t.dataset.pfTagpick;$s.pfEdit.tagOptions=[];$s.pfEdit.tagMsg='';$f.render();document.getElementById('pf-tagcheck')?.click();return true}
+ if(t.id==='pf-save'){keepName();const tagIn=document.getElementById('pf-tag');const finish=()=>{if(tagIn)$s.pfEdit.nickname=myTagCached()||$s.pfEdit.nickname;$s.db=$f.save(applyProfile($s.db,$s.pfEdit));$s.pfEdit=null;$s.modal=null;$f.render();$f.toast(tagIn?`마이태그 @${myTagCached()}·아이콘을 저장했어요.`:'프로필을 바꿨어요.')};const v=tagIn?tagIn.value.trim().replace(/^@/,''):'';if(tagIn&&v!==myTagCached()){if($s.pfEdit.busy)return true;$s.pfEdit.busy=true;setMyTag(v,{rooms:$s.mate?.rooms||[]}).then(()=>{$s.pfEdit.busy=false;finish()}).catch(e=>{$s.pfEdit.busy=false;$s.pfEdit.tag=v;$s.pfEdit.tagMsg=e.message;$s.pfEdit.tagOk=false;$f.render()});return true}finish();return true}
  }
  if(t.dataset.qm!==undefined){$s.qm=quickMealState($s.db,t.dataset.qmDate||$s.selectedDate,t.dataset.qm);if(!$s.qm){$f.toast('식사를 찾지 못했어요.');return true}$s.modal='quick-meal-edit';$f.render();return true}
  if(t.dataset.qw!==undefined){$s.qw=quickWorkoutState($s.db.workouts.find(x=>x.id===t.dataset.qw),$s.db.settings.gyms||[]);if(!$s.qw){$f.toast('운동을 찾지 못했어요.');return true}$s.modal='quick-work-edit';$f.render();return true}

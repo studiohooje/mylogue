@@ -5,14 +5,26 @@ import {firestoreContext} from './ai-drafts.js';
 
 export const TAG_RE = /^[가-힣A-Za-z0-9_]{2,16}$/;
 export const RESERVED = ['admin', 'mylogue', '마이로그', '운영자', '관리자', 'root', 'system', 'support'];
-export const tagKey = t => String(t || '').trim().replace(/^@/, '').toLowerCase();
+export const tagKey = t => String(t || '').trim().replace(/^@/, '');
+// 영어 대소문자 꼴: 전부 소문자 · 전부 대문자 · 첫 글자만 대문자(그 뒤는 소문자)
+export const caseOk = t => /^[^A-Z]*$/.test(t) || /^[^a-z]*$/.test(t) || /^[A-Z][^A-Z]*$/.test(t);
+const hasLatin = t => /[A-Za-z]/.test(t);
 export function tagProblem(t){
-  const v = String(t || '').trim().replace(/^@/, '');
+  const v = tagKey(t);
   if(!v) return '마이태그를 적어 주세요.';
-  if(v.length < 2 || v.length > 16) return '마이태그는 2~16자로 정해 주세요.';
-  if(!TAG_RE.test(v)) return '한글·영문·숫자·밑줄(_)만 쓸 수 있어요(띄어쓰기 안 돼요).';
+  if(!/^[가-힣A-Za-z0-9_]+$/.test(v)) return '한글·영문·숫자·밑줄(_)만 쓸 수 있어요(띄어쓰기 안 돼요).';
+  if(v.length > 16) return '마이태그는 16자까지예요.';
+  if(hasLatin(v) ? v.length < 3 : v.length < 2) return hasLatin(v) ? '영어가 들어가면 3자 이상이어야 해요.' : '한글은 2자 이상이어야 해요.';
+  if(!caseOk(v)) return 'case';
   if(RESERVED.includes(v.toLowerCase())) return '쓸 수 없는 마이태그예요.';
   return '';
+}
+// 대소문자 꼴이 안 맞을 때 고를 수 있는 꼴(aaAaa → Aaaaa · aaaaa · AAAAA)
+export function tagVariants(t){
+  const v = tagKey(t), lower = v.toLowerCase(), upper = v.toUpperCase();
+  const cap = lower.replace(/[a-z]/, ch => ch.toUpperCase());
+  const first = /^[A-Za-z]/.test(lower) ? lower[0].toUpperCase() + lower.slice(1) : cap;
+  return [...new Set([first, lower, upper])].filter(x => !tagProblem(x));
 }
 let mine = null; // {tag} | {tag:''} 확인 끝, null 아직 모름
 export const myTagCached = () => mine?.tag || '';
@@ -23,15 +35,21 @@ export async function loadMyTag(force = false){
   return mine.tag;
 }
 export async function tagAvailable(t){
-  const p = tagProblem(t); if(p) return {ok: false, msg: p};
+  const p = tagProblem(t);
+  if(p === 'case'){
+    const vs = tagVariants(t), c = await firestoreContext(), free = [];
+    for(const x of vs){ const s = await c.fs.getDoc(c.fs.doc(c.db, 'tags', x)); if(!s.exists() || s.data().uid === c.user.uid) free.push(x); }
+    return {ok: false, msg: free.length ? `${free.join(', ')}(으)로 입력이 가능합니다.` : '이 글자로는 쓸 수 있는 꼴이 없어요. 다른 태그를 적어 주세요.', options: free};
+  }
+  if(p) return {ok: false, msg: p};
   const c = await firestoreContext(), s = await c.fs.getDoc(c.fs.doc(c.db, 'tags', tagKey(t)));
   if(!s.exists()) return {ok: true, msg: '쓸 수 있어요.'};
   return s.data().uid === c.user.uid ? {ok: true, msg: '지금 내 마이태그예요.'} : {ok: false, msg: '이미 누가 쓰고 있어요.'};
 }
 // 새 태그 잡기 + 이전 태그 놓기 + 프로필을 한 묶음으로(규칙이 중복·하나만 가지기를 강제)
 export async function setMyTag(t, {rooms = []} = {}){
-  const p = tagProblem(t); if(p) throw Error(p);
-  const tag = String(t).trim().replace(/^@/, ''), c = await firestoreContext(), fs = c.fs, uid = c.user.uid;
+  const p = tagProblem(t); if(p) throw Error(p === 'case' ? '영어는 전부 소문자·전부 대문자·첫 글자만 대문자로만 쓸 수 있어요.' : p);
+  const tag = tagKey(t), c = await firestoreContext(), fs = c.fs, uid = c.user.uid;
   const old = mine?.tag ?? await loadMyTag();
   const b = fs.writeBatch(c.db), now = fs.serverTimestamp();
   b.set(fs.doc(c.db, 'tags', tagKey(tag)), {uid, tag, updatedAt: now});

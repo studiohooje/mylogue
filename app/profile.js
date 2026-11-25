@@ -16,18 +16,18 @@ export function avatarHTML(pr, cls='account-avatar'){
  return `<span class="${cls} avatar-letter" style="background:${h(pr.color)}" aria-hidden="true">${h([...pr.name.trim()][0]?.toUpperCase()||'나')}</span>`;
 }
 
-export function newProfileEdit(db, user){ const pr = profileOf(db, user); return {nickname:String(db?.settings?.profile?.nickname||''), type:pr.type, color:pr.color, photo:pr.photo, googlePhoto:pr.googlePhoto, fallback:user?.displayName||(user?.email||'').split('@')[0]||''}; }
+export function newProfileEdit(db, user, tag = ''){ const pr = profileOf(db, user); return {tag, tagMsg:'', tagOptions:[], nickname:String(db?.settings?.profile?.nickname||''), type:pr.type, color:pr.color, photo:pr.photo, googlePhoto:pr.googlePhoto, fallback:user?.displayName||(user?.email||'').split('@')[0]||''}; }
 
-export function profileEditHTML(st, {email='', statusText='', prefsHTML='', admin=false}={}){
- const preview = {name:st.nickname.trim()||st.fallback||'내 계정', type:st.type, color:st.color, photo:st.photo, googlePhoto:st.googlePhoto};
+export function profileEditHTML(st, {email='', statusText='', prefsHTML='', admin=false, tagReady=false}={}){
+ const preview = {name:(tagReady&&st.tag?st.tag:st.nickname.trim())||st.fallback||'내 계정', type:st.type, color:st.color, photo:st.photo, googlePhoto:st.googlePhoto};
  const opt = (type, label, inner, disabled=false) => `<button type="button" class="pf-opt ${st.type===type?'on':''}" data-pf-type="${type}" aria-pressed="${st.type===type}" ${disabled?'disabled':''}>${inner}<small>${label}</small></button>`;
  return `<div class="pf"><div class="pf-preview">${avatarHTML(preview, 'pf-avatar')}<div><b>${h(preview.name)}</b><small>${h(email)}${statusText?` · ${h(statusText)}`:''}</small></div>${admin?'<button type="button" class="chip pf-admin" data-page="adminlog" aria-label="관리 화면 열기">관리</button>':''}</div>
-<label class="field">표시 이름<input id="pf-name" maxlength="20" value="${h(st.nickname)}" placeholder="${h(st.fallback||'예: 문')}" autocomplete="nickname"></label>
+${tagReady?`<div class="field pf-tag"><label for="pf-tag">마이태그</label><div class="pf-tagrow"><span class="pf-at">@</span><input id="pf-tag" maxlength="16" value="${h(st.tag||'')}" placeholder="예: Moon" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" class="button secondary" id="pf-tagcheck">확인</button></div>${st.tagMsg?`<p class="hint ${st.tagOk?'':'warn'}" role="status">${h(st.tagMsg)}</p>`:'<p class="hint">나만 쓰는 이름이에요. 한글 2자·영어 3자부터. 영어는 전부 소문자·전부 대문자·첫 글자만 대문자로만 써요(예: Moon · moon · MOON). 바꾸면 이전 태그는 다른 사람이 쓸 수 있게 풀려요.</p>'}${(st.tagOptions||[]).length?`<div class="pf-tagopts">${st.tagOptions.map(x=>`<button type="button" class="chip" data-pf-tagpick="${h(x)}">@${h(x)}</button>`).join('')}</div>`:''}</div>`:`<label class="field">표시 이름<input id="pf-name" maxlength="20" value="${h(st.nickname)}" placeholder="${h(st.fallback||'예: 문')}" autocomplete="nickname"></label><p class="hint">로그인하고 이용 승인을 받으면 나만 쓰는 이름 '마이태그'를 정할 수 있어요.</p>`}
 <p class="pf-label">아이콘</p>
 <div class="pf-opts">${opt('google','Google 사진', st.googlePhoto?`<img class="pf-mini" src="${h(st.googlePhoto)}" alt="" referrerpolicy="no-referrer">`:'<span class="pf-mini">—</span>', !st.googlePhoto)}${opt('letter','글자', `<span class="pf-mini avatar-letter" style="background:${h(st.color)}">${h([...preview.name][0]?.toUpperCase()||'나')}</span>`)}${opt('photo','내 사진', st.photo?`<img class="pf-mini" src="${h(st.photo)}" alt="">`:'<span class="pf-mini pf-plus">＋</span>')}</div>
 ${st.type==='letter'?`<div class="pf-colors" role="radiogroup" aria-label="글자 아이콘 색">${AVATAR_COLORS.map(c=>`<button type="button" class="pf-color ${st.color===c?'on':''}" data-pf-color="${c}" style="background:${c}" aria-label="색 ${c}" aria-pressed="${st.color===c}"></button>`).join('')}</div>`:''}
 ${st.type==='photo'?`<label class="button secondary pf-upload">사진 고르기<input id="pf-photo" type="file" accept="image/*" hidden></label><p class="hint">사진은 작게 줄여 내 계정에만 저장해요.</p>`:''}
-<div class="actions"><button type="button" class="button" id="pf-save">이름·아이콘 저장</button></div>
+<div class="actions"><button type="button" class="button" id="pf-save">${tagReady?'마이태그·아이콘 저장':'이름·아이콘 저장'}</button></div>
 ${prefsHTML?`<div class="pf-prefs">${prefsHTML}<button type="button" class="button secondary pf-wide" id="gw-open">식단 목표 다시 정하기</button></div>`:''}
 <button type="button" class="button secondary pf-wide pf-more" data-page="settings">그 외 설정으로 이동 ›<small>계정·동기화, 운동 장소, AI 연결, 백업 등</small></button></div>`;
 }

@@ -3,7 +3,8 @@ import {readFile} from 'node:fs/promises';
 import {initializeTestEnvironment, assertFails, assertSucceeds} from '@firebase/rules-unit-testing';
 import {doc, getDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp, getDocs, collection, query, where} from 'firebase/firestore';
 
-// 5.0.1 마이태그: 중복 불가, 언제든 바꾸기, 바꾸면 이전 태그는 풀려 다른 사람이 가져갈 수 있다. 태그로 방 초대.
+// 5.0.1 마이태그(대표님 2026-11-25): 영어는 전부 소문자·전부 대문자·첫 글자만 대문자. 한글 2자~, 영어 섞이면 3자~.
+// Moon·moon·MOON은 다른 태그. 중복 불가, 바꾸면 이전 태그는 풀려 다른 사람이 가져갈 수 있다. 태그로 방 초대.
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 test('5.0.1 마이태그·태그 초대 규칙', {skip: !host}, async () => {
   const rules = await readFile(new URL('../firestore.rules', import.meta.url), 'utf8');
@@ -13,23 +14,25 @@ test('5.0.1 마이태그·태그 초대 규칙', {skip: !host}, async () => {
     await env.withSecurityRulesDisabled(async ctx => { for (const u of ['ta', 'tb', 'tc']) await setDoc(doc(ctx.firestore(), 'users', u), {status: 'approved'}); });
     const db = u => env.authenticatedContext(u, {email: `${u}@x.test`, email_verified: true}).firestore();
     const a = db('ta'), b = db('tb'), c = db('tc');
-    const claim = async (ctx, uid, tag, old = '') => { const bt = writeBatch(ctx); bt.set(doc(ctx, 'tags', tag.toLowerCase()), {uid, tag, updatedAt: serverTimestamp()}); bt.set(doc(ctx, 'profiles', uid), {tag, updatedAt: serverTimestamp()}); if (old && old.toLowerCase() !== tag.toLowerCase()) bt.delete(doc(ctx, 'tags', old.toLowerCase())); return bt.commit(); };
+    const claim = async (ctx, uid, tag, old = '') => { const bt = writeBatch(ctx); bt.set(doc(ctx, 'tags', tag), {uid, tag, updatedAt: serverTimestamp()}); bt.set(doc(ctx, 'profiles', uid), {tag, updatedAt: serverTimestamp()}); if (old && old !== tag) bt.delete(doc(ctx, 'tags', old)); return bt.commit(); };
     await assertSucceeds(claim(a, 'ta', 'Moon'));
-    await assertFails(claim(b, 'tb', 'moon'), '대소문자만 달라도 중복');
-    await assertFails(claim(b, 'tb', 'MOON'));
-    await assertFails(claim(b, 'tb', 'a'), '2자 이상');
-    await assertFails(claim(b, 'tb', '관리자'), '예약어');
-    await assertFails(claim(b, 'tb', 'mo on'), '띄어쓰기 불가');
-    await assertSucceeds(claim(b, 'tb', '지훈_88'));
-    // 남의 태그를 지울 수 없다
-    await assertFails(deleteDoc(doc(b, 'tags', 'moon')));
+    await assertFails(claim(b, 'tb', 'Moon'), '같은 태그는 한 사람만');
+    await assertSucceeds(claim(b, 'tb', 'moon'), '대소문자가 다르면 다른 태그');
+    await assertFails(claim(c, 'tc', 'MoOn'), '중간에 대문자 불가');
+    await assertFails(claim(c, 'tc', 'mooN'));
+    await assertFails(claim(c, 'tc', 'ab'), '영어 섞이면 3자부터');
+    await assertFails(claim(c, 'tc', '문'), '한글 2자부터');
+    await assertSucceeds(claim(c, 'tc', '문대'));
+    await assertFails(claim(c, 'tc', 'Admin', '문대'), '예약어');
+    await assertFails(claim(c, 'tc', 'mo on', '문대'), '띄어쓰기 불가');
+    // 남의 태그를 지우거나 덮어쓸 수 없다
+    await assertFails(deleteDoc(doc(b, 'tags', 'Moon')));
+    await assertFails(setDoc(doc(b, 'tags', 'Moon'), {uid: 'tb', tag: 'Moon', updatedAt: serverTimestamp()}));
     // 이전 태그를 놓지 않고 바꿀 수 없다(하나만 가진다)
-    { const bt = writeBatch(a); bt.set(doc(a, 'tags', 'sun'), {uid: 'ta', tag: 'Sun', updatedAt: serverTimestamp()}); bt.set(doc(a, 'profiles', 'ta'), {tag: 'Sun', updatedAt: serverTimestamp()}); await assertFails(bt.commit()); }
+    { const bt = writeBatch(a); bt.set(doc(a, 'tags', 'Sun'), {uid: 'ta', tag: 'Sun', updatedAt: serverTimestamp()}); bt.set(doc(a, 'profiles', 'ta'), {tag: 'Sun', updatedAt: serverTimestamp()}); await assertFails(bt.commit()); }
     // 바꾸면 Moon이 풀리고 다른 사람이 가져간다
     await assertSucceeds(claim(a, 'ta', 'Sun', 'Moon'));
-    await assertSucceeds(claim(c, 'tc', 'Moon'));
-    await assertSucceeds(claim(c, 'tc', 'MOON', 'Moon'), '대소문자만 바꾸기');
-    await assertFails(setDoc(doc(b, 'tags', 'moon'), {uid: 'tb', tag: 'moon', updatedAt: serverTimestamp()}), '남의 태그 덮어쓰기 불가');
+    await assertSucceeds(claim(c, 'tc', 'Moon', '문대'));
     await assertSucceeds(getDoc(doc(b, 'profiles', 'tc')));
     // 태그로 방 초대: 방 멤버 + 유효한 초대 코드
     const R = 'roomTAGTAGTAG01';
