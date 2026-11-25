@@ -22,7 +22,7 @@ test('AI 서버가 없으면 붙여넣기만, 있으면 말로 입력이 맨 위
  assert.match(aiInputHTML({}, {ready:false, server:true}), /id="ai-ask" disabled/);
 });
 
-test('배포 전에는 AI 서버 주소가 비어 있다', () => {
- assert.equal(AI_WORKER_URL, '');
- assert.equal(aiWorkerUrl(), '');
+test('4.29.2 AI 서버 주소: Cloudflare workers.dev(https)', () => {
+ assert.match(AI_WORKER_URL, /^https:\/\/mylogue-ai\.[a-z0-9-]+\.workers\.dev$/);
+ assert.equal(aiWorkerUrl(), AI_WORKER_URL);
 });

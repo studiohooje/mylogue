@@ -3,6 +3,8 @@ name = "mylogue-ai"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
 
 [vars]
 FIREBASE_PROJECT_ID = "mylogue-1eedb"
@@ -36,12 +38,12 @@ RATE_PER_HOUR = "60"
 ADMIN_RATE_PER_MIN = "15"
 ADMIN_RATE_PER_HOUR = "200"
 DUP_WINDOW_SEC = "20"
-# 서비스 전체 예산(원). 넘으면 운영자 포함 그날·그달 AI 멈춤. 0이나 글자는 무시되고 기본값(하루 3,000·한 달 30,000)으로.
+# 서비스 전체 예산(원). 대표님 2026-11-25: 지금은 한 달 10,000원. 넘으면 운영자 포함 그날·그달 AI 멈춤. 0이나 글자는 무시되고 기본값(하루 3,000·한 달 30,000)으로.
 # Fable 권고: 첫 주는 하루 1,000원으로 낮게 시작하고 콘솔 실제 청구액과 매일 비교한 뒤 올린다.
 GLOBAL_DAILY_COST_WON = "1000"
-GLOBAL_MONTHLY_COST_WON = "30000"
+GLOBAL_MONTHLY_COST_WON = "10000"
 # 슈퍼관리자 비용 알림 기준(원, 한 달). 70%·90%·100%에서 앱 종 알림. 비우면 전체 월 상한을 기준으로.
-ALERT_MONTHLY_WON = "20000"
+ALERT_MONTHLY_WON = "10000"
 # 숫자 칸에는 숫자만(쉼표·'원' 금지 — 섞이면 기본값으로 바뀜)
 # 실제 사용량으로 장부 맞추기: 모델 가격(달러/100만 토큰 입력/출력, 기본 Haiku 5.5·Sonnet 5.5만 앎, 모르는 모델은 2/10으로 비싸게 침)
 MODEL_PRICES = ""

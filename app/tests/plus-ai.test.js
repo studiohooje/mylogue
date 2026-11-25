@@ -28,10 +28,8 @@ test('슈퍼관리자: 기본 플러스, 일반 보기로 바꾸면 기능도 �
   plan.setAdminView('plus'); assert.equal(plan.isPlus(), true); assert.equal(plan.allowance('ai-chat'), 10);
   assert.match(plan.adminPlanCardHTML(esc), /data-plan-view="free"/);
 });
-test('가짜 AI 모드: 서버 없이 기능별 답, 꺼지면 연결 전 안내', async () => {
-  plan.setFakeAI(false); assert.equal(aiUsable(), false);
-  assert.match(aiCoachCardHTML({}, esc), /아직 연결되지 않았어요/);
-  await assert.rejects(aiRequest('chat', {question: '안녕'}), /연결되지 않았어요/);
+test('가짜 AI 모드: 서버를 부르지 않고 기능별 답(4.29.2 서버 연결 뒤에도)', async () => {
+  plan.setFakeAI(false); assert.equal(aiUsable(), true, '서버 주소가 있으면 쓸 수 있음');
   plan.setFakeAI(true); assert.equal(aiUsable(), true);
   assert.match((await aiRequest('chat', {question: '단백질?'})).text, /가짜 AI/);
   assert.match((await aiRequest('review', {summary: 'x'})).text, /예시 답/);
