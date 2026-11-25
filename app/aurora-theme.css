@@ -1985,3 +1985,14 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .ph-done-tips{display:grid;gap:6px;width:100%;text-align:left}.ph-done-tips span{font-size:14px;line-height:1.55;color:#c9d6e6;padding-left:14px;position:relative}.ph-done-tips span::before{content:'·';position:absolute;left:2px;color:#8ce4e0}
 .ph-done-cheer{font-size:16px;line-height:1.55;font-weight:600;margin-top:4px}
 .ph-done-tap{font-size:13px;color:#7f91aa}
+
+/* 4.29.x 시각 고르기 판: 식사 화면과 같은 칩 방식 */
+.when-tp .tp-chips{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;margin-top:8px}
+.when-tp .tp-chips .tp-btn{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600}
+.when-tp .tp-foot{margin-top:10px;gap:8px;flex-wrap:wrap}
+.when-tp .tp-manual{display:inline-flex}
+.when-tp .tp-manual input[type=time]{position:static;opacity:1;width:auto;min-width:116px;height:44px;padding:0 12px;border-radius:999px;font-size:16px;font-variant-numeric:tabular-nums;background:#16223a;border:1px dashed #4a6a8c;color:#edf4f8}
+.when-tp .tp-foot .done{margin-left:auto}
+
+/* 4.29.x 식사 수정 양 칸: 넓은 화면에서 150이 15로 잘리던 것 */
+.qe .qe-step input{width:72px;min-width:72px;flex:0 0 72px;box-sizing:border-box;padding:6px 4px!important}

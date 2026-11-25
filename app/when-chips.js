@@ -22,12 +22,20 @@ export function relTime(v){
 
 function dateChips(id){ return `<div class="when-row" data-when-row="date">${[['d:-1','어제'],['d:0','오늘'],['d:1','내일']].map(([c, l]) => `<button type="button" class="when-chip" data-when="${c}" data-when-target="${id}">${l}</button>`).join('')}</div>`; }
 function timeChips(id){ const now = new Date(); return `<div class="when-row" data-when-row="time"><button type="button" class="when-chip strong" data-when="t:now" data-when-target="${id}">지금</button><button type="button" class="when-chip" data-when="t:hour" data-when-target="${id}">${pad(now.getHours())}:00</button>${STEPS.map(([m, l]) => `<button type="button" class="when-chip step" data-when="t:${m}" data-when-target="${id}">${l}</button>`).join('')}</div><div class="when-tp" data-when-tp="${id}" hidden></div>`; }
-// 4.2.1 시각 고르기 판(대표님: 분이 현재 분에 맞춰져 00·30분 찾기가 불편) — 오전/오후·시(1~12)·분 10분 단위 + 세밀 조정 + 직접 입력
-export function timePanelHTML(id, v){
- const [H, M] = (/^\d{2}:\d{2}/.test(v||'') ? v : hm(new Date())).split(':').map(Number), pm = H>=12, h12 = H%12||12;
- const b = (code, label, on, cls='') => `<button type="button" class="tp-btn${on?' on':''}${cls?' '+cls:''}" data-when="${code}" data-when-target="${id}" aria-pressed="${!!on}">${label}</button>`;
- return `<div class="tp-row tp-ap">${b('ap:am','오전',!pm)}${b('ap:pm','오후',pm)}</div><div class="tp-label">시</div><div class="tp-grid tp-hours">${[12,1,2,3,4,5,6,7,8,9,10,11].map(n => b(`hh:${n}`, `${n}`, n===h12)).join('')}</div><div class="tp-label">분</div><div class="tp-grid tp-mins">${[0,10,20,30,40,50].map(n => b(`mm:${n}`, pad(n), n===M)).join('')}</div><div class="tp-row tp-fine">${b('mf:-5','−5분','', 'fine')}${b('mf:-1','−1분','', 'fine')}<b class="tp-now">${relTime(`${pad(H)}:${pad(M)}`)}</b>${b('mf:1','+1분','', 'fine')}${b('mf:5','+5분','', 'fine')}</div><div class="tp-row tp-foot">${b('tpn','직접 입력','', 'ghost')}${b('tpx','완료','', 'done')}</div>`;
+// 4.2.1 시각 고르기 판 → 4.29.x 대표님: 식사 화면과 같은 칩 방식으로 통일.
+// 오전/오후 → 시 칩(24시 표기). 시를 누르면 그 시의 10분 단위 칩(10시·10시 10분…10시 50분)으로 바뀌고, 같은 시를 다시 누르면 시 칩으로.
+// 아래 줄에는 늘 직접 입력 칸(지금 값)과 '완료'. 판의 상태(열린 시·오전/오후)는 판 요소의 data-open-hour·data-half에 둔다.
+export function timePanelHTML(id, v, {openHour = null, half = null} = {}){
+ const [H, M] = (/^\d{2}:\d{2}/.test(v||'') ? v : hm(new Date())).split(':').map(Number);
+ const pm = half ? half === 'pm' : H >= 12, cur = `${pad(H)}:${pad(M)}`;
+ const b = (code, label, on, cls='') => `<button type="button" class="chip tp-btn${on?' active on':''}${cls?' '+cls:''}" data-when="${code}" data-when-target="${id}" aria-pressed="${!!on}">${label}</button>`;
+ const oh = openHour === null || openHour === '' || openHour === undefined ? null : Number(openHour);
+ const top = oh !== null
+  ? `<div class="chip-row tp-chips tp-mins">${b(`hx:${oh}`, `${oh}시`, true)}${[10,20,30,40,50].map(n => b(`mm:${n}`, `${oh}시 ${n}분`, oh === H && n === M)).join('')}</div>`
+  : `<div class="tp-row tp-ap">${b('ap:am','오전',!pm)}${b('ap:pm','오후',pm)}</div><div class="chip-row tp-chips tp-hours">${(pm ? [12,13,14,15,16,17,18,19,20,21,22,23] : [0,1,2,3,4,5,6,7,8,9,10,11]).map(n => b(`hx:${n}`, `${n}시`, n === H)).join('')}</div>`;
+ return `${top}<div class="tp-row tp-foot"><label class="tp-manual"><span class="sr-only">시각 직접 입력</span><input type="time" data-no-when data-when-manual="${id}" value="${cur}" step="60"></label>${b('tpx','완료','', 'done')}</div>`;
 }
+const panelState = tp => ({openHour: tp?.dataset?.openHour ?? null, half: tp?.dataset?.half || null});
 function timeButton(input){
  if(input.type!=='time' || input.nextElementSibling?.classList?.contains('when-timebtn')) return;
  input.classList.add('when-native');
@@ -82,7 +90,10 @@ export function enhanceWhenInputs(root = document){
 let captionsBound = false;
 function bindCaptions(){
  if(captionsBound || typeof document.addEventListener!=='function') return; captionsBound = true;
- document.addEventListener('input', e => { const t = e.target; if(!t?.dataset?.whenDone) return; const cap = document.querySelector(`[data-when-cap="${t.id}"]`); if(cap) cap.textContent = capOf(t); });
+ document.addEventListener('input', e => { const t = e.target;
+  // 4.29.x 판 안 직접 입력: 진짜 칸에 옮기되 판은 다시 그리지 않는다(입력 중 포커스 유지)
+  if(t?.dataset?.whenManual){ const real = document.getElementById(t.dataset.whenManual); if(real && /^\d{2}:\d{2}$/.test(t.value)){ real.value = t.value; const btn = document.querySelector(`[data-when-btn="${real.id}"]`); if(btn) btn.textContent = relTime(real.value); const [mh, mm] = t.value.split(':').map(Number); for(const b of t.closest('.when-tp')?.querySelectorAll('[data-when^="mm:"]') || []){ const on = Number(b.dataset.when.slice(3)) === mm; b.classList.toggle('active', on); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); } real.dispatchEvent(new Event('input', {bubbles:true})); real.dispatchEvent(new Event('change', {bubbles:true})); } return; }
+  if(!t?.dataset?.whenDone) return; const cap = document.querySelector(`[data-when-cap="${t.id}"]`); if(cap) cap.textContent = capOf(t); });
 }
 
 function read(input){
@@ -95,7 +106,7 @@ function shiftDate(input, days){ if(!days || input.type!=='time') return; const 
 function write(input, d){
  input.value = input.type==='date' ? ymd(d) : input.type==='time' ? hm(d) : `${ymd(d)}T${hm(d)}`;
  const btn = document.querySelector(`[data-when-btn="${input.id}"]`); if(btn) btn.textContent = relTime(input.value) || '시각 고르기';
- const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(tp && !tp.hidden) tp.innerHTML = timePanelHTML(input.id, input.value);
+ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(tp && !tp.hidden) tp.innerHTML = timePanelHTML(input.id, input.value, panelState(tp));
  input.dispatchEvent(new Event('input', {bubbles:true}));
  input.dispatchEvent(new Event('change', {bubbles:true}));
 }
@@ -104,8 +115,15 @@ export function handleWhenClick(target){
  const b = target?.closest?.('[data-when]'); if(!b || !b.dataset?.when || typeof b.closest!=='function') return false;
  const input = document.getElementById(b.dataset.whenTarget || b.closest('[data-when-for]')?.dataset.whenFor || ''); if(!input || input.disabled) return true;
  const code = b.dataset.when;
- if(code==='tp' || code==='tpx'){ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(!tp) return true; const open = code==='tp' ? tp.hidden : false; tp.hidden = !open; if(open) tp.innerHTML = timePanelHTML(input.id, input.value); document.querySelector(`[data-when-btn="${input.id}"]`)?.setAttribute('aria-expanded', String(open)); return true; }
+ if(code==='tp' || code==='tpx'){ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(!tp) return true; const open = code==='tp' ? tp.hidden : false; tp.hidden = !open; if(open){ delete tp.dataset.openHour; delete tp.dataset.half; tp.innerHTML = timePanelHTML(input.id, input.value); } document.querySelector(`[data-when-btn="${input.id}"]`)?.setAttribute('aria-expanded', String(open)); return true; }
  if(code==='tpn'){ input.classList.remove('when-native'); input.focus?.(); input.showPicker?.(); const tp = document.querySelector(`[data-when-tp="${input.id}"]`); if(tp) tp.hidden = true; return true; }
+ // 4.29.x 칩 방식: 오전/오후는 보이는 시만 바꾸고, 시 칩은 열기/접기, 분 칩은 열린 시의 분
+ if(/^(ap|hx):/.test(code)){ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); const [k, a] = code.split(':');
+  if(k==='ap'){ if(tp){ tp.dataset.half = a; delete tp.dataset.openHour; tp.innerHTML = timePanelHTML(input.id, input.value, panelState(tp)); } return true; }
+  const h = Number(a); if(tp && tp.dataset.openHour === String(h)){ delete tp.dataset.openHour; tp.dataset.half = h >= 12 ? 'pm' : 'am'; tp.innerHTML = timePanelHTML(input.id, input.value, panelState(tp)); return true; }
+  if(tp) tp.dataset.openHour = String(h);
+  const d = new Date(); d.setHours(h, 0, 0, 0); write(input, d); return true; }
+ if(code.startsWith('mm:')){ const tp = document.querySelector(`[data-when-tp="${input.id}"]`); const oh = tp?.dataset?.openHour; if(oh != null && oh !== ''){ const d = new Date(); d.setHours(Number(oh), Number(code.slice(3)), 0, 0); write(input, d); return true; } }
  if(/^(ap|hh|mm|mf):/.test(code)){ const [k, a] = code.split(':'); const [H0, M0] = (/^\d{2}:\d{2}/.test(input.value||'') ? input.value : hm(new Date())).split(':').map(Number); let H = H0, M = M0;
   if(k==='ap') H = a==='pm' ? (H%12)+12 : H%12;
   if(k==='hh'){ const n = Number(a)%12; H = (H>=12 ? 12 : 0) + n; }
