@@ -2005,10 +2005,13 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .nav.nav6 button.nv6-b:hover b{opacity:.9}
 .nav.nav6 button.nv6-b.active{color:#fff}
 .nav.nav6 button.nv6-b.active b{opacity:1;filter:none;transform:translateY(-1px);box-shadow:0 0 0 2px #ffffffd9,0 6px 16px #8ce4e033!important}
-.nav6-pop{position:absolute;left:max(8px,calc(16.667% - 40px));bottom:calc(100% + 6px);z-index:60;display:grid;gap:2px;min-width:160px;padding:6px;border-radius:16px;background:#1b2740;border:1px solid #3a4d6e;box-shadow:0 12px 30px #0008}
-.nav6-pop button{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;min-height:48px;padding:0 12px!important;border:0;background:none;color:#eaf4ff;border-radius:10px;font-size:15px;cursor:pointer;justify-content:flex-start!important}
+.nav.nav6 .nav-inner{position:relative}
+/* 5.0.3 그래프·입력 팝업: 같은 모양·같은 너비, 누른 칸(--col) 바로 위 가운데 */
+.nav6-pop{position:absolute;left:calc(100% / 6 * (var(--col) + .5));bottom:calc(100% + 10px);transform:translateX(-50%);z-index:60;display:grid;gap:2px;width:176px;padding:6px;border-radius:16px;background:#1b2740;border:1px solid #3a4d6e;box-shadow:0 12px 30px #0008}
+.nav6-pop:after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;background:#1b2740;border-right:1px solid #3a4d6e;border-bottom:1px solid #3a4d6e;transform:translateX(-50%) rotate(45deg)}
+.nav6-pop button{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;min-height:48px;padding:0 10px!important;border:0;background:none;color:#eaf4ff;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;justify-content:flex-start!important;width:100%}
 .nav6-pop button:hover,.nav6-pop button.active{background:#ffffff12}
-.nav6-pop button b{width:36px;height:28px;border-radius:10px;display:grid;place-items:center;color:#101625;background:var(--mg);background-size:400% 100%;background-position:calc(var(--i) * 33.333%) 0;margin:0!important}
+.nav6-pop button b{width:36px;height:28px;flex:none;border-radius:10px;display:grid;place-items:center;color:#101625;background:var(--mg);background-size:400% 100%;background-position:calc(var(--i) * 33.333%) 0;margin:0!important}
 .nav6-pop .mlg-icon{width:18px;height:18px}
 @media (prefers-reduced-motion:reduce){.nav.nav6 button.nv6-b b{transition:none}}
 
@@ -2133,3 +2136,18 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .chat-cam-item{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border-radius:10px;border:0;background:none;color:#eaf4ff;font-size:15px;text-align:left;cursor:pointer}
 .chat-cam-item:hover{background:#ffffff10}
 button.chat-cam{border:0;cursor:pointer}
+
+/* 5.0.3 설정: 1:1 아이콘 + 짧은 설명 타일, 누르면 팝업. 하단 메뉴와 같은 그라데이션 조각으로 통일 */
+.set-grid{--mg:linear-gradient(90deg,#8ce4e0 0%,#9fd2ee 22%,#b8aaf2 50%,#d4a6dc 74%,#f2a98a 100%);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:12px;margin:8px 0 16px}
+@media (min-width:650px){.set-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1000px){.set-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.set-tile{display:grid;grid-template-rows:auto 1fr;gap:10px;align-content:start;min-height:132px;padding:14px;border-radius:18px;border:1px solid #ffffff1a;background:#1d2a44;color:#eaf4ff;text-align:left;cursor:pointer}
+.set-tile:hover{border-color:#8ce4e066}
+.set-tile:focus-visible{outline:3px solid #8ce4e0;outline-offset:2px}
+.set-ic{width:44px;height:44px;aspect-ratio:1/1;border-radius:14px;display:grid;place-items:center;color:#101625;background:var(--mg);background-size:600% 100%;background-position:calc(var(--i) * 20%) 0}
+.set-ic svg{width:24px;height:24px}
+.set-txt{display:grid;gap:4px;min-width:0}
+.set-txt strong{font-size:16px;line-height:1.3;word-break:keep-all}
+.set-txt small{font-size:13px;line-height:1.4;color:#a6bbcb;word-break:keep-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.set-sheet .set-pop{display:grid;gap:12px}
+.set-sheet .set-pop>.section{margin:0}

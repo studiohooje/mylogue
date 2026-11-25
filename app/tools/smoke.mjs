@@ -50,7 +50,8 @@ try {
  for (const m of ['batch', 'body', 'quick', 'meal', 'workout', 'ai-chat']) {
   // 홈에서 시작하고, 버튼이 홈에 없으면 '무엇을 기록할까요'(quick) 창 안에서 찾는다
   await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(500);
-  const opened = await c.run(`(()=>{let b=document.querySelector('[data-modal="${m}"]');if(!b&&'${m}'!=='quick'){document.querySelector('[data-modal="quick"]')?.click();b=document.querySelector('.sheet [data-modal="${m}"]')}b?.click();return !!b})()`); await wait(900); steps.push(`창 ${m}:${opened ? 'ok' : '없음'}`);
+  // 5.0.3 하단 '입력'은 작은 팝업(data-input-toggle) — 'quick'은 그 팝업이 열리는지, 다른 창은 홈 버튼이나 팝업 안에서 찾는다
+  const opened = await c.run(`(()=>{if('${m}'==='quick'){const t=document.querySelector('[data-input-toggle]');t?.click();return !!t&&!!document.querySelector('.nav6-pop')}let b=document.querySelector('main [data-modal="${m}"]');if(!b){document.querySelector('[data-input-toggle]')?.click();b=document.querySelector('.nav6-pop [data-modal="${m}"]')}b?.click();return !!b})()`); await wait(900); steps.push(`창 ${m}:${opened ? 'ok' : '없음'}`);
   // 4.29.0 AI 기록 대화창: 말 보내기 → 답(연결 전이면 안내, 둘러보기면 예시 카드)
   // 4.29.0 'AI로 입력'은 방식 고르기 창이 먼저 → 대화하듯 입력 · 이번만
   if (m === 'ai-chat') { await c.run(`(()=>{document.querySelector('[data-ai-mode="chat"]')?.click();return 1})()`); await wait(400); await c.run(`(()=>{document.querySelector('[data-ai-once="chat"]')?.click();return 1})()`); await wait(700); steps.push(`대화창:${await c.run(`!!document.getElementById('chat-text')`) ? 'ok' : '없음'}`); await c.run(`(()=>{const t=document.getElementById('chat-text');if(!t)return false;t.value='점심 김밥 한 줄';t.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('chat-send')?.click();return true})()`); await wait(2500); }
@@ -60,7 +61,7 @@ try {
  // 4.28.0: 운동 기록 안에서 헬스장 새로 추가 → 바로 골라져야 한다
  {
   await c.run(`(()=>{document.querySelector('.sheet .close')?.click();document.querySelector('[data-page="home"]')?.click();return true})()`); await wait(500);
-  await c.run(`(()=>{let b=document.querySelector('[data-modal="workout"]');if(!b){document.querySelector('[data-modal="quick"]')?.click();b=document.querySelector('.sheet [data-modal="workout"]')}b?.click();return !!b})()`); await wait(900);
+  await c.run(`(()=>{let b=document.querySelector('main [data-modal="workout"]');if(!b){document.querySelector('[data-input-toggle]')?.click();b=document.querySelector('.nav6-pop [data-modal="workout"]')}b?.click();return !!b})()`); await wait(900);
   await c.run(`(()=>{document.querySelector('[data-q-live]')?.click();return true})()`); await wait(700);
   const opened = await c.run(`(()=>{const b=document.getElementById('q-gym-add-open');if(b){b.click();return 'btn'}const sel=document.querySelector('select[data-q-work="gymName"]');if(!sel)return 'none';sel.value='__new__';sel.dispatchEvent(new Event('change',{bubbles:true}));return 'select'})()`); await wait(600);
   const added = await c.run(`(()=>{const i=document.getElementById('q-gym-new');if(!i)return 'no-input';i.value='연기시험짐';document.getElementById('q-gym-save').click();return 'saved'})()`); await wait(700);

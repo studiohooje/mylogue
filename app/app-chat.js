@@ -83,7 +83,7 @@ function openMode(mode) {
  $s.aiPick = null;
  if (mode === 'chat') { openChat(); return; }
  if (mode === 'prompt') { $s.modal = 'ai-input'; $f.render(); return; }
- if (mode === 'connect') { $s.modal = null; $s.page = 'settings'; $f.render(); setTimeout(() => document.getElementById('ai-connect')?.scrollIntoView?.({block: 'start', behavior: 'smooth'}), 120); }
+ if (mode === 'connect') { $s.page = 'settings'; $s.setSec = 'ai'; $s.modal = 'settings-sec'; $f.render(); setTimeout(() => document.getElementById('ai-connect')?.scrollIntoView?.({block: 'start', behavior: 'smooth'}), 120); }
 }
 export function openAIEntry() { const m = aiModeDefault(); if (m) openMode(m); else { $s.aiPick = {}; $s.modal = 'ai-pick'; $f.render(); } }
 export function chatClick(t) {

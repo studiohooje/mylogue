@@ -29,6 +29,7 @@ import {newPhaseWizard,phaseWizardHTML} from './phase.js';
 import {recipeModalHTML} from './ai-coach-ui.js';
 import {planFromSettings,macroPlanFormHTML} from './macro-plan.js';
 import {aiInputHTML,fullPrompt} from './ai-paste.js';
+import {settingsSectionHTML} from './app-pages.js';
 import {readSession} from './session.js';
 import {machineFormHTML,exerciseFormHTML} from './profile-forms.js';
 import {muscleMapHTML} from './exercise-ui.js';
@@ -39,7 +40,7 @@ import {workoutBurn,BURN_NOTE} from './exercise-burn.js';
 import {personaCardsHTML} from './personas.js';
 import {demoPersona} from './landing.js';
 import {quickMealHTML,quickWorkoutHTML} from './quick-entry.js';
-export function modalHTML(){if(!$s.modal)return '';const wrap=(title,content,kind='')=>`<div class="modal-backdrop ${kind}" id="backdrop"><div class="sheet" role="dialog" aria-modal="true" aria-label="${$s.esc(title)}"><div class="sheet-head"><h2>${$s.esc(title)}</h2><button class="close" id="close" aria-label="닫기">×</button></div>${content}</div></div>`;
+export function modalHTML(){if(!$s.modal)return '';const wrap=(title,content,kind='')=>`<div class="modal-backdrop ${kind}" id="backdrop"><div class="sheet" role="dialog" aria-modal="true" aria-label="${$s.esc(title)}"><div class="sheet-head"><h2>${$s.esc(title)}</h2><button class="close" id="close" aria-label="닫기">×</button></div>${content}</div></div>`;/* 5.0.3 설정 묶음 팝업 */if($s.modal==='settings-sec'){const sec=settingsSectionHTML($s.setSec);if(sec)return wrap(sec.title,sec.html,'set-sheet')}
  if($s.modal==='install')return wrap('마이로그 앱 설치',installModalBody());
  if($s.modal==='onboarding')return wrap($s.onb&&$s.onb.step>=5?'나에게 맞춘 마이로그':'나에게 맞추기',onboardingHTML($s.onb||newOnboarding($s.db)));
  if($s.modal==='after-workout')return wrap('오늘 한 운동 · 한 번에 입력',afterWorkoutHTML($s.afterWorkout||emptyAfterWorkout($f.today()),$f.allExercises().map(x=>x.name),$s.db.settings.gyms||[]));
