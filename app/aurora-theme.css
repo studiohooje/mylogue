@@ -2155,3 +2155,13 @@ button.chat-cam{border:0;cursor:pointer}
 .coach .coach-week{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:4px 0 8px}
 .coach .coach-week span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8796b3}
 .coach-live .coach-when{margin:6px 0 0}
+/* 5.0.4 프로필 아이콘(기본 10개) + 테두리 2종: 일반 / 플러스면 자동으로 마이로그 그라데이션 프리미엄 테두리 */
+.mlg-avatar{position:relative;display:inline-grid;place-items:center;flex:none;border-radius:50%!important;padding:2px;background:#3a4d6e;overflow:visible!important}
+.mlg-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;background:#16223b}
+.mlg-avatar.av-plus{padding:2.5px;background:conic-gradient(from 210deg,#8ce4e0,#9fd2ee,#b8aaf2,#d4a6dc,#f2a98a,#8ce4e0);box-shadow:0 0 0 1px #ffffff22,0 0 12px #b8aaf266}
+.mlg-avatar.av-plus::after{content:"";position:absolute;right:-1px;bottom:-1px;width:30%;height:30%;min-width:10px;min-height:10px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#f2a98a 45%,#b8aaf2);box-shadow:0 0 0 2px #101625}
+.pf-avatars{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:4px 0 6px}
+.pf-av{aspect-ratio:1/1;border-radius:50%;padding:3px;border:2px solid transparent;background:#17223a;cursor:pointer;display:grid;place-items:center}
+.pf-av img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.pf-av.on{border-color:#8ce4e0;box-shadow:0 0 0 3px #8ce4e033}
+.pf-av:focus-visible{outline:3px solid #8ce4e0;outline-offset:2px}

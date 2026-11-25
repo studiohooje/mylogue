@@ -46,7 +46,7 @@ export function modalHTML(){if(!$s.modal)return '';const wrap=(title,content,kin
  if($s.modal==='after-workout')return wrap('오늘 한 운동 · 한 번에 입력',afterWorkoutHTML($s.afterWorkout||emptyAfterWorkout($f.today()),$f.allExercises().map(x=>x.name),$s.db.settings.gyms||[]));
  if($s.modal==='quick-meal-edit'&&$s.qm)return wrap('식사 수정',qmHTML($s.qm));
  if($s.modal==='quick-work-edit'&&$s.qw)return wrap('운동 수정',qwHTML($s.qw));
- if($s.modal==='profile-edit'&&$s.pfEdit)return wrap('내 프로필',profileEditHTML($s.pfEdit,{tagReady:cloudState.approval==='approved'&&!!cloudState.user,admin:$s.adminLogOK(),prefsHTML:prefsSettingsHTML($s.db),email:cloudState.user?.email||'',statusText:cloudState.approval==='approved'?'':({pending:'승인 대기',not_applied:'신청 필요',rejected:'반려됨'}[cloudState.approval]||'')}));
+ if($s.modal==='profile-edit'&&$s.pfEdit)return wrap('내 프로필',profileEditHTML($s.pfEdit,{plus:isPlus(),tagReady:cloudState.approval==='approved'&&!!cloudState.user,admin:$s.adminLogOK(),prefsHTML:prefsSettingsHTML($s.db),email:cloudState.user?.email||'',statusText:cloudState.approval==='approved'?'':({pending:'승인 대기',not_applied:'신청 필요',rejected:'반려됨'}[cloudState.approval]||'')}));
  if($s.modal==='goal-wizard'&&$s.goalWiz)return wrap('식단 목표 정하기',goalWizardHTML($s.goalWiz));
  if($s.modal==='gym-map')return wrap('지도에서 운동 장소 고르기',gymMapHTML($s.gymMap||{}),'gym-map-sheet');
  if($s.modal==='guide-plan')return wrap('운동 계획 · 안내 받기',planHTML($s.guidePlan||emptyPlan($f.today(),'',prefsOf($s.db).restSec),{names:$f.allExercises().map(x=>x.name),gyms:$s.db.settings.gyms||[],routines:$s.db.routines||[],hasLast:$s.db.workouts.length>0}));

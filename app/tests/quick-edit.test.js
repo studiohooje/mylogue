@@ -37,16 +37,22 @@ test('운동 빠른 수정: 세트 무게·횟수·삭제, 빈 종목은 막음'
  assert.match(quickWorkoutHTML(quickWorkoutState(db.workouts[0])), /자세히 수정/);
 });
 
-test('프로필: 이름·아이콘 저장, 기본은 Google 이름과 사진', () => {
+test('5.0.4 프로필: 기본 아이콘 10개 중에서만, 성별로 기본값, 테두리는 플러스면 자동 프리미엄', () => {
  const user = {displayName:'Moon', email:'m@x.com', photoURL:'https://p/x.jpg'};
  assert.equal(profileOf({settings:{}}, user).name, 'Moon');
- assert.equal(profileOf({settings:{}}, user).type, 'google');
- const st = newProfileEdit({settings:{}}, user); st.nickname = '문'; st.type = 'letter'; st.color = '#b8aaf2';
+ assert.equal(profileOf({settings:{}}, user).id, 'm1');
+ assert.equal(profileOf({settings:{nutritionProfile:{sex:'female'}}}, user).id, 'f1');
+ const st = newProfileEdit({settings:{}}, user); st.nickname = '문'; st.id = 'f3';
  const db2 = applyProfile({settings:{}}, st);
  const pr = profileOf(db2, user);
- assert.equal(pr.name, '문'); assert.match(avatarHTML(pr), /avatar-letter[^>]*#b8aaf2[^>]*>문</);
- assert.throws(() => applyProfile({settings:{}}, {...st, type:'photo', photo:''}), /사진/);
- assert.match(profileEditHTML(st, {email:'m@x.com'}), /id="pf-save"/);
+ assert.equal(pr.name, '문'); assert.equal(pr.id, 'f3');
+ assert.match(avatarHTML(pr), /art\/avatar\/f3\.webp/); assert.match(avatarHTML(pr), /av-basic/);
+ assert.match(avatarHTML(pr, 'x', {plus:true}), /av-plus/);
+ assert.doesNotMatch(avatarHTML(pr), /googleusercontent|p\/x\.jpg/, '구글 사진은 쓰지 않음');
+ assert.equal(profileOf(applyProfile({settings:{}}, {...st, id:'evil'}), user).id, 'm1', '목록 밖 아이콘은 기본으로');
+ const html = profileEditHTML(st, {email:'m@x.com'});
+ assert.match(html, /id="pf-save"/); assert.equal((html.match(/data-pf-avatar=/g) || []).length, 10);
+ assert.doesNotMatch(html, /pf-photo|Google 사진|data-pf-color/);
  assert.doesNotMatch(profileEditHTML(st, {email:'m@x.com', statusText:''}), /승인됨/);
 });
 
