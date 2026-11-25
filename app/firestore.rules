@@ -528,7 +528,9 @@ service cloud.firestore {
       return t is string && t.matches('^[가-힣A-Za-z0-9_]{2,16}$')
         && (t.matches('^[^A-Z]*$') || t.matches('^[^a-z]*$') || t.matches('^[A-Z][^A-Z]*$'))
         && (!t.matches('.*[A-Za-z].*') || t.size() >= 3)
-        && !(t.lower() in ['admin','mylogue','마이로그','운영자','관리자','root','system','support']);
+        && !(t.lower() in ['admin','mylogue','마이로그','운영자','관리자','root','system','support'])
+        // 5.0.6 보안 감사: 운영자·공식 계정을 흉내 내는 말이 '들어간' 태그도 막는다(mylogue_official, 마이로그운영팀 등)
+        && !t.lower().matches('.*(admin|mylogue|마이로그|운영|관리자|official|support|staff).*');
     }
     function tagPath(key) { return /databases/$(database)/documents/tags/$(key); }
     match /tags/{key} {
@@ -566,6 +568,10 @@ service cloud.firestore {
         && request.auth.uid in get(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)).data.memberIds
         && get(/databases/$(database)/documents/mateInvites/$(request.resource.data.code)).data.roomId == request.resource.data.roomId
         && request.resource.data.fromTag is string && request.resource.data.fromTag.size() <= 16
+        // 5.0.6 보안 감사: 보낸 사람 태그는 내 프로필 태그와 같아야 한다(남의 태그를 사칭해 초대하지 못하게). 태그가 없으면 빈 글자.
+        && (request.resource.data.fromTag == ''
+          ? !exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.tag == ''
+          : get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.tag == request.resource.data.fromTag)
         && request.resource.data.roomName is string && request.resource.data.roomName.size() <= 30
         && request.resource.data.createdAt == request.time;
       allow update: if false;

@@ -5,6 +5,8 @@ import {firestoreContext} from './ai-drafts.js';
 
 export const TAG_RE = /^[가-힣A-Za-z0-9_]{2,16}$/;
 export const RESERVED = ['admin', 'mylogue', '마이로그', '운영자', '관리자', 'root', 'system', 'support'];
+// 5.0.6 보안 감사: 이 말이 '들어간' 태그도 막는다(서버 규칙 tagOk와 같은 목록)
+export const RESERVED_PART = /(admin|mylogue|마이로그|운영|관리자|official|support|staff)/;
 export const tagKey = t => String(t || '').trim().replace(/^@/, '');
 // 영어 대소문자 꼴: 전부 소문자 · 전부 대문자 · 첫 글자만 대문자(그 뒤는 소문자)
 export const caseOk = t => /^[^A-Z]*$/.test(t) || /^[^a-z]*$/.test(t) || /^[A-Z][^A-Z]*$/.test(t);
@@ -16,7 +18,7 @@ export function tagProblem(t){
   if(v.length > 16) return '마이태그는 16자까지예요.';
   if(hasLatin(v) ? v.length < 3 : v.length < 2) return hasLatin(v) ? '영어가 들어가면 3자 이상이어야 해요.' : '한글은 2자 이상이어야 해요.';
   if(!caseOk(v)) return 'case';
-  if(RESERVED.includes(v.toLowerCase())) return '쓸 수 없는 마이태그예요.';
+  if(RESERVED.includes(v.toLowerCase()) || RESERVED_PART.test(v.toLowerCase())) return '쓸 수 없는 마이태그예요(운영자·공식 계정처럼 보이는 말은 못 써요).';
   return '';
 }
 // 대소문자 꼴이 안 맞을 때 고를 수 있는 꼴(aaAaa → Aaaaa · aaaaa · AAAAA)

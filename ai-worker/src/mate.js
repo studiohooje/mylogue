@@ -11,8 +11,8 @@ export const MATE_MAX_BYTES = 400_000;
 const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : d; };
 export const dailyUploads = env => num(env.MATE_DAILY_UPLOADS, 30);
 export const totalCapBytes = env => num(env.MATE_TOTAL_MB, 9000) * 1_000_000;
-// 멤버 확인 결과를 10분 기억(사진 볼 때마다 Firestore를 읽지 않게). 같은 서버 안에서만 쓰는 임시 기억.
-const memberCache = new Map(), MEMBER_TTL = 10 * 60_000;
+// 멤버 확인 결과를 2분 기억(사진 볼 때마다 Firestore를 읽지 않게). 같은 서버 안에서만 쓰는 임시 기억.
+const memberCache = new Map(), MEMBER_TTL = 2 * 60_000; // 5.0.6 보안 감사: 방에서 나간 사람이 사진을 더 오래 보지 않게 10분 → 2분
 export const clearMemberCache = () => memberCache.clear();
 
 export const parseKey = key => { const m = KEY.exec(String(key || '')); return m ? {roomId: m[1], uid: m[2], id: m[3], ext: m[4]} : null; };

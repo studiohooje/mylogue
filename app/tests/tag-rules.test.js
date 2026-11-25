@@ -25,6 +25,8 @@ test('5.0.1 마이태그·태그 초대 규칙', {skip: !host}, async () => {
     await assertSucceeds(claim(c, 'tc', '문대'));
     await assertFails(claim(c, 'tc', 'Admin', '문대'), '예약어');
     await assertFails(claim(c, 'tc', 'mo on', '문대'), '띄어쓰기 불가');
+    await assertFails(claim(c, 'tc', 'mylogue_official', '문대'), '5.0.6 공식 계정 흉내(들어간 말)');
+    await assertFails(claim(c, 'tc', '마이로그운영팀', '문대'), '5.0.6 운영자 흉내');
     // 남의 태그를 지우거나 덮어쓸 수 없다
     await assertFails(deleteDoc(doc(b, 'tags', 'Moon')));
     await assertFails(setDoc(doc(b, 'tags', 'Moon'), {uid: 'tb', tag: 'Moon', updatedAt: serverTimestamp()}));
@@ -39,6 +41,7 @@ test('5.0.1 마이태그·태그 초대 규칙', {skip: !host}, async () => {
     await env.withSecurityRulesDisabled(async ctx => { const d = ctx.firestore(); await setDoc(doc(d, 'rooms', R), {name: '방', type: 'friends', ownerUid: 'ta', memberIds: ['ta'], memberNames: {ta: 'Sun'}, scope: {body: true, meal: true, work: true}, joinCode: '', appliedProposal: ''}); await setDoc(doc(d, 'mateInvites', 'CODE2345'), {code: 'CODE2345', roomId: R, expiresAt: Timestamp.fromDate(new Date(Date.now() + 864e5))}); });
     const direct = (ctx, from, to, extra = {}) => setDoc(doc(ctx, 'mateDirect', `${to}_${R}`), {toUid: to, fromUid: from, fromTag: 'Sun', roomId: R, roomName: '방', code: 'CODE2345', createdAt: serverTimestamp(), ...extra});
     await assertFails(direct(b, 'tb', 'tc'), '방 멤버가 아니면 못 보냄');
+    await assertFails(direct(a, 'ta', 'tc', {fromTag: 'moon'}), '5.0.6 남의 태그로 사칭해 보낼 수 없음');
     await assertSucceeds(direct(a, 'ta', 'tc'));
     await assertSucceeds(getDocs(query(collection(c, 'mateDirect'), where('toUid', '==', 'tc'))));
     await assertFails(getDoc(doc(b, 'mateDirect', `tc_${R}`)), '남의 초대는 못 봄');

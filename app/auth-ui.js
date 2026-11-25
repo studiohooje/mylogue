@@ -71,7 +71,8 @@ export async function finishKakaoFromHash(){
   const h = BOOT_HASH;
   if(!/^#kakao(-error)?=/.test(h)) return false;
   const p = new URLSearchParams(h.slice(1));
-  const clear = () => {};
+  // 5.0.6 보안: 로그인 표(커스텀 토큰)가 주소창·화면 공유·주소 복사로 새지 않게 바로 지운다
+  const clear = () => { try { history.replaceState(history.state, '', location.pathname + location.search); } catch {} };
   let saved = null; try { saved = JSON.parse(localStorage.getItem(KAKAO_STATE) || 'null'); localStorage.removeItem(KAKAO_STATE); } catch {}
   clear();
   if(p.get('kakao-error')){ setTimeout(() => $f.toast?.(p.get('kakao-error')), 300); return true; }
