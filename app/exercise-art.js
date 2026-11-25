@@ -41,7 +41,7 @@ export const EXERCISE_ART = {
  "케이블 크로스오버":"cable-crossover",
  "페이스 풀":"cable-face-pull-with-rope",
  "케이블 프론트 레이즈":"cable-front-raise",
- "케이블 오버헤드 익스텐션":"cable-overhead-triceps-extension-with-rope",
+ "케이블 트라이셉스 익스텐션":"cable-overhead-triceps-extension-with-rope",
  "로프 푸시다운":"cable-rope-triceps-pushdown",
  "케이블 푸시다운":"cable-triceps-pushdown-with-straight-bar",
  "케이블 우드찹":"cable-woodchop",

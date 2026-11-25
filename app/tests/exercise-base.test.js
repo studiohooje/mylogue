@@ -42,3 +42,13 @@ test('기준 종목 없는 내 종목은 공용 도감으로 올리지 않는다
  const c = promoteCandidates({foods:[], customExercises:[{id:'e9', name:'이름만 있는 운동'}]}, {foods:[], exercises:[]});
  assert.equal(c.exercises[0].ok, false);
 });
+
+test('대표님 결정: 케이블 오버헤드 익스텐션 → 케이블 트라이셉스 익스텐션(id·그림 유지), 킥백 → 글루트 킥백 머신', () => {
+ const x = EXERCISE_CATALOG.find(e => e.id === 'exercise:케이블 오버헤드 익스텐션');
+ assert.equal(x.name, '케이블 트라이셉스 익스텐션');
+ assert.ok(x.aliases.includes('케이블 오버헤드 익스텐션'));
+ assert.equal(resolveExercise('케이블 오버헤드 익스텐션')?.id, x.id, '지난 기록 이름도 같은 종목');
+ assert.ok(artFile({name:'케이블 오버헤드 익스텐션', exerciseId:x.id}));
+ assert.equal(resolveExercise('킥백')?.name, '글루트 킥백 머신');
+ assert.equal(resolveExercise('덤벨 킥백')?.name, '덤벨 킥백');
+});

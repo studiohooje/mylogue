@@ -110,7 +110,7 @@ const ALSO = {
  '케이블 플라이':['cable-crossover'], '로우 투 하이 케이블 플라이':['cable-crossover'], '케이블 체스트 프레스':['cable-crossover'],
  '케이블 크런치':CABLE, '케이블 킥백':CABLE, '케이블 힙 어브덕션':CABLE, '케이블 리어 델트 플라이':['cable-crossover','rear-delt'], '케이블 프론트 레이즈':CABLE,
  '케이블 컬':CABLE, '로프 푸시다운':['cable-pushdown','cable-station'], '원암 케이블 푸시다운':['cable-pushdown','cable-station'], '케이블 푸시다운':['cable-station'],
- '케이블 오버헤드 익스텐션':CABLE, '케이블 우드찹':CABLE, '팔로프 프레스':CABLE, '페이스 풀':CABLE, '케이블 레터럴 레이즈':['cable-crossover'],
+ '케이블 트라이셉스 익스텐션':CABLE, '케이블 우드찹':CABLE, '팔로프 프레스':CABLE, '페이스 풀':CABLE, '케이블 레터럴 레이즈':['cable-crossover'],
  '스미스 벤치프레스':['smith'], '스미스 인클라인 프레스':['smith'], '스미스 런지':['smith'], '스미스 숄더 프레스':['smith'],
 };
 const MACHINE_ONLY = new Set(['머신','케이블','스미스']);
