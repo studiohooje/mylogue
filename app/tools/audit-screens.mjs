@@ -3,7 +3,7 @@
 // node tools/audit-screens.mjs <출력 폴더> [인물들(쉼표)|all] [폭들(쉼표)] [--shots]
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import {spawn} from 'node:child_process'; import {fileURLToPath} from 'node:url'; import os from 'node:os';
 import {connect} from '../qa-cdp.mjs';
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
+const ROOT = process.env.DIST ? path.resolve(process.env.DIST) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const args = process.argv.slice(2), SHOTS = args.includes('--shots'), pos = args.filter(a => !a.startsWith('--'));
 const OUT = pos[0] || 'audit-out', PERSONAS = (pos[1] && pos[1] !== 'all') ? pos[1].split(',') : ['', 'jihoon', 'seoyeon', 'minjun', 'haeun', 'doyoon', 'jimin', 'sua', 'hyunwoo'];
 const WIDTHS = (pos[2] || '360,412,860,1280').split(',').map(Number);
