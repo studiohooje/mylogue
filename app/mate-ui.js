@@ -78,29 +78,21 @@ function head(title, sub = '', {back = '', right = ''} = {}){
   return `<div class="mate-top">${back ? `<button type="button" class="mate-ib" data-mate-go="${esc(back)}" aria-label="뒤로">‹</button>` : ''}<div class="mate-title"><h2>${esc(title)}</h2>${sub ? `<small>${esc(sub)}</small>` : ''}</div>${right}</div>`;
 }
 const scopeTags = r => r.type === 'mine' ? '<span class="mate-tag">내 방 · 나만 봐요</span>' : `<span class="mate-tag">${r.memberIds.length}명</span>${MATE_KINDS.map(k => `<span class="mate-tag ${r.scope[k] ? 'on' : 'off'}">${MATE_KIND_LABEL[k]}</span>`).join('')}`;
-function tagView(first){
-  const t = st().tag ||= {value: myTagCached(), msg: '', ok: false};
-  return `${head(first ? '마이태그 정하기' : '마이태그 바꾸기', first ? '메이트에서 나를 부르는 이름이에요' : '', {back: first ? '' : 'rooms'})}
-  <div class="mate-card"><p class="hint">한 사람만 쓸 수 있는 이름이에요(대소문자 구분 없이). 언제든 바꿀 수 있고, 바꾸면 이전 태그는 다른 사람이 쓸 수 있게 풀려요. 메이트 방에서 이 이름으로 보이고, 이 태그로 방에 초대받을 수 있어요.</p>
-  <form class="mate-row" data-mate-form="tag"><span class="mate-at">@</span><input id="mate-tag" maxlength="16" autocomplete="off" autocapitalize="off" value="${esc(t.value)}" placeholder="예: Moon" aria-label="마이태그"><button type="button" class="button secondary" data-mate-tagcheck>확인</button></form>
-  ${t.msg ? `<p class="hint ${t.ok ? '' : 'warn'}" role="status">${esc(t.msg)}</p>` : '<p class="hint">한글·영문·숫자·밑줄(_), 2~16자. 띄어쓰기는 안 돼요.</p>'}
-  <button type="button" class="button" data-mate-tagsave ${st().busy ? 'disabled' : ''}>${st().busy ? '저장하는 중…' : first ? '이 태그로 시작하기' : '바꾸기'}</button></div>`;
-}
 export function mytagSettingsHTML(){
   if(!ready()) return '';
   const t = myTagCached();
-  return `<section class="section card"><h3>마이태그</h3><p>${t ? `<b class="mate-tagchip">@${esc(t)}</b>` : '아직 정하지 않았어요.'}</p><p class="hint">메이트 방에서 보이는 고유한 이름이에요. 이 태그로 방에 초대받을 수 있어요.</p><button type="button" class="button secondary" data-mate-tagedit>${t ? '바꾸기' : '정하기'}</button></section>`;
+  return `<section class="section card"><h3>마이태그</h3><p>${t ? `<b class="mate-tagchip">@${esc(t)}</b>` : '아직 정하지 않았어요.'}</p><p class="hint">마이로그 전체에서 쓰는 나만의 고유한 이름이에요. 프로필·메이트에서 보이고, 이 태그로 초대받을 수 있어요.</p><button type="button" class="button secondary" data-mate-tagedit>${t ? '바꾸기' : '정하기'}</button></section>`;
 }
 const codeCardHTML = () => `<div class="mate-card"><b>초대 코드로 다른 방 들어가기</b><p class="hint">메이트에게 받은 8자리 코드를 적어 주세요(링크가 안 열릴 때도 이걸로 들어가요).</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button secondary">들어가기</button></form></div>`;
 function roomsView(){
   const s = st(), list = s.rooms || [];
   const rows = list.map(r => `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b><span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
   const dir = (s.direct || []).map(d => `<div class="mate-card mate-direct"><b>@${esc(d.fromTag || '메이트')} 님이 '${esc(d.roomName)}'에 초대했어요</b><div class="mate-row"><button type="button" class="button" data-mate-dirok="${esc(d.id)}">보고 들어가기</button><button type="button" class="button secondary" data-mate-dirno="${esc(d.id)}">거절</button></div></div>`).join('');
-  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib" data-mate-tagedit aria-label="마이태그 바꾸기">@</button><button type="button" class="mate-ib" data-mate-go="create" aria-label="방 만들기">＋</button>`})}${!myTagCached() && s.tagState === 'none' ? `<div class="mate-card mate-direct"><b>마이태그를 정해 주세요</b><p class="hint">메이트에게 보이는 나만의 이름이에요. 마이태그가 있으면 메이트가 @태그로 나를 초대할 수 있어요.</p><button type="button" class="button" data-mate-tagedit>마이태그 정하기</button></div>` : ''}${dir}
+  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib" data-mate-go="create" aria-label="방 만들기">＋</button>`})}${/* 5.0.5 대표님: 마이태그는 메이트 전용이 아니라 전체 프로필 — 메이트 첫 화면에서 크게 권하지 않고, 맨 아래 작은 한 줄만 */''}${dir}
   ${s.loading === 'rooms' && !s.rooms ? '<p class="hint">방을 불러오는 중…</p>' : ''}
   ${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
   ${codeCardHTML()}
-  <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 동안 보관돼요. '내 기록에도 남기기'로 옮긴 숫자는 기록으로 계속 남아요.</p>`;
+  <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 동안 보관돼요. '내 기록에도 남기기'로 옮긴 숫자는 기록으로 계속 남아요.</p>${myTagCached() ? '' : '<p class="hint mate-tag-hint">마이태그는 오른쪽 위 프로필에서 정해요. 정해 두면 메이트가 @태그로 나를 초대할 수 있어요. <button type="button" class="text-button" data-mate-tagedit>프로필 열기</button></p>'}`;
 }
 function postHTML(p, r){
   const mine = p.uid === me(), name = r.memberNames[p.uid] || p.name || '메이트';
