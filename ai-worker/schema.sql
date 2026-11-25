@@ -22,3 +22,10 @@ CREATE TABLE IF NOT EXISTS photo_seen (
   tries INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (uid, day, hash)
 );
+-- 4.29.x 같은 요청 되풀이 막기(내용은 저장하지 않고 해시·시각만, 사람별로 1분 지난 것은 지움)
+CREATE TABLE IF NOT EXISTS recent_req (
+  uid TEXT NOT NULL,
+  hash TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (uid, hash)
+);

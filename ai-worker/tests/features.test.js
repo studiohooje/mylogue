@@ -13,14 +13,15 @@ const jwk = {...await crypto.subtle.exportKey('jwk', publicKey), kid: 'k1'};
 const enc = o => Buffer.from(JSON.stringify(o)).toString('base64url');
 async function token(sub = 'u1') { const head = enc({alg: 'RS256', kid: 'k1'}), body = enc({aud: PROJECT, iss: `https://securetoken.google.com/${PROJECT}`, sub, email: `${sub}@x.test`, email_verified: true, iat: NOW / 1000 - 60, exp: NOW / 1000 + 3000}); const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', privateKey, new TextEncoder().encode(`${head}.${body}`)); return `${head}.${body}.${Buffer.from(sig).toString('base64url')}`; }
 function d1() { const db = new DatabaseSync(':memory:'); db.exec(readFileSync(new URL('../schema.sql', import.meta.url), 'utf8')); return {prepare: sql => ({bind: (...a) => ({first: async () => db.prepare(sql.replace(/\?\d/g, '?')).get(...a) ?? null})})}; }
-function setup({plan = '', plusAll = '0', fake = '0', answer} = {}) {
+// 4.29.x 기존 시험은 기능별 한도만 보도록 속도 제한·되풀이 막기를 끈다(guards.test.js에서 따로 시험)
+function setup({plan = '', plusAll = '0', fake = '0', answer, guards = {DUP_WINDOW_SEC: '0', RATE_PER_MIN: '0', RATE_PER_HOUR: '0', ADMIN_RATE_PER_MIN: '0', ADMIN_RATE_PER_HOUR: '0'}} = {}) {
   const calls = [];
   const fetchImpl = async url => {
     if (String(url).includes('service_accounts')) return new Response(JSON.stringify({keys: [jwk]}));
     if (String(url).includes('firestore.googleapis.com')) return new Response(JSON.stringify({fields: {status: {stringValue: 'approved'}, ...(plan ? {plan: {stringValue: plan}} : {})}}));
     throw Error('unexpected ' + url);
   };
-  const env = {FIREBASE_PROJECT_ID: PROJECT, ALLOWED_ORIGINS: 'https://studiohooje.github.io', DAILY_LIMIT: '30', MODEL: 'claude-haiku-5-5', REVIEW_MODEL: 'claude-sonnet-5-5', PLUS_ALL: plusAll, LIMIT_PHOTO: '1/3', LIMIT_REVIEW: '0/2', LIMIT_CHAT: '0/2', LIMIT_RECIPE: '0/2', FAKE_AI: fake, DB: d1()};
+  const env = {FIREBASE_PROJECT_ID: PROJECT, ALLOWED_ORIGINS: 'https://studiohooje.github.io', DAILY_LIMIT: '30', MODEL: 'claude-haiku-5-5', REVIEW_MODEL: 'claude-sonnet-5-5', PLUS_ALL: plusAll, LIMIT_PHOTO: '1/3', LIMIT_REVIEW: '0/2', LIMIT_CHAT: '0/2', LIMIT_RECIPE: '0/2', FAKE_AI: fake, DB: d1(), ...guards};
   const callClaude = async (messages, opts) => { calls.push({messages, opts}); return {text: answer ? answer(opts) : '```json\n{"mylogue":1,"records":[{"type":"meal","date":"2026-11-23","time":"12:00","items":[{"name":"비빔밥","qty":1,"unit":"그릇","kcal":560,"carbs":85,"protein":18,"fat":14}]}]}\n```', stopReason: 'end_turn', model: opts.model}; };
   return {calls, deps: {env, fetchImpl, callClaude, now: () => NOW}};
 }
@@ -139,4 +140,55 @@ test('슈퍼관리자 보기 기준: 일반이면 무료 한도, 아니면 운�
  const up = (t) => post('converse', {messages: [{role: 'user', text: t}], images: [img(t)], viewPlan: 'plus'}, user);
  assert.equal((await route(await up('b1'), s2.deps)).status, 200);
  assert.equal((await route(await up('b2'), s2.deps)).status, 429);
+});
+
+// ── 4.29.x 불필요한 AI 호출 막기(서버) ──
+const say = (t, extra = {}) => ({messages: [{role: 'user', text: t}], ...extra});
+test('막기 ① 전체 끄기 스위치: AI_ENABLED=0이면 AI를 부르지 않고 503, me는 응답', async () => {
+ resetKeyCache(); const s = setup(); s.deps.env.AI_ENABLED = '0'; const tok = await token();
+ assert.equal((await route(await post('converse', say('점심'), tok), s.deps)).status, 503);
+ assert.equal((await route(await post('me', {}, tok), s.deps)).status, 200);
+ assert.equal(s.calls.length, 0);
+});
+test('막기 ② 너무 큰 요청은 읽기 전에 413', async () => {
+ resetKeyCache(); const s = setup(); s.deps.env.MAX_BODY_BYTES = '1000'; const tok = await token();
+ assert.equal((await route(await post('converse', say('가'.repeat(2000)), tok), s.deps)).status, 413);
+ assert.equal(s.calls.length, 0);
+});
+test('막기 ③ 1분에 정해진 횟수를 넘으면 429, 운영자도 상한이 있다', async () => {
+ resetKeyCache(); const s = setup({guards: {DUP_WINDOW_SEC: '0', RATE_PER_MIN: '3', RATE_PER_HOUR: '100', ADMIN_RATE_PER_MIN: '5', ADMIN_RATE_PER_HOUR: '100'}}); const tok = await token();
+ const st = []; for (let i = 0; i < 4; i++) st.push((await route(await post('converse', say(`기록 ${i}`), tok), s.deps)).status);
+ assert.deepEqual(st, [200, 200, 200, 429]);
+ assert.equal(s.calls.length, 3);
+ const admin = await token('bulbnZbmC4PgH8tUAOjfPPLE7pA3'); const sa = [];
+ for (let i = 0; i < 6; i++) sa.push((await route(await post('converse', say(`관리 ${i}`), admin), s.deps)).status);
+ assert.deepEqual(sa, [200, 200, 200, 200, 200, 429]);
+});
+test('막기 ④ 같은 내용을 20초 안에 다시 보내면 429(시각 값만 달라도 같은 요청), 시간이 지나면 다시 된다', async () => {
+ resetKeyCache(); const s = setup({guards: {DUP_WINDOW_SEC: '20', RATE_PER_MIN: '0', RATE_PER_HOUR: '0', ADMIN_RATE_PER_MIN: '0', ADMIN_RATE_PER_HOUR: '0'}}); const tok = await token();
+ let t = NOW; s.deps.now = () => t;
+ assert.equal((await route(await post('converse', say('점심 비빔밥', {now: '12:00'}), tok), s.deps)).status, 200);
+ assert.equal((await route(await post('converse', say('점심 비빔밥', {now: '12:01'}), tok), s.deps)).status, 429);
+ assert.equal((await route(await post('converse', say('저녁 비빔밥'), tok), s.deps)).status, 200);
+ t = NOW + 25_000;
+ assert.equal((await route(await post('converse', say('점심 비빔밥'), tok), s.deps)).status, 200);
+ assert.equal(s.calls.length, 3);
+});
+test('막기 ⑤ 서비스 전체 하루 예산을 넘으면 운영자도 503, 기능 횟수는 돌려준다', async () => {
+ resetKeyCache(); const s = setup({plan: 'plus'}); s.deps.env.GLOBAL_DAILY_COST_WON = '5'; s.deps.env.COST_WON = 'chat:2'; s.deps.env.LIMIT_CHAT = '0/10'; const tok = await token();
+ const ask = q => post('chat', {question: q}, tok);
+ assert.equal((await route(await ask('첫 질문'), s.deps)).status, 200);
+ assert.equal((await route(await ask('둘째 질문'), s.deps)).status, 200);
+ const third = await route(await ask('셋째 질문'), s.deps);
+ assert.equal(third.status, 503);
+ assert.equal(s.calls.length, 2);
+ const admin = await token('bulbnZbmC4PgH8tUAOjfPPLE7pA3');
+ assert.equal((await route(await post('chat', {question: '운영자 질문'}, admin), s.deps)).status, 503);
+});
+test('답 길이 상한: 기능별 최대 출력 토큰을 모델 호출에 넘긴다', async () => {
+ resetKeyCache(); const s = setup({plan: 'plus'}); const tok = await token();
+ await route(await post('converse', say('점심'), tok), s.deps);
+ await route(await post('chat', {question: '단백질?'}, tok), s.deps);
+ assert.equal(s.calls[0].opts.maxTokens, 1500);
+ assert.equal(s.calls[1].opts.maxTokens, 800);
 });

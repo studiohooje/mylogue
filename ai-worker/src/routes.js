@@ -3,6 +3,7 @@
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
+import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, MAX_OUTPUT_TOKENS} from './guards.js';
 
 export async function accountOf(user, token, {projectId, fetchImpl = fetch, plusAll = false}) {
   const admin = ADMIN_UIDS.includes(user.uid) || (user.emailVerified && ADMIN_EMAILS.includes(user.email));
@@ -45,7 +46,7 @@ export async function useAttempt(db, uid, day, feature, limit) {
 // 4.27.0 전수검사 B-10: 사업계획의 'AI 원가 상한 1인 월 700원'을 코드로. 부를 때마다 기능별 추정 원가(COST_WON)를 월 누적에 더하고,
 // 상한(MONTHLY_COST_WON)을 넘으면 그 달은 AI를 부르지 않는다. 금액은 0.1원 단위 정수로 usage_feature(day=YYYY-MM, feature='cost')에 둔다.
 // 추정 원가는 공식 가격표 기반 계산(전수조사 보고서)이고, 실제 청구서와 비교해 wrangler.toml에서 고친다.
-export const DEFAULT_COST_WON = Object.freeze({parse: 0.5, photo: 0.7, chat: 0.7, recipe: 0.7, review: 15});
+export const DEFAULT_COST_WON = Object.freeze({parse: 2, photo: 2.5, chat: 2, recipe: 2, review: 40}) // 4.29.x 비용 예측 보고서(2026-11-25): Haiku 5.5 실제 1회 약 1.6~1.8원, 리뷰(Sonnet) 약 39원에 여유;
 export function costOf(env, feature) {
   const table = {...DEFAULT_COST_WON};
   for (const part of String(env.COST_WON || '').split(',')) { const [k, v] = part.split(':').map(s => s.trim()); if (k in table && Number.isFinite(Number(v)) && Number(v) >= 0) table[k] = Number(v); }
@@ -72,7 +73,8 @@ export async function photoSeen(db, uid, day, hash) {
 export async function sha256(text) { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join(''); }
 export const recordsIn = text => { const s = String(text || ''); const m = s.match(/```(?:json|mylogue)?\s*([\s\S]*?)```/) || s.match(/(\{[\s\S]*\})/); try { const j = JSON.parse(m?.[1] || ''); return Array.isArray(j?.records) ? j.records.length : 0; } catch { return 0; } };
 
-// deps: {env, fetchImpl, callClaude(messages, {model, system, feature, effort}) → {text, stopReason, model}, now}
+// deps: {env, fetchImpl, callModel(messages, {model, system, feature, effort, maxTokens}) → {text, stopReason, model}, now}
+// (예전 이름 callClaude도 받는다. 어느 회사 모델을 부를지는 index.js/providers.js가 AI_PROVIDER로 정한다)
 export async function route(request, deps) {
   const {env} = deps, allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
   const origin = request.headers.get('origin') || '', cors = corsHeaders(origin, allowed);
@@ -83,21 +85,29 @@ export async function route(request, deps) {
   if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me'].includes(path)) return reply(404, {error: '없는 주소예요.'});
   try {
     if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
+    // 4.29.x 불필요한 호출 막기 ①② — 로그인 확인·JSON 읽기 전에 값싼 것부터
+    if (path !== 'me') assertEnabled(env);
+    assertBodySize(request, env);
     const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
     const now = deps.now ? deps.now() : Date.now();
     const user = await verifyIdToken(token, {projectId: env.FIREBASE_PROJECT_ID, keys: await googleKeys(deps.fetchImpl, now), now});
     let acct = await accountOf(user, token, {projectId: env.FIREBASE_PROJECT_ID, fetchImpl: deps.fetchImpl, plusAll: env.PLUS_ALL === '1'});
     if (!acct.approved) throw new HttpError(403, '이용 승인 후 쓸 수 있어요.');
-    let body; try { body = await request.json(); } catch { throw new HttpError(400, '요청 형식이 올바르지 않아요.'); }
+    const body = await readJsonLimited(request, env);
     // 4.29.0 슈퍼관리자가 앱에서 '일반 사용자'로 보기를 켰으면, 서버도 일반 사용자 권한·하루 한도로 시험한다(낮추기만 가능)
     if (acct.admin && body?.viewPlan === 'free') acct = {...acct, plus: false, admin: false};
     const day = new Date(now + 9 * 3600_000).toISOString().slice(0, 10); // 한국 날짜 기준
     const month = day.slice(0, 7);
-    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : deps.callClaude(messages, opts);
+    // 4.29.x ③ 사람별 속도 제한(운영자도 넉넉한 상한) ④ 같은 내용 되풀이 막기('me'는 값싸서 속도 제한만)
+    await rateLimit(env.DB, user.uid, now, env, {admin: acct.admin});
+    if (path !== 'me') { const {now: _n, today: _t, ...same} = body || {}; await rejectDuplicate(env.DB, user.uid, await sha256(`${path}|${JSON.stringify(same)}`), now, env); }
+    const callModel = deps.callModel || deps.callClaude;
+    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : callModel(messages, {...opts, maxTokens: opts.maxTokens || MAX_OUTPUT_TOKENS[opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature] || 1500});
     // 운영자 계정은 시험이 많아 시도·월 상한에서 뺀다(하루 한도는 그대로).
     const guard = async (feature, limit) => { if (acct.admin) return; await useAttempt(env.DB, user.uid, day, feature, limit); await useMonthlyBudget(env.DB, user.uid, month, costOf(env, feature), env.MONTHLY_COST_WON ?? '700'); };
     const call = async (messages, opts) => {
-      try { await guard(opts.feature, opts.limit); }
+      // ⑤ 서비스 전체 예산은 운영자도 예외 없음(가짜 AI는 비용이 없으니 세지 않음)
+      try { await guard(opts.feature, opts.limit); if (env.FAKE_AI !== '1') await useGlobalBudget(env.DB, day, month, costOf(env, opts.feature), env); }
       catch (e) { if (opts.feature !== 'parse' && !opts.repeat) await refundFeature(env.DB, user.uid, day, opts.feature); throw e; }
       return callAI(messages, opts);
     };

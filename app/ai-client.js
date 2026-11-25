@@ -3,6 +3,7 @@
 // - 관리자 '가짜 AI 모드'면 서버 없이 정해진 답을 준다(흐름 시험용, 비용 0).
 import {aiWorkerUrl} from './ai-config.js';
 import {fakeConverse} from './ai-chat-fake.js';
+import {createAIGuard, requestKey} from './ai-guard.js';
 import {fakeAI, isDemo, adminView} from './plan.js';
 import {firestoreContext} from './ai-drafts.js';
 import {searchFoodDB, foodDBReady} from './food-db.js';
@@ -64,11 +65,17 @@ export async function aiRequest(path, body = {}, {fetchImpl = globalThis.fetch, 
   if (adminView() === 'free') body = {...body, viewPlan: 'free'};
   const url = aiWorkerUrl();
   if (!url) throw Error('AI가 아직 연결되지 않았어요. 연결되면 바로 쓸 수 있어요.');
-  const tok = token || await (await firestoreContext()).user.getIdToken();
-  let r;
-  try { r = await fetchImpl(`${url}/${path}`, {method: 'POST', headers: {authorization: `Bearer ${tok}`, 'content-type': 'application/json'}, body: JSON.stringify(body), credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store'}); }
-  catch { throw Error('AI 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); }
-  const out = await r.json().catch(() => ({}));
-  if (!r.ok) { const e = Error(out.error || 'AI 처리에 실패했어요.'); e.status = r.status; throw e; }
-  return out;
+  // 4.29.x 불필요한 호출 막기(ai-guard.js): 같은 요청 진행 중이면 그 답을 같이 기다리고, 연타·반복·연속 실패면 부르지 않는다. 자동 재시도 없음.
+  return aiGuard().run(path, requestKey(path, body), async () => {
+    const tok = token || await (await firestoreContext()).user.getIdToken();
+    let r;
+    try { r = await fetchImpl(`${url}/${path}`, {method: 'POST', headers: {authorization: `Bearer ${tok}`, 'content-type': 'application/json'}, body: JSON.stringify(body), credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store'}); }
+    catch { throw Error('AI 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); }
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = Error(out.error || 'AI 처리에 실패했어요.'); e.status = r.status; throw e; }
+    return out;
+  });
 }
+let guardInst = null;
+export const aiGuard = () => (guardInst ||= createAIGuard());
+export const setAIGuardForTest = g => { guardInst = g; };
