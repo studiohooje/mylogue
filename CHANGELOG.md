@@ -4,6 +4,13 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 4.29.1 — 2026-11-25
+
+- 불필요한 AI 호출 막기: 앱 ai-guard.js(진행 중 합치기·간격·기기 상한·연속 실패 쉬기·429 쉬기·재시도 없음, 저장소 막혀도 탭 기억), 서버 guards.js(끄기 스위치·크기·속도·되풀이 한 문장 upsert·전체 예산·답 길이·설정 값 보호·실제 사용량 장부), 운영자도 시도 상한.
+- 다른 회사 AI(OpenAI 형식: OpenAI·Gemini·DeepSeek) 연결(providers.js), 두 모델 비교 도구(ai-worker/tools/compare-models.mjs).
+- 슈퍼관리자 AI 비용 알림(cost-alert.js, me.global, ALERT_MONTHLY_WON). Fable 호출 방지 전수조사 18건 반영.
+- AI 서버(Cloudflare)는 아직 배포 전. Firestore 규칙 변경 없음. 버전 4.29.1(versionCode 91).
+
 ## Mylogue Beta 4.29.0 — 2026-11-25 (배포됨)
 
 - AI 기록 대화창(converse 서버 경로·대화 안 기록 카드·양 칩·다른 음식·기록하기/나중에 확인·이어서 고치기·사진 갈래·체중계/포장지 읽기, 둘러보기 예시 답).

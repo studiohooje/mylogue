@@ -252,3 +252,13 @@ test('승인 안 된 계정은 D1(횟수·속도·예산)을 건드리지 않는
  assert.equal((await route(await post('converse', say('점심'), tok), s.deps)).status, 403);
  assert.equal(touched, 0); assert.equal(s.calls.length, 0);
 });
+test('비용 알림: 운영자에게만 서비스 전체 사용 금액과 알림 기준을 알려 준다', async () => {
+ resetKeyCache(); const s = setup({plan: 'plus', guards: noGuards}); s.deps.env.ALERT_MONTHLY_WON = '20000'; s.deps.env.COST_WON = 'parse:2'; const tok = await token(), admin = await token('bulbnZbmC4PgH8tUAOjfPPLE7pA3');
+ await route(await post('converse', say('점심'), tok), s.deps);
+ const me = await (await route(await post('me', {}, admin), s.deps)).json();
+ assert.equal(me.global.monthWon, 2); assert.equal(me.global.dayWon, 2); assert.equal(me.global.alertWon, 20000); assert.equal(me.global.monthlyCap, 30000);
+ const meFree = await (await route(await post('me', {viewPlan: 'free'}, admin), s.deps)).json();
+ assert.ok(meFree.global, '일반으로 보기 중에도 운영자에게는 보임');
+ const user = await (await route(await post('me', {}, tok), s.deps)).json();
+ assert.equal(user.global, null);
+});

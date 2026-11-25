@@ -3,7 +3,7 @@
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
-import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, MAX_OUTPUT_TOKENS} from './guards.js';
+import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, guardValue, GLOBAL_UID, MAX_OUTPUT_TOKENS} from './guards.js';
 // Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
 export const dailyLimit = env => safeNum(env.DAILY_LIMIT, 30);
 export const monthlyCapWon = env => safeNum(env.MONTHLY_COST_WON, 700);
@@ -97,6 +97,7 @@ export async function route(request, deps) {
     let acct = await accountOf(user, token, {projectId: env.FIREBASE_PROJECT_ID, fetchImpl: deps.fetchImpl, plusAll: env.PLUS_ALL === '1'});
     if (!acct.approved) throw new HttpError(403, '이용 승인 후 쓸 수 있어요.');
     const body = await readJsonLimited(request, env);
+    const realAdmin = acct.admin; // 4.29.x 비용 알림은 '일반으로 보기' 중에도 운영자에게 보여 준다
     // 4.29.0 슈퍼관리자가 앱에서 '일반 사용자'로 보기를 켰으면, 서버도 일반 사용자 권한·하루 한도로 시험한다(낮추기만 가능)
     if (acct.admin && body?.viewPlan === 'free') acct = {...acct, plus: false, admin: false};
     const day = new Date(now + 9 * 3600_000).toISOString().slice(0, 10); // 한국 날짜 기준
@@ -119,7 +120,17 @@ export async function route(request, deps) {
       return out;
     };
     const model = env.MODEL || 'claude-haiku-5-5';
-    if (path === 'me') { const row = await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(user.uid, month, 'cost').first(); const cap = Number(monthlyCapWon(env)); return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null}); }
+    if (path === 'me') {
+      const row = await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(user.uid, month, 'cost').first(); const cap = Number(monthlyCapWon(env));
+      // 4.29.x 운영자에게만 서비스 전체 사용 금액(장부, 원)과 알림 기준. ALERT_MONTHLY_WON이 없으면 전체 월 상한을 기준으로.
+      let global = null;
+      if (realAdmin) {
+        const g = async key => Number((await env.DB.prepare('SELECT n FROM usage_feature WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(GLOBAL_UID, key, 'cost').first())?.n || 0) / 10;
+        const monthlyCap = guardValue(env, 'GLOBAL_MONTHLY_COST_WON');
+        global = {day, month, dayWon: await g(day), monthWon: await g(month), dailyCap: guardValue(env, 'GLOBAL_DAILY_COST_WON'), monthlyCap, alertWon: safeNum(env.ALERT_MONTHLY_WON, monthlyCap, {allowZero: false})};
+      }
+      return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null, global});
+    }
     // 4.28.x 'AI 기록' 대화: 앞의 대화(최근 10턴, 글만)를 함께 보내고, 마지막 사용자 말에 사진·기록 요약을 붙인다.
     // 횟수: 사진이 있으면 사진 한도, 없으면 말 기록 한도(무료도 기록은 되고, 묻기는 지시문이 플러스 안내로 답함).
     if (path === 'converse') {

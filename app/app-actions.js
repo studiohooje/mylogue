@@ -1,4 +1,5 @@
 // 4.17.0 app.js에서 옮김(14개 함수). 화면 상태는 $s, 다른 app 함수는 $f로 부른다.
+import {markCostSeen} from './cost-alert.js';
 import {$s,$f} from './app-state.js';
 import {QUESTIONS,prefsOf,withPrefs,onboardingPick,onboardingMove,newOnboarding,finishOnboarding,skipOnboarding,applyPrefClick,emptyAfterWorkout,afterWorkoutFromLast,readAfterWorkoutForm} from './prefs.js';
 import {emptyPlan,planFromWorkout,planFromRoutine,readPlanForm,completeSet,skipExercise,finishRun,addRest,endRest,editCurrent,current as guideCurrent,scheduleRestAlert,cancelRestAlert} from './guide.js';
@@ -203,6 +204,8 @@ export async function adminClick(t){
  const key=t.dataset.adminLater||t.dataset.adminReview||t.dataset.adminApprove||t.dataset.adminReject;if(!key)return false;
  const item=$f.adminItems().find(x=>x.key===key);
  if(t.dataset.adminLater){$s.adminState.snoozed.add(key);if(key.startsWith('remind:'))try{const s=[...$s.remindSeen(),key].slice(-20);localStorage.setItem(scopedKey('mylogue.remindSeen'),JSON.stringify(s))}catch{}if(!$f.adminItems().some(x=>!$s.adminState.snoozed.has(x.key)))$s.adminState.open=false;$f.render();return true}
+ // 4.29.x AI 비용 알림: '확인했어요'는 그 단계를 다시 띄우지 않고, '사용량 보기'는 설정의 플러스 미리보기 카드로
+ if(item?.kind==='cost'){markCostSeen(key);$s.adminState.snoozed.add(key);if(t.dataset.adminReview){$s.adminState.open=false;$s.modal=null;$s.page='settings';$f.render();setTimeout(()=>document.getElementById('plus-admin')?.scrollIntoView({block:'start'}),60);return true}if(!$f.adminItems().some(x=>!$s.adminState.snoozed.has(x.key)))$s.adminState.open=false;$f.render();return true}
  if(item?.kind==='remind'){$s.adminState.open=false;try{const s=[...$s.remindSeen(),key].slice(-20);localStorage.setItem(scopedKey('mylogue.remindSeen'),JSON.stringify(s))}catch{}if(t.dataset.adminApprove){$s.bodyEditId=null;$s.bodyPreset=item.what==='inbody'?'inbody':null;$s.modal='body';$f.render();return true}$s.page='settings';$s.modal=null;$f.render();setTimeout(()=>document.getElementById('reminder-settings')?.scrollIntoView({block:'start'}),60);return true}
  if(t.dataset.adminReview&&item?.kind==='plan'){$s.adminState.open=false;$s.modal=null;$s.page='home';if(item.date)$s.selectedDate=item.date;$f.render();globalThis.scrollTo?.(0,0);document.querySelector('.timeline-card.planned')?.scrollIntoView({block:'center'});return true}
  if(t.dataset.adminApprove&&item?.kind==='plan'){$s.adminState.snoozed.add(item.key);$f.confirmPlanned(item.ref);if(!$f.adminItems().some(x=>!$s.adminState.snoozed.has(x.key)))$s.adminState.open=false;$f.render();return true}

@@ -7,6 +7,7 @@
 import {cloudState} from './cloud-sync.js';
 import {isAdminUser} from './admin.js';
 import {scopedKey,storageAccount} from './storage-scope.js';
+import {costLineHTML} from './cost-alert.js';
 
 export const BETA_ALL_PLUS = true; // 베타 동안 승인된 모든 계정을 플러스로(AI 서버의 PLUS_ALL과 함께 바꾼다)
 export const PRICE = {monthly: 4900};
@@ -56,6 +57,7 @@ export function adminPlanCardHTML(esc, {serverInfo = null, aiConnected = false} 
   <div class="seg" role="group" aria-label="보기 기준">${[['free', '일반 사용자'], ['plus', '플러스 사용자']].map(([k, l]) => `<button type="button" class="${v === k ? 'active' : ''}" data-plan-view="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>
   <div class="actions"><button type="button" class="button ${fake ? '' : 'secondary'}" id="plan-fake-ai" aria-pressed="${fake}">가짜 AI 모드 ${fake ? '켜짐' : '꺼짐'}</button>${aiConnected ? '<button type="button" class="button secondary" id="plan-ai-check">AI 서버 상태 확인</button>' : ''}</div>
   <p class="hint">가짜 AI 모드: AI 서버 없이 정해진 답으로 흐름만 시험해요(비용 없음).</p>
+  ${aiConnected ? costLineHTML(serverInfo?.global || undefined, esc) : ''}
   <p class="hint">AI 서버:${aiConnected ? (serverInfo ? `연결됨 · ${serverInfo.fake ? '서버도 가짜 AI' : '실제 AI'} · 플러스 ${serverInfo.plus ? '켜짐' : '꺼짐'}` : '연결됨(상태 확인 전)') : '아직 연결 전(키 연결 후 주소를 넣으면 바로 동작)'}</p>
   <details><summary>플러스 기능 ${FEATURES.length}가지</summary><ul class="plus-list">${FEATURES.map(f => `<li><b>${esc(f.name)}</b> <small>무료 ${f.free === 0 ? '잠금' : f.free === Infinity ? '전부' : f.free} · 플러스 ${f.plus === Infinity ? '전부' : f.plus}${f.ai ? ' · AI' : ''}</small></li>`).join('')}</ul></details></section>`;
 }
