@@ -8,7 +8,7 @@ import {matchScore} from './suggest.js';
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 export const PM_APPS = ['매트', '리포머', '캐딜락', '체어', '래더 배럴', '스파인 코렉터', '아크 배럴', '리포머 타워'];
 // 기구 → 수업 종목 이름(운동 도감)
-export const classOf = app => ({'매트': '필라테스 매트', '캐딜락': '필라테스 캐딜락', '리포머 타워': '필라테스 캐딜락', '체어': '필라테스 체어', '래더 배럴': '필라테스 바렐', '스파인 코렉터': '필라테스 바렐', '아크 배럴': '필라테스 바렐'})[app] || '필라테스 리포머';
+export const classOf = app => ({'매트': '필라테스 매트', '캐딜락': '필라테스 캐딜락', '리포머 타워': '필라테스 리포머 타워', '체어': '필라테스 체어', '래더 배럴': '필라테스 바렐', '스파인 코렉터': '필라테스 스파인 코렉터', '아크 배럴': '필라테스 아크 배럴'})[app] || '필라테스 리포머';
 const INFO = new Map(PILATES_DICT.map(r => [`${r[0]}|${r[1]}`, r]));
 export function movesFor(app) { return (MOVES[app] || []).map(name => { const r = INFO.get(`${name}|${app}`); return {name, apparatus: app, level: r?.[4] || '', en: r?.[2] || ''}; }); }
 export function searchMoves(query, limit = 40) {

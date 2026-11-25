@@ -13,7 +13,8 @@ export const PROPS = ['매직서클','소프트볼','토닝볼','폼롤러','밴
 export const OBS = ['잘 됨','어려워함','불편감 있음'];
 export const AREAS = ['목','어깨','등','허리','골반','고관절','무릎','발목','손목'];
 export const CLASS_TYPES = ['개인','듀엣','트리오','그룹'];
-export const PILATES_CLASSES = ['필라테스 리포머','필라테스 매트','필라테스 캐딜락','필라테스 체어','필라테스 바렐','필라테스 기구 혼합'];
+// 5.0.5 기준 종목 세분화: 스파인 코렉터·아크 배럴·리포머 타워·소도구(링·볼·밴드)
+export const PILATES_CLASSES = ['필라테스 리포머','필라테스 매트','필라테스 캐딜락','필라테스 체어','필라테스 바렐','필라테스 스파인 코렉터','필라테스 아크 배럴','필라테스 리포머 타워','필라테스 소도구','필라테스 기구 혼합'];
 export const MOVES = {
  '매트':['헌드레드','롤업','롤오버','싱글 레그 서클','롤링 라이크 어 볼','싱글 레그 스트레치','더블 레그 스트레치','스파인 스트레치','쏘우','스완','사이드 킥','티저','씰','브릿지','캣카우','플랭크'],
  '리포머':['풋워크','헌드레드','코디네이션','스트랩 풋워크','레그 서클','쇼트 스파인','엘리펀트','니 스트레치','롱 스트레치','다운 스트레치','업 스트레치','스터머신','머메이드','풀링 스트랩','백 스트로크','티저','쇼트 박스','사이드 스플릿','러닝','점프보드'],
@@ -31,7 +32,7 @@ const DICT_BY = new Map(); for(const r of PILATES_DICT){ for(const n of [r[0], r
 // 이름(+기구)으로 사전 항목 찾기
 export function moveInfo(name, apparatus=''){ const n = String(name||'').replace(/\s/g,''); if(!n) return null; const r = DICT_BY.get(`${n}|${apparatus}`) || DICT_BY.get(n); return r ? {name:r[0], apparatus:r[1], en:r[2], level:r[4], focus:r[5], cues:r[6], spring:r[7], setup:r[8]} : null; }
 export const moveInfoHTML = m => { const x = moveInfo(m.name, m.apparatus); if(!x) return ''; const bits = [x.level, (x.focus||[]).join('·'), x.en].filter(Boolean); return `<p class="pm-ref"><small>${esc(bits.join(' · '))}${x.spring?` · 스프링 참고 ${esc(x.spring)}`:''}${x.setup?` · 세팅 참고 ${esc(x.setup)}`:''}${x.cues?.length?`<br>큐 예시: ${esc(x.cues.slice(0,2).join(' / '))}`:''}</small></p>`; };
-const apparatusOf = cls => ({'필라테스 매트':'매트','필라테스 캐딜락':'캐딜락','필라테스 체어':'체어','필라테스 바렐':'래더 배럴'})[cls] || '리포머';
+const apparatusOf = cls => ({'필라테스 매트':'매트','필라테스 캐딜락':'캐딜락','필라테스 체어':'체어','필라테스 바렐':'래더 배럴','필라테스 스파인 코렉터':'스파인 코렉터','필라테스 아크 배럴':'아크 배럴','필라테스 리포머 타워':'리포머 타워','필라테스 소도구':'매트'})[cls] || '리포머';
 export const isPilates = e => /필라테스/.test(String(e?.name||'')) || e?.part==='필라테스' || Array.isArray(e?.moves);
 const num = (v, lo, hi, int=true) => { if(v===''||v==null) return null; const n = Number(v); if(!Number.isFinite(n)) return null; const x = int ? Math.round(n) : n; return x<lo||x>hi ? null : x; };
 const str = (v, n) => String(v??'').trim().slice(0, n);
