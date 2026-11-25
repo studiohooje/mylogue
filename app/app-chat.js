@@ -22,7 +22,7 @@ export async function loadChat() {
 function persist() { const s = st(); try { kvSet(KEY(), JSON.stringify(s.msgs.slice(-CHAT_MAX))); } catch {} }
 function scrollEnd() { globalThis.requestAnimationFrame?.(() => { const l = document.getElementById('chat-log'); const sheet = l?.closest('.sheet'); if (sheet) sheet.scrollTop = sheet.scrollHeight; }); }
 // 5.0.0 로그메이트 '식단으로 가져오기': 메이트에 올린 사진(JPEG base64)과 말을 채워 대화창을 연다. 보내기는 사람이 누른다(AI는 누를 때만).
-export function openChatWithPhoto(data, thumb, text = '') { const s = st(); s.photos = [data]; s.thumbs = [thumb]; s.input = String(text || ''); $s.modal = 'ai-chat'; $f.render(); loadChat(); scrollEnd(); }
+export function openChatWithPhoto(data, thumb, text = '') { const s = st(); s.camMenu = false; s.choose = true; s.photos = [data]; s.thumbs = [thumb]; s.input = String(text || ''); $s.modal = 'ai-chat'; $f.render(); loadChat(); scrollEnd(); }
 export function openChat(text = '') { const s = st(); if (text) s.input = text; $s.modal = 'ai-chat'; $f.render(); loadChat(); scrollEnd(); }
 async function thumb(file) {
  const url = URL.createObjectURL(file);
@@ -88,7 +88,14 @@ function openMode(mode) {
 export function openAIEntry() { const m = aiModeDefault(); if (m) openMode(m); else { $s.aiPick = {}; $s.modal = 'ai-pick'; $f.render(); } }
 export function chatClick(t) {
  const d0 = t.dataset || {};
- if (d0.aiPick != null) { $s.aiPick = {}; $s.modal = 'ai-pick'; $f.render(); return true; }
+ // 5.0.1 '다른 방법으로 입력': 쓰던 게 있으면 지워진다고 먼저 묻는다
+ const busyChat = () => { const s = $s.aiChat; return !!s && ((s.msgs || []).some(m => m.role === 'user') || !!String(s.input || '').trim() || (s.photos || []).length > 0); };
+ const busyPaste = () => $s.modal === 'ai-input' && !!String($s.aiInput?.text || '').trim();
+ const goPick = () => { $s.aiPickAsk = false; if ($s.aiChat) $s.aiChat.pickAsk = false; $s.aiPick = {}; $s.modal = 'ai-pick'; $f.render(); };
+ if (d0.aiPick != null) { if ($s.modal === 'ai-chat' && busyChat()) { st().pickAsk = true; $f.render(); return true; } if (busyPaste()) { $s.aiPickAsk = true; $f.render(); return true; } goPick(); return true; }
+ if (d0.aiPickNo != null) { $s.aiPickAsk = false; if ($s.aiChat) $s.aiChat.pickAsk = false; $f.render(); return true; }
+ if (d0.aiPickOk != null) { if ($s.modal === 'ai-chat') { $s.aiChat = newChat(); persist(); } else if ($s.aiInput) { $s.aiInput = {...$s.aiInput, text: '', msg: ''}; } $s.sheetDirty = false; goPick(); return true; }
+ if (d0.chatCam != null) { st().camMenu = !st().camMenu; $f.render(); return true; }
  if (d0.aiMode) { if (aiModeDefault() === d0.aiMode) openMode(d0.aiMode); else { $s.aiPick = {chosen: d0.aiMode}; $f.render(); } return true; }
  if (d0.aiAlways != null) { setAiModeDefault(d0.aiAlways); if (d0.aiAlways) { $f.toast('앞으로 이 방식으로 바로 열어요.'); openMode(d0.aiAlways); } else { $f.toast('이제 매번 방식을 골라요.'); $f.render(); } return true; }
  if (d0.aiOnce) { openMode(d0.aiOnce); return true; }
@@ -128,7 +135,8 @@ export function chatInput(t) {
  return false;
 }
 export function chatChange(t) {
- if (t.id !== 'chat-photo') return false;
+ if (t.id !== 'chat-photo' && t.id !== 'chat-photo-cam') return false;
+ st().camMenu = false;
  readPhotos(t);
  return true;
 }

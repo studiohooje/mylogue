@@ -2123,3 +2123,13 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .pf-tagrow{display:flex;gap:8px;align-items:center}.pf-tagrow input{flex:1;min-width:0;min-height:48px;font-size:16px}.pf-at{font-size:20px;font-weight:800;color:#8ce4e0}
 .pf-tag{display:grid;gap:6px}.pf-tag label{font-size:14px;color:#c9d6e6}
 .pf-tagopts{display:flex;flex-wrap:wrap;gap:6px}.pf-tagopts .chip{min-height:40px}
+
+/* 5.0.1 AI 입력: 뒤로 가서 다른 방법으로(지워짐 경고), 사진 넣기 메뉴 */
+.ai-back{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0 12px 0 8px;margin-bottom:8px;border-radius:12px;border:1px solid #3a4d6e;background:#17223a;color:#cdd8e6;font-weight:700;font-size:14px;cursor:pointer}
+.ai-switch-warn{display:grid;gap:6px;margin:0 0 10px;padding:12px;border-radius:14px;background:#3a2a1f;border:1px solid #f3c27a88;color:#ffe2bd}
+.ai-switch-warn span{font-size:13.5px;color:#f3d9b5}
+.ai-switch-warn .actions{display:flex;gap:8px;flex-wrap:wrap}
+.chat-cam-menu{display:grid;gap:4px;margin:0 0 8px;padding:6px;border-radius:14px;background:#1b2740;border:1px solid #3a4d6e}
+.chat-cam-item{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border-radius:10px;border:0;background:none;color:#eaf4ff;font-size:15px;text-align:left;cursor:pointer}
+.chat-cam-item:hover{background:#ffffff10}
+button.chat-cam{border:0;cursor:pointer}
