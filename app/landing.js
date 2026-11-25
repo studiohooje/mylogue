@@ -186,5 +186,5 @@ export function landingHTML({installHTML='', returning=false}={}){
 }
 
 export function demoBannerHTML(){
- return `<div class="demo-banner" role="status"><span><b>둘러보는 중</b> · 예시 기록이에요. <span class="demo-more">마음껏 눌러 보세요. 내 기록에는 남지 않아요.</span></span><span class="demo-actions"><button type="button" class="demo-persona" data-modal="persona">인물 바꾸기</button><button type="button" class="demo-signup" id="demo-signup">시작하기</button><button type="button" class="demo-exit" id="demo-exit">끝내기</button></span></div>`;
+ return `<div class="demo-banner" role="status"><span><b class="nb">둘러보는 중</b> <span class="nb">· 예시 기록이에요.</span> <span class="demo-more">마음껏 눌러 보세요. 내 기록에는 남지 않아요.</span></span><span class="demo-actions"><button type="button" class="demo-persona" data-modal="persona">인물 바꾸기</button><button type="button" class="demo-signup" id="demo-signup">시작하기</button><button type="button" class="demo-exit" id="demo-exit">끝내기</button></span></div>`;
 }

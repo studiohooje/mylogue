@@ -182,7 +182,11 @@ export function mountHalo(hero, db, date, now=new Date()){
  const measure = () => {
   const hb = hero.getBoundingClientRect(), s = hb.width/(hero.clientWidth||hb.width||1);
   const rects = [];
-  hero.querySelectorAll('.timeline-date,h2,.hero-msg').forEach(el=>{ const rg=document.createRange(); rg.selectNodeContents(el); for(const r of rg.getClientRects()) if(r.width>0) rects.push({l:(r.left-hb.left)/s, t:(r.top-hb.top)/s, r:(r.right-hb.left)/s, b:(r.bottom-hb.top)/s}); });
+  // 4.29.0 대표님 폰(약 620px·글자 크게)에서 큰 제목 끝과 원호가 겹침 → 제목·날짜 줄은 오른쪽 끝까지 막힌 것으로 보고(글자 크기 설정·글꼴 차이 여유),
+  // 페이즈 칩·주간 배지처럼 글이 든 다른 요소도 함께 잰다. 헤일로는 제목 아래 빈 곳에만 그린다.
+  const W = hero.clientWidth || hb.width/s;
+  hero.querySelectorAll('.timeline-date,h2,.hero-msg').forEach(el=>{ const wide = el.matches('h2,.timeline-date'); const rg=document.createRange(); rg.selectNodeContents(el); for(const r of rg.getClientRects()) if(r.width>0) rects.push({l:(r.left-hb.left)/s, t:(r.top-hb.top)/s, r:wide ? W : (r.right-hb.left)/s, b:(r.bottom-hb.top)/s}); });
+  hero.querySelectorAll(':scope > :not(.halo-art):not(.hero-glow):not(h2):not(.hero-msg):not(.timeline-date)').forEach(el=>{ const r = el.getBoundingClientRect(); if(r.width>0 && r.height>0 && el.textContent.trim()) rects.push({l:(r.left-hb.left)/s, t:(r.top-hb.top)/s, r:(r.right-hb.left)/s, b:(r.bottom-hb.top)/s}); });
   return {rects, s};
  };
  let {rects} = measure();
