@@ -3,6 +3,7 @@
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {mateRoute} from './mate.js';
+import {kakaoRoute} from './kakao.js';
 import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, fakeAnswer} from './prompts.js';
 import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, guardValue, GLOBAL_UID, MAX_OUTPUT_TOKENS} from './guards.js';
 // Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
@@ -85,6 +86,8 @@ export async function route(request, deps) {
   const reply = (status, body) => new Response(JSON.stringify(body), {status, headers: {...cors, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store'}});
   if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: cors});
   const path = new URL(request.url).pathname.replace(/^\//, '');
+  // 5.0.1 카카오 로그인(브라우저가 직접 오가는 주소라 GET)
+  if (request.method === 'GET' && (path === 'kakao/start' || path === 'kakao/callback')) return kakaoRoute(path, request, {env, fetchImpl: deps.fetchImpl, now: deps.now ? deps.now() : Date.now()});
   if (request.method === 'GET' && path === 'health') return reply(200, {ok: true, fake: env.FAKE_AI === '1'});
   // 5.0.0 로그메이트 사진(R2). AI를 부르지 않으므로 AI 끄기 스위치·비용 장부와 따로.
   if (request.method === 'POST' && ['mate/upload', 'mate/photo', 'mate/delete'].includes(path)) {

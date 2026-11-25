@@ -12,6 +12,7 @@ import {MATE_KINDS, MATE_KIND_LABEL} from './mate-share.js';
 import {stampText, openCamera, closeCamera, capture, cameraSupported} from './mate-camera.js';
 import {MATE_MAX, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
 import {openChatWithPhoto} from './app-chat.js';
+import {openAuth, authInlineHTML, rememberInvite, pendingInvite, clearPendingInvite} from './auth-ui.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const eul = w => w + ((w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? '을' : '를');
@@ -26,6 +27,8 @@ const LAST_KEY = () => scopedKey('mylogue.mateLastRooms');
 const lastRooms = () => { try { const v = JSON.parse(globalThis.localStorage?.getItem(LAST_KEY()) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
 const saveLast = ids => { try { globalThis.localStorage?.setItem(LAST_KEY(), JSON.stringify(ids)); } catch {} };
 
+// 5.0.1 초대 링크(#mate-코드)는 앱이 주소를 바꾸기 전에 잡아 둔다(앱이 켜지며 #home으로 바꿔 코드가 사라지던 문제)
+try { const m = /^#mate-([A-Z2-9]{8})$/i.exec(String(globalThis.location?.hash || '')); if(m) rememberInvite(m[1].toUpperCase()); } catch {}
 const st = () => ($s.mate ||= {view: 'rooms', rooms: null, roomId: '', posts: {}, props: {}, loading: '', err: '', sheet: null, create: null, invite: null, join: null, mate: null, shares: null, detail: null, cap: null, mode: 'food'});
 const ready = () => !!cloudState.user && cloudState.approval === 'approved';
 const me = () => cloudState.user?.uid || '';
@@ -71,13 +74,14 @@ function head(title, sub = '', {back = '', right = ''} = {}){
   return `<div class="mate-top">${back ? `<button type="button" class="mate-ib" data-mate-go="${esc(back)}" aria-label="뒤로">‹</button>` : ''}<div class="mate-title"><h2>${esc(title)}</h2>${sub ? `<small>${esc(sub)}</small>` : ''}</div>${right}</div>`;
 }
 const scopeTags = r => r.type === 'mine' ? '<span class="mate-tag">내 방 · 나만 봐요</span>' : `<span class="mate-tag">${r.memberIds.length}명</span>${MATE_KINDS.map(k => `<span class="mate-tag ${r.scope[k] ? 'on' : 'off'}">${MATE_KIND_LABEL[k]}</span>`).join('')}`;
+const codeCardHTML = () => `<div class="mate-card"><b>초대 코드로 다른 방 들어가기</b><p class="hint">메이트에게 받은 8자리 코드를 적어 주세요(링크가 안 열릴 때도 이걸로 들어가요).</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button secondary">들어가기</button></form></div>`;
 function roomsView(){
   const s = st(), list = s.rooms || [];
   const rows = list.map(r => `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b><span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
   return `${head('메이트', '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib" data-mate-go="create" aria-label="방 만들기">＋</button>`})}
   ${s.loading === 'rooms' && !s.rooms ? '<p class="hint">방을 불러오는 중…</p>' : ''}
   ${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
-  <div class="mate-card"><b>초대받았나요?</b><p class="hint">메이트가 보낸 링크를 누르면 바로 들어가는 화면이 떠요. 코드만 받았다면 여기에 적어 주세요.</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="8" autocomplete="off" placeholder="초대 코드 8자리" aria-label="초대 코드"><button type="submit" class="button secondary">들어가기</button></form></div>
+  ${codeCardHTML()}
   <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 동안 보관돼요. '내 기록에도 남기기'로 옮긴 숫자는 기록으로 계속 남아요.</p>`;
 }
 function postHTML(p, r){
@@ -167,18 +171,18 @@ function settingsView(){
   ${MATE_KINDS.map(k => `<button type="button" class="mate-sw ${r.scope[k] ? 'on' : ''}" data-mate-scope="${k}" ${pending ? 'disabled' : ''} aria-pressed="${r.scope[k]}"><span>${MATE_KIND_LABEL[k]}<small class="hint">${r.scope[k] ? '공개 중' : '비공개'}</small></span><span class="tog"></span></button>`).join('')}
   ${pending ? '<p class="hint warn">변경 요청이 진행 중이에요. 끝나면 다시 바꿀 수 있어요.</p>' : ''}</div>` : '<p class="hint">내 방은 나만 봐요.</p>'}
   ${s.confirmLeave ? `<div class="mate-card"><b>정말 나갈까요?</b><p class="hint">${r.memberIds.length <= 1 ? '혼자 있는 방이라 나가면 방이 지워져요.' : '내가 올린 사진·글은 보관 기간이 끝날 때까지 남아요. 메이트에게 보이던 내 기록 요약은 바로 지워져요.'}</p><div class="mate-row"><button type="button" class="button" data-mate-leave="yes">나가기</button><button type="button" class="button secondary" data-mate-leave="no">그만두기</button></div></div>` : `<button type="button" class="button secondary" data-mate-leave="ask">방 나가기</button>`}
-  <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 뒤 자동으로 지워져요. 기록에 남긴 숫자는 그대로예요.</p>`;
+  <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 뒤 자동으로 지워져요. 기록에 남긴 숫자는 그대로예요.</p>${codeCardHTML()}`;
 }
 function qrSVG(text){ try{ const m = qrMatrix(text), n = m.length, q = 2; let d = ''; m.forEach((row, y) => row.forEach((on, x) => { if(on) d += `M${x + q} ${y + q}h1v1h-1z`; })); return `<svg viewBox="0 0 ${n + q * 2} ${n + q * 2}" class="mate-qr" role="img" aria-label="초대 QR 코드"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#101625"/></svg>`; }catch{ return ''; } }
 function inviteView(){
   const s = st(), r = roomById(s.roomId), inv = s.invite;
   if(!inv) return `${head('메이트 초대', r?.name || '', {back: 'settings'})}<p class="hint">초대 링크를 만드는 중…</p>`;
   const link = inviteLink(inv.code);
-  return `${head('메이트 초대', r?.name || '', {back: 'settings'})}<div class="mate-card mate-inv">${qrSVG(link)}<b>QR을 찍거나 링크를 받으면 들어올 수 있어요</b><code class="mate-code">${esc(link)}</code><div class="mate-row"><button type="button" class="button" data-mate-copy>링크 복사</button>${globalThis.navigator?.share ? '<button type="button" class="button secondary" data-mate-share>보내기</button>' : ''}</div><p class="hint">초대 코드 <b>${esc(inv.code)}</b> · 7일 동안 쓸 수 있어요. 들어오는 사람은 이 방의 공개 범위(${MATE_KINDS.map(k => `${MATE_KIND_LABEL[k]} ${r?.scope?.[k] ? '공개' : '비공개'}`).join(' · ')})를 보고 동의한 뒤 들어와요.</p></div>`;
+  return `${head('메이트 초대', r?.name || '', {back: 'settings'})}<div class="mate-card mate-inv">${qrSVG(link)}<b>QR을 찍거나 링크를 받으면 들어올 수 있어요</b><code class="mate-code">${esc(link)}</code><div class="mate-row"><button type="button" class="button" data-mate-copy>링크 복사</button>${globalThis.navigator?.share ? '<button type="button" class="button secondary" data-mate-share>보내기</button>' : ''}</div><div class="mate-bigcode" aria-label="초대 코드"><small>초대 코드</small><b>${esc(inv.code.slice(0, 4))} ${esc(inv.code.slice(4))}</b></div><button type="button" class="button secondary" data-mate-copycode>코드만 복사</button><p class="hint">링크가 안 열리면 메이트 탭의 '초대 코드'에 이 8자리를 적으면 돼요. 7일 동안 쓸 수 있어요. 들어오는 사람은 이 방의 공개 범위(${MATE_KINDS.map(k => `${MATE_KIND_LABEL[k]} ${r?.scope?.[k] ? '공개' : '비공개'}`).join(' · ')})를 보고 동의한 뒤 들어와요.</p></div>`;
 }
 function joinView(){
   const s = st(), j = s.join;
-  if(!ready()) return `${head('초대받았어요')}<div class="mate-card"><b>로그인하면 들어갈 수 있어요</b><p class="hint">마이로그 계정으로 로그인하고 이용 승인을 받은 뒤 이 링크를 다시 열어 주세요.</p>${cloudState.user ? '' : '<button type="button" class="button" data-mate-login>로그인</button>'}</div>`;
+  if(!ready()){ if(j?.code) rememberInvite(j.code); return `${head('초대받았어요')}<div class="mate-card"><b>${cloudState.user ? '이용 승인을 받으면 바로 들어갈 수 있어요' : '로그인하거나 가입하면 바로 들어갈 수 있어요'}</b><p class="hint">${cloudState.user ? '설정 → 내 계정에서 이용 신청을 해 주세요. 승인되면 이 초대가 자동으로 다시 열려요.' : '처음이면 아래에서 바로 가입돼요. 로그인하면 이 초대가 다시 열려요(3일 동안 기억).'}</p>${cloudState.user ? '' : authInlineHTML()}</div>`; }
   if(!j || j.loading) return `${head('초대받았어요')}<p class="hint">초대 정보를 불러오는 중…</p>`;
   if(j.err) return `${head('초대받았어요', '', {back: 'rooms'})}<div class="mate-card"><b>${esc(j.err)}</b></div>`;
   const inv = j.inv;
@@ -242,7 +246,7 @@ function go(view){
     s.view = 'cam'; $f.render(); startCam(); return;
   }
   if(view === 'invite'){ s.view = 'invite'; s.invite = null; $f.render(); const r = roomById(s.roomId); createMateInvite(r).then(code => { s.invite = {code}; $f.render(); }).catch(e => { s.err = e.message || '초대 링크를 만들지 못했어요.'; s.view = 'settings'; $f.render(); }); return; }
-  if(view === 'rooms'){ s.view = 'rooms'; s.join = null; s.confirmLeave = false; $f.render(); loadRooms(true); return; }
+  if(view === 'rooms'){ if(s.view === 'join') clearPendingInvite(); s.view = 'rooms'; s.join = null; s.confirmLeave = false; $f.render(); loadRooms(true); return; }
   if(view === 'room'){ s.view = 'room'; s.confirmLeave = false; $f.render(); fillPhotos(); scrollFeedEnd(); return; }
   s.view = view; $f.render();
 }
@@ -279,7 +283,7 @@ export async function mateClick(t){
   if(!t?.closest) return false;
   const d = t.dataset || {}, s = st();
   if(d.matePicker !== undefined){ openMatePicker(); return true; }
-  if(d.mateLogin !== undefined){ cloudLogin().catch(e => $f.toast(e.message)); return true; }
+  if(d.mateLogin !== undefined){ openAuth('pick', {reason: '메이트는 로그인하고 이용 승인을 받으면 쓸 수 있어요.'}); return true; }
   if(d.mateGo){ if(s.view === 'cam') stopCam(); go(d.mateGo); return true; }
   if(d.mateOpen){ s.roomId = d.mateOpen; s.view = 'room'; s.mate = null; $f.render(); loadRoom(d.mateOpen); return true; }
   if(d.mateCamclose !== undefined){ stopCam(); s.view = 'room'; s.camErr = ''; $f.render(); fillPhotos(); return true; }
@@ -345,6 +349,7 @@ export async function mateClick(t){
     catch(e){ s.busy = false; $f.toast(e.message || '방을 만들지 못했어요.'); $f.render(); }
     return true;
   }
+  if(d.mateCopycode !== undefined){ try{ await navigator.clipboard.writeText(s.invite?.code || ''); $f.toast('초대 코드를 복사했어요.'); }catch{ $f.toast('복사하지 못했어요. 코드를 길게 눌러 복사해 주세요.'); } return true; }
   if(d.mateCopy !== undefined){ const link = inviteLink(s.invite?.code || ''); try{ await navigator.clipboard.writeText(link); $f.toast('링크를 복사했어요.'); }catch{ $f.toast('복사하지 못했어요. 링크를 길게 눌러 복사해 주세요.'); } return true; }
   if(d.mateShare !== undefined){ const r = roomById(s.roomId); try{ await navigator.share({title: '마이로그 메이트 초대', text: `'${r?.name || '메이트 방'}'에 같이 기록해요`, url: inviteLink(s.invite?.code || '')}); }catch{} return true; }
   if(d.mateJoinok !== undefined){
@@ -375,7 +380,7 @@ export async function mateClick(t){
 export async function mateSubmit(form){
   const kind = form?.dataset?.mateForm; if(!kind) return false;
   const s = st();
-  if(kind === 'code'){ const code = String(document.getElementById('mate-code')?.value || '').trim().toUpperCase(); if(!/^[A-Z2-9]{8}$/.test(code)){ $f.toast('초대 코드 8자리를 확인해 주세요.'); return true; } openMateJoin(code); return true; }
+  if(kind === 'code'){ const code = String(document.getElementById('mate-code')?.value || '').replace(/[\s-]/g, '').toUpperCase(); if(!/^[A-Z2-9]{8}$/.test(code)){ $f.toast('초대 코드 8자리를 확인해 주세요.'); return true; } openMateJoin(code); return true; }
   if(kind === 'say'){
     const el = document.getElementById('mate-say'), text = String(el?.value || '').trim(); if(!text || !s.roomId) return true;
     el.value = '';
@@ -385,6 +390,6 @@ export async function mateSubmit(form){
   return false;
 }
 // 앱이 켜질 때 주소가 '#mate-코드'면 초대받은 화면으로
-export function mateBootHash(){ const m = /^#mate-([A-Z2-9]{8})$/i.exec(globalThis.location?.hash || ''); if(m){ openMateJoin(m[1].toUpperCase()); return true; } return false; }
+export function mateBootHash(){ const m = /^#mate-([A-Z2-9]{8})$/i.exec(globalThis.location?.hash || ''); if(m){ openMateJoin(m[1].toUpperCase()); return true; } const p = pendingInvite(); if(p){ if(ready()) clearPendingInvite(); openMateJoin(p); return true; } return false; }
 // 로그인·승인이 끝난 뒤 초대 화면을 다시 불러온다
 export function mateAfterLogin(){ const s = st(); if(s.view === 'join' && s.join?.code && !s.join.inv) openMateJoin(s.join.code); }

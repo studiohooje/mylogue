@@ -1,1 +1,1 @@
-{"appId":"pro.hooje.mylogue","appName":"마이로그","webDir":"dist","plugins":{"FirebaseAuthentication":{"providers":["google.com"],"skipNativeAuth":true}},"android":{"webContentsDebuggingEnabled":false}}
+{"appId":"pro.hooje.mylogue","appName":"마이로그","webDir":"dist","plugins":{"FirebaseAuthentication":{"providers":["google.com"],"skipNativeAuth":true}},"android":{"webContentsDebuggingEnabled":false},"server":{"allowNavigation":["mylogue-ai.mylogue-ai-worker.workers.dev","kauth.kakao.com","accounts.kakao.com","logins.daum.net"]}}

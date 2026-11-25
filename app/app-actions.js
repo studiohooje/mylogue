@@ -1,6 +1,7 @@
 // 4.17.0 app.js에서 옮김(14개 함수). 화면 상태는 $s, 다른 app 함수는 $f로 부른다.
 import {markCostSeen} from './cost-alert.js';
 import {$s,$f} from './app-state.js';
+import {openAuth} from './auth-ui.js';
 import {QUESTIONS,prefsOf,withPrefs,onboardingPick,onboardingMove,newOnboarding,finishOnboarding,skipOnboarding,applyPrefClick,emptyAfterWorkout,afterWorkoutFromLast,readAfterWorkoutForm} from './prefs.js';
 import {emptyPlan,planFromWorkout,planFromRoutine,readPlanForm,completeSet,skipExercise,finishRun,addRest,endRest,editCurrent,current as guideCurrent,scheduleRestAlert,cancelRestAlert} from './guide.js';
 import {addGymPlace,removeGym,centerFor} from './places.js';
@@ -260,7 +261,7 @@ export async function cloudClick(target){
  if(!target.id?.startsWith('cloud-'))return false;
  const id=target.id;
  if(id==='cloud-retry'){location.reload();return true}
- if(id==='cloud-login'){$f.persistDraft();await cloudLogin();return true}
+ if(id==='cloud-login'){$f.persistDraft();openAuth('pick');return true}
  if(id==='cloud-logout'){$f.persistDraft();await cloudLogout();return true}
  if(id==='cloud-delete-account'){const email=cloudState.user?.email||'이 계정';if(confirm('지우기 전에 백업 파일을 받아 둘까요? (‘확인’은 백업 파일을 받고 계속, ‘취소’는 받지 않고 계속)')){try{const backup=await createBackup($s.db);$f.download(`mylogue-backup-${$f.today()}.json`,JSON.stringify(backup))}catch(e){console.error(e)}}const typed=prompt(`${email}의 계정과 서버 기록을 모두 지워요. 되돌릴 수 없어요. 계속하려면 ‘삭제’라고 적어 주세요.`);if(String(typed||'').trim()!=='삭제'){$f.toast('삭제하지 않았어요.');return true}$f.persistDraft();target.disabled=true;try{await deleteAccount({onStep:step=>{target.textContent=`${step} 중…`}});alert('계정과 기록을 모두 지웠어요. 그동안 마이로그를 써 주셔서 고마워요.');location.reload()}catch(e){target.disabled=false;target.textContent='계정과 기록 삭제…';throw Error(`삭제를 끝내지 못했어요: ${e?.message||e} 다시 누르면 남은 것부터 이어서 지워요.`)}return true}
  if(id==='cloud-apply'){await applyForAccess(document.getElementById('approval-consent')?.checked===true);$f.render();$f.toast('기록 이용 신청을 보냈습니다. 승인 전에는 서버 기록을 사용할 수 없습니다.');return true}

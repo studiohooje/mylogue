@@ -42,13 +42,14 @@ export async function saveAccountConsent(record){
 }
 export async function applyForAccess(consent){
   const user=auth?.currentUser;
-  if(!user)throw Error('Google로 먼저 로그인해 주세요.');
+  if(!user)throw Error('먼저 로그인해 주세요.');
   if(isAdminUser(user))return 'approved';
   if(consent!==true)throw Error('건강 기록의 서버 저장 안내를 확인하고 동의해 주세요.');
+  /* 5.0.1 이메일 가입은 메일 인증을 마친 뒤에 신청 */if(isEmailAccount(user)&&!(await emailVerified()))throw Error('가입한 이메일의 인증 메일에서 링크를 눌러 주세요. 메일이 없으면 스팸함을 보거나 \'인증 메일 다시 받기\'를 눌러 주세요.');
   await fsSDK.runTransaction(firestore,async tx=>{
     const ref=profileRef(user.uid),before=await tx.get(ref);
     if(before.exists())throw Error('이미 신청한 계정입니다. 상태를 새로 확인해 주세요.');
-    tx.set(ref,{uid:user.uid,email:user.email||'',status:'pending',consentAt:fsSDK.serverTimestamp(),createdAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
+    tx.set(ref,{uid:user.uid,email:user.email||'',...(user.displayName?{name:String(user.displayName).slice(0,30)}:{}),status:'pending',consentAt:fsSDK.serverTimestamp(),createdAt:fsSDK.serverTimestamp(),updatedAt:fsSDK.serverTimestamp()});
   });
   return refreshApproval();
 }
@@ -125,6 +126,59 @@ export async function cloudLogin() {
   if(cloudState.native){const {idToken}=await signInNativeGoogle();await authSDK.signInWithCredential(auth,authSDK.GoogleAuthProvider.credential(idToken));location.reload();return;}
   const provider=new authSDK.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
   await authSDK.signInWithPopup(auth,provider);location.reload();
+}
+// 5.0.1 대표님(2026-11-25): 구글 말고도 가입 — 이메일(비밀번호)·카카오. 이메일은 메일 인증을 마쳐야 이용 신청이 된다.
+const AUTH_MSG = {
+  'auth/invalid-email': '이메일 주소를 확인해 주세요.',
+  'auth/missing-password': '비밀번호를 적어 주세요.',
+  'auth/weak-password': '비밀번호는 8자 이상으로 정해 주세요.',
+  'auth/email-already-in-use': '이미 가입한 이메일이에요. 로그인하거나 비밀번호 찾기를 눌러 주세요.',
+  'auth/invalid-credential': '이메일이나 비밀번호가 맞지 않아요.',
+  'auth/wrong-password': '이메일이나 비밀번호가 맞지 않아요.',
+  'auth/user-not-found': '이메일이나 비밀번호가 맞지 않아요.',
+  'auth/too-many-requests': '여러 번 틀려서 잠시 막혔어요. 조금 뒤 다시 하거나 비밀번호 찾기를 눌러 주세요.',
+  'auth/network-request-failed': '인터넷 연결을 확인해 주세요.',
+  'auth/operation-not-allowed': '이메일 가입이 아직 켜지지 않았어요. 운영자에게 알려 주세요.',
+  'auth/user-disabled': '사용이 중지된 계정이에요.',
+};
+const authError = e => Error(AUTH_MSG[e?.code] || e?.message || '로그인하지 못했어요. 잠시 뒤 다시 해 주세요.');
+const okEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+export async function emailSignUp({email, password, name = ''}) {
+  if (!auth) throw Error('인터넷 연결을 확인해 주세요.');
+  if (!okEmail(email)) throw Error('이메일 주소를 확인해 주세요.');
+  if (String(password || '').length < 8) throw Error('비밀번호는 8자 이상으로 정해 주세요.');
+  try {
+    const cred = await authSDK.createUserWithEmailAndPassword(auth, String(email).trim(), String(password));
+    const nm = String(name || '').trim().slice(0, 20);
+    if (nm) await authSDK.updateProfile(cred.user, {displayName: nm});
+    try { authSDK.useDeviceLanguage?.(auth); } catch {}
+    await authSDK.sendEmailVerification(cred.user);
+  } catch (e) { throw authError(e); }
+  location.reload();
+}
+export async function emailSignIn({email, password}) {
+  if (!auth) throw Error('인터넷 연결을 확인해 주세요.');
+  try { await authSDK.signInWithEmailAndPassword(auth, String(email || '').trim(), String(password || '')); }
+  catch (e) { throw authError(e); }
+  location.reload();
+}
+export async function emailReset(email) {
+  if (!auth) throw Error('인터넷 연결을 확인해 주세요.');
+  if (!okEmail(email)) throw Error('가입한 이메일 주소를 적어 주세요.');
+  try { try { authSDK.useDeviceLanguage?.(auth); } catch {} await authSDK.sendPasswordResetEmail(auth, String(email).trim()); }
+  catch (e) { if (e?.code !== 'auth/user-not-found') throw authError(e); }
+}
+export const isEmailAccount = (user = auth?.currentUser) => !!user && (user.providerData || []).some(p => p.providerId === 'password');
+export async function emailVerified() { const u = auth?.currentUser; if (!u) return false; try { await u.reload(); } catch {} if (u.emailVerified) { try { await u.getIdToken(true); } catch {} } return !!u.emailVerified; }
+export async function resendVerification() { const u = auth?.currentUser; if (!u) throw Error('먼저 로그인해 주세요.'); try { await authSDK.sendEmailVerification(u); } catch (e) { throw authError(e); } }
+// 카카오: AI 서버가 카카오 확인 뒤 Firebase 로그인 표(커스텀 토큰)를 만들어 주소 뒤(#)로 돌려준다. 이 함수는 그 표로 로그인한다.
+export async function signInWithKakaoToken(token, name = '') {
+  if (!auth) throw Error('인터넷 연결을 확인해 주세요.');
+  try {
+    const cred = await authSDK.signInWithCustomToken(auth, token);
+    const nm = String(name || '').trim().slice(0, 20);
+    if (nm && !cred.user.displayName) await authSDK.updateProfile(cred.user, {displayName: nm});
+  } catch (e) { throw authError(e); }
 }
 export async function cloudLogout() { if(cloudState.native)await signOutNativeGoogle();if(auth)await authSDK.signOut(auth);location.reload(); }
 // 4.11.0 계정 삭제: 본인 확인(Google 다시 로그인) → 서버 기록·검토함 초안·계정 문서 삭제 → 이 기기의 이 계정 기록 삭제 → 로그인 계정 삭제.

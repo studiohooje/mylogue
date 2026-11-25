@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function owner(uid) { return signedIn() && request.auth.uid == uid; }
-    function admin() { return signedIn() && (request.auth.uid == 'bulbnZbmC4PgH8tUAOjfPPLE7pA3' || (request.auth.token.email == 'mooncurvv@gmail.com' && request.auth.token.email_verified == true)); }
+    function admin() { return signedIn() && (request.auth.uid == 'bulbnZbmC4PgH8tUAOjfPPLE7pA3' || (request.auth.token.get('email', '') == 'mooncurvv@gmail.com' && request.auth.token.get('email_verified', false) == true)); }
     function approved() {
       return admin() || (signedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
@@ -13,10 +13,13 @@ service cloud.firestore {
       allow get: if owner(uid) || admin();
       allow list: if admin();
       allow create: if owner(uid) && !admin()
-        && request.resource.data.keys().hasOnly(['uid','email','status','consentAt','createdAt','updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid','email','name','status','consentAt','createdAt','updatedAt'])
         && request.resource.data.keys().hasAll(['uid','email','status','consentAt','createdAt','updatedAt'])
         && request.resource.data.uid == uid
-        && request.resource.data.email == request.auth.token.email
+        // 5.0.1 카카오 가입은 이메일이 없을 수 있다. 이메일(비밀번호) 가입은 메일 인증을 마쳐야 신청된다
+        && request.resource.data.email == request.auth.token.get('email', '')
+        && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 30))
+        && (request.auth.token.get('firebase', {}).get('sign_in_provider', '') != 'password' || request.auth.token.get('email_verified', false) == true)
         && request.resource.data.status == 'pending'
         && request.resource.data.consentAt == request.time
         && request.resource.data.createdAt == request.time
