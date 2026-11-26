@@ -49,9 +49,9 @@ const hm12 = t => { const [h, m] = t.split(':').map(Number); return `${h < 12 ? 
 // 운동 기록의 '어떻게 기록할까요?'(실시간 입력 / 한 번에 입력 / 의도적 휴식)와 같은 틀
 export function mealWhenChooserHTML(){
  return `<div class="quick-flow q-live-start q-meal-start"><h3>어떻게 기록할까요?</h3><p class="hint">언제 먹은 건지 골라 주세요.</p>
-<button type="button" class="q-live-card live" data-q-when="now"><span class="q-live-ico" aria-hidden="true">⏱</span><span><b>방금 먹은 것</b><small>지금 시각으로 바로 적어요. −10분·−30분·정각으로 쉽게 맞춰요.</small></span></button>
-<button type="button" class="q-live-card" data-q-when="past"><span class="q-live-ico" aria-hidden="true">✎</span><span><b>전에 먹은 것</b><small>아침·점심처럼 지난 끼니를 날짜와 시각을 골라 적어요. 어제 것도 돼요.</small></span></button>
-<button type="button" class="rest-btn q-plan-btn" data-q-when="plan"><span class="q-plan-ico" aria-hidden="true">▦</span><span><b>앞으로 먹을 것 미리</b><small>미리 넣어 두면 오늘 칼로리·탄단지를 '예정 포함'으로 미리 계산해 봐요</small></span></button></div>`;
+<button type="button" class="q-live-card live" data-q-when="now"><span class="q-live-ico" aria-hidden="true">⏱</span><span><b>방금 먹은 것</b><small>지금 시각으로 바로 적어요</small></span></button>
+<button type="button" class="q-live-card" data-q-when="past"><span class="q-live-ico" aria-hidden="true">✎</span><span><b>전에 먹은 것</b><small>지난 끼니 · 어제 것도 시각을 골라 적어요</small></span></button>
+<button type="button" class="q-live-card alt" data-q-when="plan"><span class="q-live-ico" aria-hidden="true">▦</span><span><b>앞으로 먹을 것 미리</b><small>예정으로 넣어 오늘 칼로리를 미리 봐요</small></span></button></div>`;
 }
 
 export function mealWhenBarHTML(s, now = new Date()){

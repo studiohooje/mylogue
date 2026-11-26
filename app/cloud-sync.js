@@ -172,7 +172,9 @@ export async function cloudLogin() {
   if (!auth) throw Error('인터넷 연결을 확인해 주세요.');
   if(cloudState.native){const {idToken}=await signInNativeGoogle();await authSDK.signInWithCredential(auth,authSDK.GoogleAuthProvider.credential(idToken));location.reload();return;}
   const provider=new authSDK.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
-  await authSDK.signInWithPopup(auth,provider);location.reload();
+  /* 5.4.5 대표님 화면: 구글 창을 닫으면 영어 오류(auth/popup-closed-by-user)가 이메일 가입 창에 떴다 → 닫은 건 조용히, 나머지는 한국어로 */
+  try{await authSDK.signInWithPopup(auth,provider)}catch(e){if(['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'].includes(e?.code)){const x=Error('');x.silent=true;throw x}throw authError(e)}
+  location.reload();
 }
 // 5.0.1 대표님(2026-11-25): 구글 말고도 가입 — 이메일(비밀번호)·카카오. 이메일은 메일 인증을 마쳐야 이용 신청이 된다.
 const AUTH_MSG = {
@@ -187,6 +189,9 @@ const AUTH_MSG = {
   'auth/network-request-failed': '인터넷 연결을 확인해 주세요.',
   'auth/operation-not-allowed': '이메일 가입이 아직 켜지지 않았어요. 운영자에게 알려 주세요.',
   'auth/user-disabled': '사용이 중지된 계정이에요.',
+  'auth/popup-blocked': '브라우저가 로그인 창을 막았어요. 팝업을 허용하거나 이메일로 로그인해 주세요.',
+  'auth/unauthorized-domain': '이 주소에서는 아직 구글 로그인이 허용되지 않았어요. 운영자에게 알려 주세요.',
+  'auth/internal-error': '로그인 중 문제가 생겼어요. 잠시 뒤 다시 해 주세요.',
 };
 const authError = e => Error(AUTH_MSG[e?.code] || e?.message || '로그인하지 못했어요. 잠시 뒤 다시 해 주세요.');
 const okEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {cleanWorkout} from '../domain.js';
 import {dayRecords, haloMessage} from '../halo.js';
 import {renderHomeTimeline} from '../timeline-view.js';
-import {quickWorkoutHTML, emptyQuickWorkout} from '../quick-entry.js';
+import {quickWorkoutHTML, emptyQuickWorkout, liveChooserHTML} from '../quick-entry.js';
 import {EXERCISE_CATALOG} from '../catalog.js';
 
 const D = '2026-11-21';
@@ -28,10 +28,13 @@ test('의도적 휴식은 기간 리포트의 운동 횟수에 들어가지 않�
  assert.match(html, /data-delete="workouts:/);
 });
 
-test('운동 기록 창에 휴식 버튼, 휴식한 날은 안내, 타임라인에 휴식 카드', () => {
+test('휴식 버튼은 처음 고르는 창에만(입력 창에는 중복 없음), 휴식한 날은 안내', () => {
  const s = emptyQuickWorkout(D);
  const db = {workouts:[], machines:[], settings:{gyms:[]}, meals:[], body:[]};
- assert.match(quickWorkoutHTML(db, s, EXERCISE_CATALOG), /id="q-rest"/);
+ // 5.4.5 대표님: '어떻게 기록할까요?'에 이미 있으니 입력 창에서는 뺀다
+ assert.doesNotMatch(quickWorkoutHTML(db, {...s, live:false}, EXERCISE_CATALOG), /id="q-rest"/);
+ assert.match(liveChooserHTML(s, db), /id="q-rest"/);
+ assert.doesNotMatch(liveChooserHTML(s, {...db, workouts:[rest]}), /id="q-rest"/);
  const after = quickWorkoutHTML({...db, workouts:[rest]}, s, EXERCISE_CATALOG);
  assert.doesNotMatch(after, /id="q-rest"/);
  assert.match(after, /의도적 휴식<\/b>으로 기록돼 있어요/);

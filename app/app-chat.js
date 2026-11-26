@@ -145,8 +145,8 @@ export function chatChange(t) {
  return true;
 }
 // 5.4.0 식사 창 '도움받기 › AI에게 사진 분석시키기': 앱 안에서 찍고 바로 AI 대화로(하루 횟수는 input-sources)
-export function aiPhotoFromCamera(onShot = () => {}, text = '이 사진의 음식을 기록해 줘') {
- openSnapCamera(async file => { try { const data = await $f.aiPhotoData(file), th = await thumb(file); onShot(); openChatWithPhoto(data, th, text); } catch (e) { $f.toast(e.message || '사진을 읽지 못했어요.'); } }, {title: '음식 사진'});
+export function aiPhotoFromCamera(onShot = () => {}, text = '이 사진의 음식을 기록해 줘', title = '음식 사진') {
+ openSnapCamera(async file => { try { const data = await $f.aiPhotoData(file), th = await thumb(file); onShot(); openChatWithPhoto(data, th, text); } catch (e) { $f.toast(e.message || '사진을 읽지 못했어요.'); } }, {title});
 }
 async function readPhotos(t) {
  const s = st(), files = [...(t.files || [])].slice(0, 2);

@@ -262,3 +262,14 @@ test('비용 알림: 운영자에게만 서비스 전체 사용 금액과 알림
  const user = await (await route(await post('me', {}, tok), s.deps)).json();
  assert.equal(user.global, null);
 });
+
+// 5.4.5 기구 찾기: 사진 → 기구 이름·근육·종목(기록은 만들지 않음), 못 알아보면 사진 횟수 돌려줌
+test('기구 찾기: 사진으로 기구를 알려 주고, 못 알아보면 횟수 미차감', async () => {
+  resetKeyCache(); const s = setup({plan: 'plus', answer: () => '{"name":"레그 프레스","aka":["레그프레스 머신"],"brand":"","muscles":["대퇴사두","둔근"],"exercises":["레그프레스"],"how":["등을 패드에 붙여요"],"confidence":"high","note":""}'}); const tok = await token();
+  const r = await route(await post('machine', {images: [img('legpress')]}, tok), s.deps); const b = await r.json();
+  assert.equal(r.status, 200); assert.equal(b.machine.name, '레그 프레스'); assert.deepEqual(b.machine.exercises, ['레그프레스']); assert.equal(b.machine.confidence, 'high');
+  s.deps.callClaude = async (m, o) => ({text: '{"name":"","note":"기구 전체가 보이게 찍어 주세요"}', stopReason: 'end_turn', model: o.model});
+  const u = await (await route(await post('machine', {images: [img('blur2')]}, tok), s.deps)).json();
+  assert.equal(u.machine.name, ''); assert.equal(u.refunded, true);
+  assert.equal((await route(await post('machine', {text: '사진 없음'}, tok), s.deps)).status, 400);
+});

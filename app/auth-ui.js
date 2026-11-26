@@ -87,7 +87,7 @@ export async function authClick(t){
   if(k === 'close'){ closeAuth(); return true; }
   if(k === 'open-email'){ openAuth('email-in'); return true; }
   if(k === 'pick' || k === 'email-in' || k === 'email-up' || k === 'reset'){ const email = document.getElementById('auth-email')?.value || st()?.email || ''; $s.auth = {...(st() || {}), mode: k, msg: '', email}; $f.render(); return true; }
-  if(k === 'google'){ try { if(st()) st().busy = true; await cloudLogin(); } catch(e){ if(st()){ st().busy = false; st().msg = e.message || '로그인하지 못했어요.'; $f.render(); } else $f.toast(e.message || '로그인하지 못했어요.'); } return true; }
+  if(k === 'google'){ try { if(st()) st().busy = true; await cloudLogin(); } catch(e){ if(e?.silent){ if(st()){ st().busy = false; $f.render(); } return true; } if(st()){ st().busy = false; st().msg = e.message || '로그인하지 못했어요.'; $f.render(); } else $f.toast(e.message || '로그인하지 못했어요.'); } return true; }
   if(k === 'kakao'){ startKakao(); return true; }
   if(k === 'resend'){ try { await resendVerification(); $f.toast('인증 메일을 다시 보냈어요.'); } catch(e){ $f.toast(e.message); } return true; }
   if(k === 'reload'){ location.reload(); return true; }

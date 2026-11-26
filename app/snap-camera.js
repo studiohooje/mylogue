@@ -4,7 +4,7 @@ import {openCamera,closeCamera,capture,cameraSupported} from './mate-camera.js';
 export {cameraSupported};
 export function openSnapCamera(onFile,{title='사진 찍기'}={}){
  const box=document.createElement('div');box.className='mate-cam snap-cam';box.setAttribute('role','dialog');box.setAttribute('aria-label',title);
- box.innerHTML=`<div class="mate-cam-top"><button type="button" class="mate-ib" data-snap-close aria-label="닫기">✕</button><span>${title} · 가로로 넓게 담겨요</span><span style="width:44px"></span></div><div class="mate-vf"><video playsinline muted></video><p class="mate-cam-err" hidden></p></div><div class="mate-shutter-row"><span></span><button type="button" class="mate-shutter" data-snap-shot aria-label="찍기"></button><span></span></div>`;
+ box.innerHTML=`<div class="mate-cam-top"><button type="button" class="mate-ib" data-snap-close aria-label="닫기">✕</button><span>${title}</span><span style="width:44px"></span></div><div class="mate-vf"><video playsinline muted></video><p class="mate-cam-err" hidden></p></div><div class="mate-shutter-row"><span></span><button type="button" class="mate-shutter" data-snap-shot aria-label="찍기"></button><span></span></div>`;
  document.body.appendChild(box);
  const v=box.querySelector('video'),err=box.querySelector('.mate-cam-err');
  const done=()=>{closeCamera();box.remove()};

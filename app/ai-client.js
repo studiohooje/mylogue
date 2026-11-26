@@ -29,7 +29,7 @@ export function demoItems(text = ''){
 
 export const aiConnected = () => !!aiWorkerUrl();
 export const aiUsable = () => aiConnected() || fakeAI() || isDemo();
-const PATHS = ['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight'];
+const PATHS = ['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight', 'machine'];
 
 export function fakeReply(path, body = {}) {
   if (path === 'converse') return fakeConverse(body, demoItems);
@@ -44,6 +44,7 @@ export function fakeReply(path, body = {}) {
     lines.push(pr && pr < 100 ? '다음 주에는 한 끼에 단백질 반찬 하나를 더해 봐요.' : '다음 주도 지금 리듬 그대로 이어 가요.');
     return {text: lines.join('\n') + '\n(예시 답이에요. 실제 연결 뒤에는 AI가 써요.)', left: 2, fake: true};
   }
+  if (path === 'machine') return {machine: {name: '시티드 로우 머신', aka: ['로우 머신'], brand: '', muscles: ['광배근', '능형근', '이두'], exercises: ['시티드 로우 머신', '시티드 케이블 로우'], how: ['가슴 패드에 가슴을 대고 허리를 곧게 세워요.', '팔이 아니라 등으로 당긴다는 느낌으로 견갑을 모아요.', '돌아갈 때 무게를 천천히 버텨요.'], confidence: 'medium', note: '둘러보기 예시 답이에요.'}, left: 19, fake: true};
   if (path === 'insight') return {insight: {headline: '오늘도 기록을 이어 가고 있어요 (예시 답)', meal: {title: '저녁 · 단백질 채우기', items: ['닭가슴살 150g', '현미밥 ½공기', '구운 채소'], note: '남은 단백질을 한 끼로 채우면 회복에 좋아요.'}, workout: {title: '다음 운동 · 등·이두', plan: [['랫풀다운', '4 × 10'], ['시티드 케이블 로우', '3 × 12'], ['바벨 컬', '3 × 10']], note: '하체는 아직 회복 중이라 오늘은 상체를 권해요.'}, week: ['이번 주 3번 움직였어요. 리듬이 잘 잡혀 있어요.'], weight: ['7일 평균이 조금 내려왔어요. 하루하루보다 흐름을 봐 주세요.']}, left: 2, fake: true};
   if (path === 'chat') return {text: `"${String(body.question || '').slice(0, 40)}"에 대한 가짜 AI 답이에요. 실제 연결 뒤에는 내 기록을 근거로 답해요.`, left: 19, fake: true};
   if (path === 'recipe') {

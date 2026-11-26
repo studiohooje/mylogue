@@ -162,11 +162,22 @@ function remountSoon(delay=80){
  clearTimeout(remountSoon.tm);
  remountSoon.tm = setTimeout(()=>{ const h=document.querySelector('.timeline-hero'); if(h&&lastMount) mountHalo(h, lastMount.db, lastMount.date); }, delay);
 }
+/* 5.4.5 대표님: 날짜를 바꿔도 큰 박스 높이는 오늘 크기 그대로(내용이 바뀌어 위아래로 출렁이지 않게).
+   오늘 화면에서 잰 높이를 폭별로 기억했다가 다른 날은 그만큼 최소 높이로. 더 긴 글이 오면 그때만 늘어난다. */
+const heroH = new Map();
+const ymdOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export function lockHeroHeight(hero, date, now = new Date()){
+ if(!hero?.style) return;
+ const w = Math.round(hero.clientWidth || 0);
+ if(date === ymdOf(now)){ hero.style.minHeight = ''; const h = hero.offsetHeight; if(w && h) heroH.set(w, h); return; }
+ const h = heroH.get(w); hero.style.minHeight = h ? `${h}px` : '';
+}
 export function mountHalo(hero, db, date, now=new Date()){
  if(!hero || typeof document==='undefined') return null;
  const svg = hero.querySelector('.halo-art');
  if(!svg) return null;
  lastMount = {db, date};
+ lockHeroHeight(hero, date, now);
  // 글꼴이 늦게 로드되거나 화면 크기·글자 크기가 바뀌면 글자 폭이 달라지므로 다시 잰다.
  if(!bound){
   bound = true;

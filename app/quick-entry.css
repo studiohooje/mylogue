@@ -487,3 +487,40 @@ body:has(.live-sheet) .toast,body:has(.ss-sheet) .toast{top:calc(env(safe-area-i
 .wmenu-btn{min-width:44px;min-height:40px;padding:0;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:999px;color:#a6bbcb;font-size:22px;letter-spacing:1px;cursor:pointer}
 .wmenu-btn:hover,.wmenu-btn[aria-expanded="true"]{color:#eaf4ff;background:#ffffff12!important}
 .wmenu-btn:focus-visible{outline:2px solid #8ce4e0;outline-offset:1px}
+/* 5.4.5 대표님: 입력 창 줄간격 — 세 갈래 탭과 아래 목록 사이를 붙이지 않고 같은 간격(12px)으로 */
+.mi-src,.ws-src{display:grid;gap:12px;margin:12px 0}
+.mi-src>*,.ws-src>*{margin-top:0;margin-bottom:0}
+.mi-src .hs-list{gap:8px}
+/* 5.4.5 대표님: 입력 창 덩어리 사이 간격 한 가지(16px) — 겹치던 margin(12)+gap(12) 정리 */
+.modal-backdrop .quick-flow{display:grid;gap:16px}
+.modal-backdrop .quick-flow>*{margin-top:0!important;margin-bottom:0!important}
+.modal-backdrop .quick-flow>.quick-primary{margin-top:0!important}
+.modal-backdrop .quick-flow.q-live-start{gap:10px}
+.modal-backdrop .q-plan{gap:12px}.modal-backdrop .q-plan>*{margin-top:0!important;margin-bottom:0!important}
+.mi-src>*,.ws-src>*,.modal-backdrop .q-plan>*,.modal-backdrop .quick-flow>*{min-width:0}.mi-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* 5.4.5 하던 순서 살짝 바꾸기 */
+.q-plan-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.q-order.q-order-ed{display:grid;gap:6px;margin:0}
+.q-order-ed li.q-ord-ed{display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 4px 4px 12px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}
+.q-ord-nm{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-ord-btns{display:flex;gap:4px;flex:none}
+.q-ord-b{width:40px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:15px;cursor:pointer}
+.q-ord-b:disabled{opacity:.3;cursor:default}
+.q-ord-b.del{color:#f0a2a6}
+.q-ord-hint{margin:8px 0 0;font-size:12px}
+.q-ord-reset{font-size:13px;min-height:36px}
+/* 5.4.5 기구 찾기 결과 */
+.mf-card{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:14px;border:1px solid #8ce4e055;background:linear-gradient(160deg,#8ce4e012,#ffffff05)}
+.mf-card.warn{border-color:#f0a2a666}
+.mf-shot{flex:none;width:72px;height:72px;border-radius:10px;object-fit:cover;background:#0d1526}
+.mf-card>div{flex:1;min-width:0;display:grid;gap:4px}
+.mf-card b{font-size:15px;line-height:1.35}.mf-card small{font-size:12.5px;color:var(--muted);line-height:1.4;word-break:keep-all}
+.mf-eyebrow{font-size:12px;color:#8ce4e0;font-weight:700}
+.mf-card b.mf-name{font-size:18px}
+.mf-row{margin:4px 0 0;font-size:13px;color:#cdd8e6;word-break:keep-all}.mf-row span{display:block;font-size:12px;color:var(--muted)}
+.mf-how{margin:4px 0 0;padding-left:18px;display:grid;gap:2px;font-size:13px;line-height:1.45;color:#cdd8e6;word-break:keep-all}
+.mf-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mf-acts .chip{min-height:36px;font-size:13px}
+.mf-acts .chip.mf-go{border-color:#8ce4e0;color:#0d1326;background:#8ce4e0;font-weight:700}
+.mf-note{margin:4px 0 0;font-size:12px}
+@media(max-width:380px){.mf-shot{width:56px;height:56px}}

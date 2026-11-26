@@ -4,7 +4,7 @@ import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {mateRoute} from './mate.js';
 import {kakaoRoute} from './kakao.js';
-import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, INSIGHT_SYSTEM, fakeAnswer} from './prompts.js';
+import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, INSIGHT_SYSTEM, fakeAnswer, MACHINE_SYSTEM} from './prompts.js';
 import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, guardValue, GLOBAL_UID, MAX_OUTPUT_TOKENS} from './guards.js';
 // Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
 export const dailyLimit = env => safeNum(env.DAILY_LIMIT, 30);
@@ -106,7 +106,7 @@ export async function route(request, deps) {
       return reply(502, {error: '사진을 처리하지 못했어요. 잠시 뒤 다시 해 주세요.'});
     }
   }
-  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight'].includes(path)) return reply(404, {error: '없는 주소예요.'});
+  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight', 'machine'].includes(path)) return reply(404, {error: '없는 주소예요.'});
   try {
     if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
     // 4.29.x 불필요한 호출 막기 ①② — 로그인 확인·JSON 읽기 전에 값싼 것부터
@@ -127,7 +127,7 @@ export async function route(request, deps) {
     await rateLimit(env.DB, user.uid, now, env, {admin: acct.admin});
     if (path !== 'me') { const {now: _n, today: _t, ...same} = body || {}; await rejectDuplicate(env.DB, user.uid, await sha256(`${path}|${JSON.stringify(same)}`), now, env); }
     const callModel = deps.callModel || deps.callClaude;
-    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : callModel(messages, {...opts, maxTokens: opts.maxTokens || MAX_OUTPUT_TOKENS[opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature] || 1500});
+    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.system === MACHINE_SYSTEM ? 'machine' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : callModel(messages, {...opts, maxTokens: opts.maxTokens || MAX_OUTPUT_TOKENS[opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature] || 1500});
     // 운영자 계정은 시험이 많아 시도·월 상한에서 뺀다(하루 한도는 그대로).
     // Fable M-1: 운영자도 시도 상한(하루 한도의 3배)은 지킨다 — 돌려받기를 끝없이 받아 무한히 부르지 않게. 월 상한만 운영자 예외.
     const guard = async (feature, limit) => { await useAttempt(env.DB, user.uid, day, feature, limit); if (acct.admin) return; await useMonthlyBudget(env.DB, user.uid, month, costOf(env, feature), monthlyCapWon(env)); };
@@ -183,6 +183,20 @@ export async function route(request, deps) {
       if (out.stopReason === 'max_tokens') throw new HttpError(422, '내용이 너무 길어요. 나눠서 보내 주세요.');
       if (feature === 'photo' && !repeat && recordsIn(out.text) === 0) { await refundFeature(env.DB, user.uid, day, 'photo'); return reply(200, {text: out.text, model: out.model, left: (quota.left ?? 0) + 1, refunded: true}); }
       return reply(200, {text: out.text, model: out.model, left: quota.left});
+    }
+    // 5.4.5 기구 찾기: 사진 한 장 → 무슨 기구인지(기록은 만들지 않음). 사진 한도를 같이 쓴다.
+    if (path === 'machine') {
+      const input = readInput({...body, text: ''});
+      if (!input.images.length) throw new HttpError(400, '기구 사진을 찍어 주세요.');
+      const quota = await useFeature(env.DB, user.uid, day, 'photo', limitOf(env, 'photo', acct.plus));
+      const content = [{type: 'image', source: {type: 'base64', media_type: input.images[0].media_type, data: input.images[0].data}}, {type: 'text', text: '이 사진의 기구가 뭔지 알려 줘.'}];
+      const out = await call([{role: 'user', content}], {model, system: MACHINE_SYSTEM, feature: 'photo', input: {...input, feature: 'machine'}, effort: 'low', limit: limitOf(env, 'photo', acct.plus)});
+      let p = null; try { p = JSON.parse(String(out.text).match(/\{[\s\S]*\}/)?.[0] || ''); } catch {}
+      if (!p || typeof p !== 'object') { await refundFeature(env.DB, user.uid, day, 'photo'); throw new HttpError(422, '기구를 알아보지 못했어요. 기구 전체가 보이게 다시 찍어 주세요.'); }
+      const strs = (v, n, len) => (Array.isArray(v) ? v : []).slice(0, n).map(x => String(x).slice(0, len)).filter(Boolean);
+      const machine = {name: String(p.name || '').slice(0, 40), aka: strs(p.aka, 3, 30), brand: String(p.brand || '').slice(0, 30), muscles: strs(p.muscles, 5, 20), exercises: strs(p.exercises, 4, 30), how: strs(p.how, 4, 120), confidence: ['high', 'medium', 'low'].includes(p.confidence) ? p.confidence : 'low', note: String(p.note || '').slice(0, 120)};
+      if (!machine.name) { await refundFeature(env.DB, user.uid, day, 'photo'); return reply(200, {machine, left: (quota.left ?? 0) + 1, refunded: true}); }
+      return reply(200, {machine, model: out.model, left: quota.left});
     }
     // 5.0.4 AI 인사이트(프리미엄, 버튼을 눌렀을 때만): 앱이 계산한 요약 → 오늘의 맞춤 코칭 JSON
     if (path === 'insight') {
