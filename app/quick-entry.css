@@ -343,5 +343,85 @@ body:has(.live-sheet) .toast,body:has(.ss-sheet) .toast{top:calc(env(safe-area-i
 /* 5.1.0 음식 양: 개수 / g */
 .q-cu-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
 .q-cu-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:15px;font-weight:800}
-.q-cu-seg button small{font-size:11px;color:var(--muted);font-weight:500}
+.q-cu-seg button small{font-size:12px;color:var(--muted);font-weight:500}
 .q-cu-seg button.on{border-color:#8ce4e0;background:#8ce4e01a;color:#8ce4e0}
+/* 5.1.0 오늘의 타임라인 C-3: 테두리 없이 시간 축 위에 바로 */
+.timeline-list{gap:0!important}
+.tl3-step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;position:relative;padding:12px 0;border-bottom:1px solid #26334f}
+.tl3-step:last-child{border-bottom:0}
+.tl3-axis{display:flex;justify-content:center;padding-top:2px}
+.tl3-axis::after{content:"";position:absolute;left:19px;top:46px;bottom:-12px;border-left:1px dashed #3d5274}
+.tl3-step:last-child .tl3-axis::after{display:none}
+.tl3-ico{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);position:relative;z-index:1}
+.tl3-ico svg{width:17px;height:17px}
+.tl3-meal{--c:#f5c84b}.tl3-workout{--c:#8ce4e0}.tl3-rest{--c:#b8aaf2}
+.tl3-body>.timeline-card{border:0!important;background:none!important;box-shadow:none!important;padding:0!important;border-radius:0}
+.tl3-body .timeline-card-top{min-height:32px;align-items:center}
+.tl3-body .timeline-card-top strong,.tl3-body .timeline-card-top>span:first-child{font-size:15px;color:var(--text)}
+.tl3-body .timeline-card h3{margin:2px 0 4px;font-size:16px}
+.tl3-row{display:flex;align-items:flex-start;gap:10px;margin-top:2px}
+.tl3-foods{flex:1;min-width:0;list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.tl3-foods li{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:13px;color:#cdd8e6}
+.tl3-foods .nm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl3-foods .q{flex:0 0 auto;font-size:12px;color:#8ce4e0;font-weight:700;font-variant-numeric:tabular-nums}
+.tl3-foods li.more{position:relative}
+.tl3-more{background:none;border:0;padding:4px 6px 4px 0;min-height:40px;min-width:44px;color:#8ce4e0;font:inherit;font-size:12px;text-decoration:underline dotted}
+.tl3-tip{display:none;position:absolute;left:0;top:40px;z-index:20;padding:8px 12px;border-radius:12px;background:#e4f3f6;color:#17283c;font-size:13px;box-shadow:0 8px 24px #000a;white-space:nowrap}
+.tl3-tip span{display:block}.tl3-tip b{color:#0f6f6a}
+.tl3-more:hover+.tl3-tip,.tl3-more:focus+.tl3-tip{display:grid;gap:2px}
+.tl3-val{flex:0 0 auto;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.tl3-val small{font-size:12px;font-weight:600;color:var(--muted);margin-left:2px}
+.tl3-body .macrobar{height:5px;margin:8px 0 0}
+.tl3-body .timeline-macros{display:none}
+.tl3-body .timeline-metrics{font-size:12px;margin:2px 0 0}
+.tl3-body .timeline-preview{font-size:13px;margin:4px 0 0}
+.tl3-body .tl-art{margin:4px 0}
+.tl3-body .timeline-link{min-height:36px;padding:0;font-size:13px}
+/* 5.1.0 식사 창: 세 갈래 + 지난 식사 좁은 카드 */
+.mi-src{margin:12px 0}
+.mi-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mi-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;min-height:84px;padding:10px 6px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;text-align:left;min-width:0}
+.mi-tabs button i{font-style:normal;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#ffffff10;font-size:16px;line-height:1;margin:0 auto 2px}
+.mi-tabs button b{font-size:14px;line-height:1.25;word-break:keep-all}
+.mi-tabs button small{font-size:12px;color:var(--muted);line-height:1.3}
+.mi-tabs button.on{border-color:#8ce4e0;background:linear-gradient(160deg,#22404f,var(--surface));box-shadow:0 0 0 1px #8ce4e055 inset}
+.mi-tabs button.on i{background:#8ce4e0;color:#101625}
+.mi-mate{margin-top:12px;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--surface)}
+.mi-mate p{margin:0 0 10px;font-size:14px;color:#cdd8e6;line-height:1.55}
+.mi-empty{margin:12px 2px 0}
+.quick-flow.src-past .quick-choices,.quick-flow.src-mate .quick-choices{display:none}
+.mv1{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 6px;scroll-snap-type:x mandatory}
+.mv-card{position:relative;flex:0 0 156px;scroll-snap-align:start;border:1px solid var(--line);border-radius:14px;background:linear-gradient(160deg,#22304f,var(--surface));padding:10px 12px;min-width:0;display:flex;flex-direction:column}
+.mv-hit{position:absolute;inset:0;border:0;background:transparent;border-radius:14px;z-index:1;cursor:pointer}
+.mv-h{font-size:14px}
+.mv-card ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px}
+.mv-card li{display:flex;align-items:baseline;gap:6px;font-size:13px;color:#cdd8e6;min-width:0}
+.mv-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv-qty{flex:0 0 auto;font-size:12px;color:#8ce4e0;font-weight:700;font-variant-numeric:tabular-nums}
+.mv-more{position:relative}
+.mv-morebtn{position:relative;z-index:2;background:none;border:0;padding:4px 6px 4px 0;min-height:40px;color:#8ce4e0;font:inherit;font-size:12px;text-decoration:underline dotted}
+.mv-tip{display:none;position:absolute;left:0;top:40px;z-index:5;padding:8px 12px;border-radius:12px;background:#e4f3f6;color:#17283c;font-size:12px;white-space:nowrap;box-shadow:0 8px 24px #000a}
+.mv-tip span{display:block}.mv-tip b{color:#0f6f6a}
+.mv-morebtn:hover+.mv-tip,.mv-morebtn:focus+.mv-tip{display:grid;gap:2px}
+.mv-total{display:flex;align-items:baseline;gap:3px;margin:auto 0 0;padding-top:6px;border-top:1px dashed var(--line);font-variant-numeric:tabular-nums}
+.mv-total span{font-size:12px;color:var(--muted);margin-right:auto}
+.mv-total b{font-size:16px}
+.mv-total small{font-size:12px;color:var(--muted)}
+.mv-add{margin-top:4px;font-size:12px;color:#8ce4e0;text-align:right}
+
+.quick-food-macro small{font-size:12px}
+
+/* 5.1.0 지난 식사 카드: 더 낮게 — 칼로리는 머리줄 오른쪽, 아래는 '통째로 기록 · 세부 수정' */
+.mv-card{padding:8px 10px;flex-basis:164px}
+.mv-hit{display:none}
+.mv-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.mv-top .mv-h{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mv-kcal{flex:0 0 auto;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.mv-kcal small{font-size:12px;font-weight:600;color:var(--muted);margin-left:1px}
+.mv-card ul{margin:4px 0 0;gap:1px}
+.mv-card li{font-size:12.5px;line-height:1.45}
+.mv-total,.mv-add{display:none}
+.mv-acts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto;padding-top:6px}
+.mv-acts button{min-height:40px;border-radius:10px;font:inherit;font-size:13px;font-weight:800;padding:0 4px;white-space:nowrap}
+.mv-go{border:0;background:#8ce4e0;color:#101625}
+.mv-edit{border:1px solid var(--line);background:transparent;color:var(--text)}

@@ -54,6 +54,15 @@ export function pastMeals(meals = [], date, time = '12:00', {days = 7, limit = 8
  return list.sort((a, b) => b.score - a.score || String(b.at).localeCompare(String(a.at))).slice(0, limit);
 }
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 5.1.0 대표님(식사 창 목업 확정): '지난 식사에서 · 메이트로그에서 · 직접 입력하기' 세 갈래, 지난 식사는 좁은 카드(한 줄에 한 음식 · 앞부분… + 양, 3개 + 외 N, 총 칼로리)
+export function mealSourceHTML(db, s){
+ const list = pastMeals(db.meals || [], s.date, s.time), src = s.src || (list.length && !String(s.query || '').trim() ? 'past' : 'self');
+ const q = x => `${Number(x.servingQty) % 1 ? Number(x.servingQty).toFixed(1) : (x.servingQty ?? '')}${esc(x.servingUnit || '')}`;
+ const tabs = [['past', '↻', '지난 식사에서', '먹었던 한 끼 통째로'], ['mate', '📷', '메이트로그에서', '올린 사진으로 AI 초안'], ['self', '✎', '직접 입력하기', '검색·직접 적기']];
+ const card = g => { const rest = g.items.slice(3); return `<div class="mv-card"><div class="mv-top"><b class="mv-h">${esc(g.label)}</b><span class="mv-kcal">${Math.round(g.kcal).toLocaleString('ko-KR')}<small>kcal</small></span></div><ul>${g.items.slice(0, 3).map(x => `<li title="${esc(x.name)} ${q(x)}"><span class="mv-name">${esc(x.name)}</span><span class="mv-qty">${q(x)}</span></li>`).join('')}${rest.length ? `<li class="mv-more"><button type="button" class="mv-morebtn">… 외 ${rest.length}개</button><span class="mv-tip" role="tooltip">${rest.map(x => `<span>${esc(x.name)} <b>${q(x)}</b></span>`).join('')}</span></li>` : ''}</ul><div class="mv-acts"><button type="button" class="mv-go" data-q-again-save="${esc(g.key)}">통째로 기록</button><button type="button" class="mv-edit" data-q-again-meal="${esc(g.key)}">세부 수정</button></div></div>`; };
+ const body = src === 'past' ? (list.length ? `<div class="mv1">${list.map(card).join('')}</div>` : '<p class="hint mi-empty">아직 지난 식사가 없어요. 직접 입력하기로 첫 끼니를 남겨 보세요.</p>') : src === 'mate' ? `<div class="mi-mate"><p>메이트 방에 올린 <b>내 식사 사진</b>을 골라 AI가 음식·양을 정리해요. 정리된 초안은 고친 뒤 담아요.</p><button type="button" class="button quick-primary" data-mate-picker>메이트로그 사진 고르기</button></div>` : '';
+ return {src, html: `<section class="mi-src"><div class="mi-tabs" role="tablist" aria-label="식사 넣는 방법">${tabs.map(([k, ic, t, sub]) => `<button type="button" role="tab" class="${k === src ? 'on' : ''}" aria-selected="${k === src}" data-q-src="${k}"><i aria-hidden="true">${ic}</i><b>${t}</b><small>${sub}</small></button>`).join('')}</div>${body}</section>`};
+}
 export function pastMealsHTML(db, s){
  const list = pastMeals(db.meals || [], s.date, s.time); if (!list.length) return '';
  const names = g => { const n = g.items.map(x => x.name); return n.length > 1 ? `${n[0]} 외 ${n.length - 1}` : n[0]; };

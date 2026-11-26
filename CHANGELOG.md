@@ -4,6 +4,12 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.2.0 — 2026-11-26 (배포됨)
+
+- 홈 타임라인 C-3안(대표님 확정): tl3Wrap(시간 축 아이콘 원·세로 점선, 테두리 없음), foodLines(한 줄 한 음식 + 양, 2개 + 외 N 말풍선), 칼로리 오른쪽.
+- 식사 창: meal-rank mealSourceHTML 세 갈래(지난 식사·메이트로그·직접 입력, data-q-src), 지난 식사 V1 좁은 카드(이름 뒤 말줄임 + 양, 3개 + 외 N 말풍선, 총 kcal, 카드 누르면 통째로 담기).
+- 음식 단위 검수: portion-dict countUnitFor(개수 규칙 추가·요리 제외), food-catalog 1개 무게 35개(default 개수), countRow(개수로 저장·1개 무게로 영양값), 양 고르기 '개/g' 전환, food-db UNIT_FIX(이상한 단위 110개).
+
 ## Mylogue Beta 5.1.1 — 2026-11-26 (배포됨)
 
 - 여러 창(탭) 보호: store.isStale(다른 탭이 저장한 뒤 다시 읽지 않은 탭) → save()는 덮어쓰지 않고 staleTab 오류(앱이 최신을 다시 읽음), 모든 synchronize 호출은 freshDB()로 최신 기록부터, storage·focus·visibility에서 db·진행 중 세션 다시 읽기. 원인: 대표님 폰 크롬의 오래된 탭이 11:28에 07:53 기록(1세트)을 서버에 덮어씀(rev 24).
