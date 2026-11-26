@@ -29,6 +29,9 @@ test('5.4.0 코치방·식단 제안·출석 응답 규칙', {skip: !host}, asyn
     // 출석 응답: 회원만
     await assertSucceeds(updateDoc(doc(m, 'links', linkId), {attend: {b1: 'yes'}, updatedAt: serverTimestamp()}));
     await assertFails(updateDoc(doc(t, 'links', linkId), {attend: {b1: 'no'}, updatedAt: serverTimestamp()}));
+    // 개인 루틴 했어요: 회원만
+    await assertSucceeds(updateDoc(doc(m, 'links', linkId), {routineLog: {r1: [{date: '2026-11-26', done: 4, total: 4}]}, updatedAt: serverTimestamp()}));
+    await assertFails(updateDoc(doc(t, 'links', linkId), {routineLog: {}, updatedAt: serverTimestamp()}));
     // 수강권 규칙 확인: 회원만, 글자
     await assertSucceeds(updateDoc(doc(m, 'links', linkId), {ptAgreedAt: '2026-11-26T10:00:00.000Z', updatedAt: serverTimestamp()}));
     await assertFails(updateDoc(doc(t, 'links', linkId), {ptAgreedAt: 'x', updatedAt: serverTimestamp()}));

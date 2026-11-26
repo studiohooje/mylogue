@@ -4,6 +4,7 @@
 import {$s, $f} from './app-state.js';
 import {scopedKey} from './storage-scope.js';
 import {clearLive} from './live-session.js';
+import {liveClick} from './summary-actions.js';
 import {photoQuota} from './input-sources.js';
 import {isPlus} from './plan.js';
 
@@ -37,13 +38,13 @@ export function startCoachLive(ctx){
 export function coachBandHTML(){
   const c = coachLive(); if(!c) return '';
   const nm = (c.names || []).join(', ') || '회원';
-  return `<div class="cl-band" role="status"><span class="cl-av" style="background:#8ce4e0" aria-hidden="true">${esc(nm[0])}</span><div class="cl-band-t"><b>${esc(nm)} 님 수업 중${c.ptLine ? ` · ${esc(c.ptLine)}` : ''}</b>${c.lastLine ? `<small>${esc(c.lastLine)}</small>` : '<small>세트마다 적고, 끝나면 회원에게 보내요</small>'}</div><button type="button" class="text-button cl-band-x" data-cl-stop aria-label="코치 수업 끄기">끄기</button></div>`;
+  return `<div class="cl-band" role="status"><span class="cl-av" style="background:#8ce4e0" aria-hidden="true">${esc(nm[0])}</span><div class="cl-band-t"><b>${esc(nm)} 님 수업 중${c.ptLine ? ` · ${esc(c.ptLine)}` : ''}</b>${c.plan?.length ? `<small>계획 ${c.plan.length}종목: ${esc(c.plan.slice(0, 4).map(x => x.name).join(' → '))}${c.plan.length > 4 ? ' …' : ''}</small>` : c.lastLine ? `<small>${esc(c.lastLine)}</small>` : '<small>세트마다 적고, 끝나면 회원에게 보내요</small>'}</div><button type="button" class="text-button cl-band-x" data-cl-stop aria-label="코치 수업 끄기">끄기</button></div>`;
 }
 
 export function coachSummaryHTML(){
   const c = coachLive(); if(!c) return '';
   const nm = (c.names || []).join(', ') || '회원';
-  return `<section class="cl-card ss-coach"><h3>회원에게 보낼 코멘트</h3><div class="cl-chips">${QUICK_NOTES.map(n => `<button type="button" class="${(c.notes || []).includes(n) ? 'on' : ''}" data-cl-note="${esc(n)}" aria-pressed="${(c.notes || []).includes(n)}">${esc(n)}</button>`).join('')}</div>
+  return `<section class="cl-card ss-coach"><h3>회원에게 보낼 코멘트</h3><div class="cl-chips">${(($s.coach?.quickNotes?.() || []).length ? $s.coach.quickNotes() : QUICK_NOTES).map(n => `<button type="button" class="${(c.notes || []).includes(n) ? 'on' : ''}" data-cl-note="${esc(n)}" aria-pressed="${(c.notes || []).includes(n)}">${esc(n)}</button>`).join('')}</div>
   <label class="field">오늘 좋아진 점<input id="cl-good" maxlength="120" value="${esc(c.good)}" placeholder="예: 스쿼트 깊이가 안정됐어요" autocomplete="off"></label>
   <label class="field">다음 수업 포인트<input id="cl-next" maxlength="120" value="${esc(c.next)}" placeholder="예: 런지 때 왼쪽 무릎" autocomplete="off"></label>
   <button type="button" class="cl-send" data-cl-send>${esc(nm)} 님에게 보내기</button><p class="hint" style="margin:0">다음 화면에서 PT 회차 차감을 확인하고 보내요. 회원이 확정해야 회원 기록이 돼요. 코치님 운동 기록에는 남지 않아요.</p></section>`;
@@ -98,14 +99,14 @@ export function setCoachMeal(v){ $s.coachMeal = v || null; try{ v ? globalThis.l
 export function startCoachMeal(ctx){ // {clientIds, names, title}
   setCoachMeal(ctx);
   const b = document.createElement('button'); b.dataset.modal = 'batch'; b.hidden = true; ($s.root || document.body).appendChild(b); b.click(); b.remove();
-  const self = () => { const m = $s.quickMeal; if(m && !m.src){ m.src = 'self'; $f.render(); } };
+  const self = () => { document.querySelector('[data-q-when="now"]')?.click(); const m = $s.quickMeal; if(m && m.src !== 'self'){ m.src = 'self'; $f.render(); setTimeout(() => document.getElementById('q-food-search')?.focus(), 40); } };
   self(); setTimeout(self, 0);
   return true;
 }
 export function coachMealBandHTML(){
   const c = coachMeal(); if(!c) return '';
   const nm = (c.names || []).join(', ') || '회원';
-  return `<div class="cl-band" role="status"><span class="cl-av" style="background:#f2d36b" aria-hidden="true">${esc(nm[0])}</span><div class="cl-band-t"><b>${esc(nm)} 님 식단 제안 만드는 중</b><small>담고 '기록'을 누르면 내 식단이 아니라 회원에게 갈 제안으로 저장돼요</small></div><button type="button" class="text-button cl-band-x" data-cl-meal-stop aria-label="식단 제안 그만두기">그만</button></div>`;
+  return `<div class="cl-band" role="status"><span class="cl-av" style="background:#f2d36b" aria-hidden="true">${esc(nm[0])}</span><div class="cl-band-t"><b>${esc(nm)} 님 식단 제안${c.label ? ` · ${esc(c.label)}에 넣을 음식` : ''}</b><small>음식·양을 담고 '기록'을 누르면 제안 화면으로 돌아가요(내 식단에는 안 남아요)</small></div><button type="button" class="text-button cl-band-x" data-cl-meal-stop aria-label="식단 제안 그만두기">그만</button></div>`;
 }
 export const mealPlanItem = m => { const {id, date, loggedAt, mealGroupId, updatedAt, createdAt, planned, source, ...rest} = m; return {...rest, source: 'coach'}; };
 // 식사 저장을 가로채 제안으로. 처리했으면 true
@@ -118,9 +119,17 @@ export function coachMealSave(){
   $s.db = $f.save({...$s.db, meals: $s.db.meals.filter(m => !added.includes(m))});
   const plan = {id: `mp${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, title: c.title || added[0].slot || '식단 제안', slot: added[0].slot || '', note: '', items: added.map(mealPlanItem), createdAt: new Date().toISOString()};
   setCoachMeal(null); $s.modal = null; $s.quickMeal = null;
+  if(c.target){ $s.coach?.dietAddItems?.(c.target, plan.items); return true; }
   $s.coach?.addMealPlan?.(c.clientIds || [], plan);
   return true;
 }
 globalThis.__mylogueCoachPlans = () => { try{ return $s.coach?.memberPlans?.() || []; }catch{ return []; } };
 globalThis.__myloguePhotoQuota = () => { try{ return photoQuota(isPlus()); }catch{ return photoQuota(false); } };
 globalThis.__mylogueCoachRoutines = () => { try{ return $s.coach?.memberRoutines?.() || []; }catch{ return []; } };
+
+// 5.4.2 회원: 확정한 코치 수업 운동으로 혼자 운동(실시간 입력 · 무게 -10%)
+export function startSoloClass(workoutId){
+  const b = document.createElement('button'); b.dataset.modal = 'workout'; b.hidden = true; ($s.root || document.body).appendChild(b); b.click(); b.remove();
+  const go = () => { const q = $s.quickWorkout; if(!q || (q.sets || []).length) return; if(q.live === undefined) q.live = true; liveClick({dataset: {qWclass: workoutId}, closest: () => null, id: ''}); };
+  setTimeout(go, 0);
+}

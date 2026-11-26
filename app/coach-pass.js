@@ -10,11 +10,11 @@ export const DEFAULT_RULE = {noshow: true, late: true, cutoffH: 24};
 
 export function passOf(c){
   const pt = c?.pt || {};
-  if(!pt.total) return null;
+  if(!pt.total && pt.kind!=='period') return null;
   const log = [...(pt.log || []), ...(c.ptLog || []).filter(x => !(pt.log || []).some(y => y.at === x.at))].sort((a, b) => String(a.at).localeCompare(String(b.at))).slice(-LOG_MAX);
-  return {name: pt.name || `PT ${pt.total}회권`, format: pt.format || '1:1', start: pt.start || '', total: Number(pt.total) || 0, used: Number(pt.used) || 0, expiresAt: pt.expiresAt || '', rule: {...DEFAULT_RULE, ...(pt.rule || {})}, holds: pt.holds || [], log, agreedAt: pt.agreedAt || ''};
+  return {kind: pt.kind || 'count', name: pt.name || (pt.kind==='period' ? '기간권' : `PT ${pt.total}회권`), format: pt.format || '1:1', start: pt.start || '', total: Number(pt.total) || 0, used: Number(pt.used) || 0, expiresAt: pt.expiresAt || '', rule: {...DEFAULT_RULE, ...(pt.rule || {})}, holds: pt.holds || [], log, agreedAt: pt.agreedAt || ''};
 }
-export const passLeft = p => p ? Math.max(0, p.total - p.used) : null;
+export const passLeft = p => p && p.kind!=='period' ? Math.max(0, p.total - p.used) : null;
 export function withLog(pt, entry){ return {...pt, log: [...(pt.log || []), {at: new Date().toISOString(), ...entry}].slice(-LOG_MAX)}; }
 // 회차를 쓰고(+used) 장부에 남긴다
 export function deduct(pt, entry){ return withLog({...pt, used: (Number(pt.used) || 0) + 1}, {delta: -1, ...entry}); }
@@ -35,23 +35,45 @@ export function ledgerHTML(p, {limit = 20} = {}){
 }
 export function passCardHTML(p, {who = 'coach', clientId = '', linkId = ''} = {}){
   if(!p) return who === 'coach' ? `<p class="hint">수강권을 만들면 남은 회차·만료·규칙이 회원에게도 같이 보여요.</p>` : '';
-  const left = passLeft(p), pct = p.total ? Math.round(p.used / p.total * 100) : 0;
+  const left = passLeft(p), pct = p.kind==='period' ? periodPct(p) : p.total ? Math.round(p.used / p.total * 100) : 0;
   const rule = `${p.rule.noshow ? '노쇼 1회 차감' : '노쇼 차감 안 함'} · ${p.rule.late ? `${p.rule.cutoffH}시간 안 취소 1회 차감` : '취소 차감 안 함'}`;
-  return `<div class="cl-pass"><div class="t"><b>${esc(p.name)} · ${esc(p.format)}</b><span class="cl-pill ${left <= 3 ? 'warn' : 'mint'}">${left <= 0 ? '다 썼어요' : '사용 중'}</span></div><div class="n">${left}<small> / ${p.total}회 남음</small></div><div class="cl-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+  return `<div class="cl-pass"><div class="t"><b>${esc(p.name)} · ${esc(p.format)}</b><span class="cl-pill ${left !== null && left <= 3 ? 'warn' : 'mint'}">${left !== null && left <= 0 ? '다 썼어요' : '사용 중'}</span></div><div class="n">${p.kind==='period' ? `~${esc(md(p.expiresAt)||'')}<small> 까지 · ${p.used}회 참여</small>` : `${left}<small> / ${p.total}회 남음</small>`}</div><div class="cl-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
   <div class="cl-li" style="border:0;padding:0"><span>${p.start ? `${esc(p.start)} 시작` : ''}</span><span>${p.expiresAt ? `${esc(p.expiresAt)} 만료` : '만료일 없음'}${p.holds.length ? ` · 홀딩 ${p.holds.reduce((a, h) => a + (h.days || 0), 0)}일` : ''}</span></div>
   <p class="hint" style="margin:0">규칙: ${esc(rule)}${p.agreedAt ? ` · 회원 확인 ${esc(md(String(p.agreedAt).slice(0, 10)))}` : who === 'coach' ? ' · 회원 확인 전' : ''}</p>
   ${who === 'coach' ? `<div class="cl-btns cl-btns2"><button type="button" class="cl-ghost" data-coach-hold="${esc(clientId)}">일시정지(홀딩)</button><button type="button" class="cl-ghost" data-coach-pass-edit="${esc(clientId)}">수강권 고치기</button></div>` : (!p.agreedAt && linkId ? `<button type="button" class="cl-go" data-mc-pass-agree="${esc(linkId)}">규칙 확인했어요</button>` : '')}</div>`;
 }
-export function passFormHTML(c){
-  const p = passOf(c) || {name: '', format: '1:1', start: '', total: '', used: 0, expiresAt: '', rule: DEFAULT_RULE};
-  return `<form id="coach-pt-form" class="cd-pt cl-pass-form" data-client="${esc(c.id)}"><small>수강권</small>
-  <label class="field">이름<input name="name" maxlength="30" value="${esc(c.pt?.name || '')}" placeholder="예: PT 20회권"></label>
-  <div class="cd-pt-row"><label>형태<select name="format">${FORMATS.map(f => `<option ${f === p.format ? 'selected' : ''}>${f}</option>`).join('')}</select></label><label>총<input name="total" type="number" min="0" max="500" value="${esc(p.total || '')}"></label><label>사용<input name="used" type="number" min="0" max="500" value="${esc(p.used ?? '')}"></label></div>
-  <div class="cd-pt-row"><label>시작<input name="start" type="date" data-no-when value="${esc(p.start)}"></label><label>만료<input name="expiresAt" type="date" data-no-when value="${esc(p.expiresAt)}"></label></div>
-  <label class="check-row"><input type="checkbox" name="noshow" ${p.rule.noshow ? 'checked' : ''}> 노쇼면 1회 차감</label>
-  <label class="check-row"><input type="checkbox" name="late" ${p.rule.late ? 'checked' : ''}> 시작 <input name="cutoffH" type="number" min="1" max="72" value="${esc(p.rule.cutoffH)}" class="cl-cut" aria-label="몇 시간 전"> 시간 안에 취소하면 1회 차감</label>
-  <p class="hint">규칙은 회원에게도 보이고, 회원이 '규칙 확인했어요'를 눌러요. 사용 회차를 손으로 바꾸면 장부에 '직접 고침'으로 남아요.</p>
-  <div class="actions"><button class="button small" type="submit">저장</button><button type="button" class="text-button" data-coach-pass-edit="">닫기</button></div></form>`;
+const periodPct = p => { const a = Date.parse(p.start), b = Date.parse(p.expiresAt); if(!a || !b || b <= a) return 0; return Math.max(0, Math.min(100, Math.round((Date.now() - a) / (b - a) * 100))); };
+export const addMonths = (ymd, n) => { const d = new Date(`${ymd}T12:00:00`); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
+// 5.4.2 대표님: 수강권 만들기를 운동·식단 입력처럼 컴팩트한 창으로(칩 위주, 저장 전 카드 미리보기). 결제 금액은 선택·코치만.
+export function passFormHTML(c, {today = new Date().toISOString().slice(0, 10), showPrice = true} = {}){
+  const p = passOf(c), was = c.pt || {}, kind = p?.kind || 'count', total = p?.total || 20, fmt = p?.format || '1:1', rule = p?.rule || DEFAULT_RULE;
+  const r = (name, v, l, on) => `<label class="ck-chip"><input type="radio" name="${name}" value="${esc(v)}" ${on ? 'checked' : ''}><span>${l}</span></label>`;
+  const seg = (name, opts, cur) => `<div class="ck-seg">${opts.map(([v, l]) => `<label><input type="radio" name="${name}" value="${esc(v)}" ${String(cur) === String(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`;
+  const preset = [10, 20, 30, 50].includes(total) ? String(total) : 'x';
+  return `<form id="coach-pt-form" class="cs-form" data-client="${esc(c.id)}" data-today="${esc(today)}">
+  <div class="cs-step"><b>종류</b>${seg('pkind', [['count', '횟수권'], ['period', '기간권']], kind)}</div>
+  <div class="cs-step cs-count"><b>회차</b><div class="ck-chips">${[10, 20, 30, 50].map(n => r('ptotal', n, n, preset === String(n))).join('')}${r('ptotal', 'x', '직접', preset === 'x')}</div><input name="totalX" type="number" inputmode="numeric" min="1" max="500" value="${preset === 'x' ? esc(total) : ''}" placeholder="회차 직접" class="cs-x"></div>
+  <div class="cs-step"><b>형태</b>${seg('format', FORMATS.map(f => [f, f]), fmt)}</div>
+  <div class="cs-step"><b>기간 <small>${p?.start ? `${esc(p.start)} 시작` : '오늘 시작'}</small></b><div class="ck-chips">${[[1, '1개월'], [3, '3개월'], [6, '6개월']].map(([m, l]) => r('months', m, l, !p && m === 3)).join('')}${r('months', 'x', '직접', !!p)}</div><input name="expiresAt" type="date" data-no-when value="${esc(p?.expiresAt || '')}" class="cs-x"></div>
+  ${p ? `<label class="cs-step"><b>사용한 회차 <small>바꾸면 장부에 '직접 고침'으로 남아요</small></b><input name="used" type="number" inputmode="numeric" min="0" max="500" value="${esc(p.used)}"></label>` : ''}
+  ${showPrice ? `<label class="cs-step"><b>결제 금액 <small>선택 · 코치님만 봐요</small></b><div class="cs-price"><input name="price" type="number" inputmode="numeric" min="0" step="1000" value="${esc(c.passPrice || '')}" placeholder="예: 1650000"><span class="cs-per" data-cs-per></span></div></label>` : ''}
+  <div class="cs-step"><b>규칙 <small>회원도 보고 '확인했어요'를 눌러요</small></b>
+   <label class="ck-sw"><input type="checkbox" name="noshow" ${rule.noshow ? 'checked' : ''}><span><b>노쇼면 1회 차감</b></span><i aria-hidden="true"></i></label>
+   <label class="ck-sw"><input type="checkbox" name="late" ${rule.late ? 'checked' : ''}><span><b>시작 몇 시간 안 취소면 1회 차감</b></span><i aria-hidden="true"></i></label>
+   <div class="ck-chips">${[12, 24, 48].map(h => r('cutoffH', h, `${h}시간`, Number(rule.cutoffH) === h)).join('')}</div></div>
+  <div class="cs-step"><b>미리보기</b><div data-cs-preview>${passPreviewHTML({kind, total, format: fmt, start: p?.start || today, expiresAt: p?.expiresAt || addMonths(today, 3), rule, used: p?.used || 0, name: was.name})}</div></div>
+  <button class="cs-go" type="submit">${p ? '수강권 저장' : '수강권 만들기'}</button></form>`;
+}
+export function passPreviewHTML(v){
+  const name = v.name || (v.kind === 'period' ? '기간권' : `PT ${v.total}회권`), left = v.kind === 'period' ? null : Math.max(0, v.total - (v.used || 0));
+  return `<div class="cl-pass"><div class="t"><b>${esc(name)} · ${esc(v.format)}</b><span class="cl-pill mint">미리보기</span></div><div class="n">${left === null ? `~${esc(md(v.expiresAt))}<small> 까지</small>` : `${left}<small> / ${v.total}회</small>`}</div><div class="cl-bar" aria-hidden="true"><i style="width:${left === null ? 2 : Math.round((v.used || 0) / Math.max(1, v.total) * 100)}%"></i></div><small class="hint" style="margin:0">${esc(v.start)} 시작 · ${esc(v.expiresAt || '만료 없음')} 만료 · ${v.rule.noshow ? '노쇼 1회 차감' : '노쇼 차감 없음'} · ${v.rule.late ? `${v.rule.cutoffH}시간 안 취소 1회 차감` : '취소 차감 없음'}</small></div>`;
+}
+// 시트의 값 → 수강권(미리보기·저장 공용)
+export function readPassForm(form){
+  const e = form.elements, today = form.dataset.today || new Date().toISOString().slice(0, 10), v = n => e[n]?.value ?? '';
+  const kind = v('pkind') || 'count', tp = v('ptotal'), total = kind === 'period' ? 0 : Math.max(1, Math.min(500, Number(tp === 'x' ? v('totalX') : tp) || 0));
+  const mo = v('months'), start = today, expiresAt = mo && mo !== 'x' ? addMonths(start, Number(mo)) : v('expiresAt');
+  return {kind, total, format: v('format') || '1:1', start, expiresAt, rule: {noshow: !!e.noshow?.checked, late: !!e.late?.checked, cutoffH: Number(v('cutoffH')) || 24}, used: e.used ? Math.max(0, Number(v('used')) || 0) : undefined, price: Number(v('price')) || null};
 }
 export function holdFormHTML(c){ return `<form id="coach-hold-form" class="cd-pt" data-client="${esc(c.id)}"><small>일시정지(홀딩)</small><div class="cd-pt-row"><label>며칠<input name="days" type="number" min="1" max="90" value="7"></label><button class="button small" type="submit">홀딩</button><button type="button" class="text-button" data-coach-hold="">닫기</button></div><p class="hint">만료일이 그만큼 뒤로 가고 장부에 남아요.</p></form>`; }
 

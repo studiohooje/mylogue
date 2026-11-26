@@ -4,6 +4,11 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.4.2 — 2026-11-26 (배포됨)
+
+- 코치로그 완성(대표님 승인 목업 v2): 앱 전체 코치 테마(머리 '코치로그 · coachlogue', 카드·창·입력·설정·메뉴), 코치태그(profile.js, 회원에게 보이는 이름 → links.trainerName), 회원 등록 시트(수업 종류 여러 개 c.kinds), 수강권 시트(횟수·기간권·결제 금액 코치만 passPrice·미리보기), 수업 계획 미리 등록(coach-plan.js: 함께한 운동·종류 필터·섞기·보내기 방식·schedule.plan → links.schedule showAt), 식단 제안 3방식(coach-diet.js), 개인 루틴(시트·-10%·주 n회·links.routineLog), 코치 설정(prefs), 회원 홈 내 코치 카드(계획 보기·지난 수업 혼자 하기), 운동 창 '수업 그대로'·루틴 진행 띠.
+- 규칙: links 회원 routineLog 추가. build·sw에 coach-plan.js·coach-diet.js.
+
 ## Mylogue Beta 5.4.1 — 2026-11-26 (배포됨)
 
 - 코치로그 대시보드 초대 버튼 먹통 수정(coachNew가 회원 화면으로 이동해 폼 열기).

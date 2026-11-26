@@ -237,10 +237,12 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && (
           (resource.data.memberUid == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scope','shared','status','endedAt','endedBy','memberName','attend','ptAgreedAt','updatedAt'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scope','shared','status','endedAt','endedBy','memberName','attend','ptAgreedAt','routineLog','updatedAt'])
             && scopeOk(request.resource.data.scope)
             // 5.4.0 D6 전날 출석 응답: 예약 id → 'yes'|'change'|'no' (최대 60개)
             && (!('attend' in request.resource.data) || (request.resource.data.attend is map && request.resource.data.attend.size() <= 60))
+            // 5.4.2 개인 루틴 했어요(루틴 id → 기록 목록, 최대 24개 루틴)
+            && (!('routineLog' in request.resource.data) || (request.resource.data.routineLog is map && request.resource.data.routineLog.size() <= 24))
             // 5.4.0 D7 수강권 규칙 확인 시각
             && (!('ptAgreedAt' in request.resource.data) || (request.resource.data.ptAgreedAt is string && request.resource.data.ptAgreedAt.size() <= 40)))
           || (resource.data.trainerUid == request.auth.uid

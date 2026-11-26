@@ -1,8 +1,13 @@
 // 4.0.0 코치 모드 화면 상태와 이벤트. app.js는 이 컨트롤러에 클릭·제출·변경과 화면 그리기를 넘긴다.
 // 마스터 계정이 아니면 visible()이 false라 어떤 버튼·메뉴·문구도 그리지 않는다.
-import {startCoachLive, startCoachMeal} from './coach-live.js';
+import {startCoachLive, startCoachMeal, startSoloClass, coachMeal} from './coach-live.js';
+import {coachTagText} from './profile.js';
+import {planSheetHTML, readPlanForm, emptyPlan, prefsOf, planShowAt, suggest, kindOfExercise} from './coach-plan.js';
+import {findExercise as findEx} from './catalog.js';
+import {sheetHTML} from './coach.js';
+import {dietSheetHTML, readDietForm, emptyDiet, dietItemsAt, dietPathLabel, newCombo, finalizeDiet} from './coach-diet.js';
 import {findExercise} from './catalog.js';
-import {passOf, deduct, withLog, hold, lateCancel, reportOf, reportText, drawReport} from './coach-pass.js';
+import {passOf, deduct, withLog, hold, lateCancel, reportOf, reportText, drawReport, readPassForm, passPreviewHTML} from './coach-pass.js';
 import {memberHomeCardHTML} from './coach.js';
 import {coachAllowed, coachData, withCoach, cid, emptySend, readSendForm, rowsToExercises, exercisesToRows, sessionSummary, applyAcks, clientStatus,
  coachNav, coachToggleHTML, coachClientsHTML, coachSendHTML, coachDashHTML, coachScheduleHTML, coachTemplatesHTML, coachSettingsHTML, memberCoachHTML, sharedSummary, COACH_PAGES} from './coach.js';
@@ -14,25 +19,31 @@ const MODE_KEY = 'mylogue.coachMode';
 export function createCoachController({getDB, save, render, toast, setPage, getPage, today, user, profileName}){
  let on = false; try{ on = localStorage.getItem(MODE_KEY)==='on'; }catch{}
  let links = [], acks = [], loaded = false, busy = false, sharedPushed = new Set();
- const st = {open:'', form:'', send:null, week:0, book:null, assess:'', tab:'', day:'', passEdit:'', holdOpen:'', report:'', reportNote:''};
+ const st = {diet:null, plan:null, mplan:'', open:'', form:'', send:null, week:0, book:null, assess:'', tab:'', day:'', passEdit:'', holdOpen:'', report:'', reportNote:''};
  const member = {code:'', agree:false, scope:{}, busy:false, msg:''};
  const visible = () => coachAllowed(user());
  const active = () => visible() && on;
  const data = () => coachData(getDB());
  const put = patch => save(withCoach(getDB(), patch));
  const demo = () => !user();   // 로컬 화면 확인(?coach=demo)일 때는 서버 호출을 하지 않는다
- const trainerName = () => profileName() || '코치';
+ const trainerName = () => coachTagText(getDB()) || profileName() || '코치';
  const sendState = () => st.send || (st.send = emptySend(today()));
 
  /* 5.4.0 D15: 연동된 회원에게는 연동 문서(links.mealPlans)로 보낸다. 회원은 식사 창 '코치 제안'에서 쓴다 */
  function pushPlans(c){ if(!c?.linkId || demo()) return; const plans = (c.mealPlans||[]).slice(-12).map(p => ({...p, sentAt:p.sentAt||new Date().toISOString()}));
   cloud.updateLink(c.linkId, {mealPlans:plans}).then(() => { const d = data(); put({clients:d.clients.map(x => x.id===c.id ? {...x, mealPlans:plans} : x)}); render(); }).catch(e => toast(`식단 제안을 보내지 못했어요: ${e.message||e}`)); }
+ function historyLast(d, clientId, name){ const mine = d.sessions.filter(s => (s.targets||[]).some(t => t.clientId===clientId)).sort((a, b) => String(b.date).localeCompare(String(a.date))); for(const s of mine) for(const e of s.exercises||[]){ if(e.name===name){ const w = (e.sets||[]).filter(x => x.type!=='웜업'); const top = w.at(-1); return top ? {weight:top.weight, reps:top.reps, sets:w.length} : {}; } const m = (e.moves||[]).find(x => x.name===name); if(m) return {reps:m.reps||'', memo:m.spring||''}; } return {}; }
+ function this_addMealPlan(ids, plan){ const d = data(); const cs = d.clients.filter(c => ids.includes(c.id)); if(!cs.length) return; put({clients:d.clients.map(c => ids.includes(c.id) ? {...c, mealPlans:[...(c.mealPlans||[]), plan].slice(-12)} : c)}); for(const c of cs) pushPlans({...c, mealPlans:[...(c.mealPlans||[]), plan].slice(-12)}); st.open = cs[0].id; st.tab = 'diet'; setPage('coach-clients'); toast(cs[0].memberUid ? `${cs[0].name} 님에게 식단 제안을 보냈어요.` : '식단 제안을 저장했어요. 미가입 회원은 \'글로 복사\'로 보내요.'); }
+ function planSheet(){ if(coachMeal()) return ''; if(st.plan?.mode==='routine'){ const c = data().clients.find(x => x.id===st.plan.clientId); return sheetHTML(`개인 운동 루틴 · ${c?.name||''}`, planSheetHTML(data(), st.plan, {client:c, today:today()})); } if(st.diet){ const c = data().clients.find(x => x.id===st.diet.clientId); return sheetHTML(st.diet.mode?`${({day:'하루 식단표',combo:'끼니별 조합',single:'한 끼만 콕'})[st.diet.mode]} · ${c?.name||''}`:`식단 제안 · ${c?.name||''}`, dietSheetHTML(st.diet, {client:c})); } if(!st.plan) return ''; const d = data(), c = d.clients.find(x => x.id===st.plan.clientId); return sheetHTML(`수업 계획 · ${c?.name||''}`, planSheetHTML(d, st.plan, {client:c, today:today()})); }
+ function planToExercises(items){ return (items||[]).map(it => it.kind==='웨이트' ? {name:it.name, kind:'strength', sets:Array.from({length:Math.max(1, Math.min(10, Number(it.sets)||3))}, () => ({weight:Number(it.weight)||0, unit:'kg', reps:Number(it.reps)||0}))} : {name:it.name, kind:'cardio', part:it.kind==='필라테스'?'필라테스':'', sessionType:it.kind, durationMin:Number(it.min)||null, note:it.memo||'', sets:[]}); }
  async function refresh({quiet=true}={}){
   if(!visible() || demo() || busy) return;
   busy = true;
   try{
    links = await cloud.listLinks();
    const mineAsTrainer = links.filter(l => l.trainerMine);
+   /* 5.4.2 코치태그가 바뀌면 연동 문서의 코치 이름도 맞춘다(회원에게 보이는 이름) */
+   for(const l of mineAsTrainer) if(l.status==='active' && l.trainerName!==trainerName()) cloud.updateLink(l.id, {trainerName:trainerName()}).then(() => { l.trainerName = trainerName(); }).catch(() => {});
    // 초대 수락으로 생긴 연동을 회원 목록에 이어 붙인다(미가입 회원 → 연동)
    let d = data(), changed = false;
    const clients = d.clients.map(c => { const l = mineAsTrainer.find(x => x.clientId===c.id); if(l && (c.linkId!==l.id || c.memberUid!==l.memberUid)){ changed = true; return {...c, linkId:l.id, memberUid:l.memberUid, inviteCode:''}; } return c; });
@@ -45,8 +56,8 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
   }catch(e){ console.error('코치 연동 불러오기', e); }
   finally{ busy = false; render(); }
  }
- async function syncPT(clients){ for(const c of clients) if(c.linkId && c.pt?.total){ const l = links.find(x => x.id===c.linkId); if(l?.status==='active' && JSON.stringify(l.pt||{})!==JSON.stringify(c.pt)) await cloud.updateLink(c.linkId, {pt:c.pt}); } }
- async function syncSchedule(){ const d = data(); for(const c of d.clients) if(c.linkId){ const l = links.find(x => x.id===c.linkId); if(l?.status!=='active') continue; const sched = d.schedules.filter(x => x.status==='planned' && (x.clientIds||[]).includes(c.id) && String(x.startAt)>=today()).sort((a, b) => String(a.startAt).localeCompare(String(b.startAt))).slice(0, 20).map(x => ({startAt:x.startAt, durationMin:x.durationMin||50, title:x.title||'', place:x.place||''})); await cloud.updateLink(c.linkId, {schedule:sched}).catch(() => {}); } }
+ async function syncPT(clients){ for(const c of clients) if(c.linkId && (c.pt?.total || c.pt?.kind==='period')){ const l = links.find(x => x.id===c.linkId); if(l?.status==='active' && JSON.stringify(l.pt||{})!==JSON.stringify(c.pt)) await cloud.updateLink(c.linkId, {pt:c.pt}); } }
+ async function syncSchedule(){ const d = data(); for(const c of d.clients) if(c.linkId){ const l = links.find(x => x.id===c.linkId); if(l?.status!=='active') continue; const sched = d.schedules.filter(x => x.status==='planned' && (x.clientIds||[]).includes(c.id) && String(x.startAt)>=today()).sort((a, b) => String(a.startAt).localeCompare(String(b.startAt))).slice(0, 20).map(x => { const showAt = planShowAt(x, prefsOf(d)); return {id:x.id, status:x.status, startAt:x.startAt, durationMin:x.durationMin||50, title:x.title||'', place:x.place||'', ...(showAt?{plan:{items:x.plan.items.slice(0, 20), note:x.plan.note||'', showAt}}:{})}; }); await cloud.updateLink(c.linkId, {schedule:sched}).catch(() => {}); } }
 
  // 헤더·메뉴
  const headerExtra = () => visible() ? coachToggleHTML(on) : '';
@@ -54,9 +65,9 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
  const headerClass = () => active() ? ' coach-mode' : '';
  function pageHTML(page){
   const d = data(), t = today();
-  if(page==='coach-clients') return coachClientsHTML(d, {links, open:st.open, today:t, form:st.form, assess:st.assess, tab:st.tab, passEdit:st.passEdit, holdOpen:st.holdOpen, report:st.report, reportNote:st.reportNote});
-  if(page==='coach-send') return coachSendHTML(d, sendState(), {links});
-  if(page==='coach-schedule') return coachScheduleHTML(d, {today:t, week:st.week, form:st.book, day:st.day});
+  if(page==='coach-clients') return coachClientsHTML(d, {links, open:st.open, today:t, form:st.form, assess:st.assess, tab:st.tab, passEdit:st.passEdit, holdOpen:st.holdOpen, report:st.report, reportNote:st.reportNote})+planSheet();
+  if(page==='coach-send') return coachSendHTML(d, sendState(), {links})+planSheet();
+  if(page==='coach-schedule') return coachScheduleHTML(d, {today:t, week:st.week, form:st.book, day:st.day})+planSheet();
   if(page==='coach-templates') return coachTemplatesHTML(d);
   const warn = links.filter(l => l.trainerMine && l.status==='active' && !l.warnedTrainerAt);
   return coachDashHTML(d, {today:t, links, warn});
@@ -78,6 +89,21 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
   const d = data();
   if(ds.coachAssess!==undefined){ st.assess = ds.coachAssess; render(); return true; }
   if(ds.coachNew!==undefined){ st.form = ds.coachNew; st.open = ''; if(getPage()!=='coach-clients') setPage('coach-clients'); else render(); if(ds.coachNew) setTimeout(() => { const f = document.getElementById('coach-client-form'); f?.scrollIntoView?.({block:'center'}); f?.querySelector('input')?.focus(); }, 60); return true; }
+  if(ds.coachPlan){ const [kind, id] = ds.coachPlan.split(':'); const pr = prefsOf(d);
+   if(kind==='sched'){ const x = d.schedules.find(y => y.id===id); if(!x) return true; const c = d.clients.find(y => (x.clientIds||[]).includes(y.id)); st.plan = {...emptyPlan({clientId:c?.id||'', scheduleId:x.id, date:String(x.startAt).slice(0,10), time:String(x.startAt).slice(11,16), kinds:c?.kinds||['웨이트'], send:pr.planSend}), title:x.title||'', ...(x.plan?{items:structuredClone(x.plan.items||[]), note:x.plan.note||'', send:x.plan.send||pr.planSend}:{})}; }
+   else { const c = d.clients.find(y => y.id===id); if(!c) return true; const next = d.schedules.filter(x => x.status==='planned' && (x.clientIds||[]).includes(c.id) && String(x.startAt) >= today()).sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)))[0]; st.plan = next ? {...emptyPlan({clientId:c.id, scheduleId:next.id, date:String(next.startAt).slice(0,10), time:String(next.startAt).slice(11,16), kinds:c.kinds||['웨이트'], send:pr.planSend}), title:next.title||'', ...(next.plan?{items:structuredClone(next.plan.items||[]), note:next.plan.note||'', send:next.plan.send||pr.planSend}:{})} : emptyPlan({clientId:c.id, kinds:c.kinds||['웨이트'], send:pr.planSend, date:today()}); }
+   render(); return true; }
+  if(st.plan && (ds.cpAdd||ds.cpDel!==undefined||ds.cpUp!==undefined||t.id==='cp-save-tpl')){ const form = document.getElementById('coach-plan-form'); st.plan = readPlanForm(form, st.plan);
+   if(ds.cpAdd){ const [k, ...n] = ds.cpAdd.split('|'), name = n.join('|'); const h0 = historyLast(d, st.plan.clientId, name), h = st.plan.mode==='routine' && h0.weight ? {...h0, weight:Math.round(h0.weight*0.9/2.5)*2.5} : h0; st.plan.items.push({name, kind:k, ...(k==='웨이트'?{weight:h.weight??'', reps:h.reps??10, sets:h.sets??3}:{reps:h.reps??'', memo:h.memo??''})}); const sg = document.querySelector('[data-cp-search]'); if(sg) sg.value = ''; }
+   if(ds.cpDel!==undefined) st.plan.items.splice(Number(ds.cpDel), 1);
+   if(ds.cpUp!==undefined){ const i = Number(ds.cpUp); if(i>0){ const it = st.plan.items.splice(i, 1)[0]; st.plan.items.splice(i-1, 0, it); } }
+   if(t.id==='cp-save-tpl'){ if(!st.plan.items.length){ toast('운동을 하나 이상 넣어 주세요.'); return true; } put({templates:[...d.templates, {id:cid('t'), clientId:st.plan.clientId, title:st.plan.title||'수업 계획', exercises:planToExercises(st.plan.items), lastUsedAt:new Date().toISOString()}]}); toast('템플릿으로 저장했어요.'); return true; }
+   render(); return true; }
+  if(ds.coachRoutineNew){ const c = d.clients.find(x => x.id===ds.coachRoutineNew); if(!c) return true; st.plan = {...emptyPlan({clientId:c.id, kinds:c.kinds||['웨이트']}), mode:'routine', freq:2}; render(); return true; }
+  if(ds.coachPlanSend){ put({schedules:d.schedules.map(x => x.id===ds.coachPlanSend ? {...x, plan:{...x.plan, sentAt:new Date().toISOString()}} : x)}); render(); syncSchedule().then(() => toast('회원에게 수업 계획을 보냈어요.')).catch(() => {}); return true; }
+  if(ds.mcSolo){ startSoloClass(ds.mcSolo); return true; }
+  if(ds.mcPlan!==undefined){ st.mplan = st.mplan===ds.mcPlan ? '' : ds.mcPlan; render(); return true; }
+  if(ds.coachSheetClose!==undefined || (ds.coachSheetBg!==undefined && t.classList?.contains('coach-sheet'))){ st.form = ''; st.passEdit = ''; st.holdOpen = ''; st.sheet = null; st.plan = null; st.diet = null; render(); return true; }
   if(ds.coachPassEdit!==undefined){ st.passEdit = ds.coachPassEdit; st.holdOpen = ''; render(); return true; }
   if(ds.coachHold!==undefined){ st.holdOpen = ds.coachHold; st.passEdit = ''; render(); return true; }
   if(ds.coachReport!==undefined){ st.report = ds.coachReport; st.reportNote = ''; render(); return true; }
@@ -113,7 +139,7 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
     const last = one ? d.sessions.filter(s => (s.targets||[]).some(t => t.clientId===one.id)).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] : null;
     const fb = last ? (last.targets||[]).find(t => t.clientId===one.id)?.feedback : null;
     const lastLine = last ? `지난 수업 ${String(last.date).slice(5).replace('-','/')} · ${sessionSummary(last)}${fb?.pain?.length?` · 불편: ${fb.pain.join(', ')}`:''}` : (one?.cautions ? `주의: ${one.cautions}` : '');
-    startCoachLive({clientIds:ids, names:cs.map(c => c.name), title:x?.title||'', scheduleId:x?.id||'', date:x?String(x.startAt).slice(0,10):today(), time:x?String(x.startAt).slice(11,16):new Date().toTimeString().slice(0,5), ptLine:left!==null?`PT ${(Number(one.pt.used)||0)+1}/${one.pt.total}회차`:'', lastLine});
+    startCoachLive({plan:x?.plan?.items||[], clientIds:ids, names:cs.map(c => c.name), title:x?.title||'', scheduleId:x?.id||'', date:x?String(x.startAt).slice(0,10):today(), time:x?String(x.startAt).slice(11,16):new Date().toTimeString().slice(0,5), ptLine:left!==null?`PT ${(Number(one.pt.used)||0)+1}/${one.pt.total}회차`:'', lastLine});
     return true; }
   /* 5.4.0 D6 회원: 다음 수업 출석 응답(연동 문서 attend) */
   if(ds.coachRoom!==undefined){ const l = links.find(x => x.id===ds.coachRoom); if(!l){ toast('앱 회원과 연동되면 코치방이 열려요.'); return true; } const {openCoachRoom} = await import('./mate-ui.js'); openCoachRoom(l); return true; }
@@ -124,7 +150,15 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
     put({clients:d.clients.map(c => s0.clientIds.includes(c.id) ? {...c, routines:[...(c.routines||[]), routine].slice(-12)} : c)});
     for(const c of cs) if(c.linkId && !demo()) cloud.updateLink(c.linkId, {routines:[...(c.routines||[]), routine].slice(-12)}).catch(e => toast(`루틴을 보내지 못했어요: ${e.message||e}`));
     toast(cs.some(c => c.linkId) ? '회원 운동 창 \'도움받기 › 코치 루틴\'으로 보냈어요.' : '루틴을 저장했어요. 미가입 회원은 연동되면 보여요.'); render(); return true; }
-  if(ds.coachMealNew){ const c = d.clients.find(x => x.id===ds.coachMealNew); if(!c) return true; startCoachMeal({clientIds:[c.id], names:[c.name], title:''}); return true; }
+  if(ds.coachMealNew){ const c = d.clients.find(x => x.id===ds.coachMealNew); if(!c) return true; st.diet = emptyDiet({clientId:c.id}); render(); return true; }
+  if(st.diet && (ds.cdMode!==undefined||ds.cdAdd||ds.cdDel||ds.cdCnew||ds.cdCdel)){ const form = document.getElementById('coach-diet-form'); st.diet = readDietForm(form, st.diet);
+   if(ds.cdMode!==undefined) st.diet.mode = ds.cdMode;
+   if(ds.cdDel){ const k = ds.cdDel.lastIndexOf(':'), path = ds.cdDel.slice(0, k), i = Number(ds.cdDel.slice(k+1)); dietItemsAt(st.diet, path)?.splice(i, 1); }
+   if(ds.cdCnew){ st.diet.combos[ds.cdCnew] = [...(st.diet.combos[ds.cdCnew]||[]), newCombo(st.diet, ds.cdCnew)]; }
+   if(ds.cdCdel){ const [sl, i] = ds.cdCdel.split('|'); st.diet.combos[sl]?.splice(Number(i), 1); }
+   if(ds.cdAdd){ const c = d.clients.find(x => x.id===st.diet.clientId); startCoachMeal({clientIds:[c?.id], names:[c?.name||'회원'], title:'', target:ds.cdAdd, label:dietPathLabel(st.diet, ds.cdAdd)}); return true; }
+   render(); return true; }
+
   if(ds.coachPlanDel){ const [cidv, pid] = ds.coachPlanDel.split(':'); if(!confirmInline(t, '다시 누르면 지워요')) return true; const c = d.clients.find(x => x.id===cidv); const plans = (c?.mealPlans||[]).filter(p => p.id!==pid); put({clients:d.clients.map(x => x.id===cidv ? {...x, mealPlans:plans} : x)}); pushPlans({...c, mealPlans:plans}); render(); return true; }
   if(ds.coachFromSchedule){ const x = d.schedules.find(y => y.id===ds.coachFromSchedule); if(!x) return true; st.send = {...emptySend(String(x.startAt).slice(0,10), x.clientIds||[]), time:String(x.startAt).slice(11,16), title:x.title||'', scheduleId:x.id, place:x.place||''}; setPage('coach-send'); return true; }
   if(ds.coachUseTpl){ const tp = d.templates.find(x => x.id===ds.coachUseTpl); if(!tp) return true; st.send = {...emptySend(today(), tp.clientId?[tp.clientId]:[]), title:tp.title, rows:exercisesToRows(tp.exercises), memberNote:tp.notes||''}; setPage('coach-send'); return true; }
@@ -194,19 +228,34 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
   if(!active()) return false;
   const d = data();
   if(form.id==='coach-client-form'){
-   const name = String(f.name||'').trim(); if(!name) throw Error('이름을 적어 주세요.');
-   const c = {id:cid('c'), name:name.slice(0,40), memberUid:null, linkId:null, goal:String(f.goal||'').slice(0,120), cautions:String(f.cautions||'').slice(0,200), pt:f.ptTotal?{total:Number(f.ptTotal)||0, used:0, expiresAt:f.ptExpires||''}:{}, groups:[], createdAt:new Date().toISOString()};
-   put({clients:[...d.clients, c]}); const kind = form.dataset.kind; st.form = ''; st.open = c.id;
+   const e = form.elements, name = String(f.name||'').trim(); if(!name) throw Error('이름을 적어 주세요.');
+   const kinds = [...form.querySelectorAll('input[name=kinds]:checked')].map(x => x.value); const goal = String(f.goal||'').trim() || (form.querySelector('input[name=goalPick]:checked')?.value||'');
+   const kind = form.querySelector('input[name=mode]:checked')?.value || form.dataset.kind || 'offline';
+   const c = {id:cid('c'), name:name.slice(0,40), kinds:kinds.length?kinds:['웨이트'], memberUid:null, linkId:null, goal:goal.slice(0,120), cautions:String(f.cautions||'').slice(0,200), pt:{}, groups:[], createdAt:new Date().toISOString()};
+   put({clients:[...d.clients, c]}); st.form = ''; st.open = c.id; st.tab = e.withPass?.checked ? 'pass' : 'sessions'; st.passEdit = e.withPass?.checked ? c.id : '';
    if(kind==='invite'){ if(demo()) put({clients:data().clients.map(x => x.id===c.id ? {...x, inviteCode:'DEMO2345', inviteExpires:new Date(Date.now()+7*864e5).toISOString()} : x)}); else { const r = await cloud.createInvite({clientId:c.id, trainerName:trainerName()}); put({clients:data().clients.map(x => x.id===c.id ? {...x, inviteCode:r.code, inviteExpires:r.expiresAt} : x)}); } }
-   render(); toast(kind==='invite' ? `${c.name}님 초대 코드를 만들었어요. 코드·링크·QR 중 편한 걸 보내 주세요.` : `${c.name}님을 추가했어요.`); return true;
-  }
+   render(); toast(kind==='invite' ? `${c.name}님을 추가했어요. 초대 코드는 ⋯ 메모에서 보내요.` : `${c.name}님을 추가했어요.`); return true; }
+  if(form.id==='coach-diet-form'){ st.diet = readDietForm(form, st.diet); const plan = finalizeDiet(st.diet); const empty = plan.mode==='day' ? !plan.slots.length : plan.mode==='single' ? !plan.items.length : !Object.keys(plan.combos).length; if(empty) throw Error('음식을 하나 이상 넣어 주세요.'); const ids = [st.diet.clientId]; st.diet = null; this_addMealPlan(ids, plan); return true; }
+  if(form.id==='coach-plan-form'){ st.plan = readPlanForm(form, st.plan); const p = st.plan; if(!p.items.length) throw Error('운동을 하나 이상 넣어 주세요.');
+   if(p.mode==='routine'){ const routine = {id:cid('r'), title:p.title||'개인 운동 루틴', note:p.note||'', freq:p.freq||2, items:p.items.map(it => ({...it, ...(findEx(it.name)?.part?{part:findEx(it.name).part}:{})})), createdAt:new Date().toISOString()}; const c = d.clients.find(x => x.id===p.clientId); const routines = [...(c?.routines||[]), routine].slice(-12);
+    put({clients:d.clients.map(x => x.id===p.clientId ? {...x, routines} : x)}); if(c?.linkId && !demo()) cloud.updateLink(c.linkId, {routines}).catch(e => toast(`루틴을 보내지 못했어요: ${e.message||e}`)); st.plan = null; st.open = p.clientId; st.tab = 'routine'; render(); toast(c?.linkId ? `${c.name} 님 운동 창 '도움받기 › 코치 루틴'으로 보냈어요.` : '루틴을 저장했어요. 미가입 회원은 연동되면 보여요.'); return true; }
+   const plan = {items:p.items, note:p.note, send:p.send, savedAt:new Date().toISOString(), ...(p.send==='now'?{sentAt:new Date().toISOString()}:{})};
+   let schedules = d.schedules;
+   if(p.scheduleId) schedules = schedules.map(x => x.id===p.scheduleId ? {...x, title:p.title||x.title, plan:{...(x.plan||{}), ...plan}} : x);
+   else { if(!p.date) throw Error('날짜를 정해 주세요.'); schedules = [...schedules, {id:cid('b'), clientIds:[p.clientId], startAt:`${p.date}T${p.time||'19:00'}`, durationMin:50, title:p.title||'수업', place:'', status:'planned', plan}]; }
+   put({schedules}); st.plan = null; render(); syncSchedule().catch(() => {});
+   toast(p.send==='none' ? '계획을 저장했어요(회원에게는 안 보내요).' : p.send==='manual' ? '계획을 저장했어요. 일정에서 \'계획 보내기\'로 보내요.' : p.send==='now' ? '계획을 저장하고 회원에게 보냈어요.' : '계획을 저장했어요. 정한 시각에 회원에게 보여요.'); return true; }
+  if(form.id==='coach-prefs-form'){ const e = form.elements, v = n => form.querySelector(`input[name=${n}]:checked`)?.value;
+   put({prefs:{...prefsOf(d), planSend:v('planSend')||'dayBefore', planTime:v('planTime')||'20:00', planHours:Number(v('planHours'))||3, attendAsk:!!e.attendAsk?.checked, showPrice:!!e.showPrice?.checked, quickNotes:String(e.quickNotes?.value||'').split(',').map(x => x.trim()).filter(Boolean).slice(0, 12)}}); render(); syncSchedule().catch(() => {}); toast('코치 설정을 저장했어요.'); return true; }
+  if(form.id==='coach-kinds-form'){ const id = form.dataset.client, kinds = [...form.querySelectorAll('input[name=kinds]:checked')].map(x => x.value); if(!kinds.length) throw Error('하나 이상 골라 주세요.'); put({clients:d.clients.map(c => c.id===id ? {...c, kinds} : c)}); render(); toast('수업 종류를 저장했어요.'); return true; }
   if(form.id==='coach-assess-form'){ const id = form.dataset.client; const a = readAssessment(f); put({clients:d.clients.map(c => c.id===id ? {...c, assessments:[...(c.assessments||[]), a].slice(-24)} : c)}); st.assess = ''; render(); toast('자세 관찰을 저장했어요.'); return true; }
-  if(form.id==='coach-pt-form'){ const id = form.dataset.client; const total = f.total===''?null:Number(f.total), used = f.used===''?0:Number(f.used); if(total!==null && used>total) throw Error('사용 회차가 총 회차보다 많아요.');
-   const clients = d.clients.map(c => { if(c.id!==id) return c; if(total===null) return {...c, pt:{}}; const was = c.pt||{}; let pt = {...was, ...(was.log?{}:{log:c.ptLog||[]}), total, used, expiresAt:(f.expiresAt?.value??f.expiresAt)||'', name:(f.name?.value??f.name??'').trim(), format:f.format?.value??f.format??'1:1', start:f.start?.value??f.start??'', rule:{noshow:!!form.elements.noshow?.checked, late:!!form.elements.late?.checked, cutoffH:Math.max(1, Math.min(72, Number(form.elements.cutoffH?.value)||24))}};
-    if(was.total && Number(was.used||0)!==used) pt = withLog(pt, {date:today(), kind:'manual', delta:Number(was.used||0)-used, note:`사용 ${Number(was.used||0)} → ${used}`});
-    if(!was.total) pt = withLog(pt, {date:today(), kind:'restore', delta:total, note:`${pt.name||`PT ${total}회권`} 시작`});
-    return {...c, pt}; });
-   put({clients}); syncPT(clients).catch(() => {}); st.passEdit = ''; render(); toast('수강권을 저장했어요.'); return true; }
+  if(form.id==='coach-pt-form'){ const id = form.dataset.client, v = readPassForm(form); if(v.kind==='count' && !(v.total>0)) throw Error('회차를 골라 주세요.'); if(!v.expiresAt) throw Error('기간(만료일)을 정해 주세요.');
+   const clients = d.clients.map(c => { if(c.id!==id) return c; const was = c.pt||{}, used = v.used ?? Number(was.used||0); if(v.kind==='count' && used>v.total) throw Error('사용 회차가 총 회차보다 많아요.');
+    let pt = {...was, ...(was.log?{}:{log:c.ptLog||[]}), kind:v.kind, total:v.total, used, start:was.start||v.start, expiresAt:v.expiresAt, format:v.format, name:was.name&&was.total===v.total&&was.kind===v.kind?was.name:(v.kind==='period'?`기간권 ${v.format}`:`PT ${v.total}회권`), rule:v.rule};
+    if(was.total||was.kind==='period'){ if(Number(was.used||0)!==used) pt = withLog(pt, {date:today(), kind:'manual', delta:Number(was.used||0)-used, note:`사용 ${Number(was.used||0)} → ${used}`}); }
+    else pt = withLog(pt, {date:today(), kind:'restore', delta:v.kind==='period'?0:v.total, note:`${pt.name} 시작`});
+    return {...c, pt, passPrice:v.price||c.passPrice||null}; });
+   put({clients}); syncPT(clients).catch(() => {}); st.passEdit = ''; render(); toast('수강권을 저장했어요. 회원도 같은 카드를 봐요.'); return true; }
   if(form.id==='coach-hold-form'){ const id = form.dataset.client, days = Number(form.elements.days?.value)||0; const clients = d.clients.map(c => c.id===id && c.pt?.total ? {...c, pt:hold(c.pt, days, today())} : c); put({clients}); syncPT(clients).catch(() => {}); st.holdOpen = ''; render(); toast(`${days}일 홀딩했어요. 만료일이 뒤로 갔어요.`); return true; }
   if(form.id==='coach-send-form'){ st.send = readSendForm(form, sendState()); if(!st.send.clientIds.length) throw Error('보낼 회원을 골라 주세요.'); if(!rowsToExercises(st.send.rows).length) throw Error('종목을 하나 이상 적어 주세요.'); st.send.step = 'confirm'; render(); globalThis.scrollTo?.(0, 0); return true; }
   if(form.id==='coach-book-form'){
@@ -230,9 +279,18 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
  // ?invite=코드 링크로 들어오면 내 코치 칸에 채운다(마스터 계정만)
  function takeInvite(code){ if(!visible() || !/^[A-Z2-9]{8}$/.test(String(code||'').toUpperCase())) return false; member.code = String(code).toUpperCase(); on = false; return true; }
  return {visible, active, refresh, headerExtra, headerClass, addMealPlan(ids, plan){ const d = data(); const cs = d.clients.filter(c => ids.includes(c.id)); if(!cs.length) return; put({clients:d.clients.map(c => ids.includes(c.id) ? {...c, mealPlans:[...(c.mealPlans||[]), plan].slice(-12)} : c)}); for(const c of cs) pushPlans({...c, mealPlans:[...(c.mealPlans||[]), plan].slice(-12)}); st.open = cs[0].id; st.tab = 'diet'; setPage('coach-clients'); toast(cs[0].memberUid ? `${cs[0].name} 님에게 식단 제안을 보냈어요.` : '식단 제안을 저장했어요. 미가입 회원은 \'글로 복사\'로 보내요.'); },
+ allowed(){ return visible(); },
+ formInput(t){
+  if(st.plan && t?.matches?.('[data-cp-search]')){ const box = document.querySelector('[data-cp-sugg]'); if(box){ const list = suggest(t.value, st.plan.kinds); box.innerHTML = list.map(x => `<button type="button" class="ck-chip-btn" data-cp-add="${x.kind}|${x.name.replace(/"/g,'&quot;')}">＋ ${x.name} <small>${x.kind}</small></button>`).join('') || (t.value.trim()?`<button type="button" class="ck-chip-btn" data-cp-add="${st.plan.kinds[0]||'웨이트'}|${t.value.trim().replace(/"/g,'&quot;')}">＋ '${t.value.trim()}' 그대로 넣기</button>`:''); } return true; }
+  if(st.plan && t?.matches?.('[data-cp-kind]')){ st.plan = readPlanForm(document.getElementById('coach-plan-form'), st.plan); render(); return true; }
+  const form = t?.closest?.('#coach-pt-form'); if(!form) return false; const v = readPassForm(form), c = data().clients.find(x => x.id===form.dataset.client); const box = form.querySelector('[data-cs-preview]'); if(box) box.innerHTML = passPreviewHTML({...v, used:v.used ?? Number(c?.pt?.used||0), name:''}); const per = form.querySelector('[data-cs-per]'); if(per) per.textContent = v.price && v.total ? `회당 ${Math.round(v.price/v.total).toLocaleString('ko-KR')}원` : ''; return true; },
+ dietAddItems(path, items){ if(!st.diet) return; const at = dietItemsAt(st.diet, path); if(at) at.push(...items); st.open = st.diet.clientId; st.tab = 'diet'; setPage('coach-clients'); toast(`${items.length}가지를 넣었어요.`); },
+ reportRoutine(routineId, entry){ const l = links.find(x => x.memberMine && x.status==='active' && (x.routines||[]).some(r => r.id===routineId)); if(!l || demo()) return; const log = {...(l.routineLog||{}), [routineId]:[...((l.routineLog||{})[routineId]||[]), entry].slice(-20)}; l.routineLog = log; cloud.updateLink(l.id, {routineLog:log}).then(() => toast('코치님께 루틴 했어요를 알렸어요.')).catch(() => {}); },
+ linkOf(clientId){ const c = data().clients.find(x => x.id===clientId); return c ? links.find(l => l.id===c.linkId) || null : null; },
+ quickNotes(){ return prefsOf(data()).quickNotes || []; },
  linkById(id){ return links.find(l => l.id===id) || null; },
  waitingFor(linkId){ const d = data(), c = d.clients.find(x => x.linkId===linkId); if(!c) return []; return d.sessions.filter(x => (x.targets||[]).some(t => t.clientId===c.id && t.status==='sent')).map(x => `${String(x.date).slice(5).replace('-','/')} ${x.title||'수업'}`); },
- memberHomeHTML(pending=0){ return visible() && !active() ? memberHomeCardHTML(links, {pending}) : ''; },
+ memberHomeHTML(pending=0, lastClass=null){ return visible() && !active() ? memberHomeCardHTML(links, {pending, openPlan:st.mplan, lastClass}) : ''; },
  memberRoutines(){ return links.filter(l => l.memberMine && l.status==='active').flatMap(l => (l.routines||[]).map(r => ({...r, trainerName:l.trainerName}))).concat(globalThis.__mylogueDemoRoutines||[]); },
  memberPlans(){ return links.filter(l => l.memberMine && l.status==='active').flatMap(l => (l.mealPlans||[]).map(p => ({...p, trainerName:l.trainerName}))).concat(globalThis.__mylogueDemoPlans||[]); },
  sendFromLive(v){ st.send = {...emptySend(v.date, v.clientIds), time:v.time||'', title:v.title||'', rows:v.rows, memberNote:v.memberNote||'', scheduleId:v.scheduleId||'', step:'confirm'}; setPage('coach-send'); },

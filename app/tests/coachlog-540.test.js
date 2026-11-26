@@ -38,11 +38,11 @@ test('식사 창 세 갈래: 지난 식사 · 도움받기 · 직접, 코치 제
   assert.match(none, /오늘 3번을 다 썼어요/);
   const plans = [{id: 'p1', title: '점심 제안', trainerName: '이준호', items: [{name: '현미밥', servingQty: 1, servingUnit: '공기', calories: 300}]}];
   const coach = mealSourceHTML({meals: []}, {...s, src: 'coach'}, plans).html;
-  assert.match(coach, /data-q-coach-save="p1"/); assert.match(coach, /이준호 코치님 제안/); assert.match(coach, /class="on"[^>]*data-q-src="help"/);
+  assert.match(coach, /data-q-coach-save="p1~x"/); assert.match(coach, /이준호 코치님/); assert.match(coach, /class="on"[^>]*data-q-src="help"/);
 });
 test('운동 창 세 갈래: 지난 운동 · 도움받기(코치 루틴 · AI 사진) · 직접 고르기', () => {
   const h = workSourceHTML({src: 'help', routines: []});
-  assert.match(h, /코치에게 제안받은 루틴[\s\S]*연동된 코치님이 루틴을 보내면 열려요/);
+  assert.match(h, /코치에게 제안받은 루틴[\s\S]*연동된 코치님이 루틴을 보내거나 수업을 확정하면 열려요/);
   const c = workSourceHTML({src: 'coach', routines: [{id: 'r1', title: '하체 숙제', trainerName: '이준호', items: [{name: '스쿼트'}]}]});
   assert.match(c, /data-q-wroutine="r1"/);
   assert.match(workSourceHTML({src: 'past', recent: [{id: 'w1', title: '하체', date: '2026-11-25', exCount: 4}]}), /data-q-wpast="w1"[\s\S]*11\/25 · 4종목/);
@@ -59,4 +59,27 @@ test('미가입 회원용 수업 글: 세트별 무게×횟수와 코치 한마�
   const {sessionText} = await import('../coach.js');
   const t = sessionText({date: '2026-11-26', title: '하체 PT', exercises: [{name: '스쿼트', sets: [{weight: 55, reps: 10}, {weight: 60, reps: 8}]}, {name: '사이클', kind: 'cardio', durationMin: 10}], memberNote: '무릎 각도'}, '정해준');
   assert.match(t, /정해준 님 11\/26 수업\] 하체 PT/); assert.match(t, /스쿼트 55×10, 60×8/); assert.match(t, /사이클 10분/); assert.match(t, /코치 한마디: 무릎 각도/);
+});
+test('식단 제안 3가지: 하루 식단표·끼니별 조합·한 끼 — 회원은 지금 끼니가 먼저, 고르면 그 음식들', async () => {
+  const {finalizeDiet, emptyDiet, coachPick, memberCoachMealsHTML} = await import('../coach-diet.js');
+  const it = n => ({name: n, servingQty: 1, servingUnit: '개', calories: 100});
+  const d = emptyDiet({clientId: 'c1', mode: 'day'}); d.slots[0].items.push(it('바나나')); d.slots[1].items.push(it('현미밥'), it('닭가슴살'));
+  const day = finalizeDiet(d); assert.equal(day.slots.length, 2);
+  const c = emptyDiet({clientId: 'c1', mode: 'combo'}); c.combos.점심.push({name: 'A 조합', items: [it('포케')]}, {name: 'B 조합', items: []});
+  const combo = finalizeDiet(c); assert.equal(combo.combos.점심.length, 1); assert.equal(combo.combos.아침, undefined);
+  const plans = [{...day, id: 'd1', trainerName: '이준호'}, {...combo, id: 'c1', trainerName: '이준호'}];
+  const h = memberCoachMealsHTML(plans, {time: '12:10'});
+  assert.ok(h.indexOf('점심 · 12:30') < h.indexOf('아침 · 08:00'), '지금 끼니(점심)가 먼저');
+  assert.match(h, /data-q-coach-save="c1~c~점심~0"/);
+  assert.deepEqual(coachPick(plans, 'd1~s~1').items.map(x => x.name), ['현미밥', '닭가슴살']);
+  assert.equal(coachPick(plans, 'c1~c~점심~0').slot, '점심');
+});
+test('수업 계획: 회원 종류로 걸러진 함께한 운동 · 보낼 시각', async () => {
+  const {historyOf, planShowAt, planVisible} = await import('../coach-plan.js');
+  const data = {sessions: [{date: '2026-11-20', exercises: [{name: '벤치프레스', kind: 'strength', sets: [{weight: 60, reps: 8}]}, {name: '매트', kind: 'cardio', part: '필라테스', moves: [{name: '헌드레드', reps: 100}], sets: []}], targets: [{clientId: 'c1'}]}]};
+  const h = historyOf(data, 'c1'); assert.deepEqual(h.map(x => `${x.kind}:${x.name}`).sort(), ['웨이트:벤치프레스', '필라테스:헌드레드']);
+  const x = {startAt: '2026-11-28T19:00', plan: {items: [{name: '벤치프레스'}], send: 'dayBefore'}};
+  const at = planShowAt(x, {planSend: 'dayBefore', planTime: '20:00'}); assert.equal(new Date(at).getDate(), 27); assert.equal(new Date(at).getHours(), 20);
+  assert.equal(planShowAt({...x, plan: {...x.plan, send: 'none'}}, {}), '');
+  assert.equal(planVisible({plan: {items: [1], showAt: '2000-01-01T00:00:00Z'}}), true);
 });

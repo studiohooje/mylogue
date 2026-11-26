@@ -238,7 +238,8 @@ export async function adminClick(t){
 export function quickEditClick(t){
  if(t.id==='profile-open'){$s.pfEdit=newProfileEdit($s.db,cloudState.user,myTagCached());if(cloudState.approval==='approved')loadMyTag().then(tg=>{if($s.pfEdit&&!$s.pfEdit.tag){$s.pfEdit.tag=tg;$f.render()}}).catch(()=>{});$s.modal='profile-edit';$f.render();return true}
  if($s.pfEdit&&$s.modal==='profile-edit'){
-  const keepName=()=>{const v=document.getElementById('pf-name');if(v)$s.pfEdit.nickname=v.value};
+  const keepName=()=>{const v=document.getElementById('pf-name');if(v)$s.pfEdit.nickname=v.value;const cn=document.getElementById('pf-cname');if(cn)$s.pfEdit.coachName=cn.value;const ct=document.getElementById('pf-ctitle');if(ct)$s.pfEdit.coachCustom=ct.value};
+  if(t.dataset.pfCtitle!==undefined){keepName();const tg=document.getElementById('pf-tag');if(tg)$s.pfEdit.tag=tg.value;$s.pfEdit.coachTitle=t.dataset.pfCtitle;$f.render();if(t.dataset.pfCtitle==='@custom')setTimeout(()=>document.getElementById('pf-ctitle')?.focus(),30);return true}
   if(t.dataset.pfAvatar){keepName();const tg=document.getElementById('pf-tag');if(tg)$s.pfEdit.tag=tg.value;$s.pfEdit.id=t.dataset.pfAvatar;$f.render();return true}
   if(t.id==='pf-tagcheck'){const v=document.getElementById('pf-tag')?.value||'';$s.pfEdit.tag=v;$s.pfEdit.tagMsg='확인하는 중…';$s.pfEdit.tagOptions=[];$f.render();tagAvailable(v).then(r=>{if(!$s.pfEdit)return;$s.pfEdit.tagMsg=r.msg;$s.pfEdit.tagOk=r.ok;$s.pfEdit.tagOptions=r.options||[];$f.render()}).catch(e=>{if($s.pfEdit){$s.pfEdit.tagMsg=e.message;$f.render()}});return true}
  if(t.dataset.pfTagpick){$s.pfEdit.tag=t.dataset.pfTagpick;$s.pfEdit.tagOptions=[];$s.pfEdit.tagMsg='';$f.render();document.getElementById('pf-tagcheck')?.click();return true}

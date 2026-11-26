@@ -2414,3 +2414,118 @@ html.coach-theme input[type=checkbox]{accent-color:#ff7a59}
 html.coach-theme .status-badge.ok{color:#ffc59a}
 html.coach-theme .coach-head2 h2{color:#fff3ec}
 html.coach-theme .cdash-card,html.coach-theme .coach-client{border-color:#ff94662e}
+/* 5.4.2 대표님: 코치로그에서 나오는 건 전부 코치 색 — 남색(마이로그) 카드·창·입력칸을 따뜻한 짙은 색으로 */
+html.coach-theme{--surface:#2a1c22;--surface2:#3a262c;--line:#5c3f42}
+html.coach-theme .card,html.coach-theme .timeline-card,html.coach-theme .exercise{background:linear-gradient(150deg,#2b1d23,#22171d);border-color:#ff94662e;box-shadow:0 8px 25px #0a050722}
+html.coach-theme .sheet{background:#25181e;border-color:#7a4a44}
+html.coach-theme .modal-backdrop .sheet>.sheet-head,html.coach-theme .quick-palette .sheet>.sheet-head,html.coach-theme .modal-backdrop:not(.quick-palette) .sheet>.sheet-head{background:#25181e}
+html.coach-theme input:not([type=checkbox]):not([type=radio]),html.coach-theme select,html.coach-theme textarea{background:#1c1216;border-color:#5c3f42}
+html.coach-theme .cl-sum div,html.coach-theme .cl-alert>div,html.coach-theme .cl-plan,html.coach-theme .cd-fb,html.coach-theme .briefing,html.coach-theme [class*="brief"]{background:#ffffff08}
+html.coach-theme .cl-tabs,html.coach-theme .mi-tabs button,html.coach-theme .hs-opt{background:#ffffff08}
+html.coach-theme .cl-days button{background:#ffffff06;border-color:#ff946624}
+html.coach-theme .cl-ib,html.coach-theme .button.secondary{background:#3a262c;border-color:#7a4a44;color:#fff3ec}
+html.coach-theme .cl-ghost{border-color:#ff946640}
+html.coach-theme .q-live-card.live,html.coach-theme .mi-tabs button.on{background:linear-gradient(135deg,#ff946626,#f0566e26);border-color:#ff946688}
+html.coach-theme .q-live-ico,html.coach-theme .hs-opt .hs-ico{background:#ff94661f;color:#ffb48f}
+html.coach-theme .eyebrow{color:#ffb48f}
+/* 5.4.2 대표님: 코치로그로 바꾸면 앱 전체 톤이 바뀐다(머리·바닥 바·글자 회색까지) */
+html.coach-theme{--bg:#15111a;--muted:#c4aca6;--text:#fbf1ec}
+html.coach-theme .nav{background:linear-gradient(90deg,#1e1418,#2a1a1f);border-top-color:#ff8a5c44}
+html.coach-theme .nav.nav6 button.nv6-b{color:#c9b3ad}
+html.coach-theme .header{background:transparent}
+html.coach-theme .hint,html.coach-theme small{color:var(--muted)}
+html.coach-theme .cl-who small,html.coach-theme .coach-head2 small{color:#c4aca6}
+/* 5.4.2 대표님: 코치로그면 머리 이름도 '코치로그 · coachlogue', 글자·로고 색까지 코치 색 */
+html.coach-theme .brand .brand-title{background:linear-gradient(90deg,#ffffff 0%,#ffe2d2 40%,#ff9466 72%,#f0566e 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+html.coach-theme .brand .brand-en{color:#ff9466}
+html.coach-theme .brand-home:hover{background:rgba(255,148,102,.08)}
+html.coach-theme .brand-home:focus-visible{outline-color:#ff9466}
+html.coach-theme .brand svg circle.on,html.coach-theme .brand svg .on{stroke:#ff9466}
+html.coach-theme .brand svg{filter:hue-rotate(160deg) saturate(1.2)}
+html.coach-theme .header .account-chip,html.coach-theme .header .install-chip,html.coach-theme .header .admin-bell,html.coach-theme .header .coach-toggle{background:#ffffff08;border-color:#ff946633}
+html.coach-theme a{color:#ffb48f}
+
+/* 5.4.2 코치태그 */
+.pf-ctag{display:grid;gap:8px;margin-top:4px;padding:12px;border-radius:16px;border:1px solid #ff946655;background:linear-gradient(135deg,#ff94661a,#f0566e14)}
+.pf-ctag label{display:flex;align-items:center;gap:8px}
+.pf-ctag-badge{font-size:11.5px;font-weight:800;color:#ffb48f;background:#ff946626;border-radius:999px;padding:2px 8px}
+.pf-ctitles{flex-wrap:wrap}
+.pf-ctag-prev{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:12px;background:#00000026}
+.pf-ctag-prev small{color:var(--muted);font-size:12.5px}.pf-ctag-prev b{font-size:16px;color:#ffc59a}
+
+/* 5.4.2 코치 시트(운동·식단 입력 창처럼) */
+.coach-sheet{z-index:60}
+.coach-sheet .cs-body{padding:12px 16px 8px}
+.cs-form{display:grid;gap:14px}
+.cs-step{display:grid;gap:8px}.cs-step>b{font-size:14px}.cs-step>b small{font-weight:500;color:var(--muted);margin-left:6px;font-size:12.5px}
+.cs-step input:not([type=radio]):not([type=checkbox]){min-height:46px;font-size:16px}
+.ck-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ck-chip{position:relative;cursor:pointer}.ck-chip input{position:absolute;opacity:0;pointer-events:none}
+.ck-chip span{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #ffffff2a;font-size:14px;font-weight:600}
+.ck-chip input:checked+span{background:var(--coach-grad,#8ce4e0);color:#24100c;border-color:transparent}
+.ck-chip input:focus-visible+span{outline:2px solid #ff9466;outline-offset:2px}
+.ck-seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:#ffffff0a}
+.ck-seg label{position:relative;cursor:pointer}.ck-seg input{position:absolute;opacity:0;pointer-events:none}
+.ck-seg span{display:grid;place-items:center;min-height:44px;border-radius:10px;font-weight:700;color:var(--muted)}
+.ck-seg input:checked+span{background:var(--coach-grad,#8ce4e0);color:#24100c}
+.ck-sw{display:flex;align-items:center;gap:10px;min-height:50px;border-top:1px solid #ffffff10;cursor:pointer;position:relative}
+.ck-sw input{position:absolute;opacity:0;pointer-events:none}.ck-sw span{flex:1}.ck-sw span b{display:block;font-size:14.5px}.ck-sw span small{display:block;color:var(--muted);font-size:12px}
+.ck-sw i{width:46px;height:28px;border-radius:999px;background:#ffffff22;position:relative;flex:none}.ck-sw i:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}
+.ck-sw input:checked~i{background:var(--coach-grad,#8ce4e0)}.ck-sw input:checked~i:after{left:21px}
+.cs-go{min-height:52px;border:0;border-radius:14px;background:var(--coach-grad,#8ce4e0);color:#24100c;font:inherit;font-weight:800;font-size:16px;width:100%;cursor:pointer}
+.cs-x{display:none}
+.cs-step:has(input[value=x]:checked) .cs-x{display:block}
+.cs-form:has(input[name=pkind][value=period]:checked) .cs-count{display:none}
+.cs-price{display:flex;align-items:center;gap:10px}.cs-price input{flex:1}.cs-per{color:var(--muted);font-size:13px;white-space:nowrap}
+.ck-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:800;margin-left:2px;vertical-align:middle}
+.ck-tag.w{background:#ff946629;color:#ffb48f}.ck-tag.p{background:#b8aaf233;color:#d6cbff}.ck-tag.y{background:#7fe0b029;color:#a8f0cc}.ck-tag.e{background:#ffffff14;color:#ddd}
+
+/* 5.4.2 수업 계획 */
+.cl-btns3{grid-template-columns:1fr 1fr}
+.cp-when{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cp-hist{display:flex;align-items:center;gap:10px;min-height:50px;border-top:1px solid #ffffff10}.cp-hist:first-of-type{border-top:0}
+.cp-t{flex:1;min-width:0}.cp-t b{display:block;font-size:14.5px}.cp-t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-sugg{display:flex;flex-wrap:wrap;gap:6px}.ck-chip-btn{min-height:38px;padding:0 12px;border-radius:999px;border:1px dashed #ffffff40;background:transparent;color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}.ck-chip-btn small{color:var(--muted)}
+.cp-plan{list-style:none;margin:0;padding:0;display:grid}
+.cp-sec{font-size:12.5px;font-weight:800;color:#ffb48f;margin:8px 0 2px}
+html:not(.coach-theme) .cp-sec{color:#8ce4e0}
+.cp-item{display:flex;align-items:center;gap:8px;min-height:52px;border-top:1px solid #ffffff10}
+.cp-item .n{width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;background:#ffffff14;font-size:12px;font-weight:800}
+.cp-in{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);margin-top:2px;flex-wrap:wrap}
+.cp-in input{width:56px;min-height:36px!important;padding:0 6px;font-size:16px;text-align:center}.cp-in input.cp-memo{width:140px;text-align:left}
+.cp-acts{display:flex;gap:4px}.cp-acts button{width:36px;height:36px;border-radius:10px;border:1px solid #ffffff24;background:transparent;color:var(--text);cursor:pointer}
+.cp-send{grid-auto-flow:row;grid-template-columns:repeat(3,1fr)}
+.cp-row{align-items:center}
+.cp-plan-btn{min-height:36px;padding:0 10px;font-size:12.5px}
+.mk-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mk-ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#ffffff10;flex:none;font-size:18px}
+.mk-note{border-left:3px solid #8ce4e0;padding:4px 0 4px 10px;font-size:13.5px;line-height:1.55;margin:0}
+html.coach-theme .mk-note{border-left-color:#ff9466}
+.mc-plan-open{margin-top:6px}
+
+/* 5.4.2 코치 색: 설정 타일·칩·프로필 위 카드 */
+html.coach-theme .set-tile{background:#2a1c22;border-color:#ff94662a;color:#fbf1ec}
+html.coach-theme .set-tile:hover{border-color:#ff946666}
+html.coach-theme .set-tile:focus-visible{outline-color:#ff9466}
+html.coach-theme .chip{background:#3a262c;border-color:#7a4a44;color:#fbf1ec}
+html.coach-theme .chip.active{background:#5a3a36;border-color:#ff9466}
+html.coach-theme .pf-preview{background:#2a1c22}
+html.coach-theme .pf-av.on,html.coach-theme .pf-opt.on{border-color:#ff9466}
+
+/* 5.4.2 식단 제안 짜기 */
+.cd-sum h3 small{display:flex;align-items:center;gap:4px}.cd-target{width:72px;min-height:34px!important;padding:0 6px;font-size:16px;text-align:center}
+.cd-macro{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.cd-macro div{background:#ffffff0a;border-radius:12px;padding:6px 8px}.cd-macro small{display:block;color:var(--muted);font-size:11.5px}.cd-macro b{font-size:15px;font-variant-numeric:tabular-nums}
+.cd-meal{border-radius:14px;background:#ffffff08;padding:10px 12px;display:grid;gap:6px}
+.cd-meal .h{display:flex;justify-content:space-between;align-items:baseline}.cd-meal .h b{font-size:14px}.cd-meal .h span{font-weight:800;font-variant-numeric:tabular-nums}
+.cd-meal input{min-height:40px!important;font-size:16px}
+.cd-items{list-style:none;margin:0;padding:0;display:grid;gap:2px}.cd-items li{display:grid;grid-template-columns:minmax(0,1fr) auto 44px 32px;gap:6px;align-items:center;font-size:13.5px}.cd-items li span:nth-child(2),.cd-items .k{color:var(--muted);text-align:right}.cd-items button{width:30px;height:30px;border-radius:8px;border:0;background:#ffffff10;color:var(--text);cursor:pointer}
+.cd-combos{display:grid;gap:8px}.cd-cbtn{display:flex;justify-content:space-between;align-items:center}
+.cd-newc{min-height:44px;border-radius:12px;border:1px dashed #ffffff40;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.mc-plan-h{display:flex;flex-direction:column;gap:2px;margin:6px 0 4px}.mc-plan-h b{font-size:14.5px}.mc-plan-h small{color:var(--muted);font-size:12.5px}
+.mc-slot{margin:6px 0 2px;font-size:12.5px;font-weight:800;color:#8ce4e0}
+.mv-now{border-color:#8ce4e0!important;box-shadow:0 0 0 1px #8ce4e055}
+.rt-band{margin:10px 14px 0;background:linear-gradient(135deg,#8ce4e01f,#b8aaf21f);border-color:#8ce4e055}
+/* 5.4.2 코치가 식단 제안용 음식을 고를 때: 시각·갈래는 숨기고 검색만, 패널도 코치 색 */
+.coach-meal .q-when-bar,.coach-meal .mi-src,.coach-meal .q-meal-when,.coach-meal .meal-when{display:none!important}
+html.coach-theme .quick-choices,html.coach-theme .quick-choice,html.coach-theme .quick-picked,html.coach-theme .quick-flow>section{background:#2a1c22;border-color:#5c3f42}
+html.coach-theme .quick-choice:hover{border-color:#ff946666}

@@ -1,4 +1,5 @@
 import {helpOptionsHTML} from './input-sources.js';
+import {memberCoachMealsHTML} from './coach-diet.js';
 // 4.26.0 대표님 지시: 식단도 운동의 '많이 쓴 머신'처럼, 자주 먹은 것과 평소 이 시간쯤 먹던 것을 위로.
 // 지난 식사 그대로는 어제 하나가 아니라 며칠 치를 작은 칩으로(지금 시각에 가까운 끼니 먼저).
 // 이 파일은 app.js를 import하지 않는다(이중 로딩 방지).
@@ -71,7 +72,7 @@ export function mealSourceHTML(db, s, plans = [], photo = {limit: 3, left: 3}){
   {ico: '✦', title: 'AI에게 사진 분석시키기', sub: '앱 안에서 찍으면 음식·양을 정리해요', attr: 'data-q-ai-photo', off: photo.left <= 0, why: `오늘 ${photo.limit}번을 다 썼어요 · 내일 다시 열려요`, badge: photo.left > 0 ? `오늘 ${photo.left}/${photo.limit}번` : ''},
  ]);
  const back = '<button type="button" class="text-button mi-back" data-q-src="help">‹ 도움받기</button>';
- const body = src === 'help' ? helpBody : src === 'mate' ? helpBody : src === 'coach' ? `${back}<p class="hint mi-coach-h">꼭 이대로 먹을 필요는 없어요. 담은 뒤 양을 바꿔도 돼요.</p><div class="mv1">${plans.map(pcard).join('')}</div>` : src === 'past' ? (list.length ? `<div class="mv1">${list.map(card).join('')}</div>` : '<p class="hint mi-empty">아직 지난 식사가 없어요. 직접 입력하기로 첫 끼니를 남겨 보세요.</p>') : src === 'mate' ? `<div class="mi-mate"><p>메이트 방에 올린 <b>내 식사 사진</b>을 골라 AI가 음식·양을 정리해요. 정리된 초안은 고친 뒤 담아요.</p><button type="button" class="button quick-primary" data-mate-picker>메이트로그 사진 고르기</button></div>` : '';
+ const body = src === 'help' ? helpBody : src === 'mate' ? helpBody : src === 'coach' ? `${back}<p class="hint mi-coach-h">꼭 이대로 먹을 필요는 없어요. 담은 뒤 양을 바꿔도 돼요.</p>${memberCoachMealsHTML(plans.map(p => p.mode ? p : {...p, mode: 'single'}), {time: s.time})}` : src === 'past' ? (list.length ? `<div class="mv1">${list.map(card).join('')}</div>` : '<p class="hint mi-empty">아직 지난 식사가 없어요. 직접 입력하기로 첫 끼니를 남겨 보세요.</p>') : src === 'mate' ? `<div class="mi-mate"><p>메이트 방에 올린 <b>내 식사 사진</b>을 골라 AI가 음식·양을 정리해요. 정리된 초안은 고친 뒤 담아요.</p><button type="button" class="button quick-primary" data-mate-picker>메이트로그 사진 고르기</button></div>` : '';
  return {src, html: `<section class="mi-src"><div class="mi-tabs" role="tablist" aria-label="식사 넣는 방법">${tabs.map(([k, ic, t, sub]) => `<button type="button" role="tab" class="${k === tab ? 'on' : ''}" aria-selected="${k === tab}" data-q-src="${k}"><i aria-hidden="true">${ic}</i><b>${t}</b><small>${sub}</small></button>`).join('')}</div>${body}</section>`};
 }
 export function pastMealsHTML(db, s){
