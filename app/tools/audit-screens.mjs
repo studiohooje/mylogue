@@ -8,7 +8,7 @@ const args = process.argv.slice(2), SHOTS = args.includes('--shots'), pos = args
 const OUT = pos[0] || 'audit-out', PERSONAS = (pos[1] && pos[1] !== 'all') ? pos[1].split(',') : ['', 'jihoon', 'seoyeon', 'minjun', 'haeun', 'doyoon', 'jimin', 'sua', 'hyunwoo'];
 const WIDTHS = (pos[2] || '360,412,860,1280').split(',').map(Number);
 fs.mkdirSync(OUT, {recursive: true});
-const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].filter(Boolean).find(p => fs.existsSync(p));
+const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].filter(Boolean).find(p => fs.existsSync(p));
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.webp': 'image/webp', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.woff2': 'font/woff2'};
 const server = http.createServer((req, res) => { let name = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (name === '/') name = '/index.html'; const file = path.resolve(ROOT, '.' + name); if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end(); return; } res.writeHead(200, {'content-type': MIME[path.extname(file)] || 'application/octet-stream'}); fs.createReadStream(file).pipe(res); });

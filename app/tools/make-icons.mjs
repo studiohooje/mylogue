@@ -11,7 +11,7 @@ import os from 'node:os';
 import {connect} from '../qa-cdp.mjs';
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RES = path.join(APP, 'android', 'app', 'src', 'main', 'res');
-const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p => p && fs.existsSync(p));
+const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p => p && fs.existsSync(p));
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const MIME = {'.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.ttf': 'font/ttf'};
 const pages = {};

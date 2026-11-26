@@ -4,7 +4,7 @@ import http from 'node:http'; import fs from 'node:fs'; import path from 'node:p
 import {connect} from '../qa-cdp.mjs';
 const args = process.argv.slice(2), WARM = args.includes('--warm'), pos = args.filter(a => !a.startsWith('--'));
 const LIVE = /^https?:/.test(pos[0] || ''), ROOT = LIVE ? '' : path.resolve(pos[0] || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')), RTT = Number(pos[1] || 150), RUNS = Number(pos[2] || 3);
-const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].filter(Boolean).find(p => fs.existsSync(p));
+const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].filter(Boolean).find(p => fs.existsSync(p));
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.webp': 'image/webp', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.jpg': 'image/jpeg'};
 // GitHub Pages처럼 gzip으로 보낸다

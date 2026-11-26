@@ -11,13 +11,13 @@ import os from 'node:os';
 import {connect} from '../qa-cdp.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
-const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome', '/usr/bin/chromium'].filter(Boolean).find(p => fs.existsSync(p));
+const CHROME = [process.env.CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome', '/usr/bin/chromium'].filter(Boolean).find(p => fs.existsSync(p));
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json', '.wasm': 'application/wasm'};
 
 if (!fs.existsSync(path.join(ROOT, 'index.html'))) { console.error('dist가 없어요. 먼저 npm run build'); process.exit(1); }
 // 4.27.0 재검사 N-10: CI(GitHub Actions)에서는 크롬이 없으면 통과가 아니라 실패
-if (!CHROME) { if (process.env.CI) { console.error('CI에서 크롬을 찾지 못했어요(CHROME 환경 변수로 지정).'); process.exit(1); } console.log('크롬을 찾지 못해 연기 시험을 건너뛰어요.'); process.exit(0); }
+if (!CHROME) { if (process.env.CI) { console.error('CI에서 크롬을 찾지 못했어요(CHROME 환경 변수로 지정).'); process.exit(1); } console.error('크롬을 찾지 못해 연기 시험을 못 했어요. 크롬을 설치하거나 CHROME 환경 변수로 경로를 지정해 주세요(배포 전 필수).'); process.exit(1); }
 
 const server = http.createServer((req, res) => { let name = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (name === '/') name = '/index.html'; const file = path.resolve(ROOT, '.' + name); if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; } fs.readFile(file, (e, d) => { if (e) { res.writeHead(404).end(); return; } res.writeHead(200, {'Content-Type': MIME[path.extname(file)] || 'application/octet-stream'}).end(d); }); });
 await new Promise(r => server.listen(0, '127.0.0.1', r));

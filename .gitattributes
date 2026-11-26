@@ -1,0 +1,14 @@
+# 2026-11-26 윈도우 노트북 + 맥미니 함께 쓰기: 줄바꿈을 저장소에선 LF로 통일
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.apk binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.woff2 binary
+*.ttf binary
+*.keystore binary
+*.jar binary
