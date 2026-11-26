@@ -4,6 +4,11 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.4.4 — 2026-11-26 (배포됨)
+
+- 바로 찍기: 찍은 뒤 확인 창(큰 미리보기) → '다시 찍기' / '올리기'를 눌러야 올라감. 메이트 방 찍기에도 '다시 찍기'.
+- .mlg-page-enter 애니메이션 fill both → backwards(남은 transform 때문에 메이트 시트가 화면 위로 밀리던 문제).
+
 ## Mylogue Beta 5.4.3 — 2026-11-26 (배포됨)
 
 - 도메인 mylogue.fit(GitHub Pages 사용자 도메인·HTTPS, Firebase 승인 도메인), 초대·og 링크 새 주소, AI 서버 허용 출처.

@@ -2552,3 +2552,7 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .mate-ord{display:flex;gap:6px}
 .mate-ord .mate-ib:disabled{opacity:.3}
 .mate-first{display:inline-block;margin:2px 0;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;color:#0d1326;background:#8ce4e0;width:max-content}
+/* 5.4.3 대표님: 찍은 사진은 크게 확인 → 다시 찍기 / 올리기를 눌러야 올라감 */
+.mate-prev.mate-prev-big{width:100%;max-height:46vh;aspect-ratio:4/3;object-fit:contain;border-radius:14px;background:#0d1526}
+.mate-capacts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px}
+.mate-capacts .button{min-height:48px;margin:0}

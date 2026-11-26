@@ -168,11 +168,12 @@ function postSheet(){
   const picks = rooms.map(r => `<button type="button" class="mate-pick ${c.to.includes(r.id) ? 'on' : ''}" data-mate-to="${esc(r.id)}" aria-pressed="${c.to.includes(r.id)}"><span class="ck">${c.to.includes(r.id) ? '✓' : ''}</span><span><b>${esc(r.name)}</b><small>${r.type === 'mine' ? '나만 봐요' : `${r.memberIds.length}명`}</small></span></button>`).join('');
   const rec = c.mode === 'scale' ? `<label class="field">체중(kg)<input id="mate-kg" inputmode="decimal" placeholder="예: 75.0" autocomplete="off"></label><p class="hint">적으면 체중 기록에도 남아요(영구). 비우면 사진만.</p>`
     : c.mode === 'food' ? `<p class="hint">먹은 것은 올린 뒤 사진의 '식단으로 가져오기'로 AI에게 맡기거나, 식사 기록에서 '메이트로그에서 가져오기'로 옮길 수 있어요.</p>` : '';
-  return `<div class="mate-ov" data-mate-ovclose><div class="mate-sheet" role="dialog" aria-label="어디에 올릴까요"><div class="mate-sh"><b>어디에 올릴까요?</b><button type="button" class="mate-ib" data-mate-capcancel aria-label="닫기">✕</button></div>
-  <div class="mate-row" style="align-items:flex-start;flex-wrap:nowrap"><img class="mate-prev" src="${esc(c.url)}" alt="찍은 사진"><p class="hint">지난번에 고른 방이 미리 골라져 있어요. 바꾸면 다음에도 그대로 기억해요.</p></div>
+  return `<div class="mate-ov" data-mate-ovclose><div class="mate-sheet" role="dialog" aria-label="어디에 올릴까요"><div class="mate-sh"><b>찍은 사진 확인</b><button type="button" class="mate-ib" data-mate-capcancel aria-label="올리지 않고 닫기">✕</button></div>
+  <img class="mate-prev mate-prev-big" src="${esc(c.url)}" alt="찍은 사진">
+  <p class="hint">${c.quick ? '맨 위 방이 골라져 있어요. 다른 방도 고를 수 있어요.' : '지난번에 고른 방이 미리 골라져 있어요. 바꾸면 다음에도 그대로 기억해요.'}</p>
   ${picks || '<p class="hint">먼저 방을 만들어 주세요.</p>'}
   ${rec ? `<div class="mate-card">${rec}</div>` : ''}
-  <button type="button" class="button" data-mate-upload ${c.to.length && !s.busy ? '' : 'disabled'}>${s.busy ? '올리는 중…' : c.to.length ? `${c.to.length}개 방에 올리기` : '방을 골라 주세요'}</button>
+  <div class="mate-capacts"><button type="button" class="button secondary" data-mate-retake ${s.busy ? 'disabled' : ''}>다시 찍기</button><button type="button" class="button" data-mate-upload ${c.to.length && !s.busy ? '' : 'disabled'}>${s.busy ? '올리는 중…' : c.to.length ? `${c.to.length}개 방에 올리기` : '방을 골라 주세요'}</button></div>
   <p class="hint">방의 사진은 ${MATE_KEEP_DAYS}일 뒤 자동으로 지워져요.</p></div></div>`;
 }
 function bars(m){
@@ -386,11 +387,13 @@ export async function mateClick(t){
       let to = lastRooms().filter(id => valid.has(id)); if(!to.length && s.roomId) to = [s.roomId];
       const quick = s.quick; s.quick = false; if(quick) to = [s.roomId];
       s.cap = {...shot, mode: s.mode, url: URL.createObjectURL(shot.blob), to, quick}; s.view = 'room';
-      if(quick && s.mode !== 'scale') await uploadCap(); else $f.render();
+      $f.render();
     }catch(e){ $f.toast(e.message); }
     return true;
   }
   if(d.mateTo){ const c = s.cap, i = c.to.indexOf(d.mateTo); i < 0 ? c.to.push(d.mateTo) : c.to.splice(i, 1); $f.render(); return true; }
+  if(d.mateRetake !== undefined){ const c = s.cap; if(!c || s.busy) return true; URL.revokeObjectURL(c.url); s.cap = null; s.quick = !!c.quick; if(c.quick && c.to[0]) s.roomId = c.to[0]; s.view = 'cam'; $f.render(); startCam(); return true; }
+  if(d.mateCapcancel !== undefined && s.cap?.quick){ URL.revokeObjectURL(s.cap.url); s.cap = null; s.view = 'room'; $s.page = 'home'; $f.render(); return true; }
   if(d.mateCapcancel !== undefined){ if(s.cap?.url) URL.revokeObjectURL(s.cap.url); s.cap = null; $f.render(); fillPhotos(); return true; }
   if(d.mateUpload !== undefined){ await uploadCap(); return true; }
   if(d.mateWho){ s.mate = d.mateWho; s.shares = null; $f.render(); const r = roomById(s.roomId); readShares(r, d.mateWho).then(x => { s.shares = x; $f.render(); }).catch(e => { s.shares = {body: {locked: true}, meal: {locked: true}, work: {locked: true}}; $f.toast(e.message); $f.render(); }); return true; }
