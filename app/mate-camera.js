@@ -23,7 +23,7 @@ export async function openCamera(video, {facing = 'environment'} = {}){
   }
   /* 5.1.0 대표님: 기본이 너무 광각 → 2배로. 카메라가 줌을 지원하면 하드웨어 줌, 아니면 가운데를 잘라 2배(미리보기도 같은 배율) */
   digitalZoom = 2;
-  try{ const t = stream.getVideoTracks()[0], cap = t?.getCapabilities?.(); if(cap?.zoom && cap.zoom.max >= 1.5){ const z = Math.min(cap.zoom.max, Math.max(cap.zoom.min || 1, ZOOM)); await t.applyConstraints({advanced: [{zoom: z}]}); digitalZoom = Math.max(1, ZOOM / z); } }catch{}
+  /* 5.4.3 대표님(셋로그처럼): 하드웨어 줌은 폰마다 미리보기와 찍힌 장면이 달라질 수 있어 쓰지 않는다. 화면 확대(가운데 2배)만 쓰고, 찍을 때는 화면에 보이는 영역을 그대로 자른다 */
   video.style.transform = digitalZoom > 1 ? `scale(${digitalZoom})` : '';
   video.srcObject = stream; video.setAttribute('playsinline', ''); video.muted = true;
   try{ await video.play(); }catch{}
@@ -35,12 +35,16 @@ export function closeCamera(){ if(stream){ for(const t of stream.getTracks()) t.
 export async function capture(video, {at = new Date(), stamp = true, maxEdge = MAX_EDGE} = {}){
   const vw = video.videoWidth, vh = video.videoHeight;
   if(!vw || !vh) throw Error('카메라가 아직 준비되지 않았어요. 잠시 뒤 다시 눌러 주세요.');
-  // 5.1.0 가운데를 2배로 자르고(하드웨어 줌이 없을 때), 가로 4:3으로 맞춘다(세로로 찍어도 가로로 넓게)
-  /* 5.4.0 대표님: 찍힌 사진 = 카메라 화면에 보이던 그대로. 미리보기 칸(object-fit: cover + 배율)의 실제 모양을 읽어 같은 부분만 자른다 */
-  const box = video.parentElement?.getBoundingClientRect?.(), aspect = box && box.width > 0 && box.height > 0 ? box.width / box.height : ASPECT;
-  let cw = vw / digitalZoom, ch = vh / digitalZoom;
-  if(cw / ch < aspect) ch = cw / aspect; else cw = ch * aspect;
-  const sx = (vw - cw) / 2, sy = (vh - ch) / 2;
+  /* 5.4.3 화면에 보이는 그대로: 미리보기 칸(보이는 창)의 위치를 영상 픽셀로 거꾸로 계산(object-fit: cover + CSS 확대 + 가운데 정렬 모두 반영) */
+  let sx, sy, cw, ch;
+  const box = video.parentElement?.getBoundingClientRect?.(), vr = video.getBoundingClientRect?.(), W = video.offsetWidth, H = video.offsetHeight;
+  if(box && vr && W > 0 && H > 0 && box.width > 0){
+    const kz = vr.width / W, s = Math.max(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2, cx = vr.left + vr.width / 2, cy = vr.top + vr.height / 2;
+    const toV = (px, py) => [((W / 2 + (px - cx) / kz) - ox) / s, ((H / 2 + (py - cy) / kz) - oy) / s];
+    const [x0, y0] = toV(Math.max(box.left, vr.left), Math.max(box.top, vr.top)), [x1, y1] = toV(Math.min(box.right, vr.right), Math.min(box.bottom, vr.bottom));
+    sx = Math.max(0, x0); sy = Math.max(0, y0); cw = Math.min(vw, x1) - sx; ch = Math.min(vh, y1) - sy;
+  }
+  if(!(cw > 8 && ch > 8)){ cw = vw / digitalZoom; ch = vh / digitalZoom; if(cw / ch < ASPECT) ch = cw / ASPECT; else cw = ch * ASPECT; sx = (vw - cw) / 2; sy = (vh - ch) / 2; }
   const k = Math.min(1, maxEdge / cw), w = Math.round(cw * k), h = Math.round(ch * k);
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d');

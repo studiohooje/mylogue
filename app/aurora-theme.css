@@ -2529,3 +2529,26 @@ html.coach-theme .pf-av.on,html.coach-theme .pf-opt.on{border-color:#ff9466}
 .coach-meal .q-when-bar,.coach-meal .mi-src,.coach-meal .q-meal-when,.coach-meal .meal-when{display:none!important}
 html.coach-theme .quick-choices,html.coach-theme .quick-choice,html.coach-theme .quick-picked,html.coach-theme .quick-flow>section{background:#2a1c22;border-color:#5c3f42}
 html.coach-theme .quick-choice:hover{border-color:#ff946666}
+
+/* 5.4.3 대표님: 홈 'AI로 입력'을 반으로 — 오른쪽은 메이트로그 '바로 찍기' */
+.home-quick .home-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:0 0 10px}
+.home-quick .home-duo .ai-magic{margin:0;min-height:76px;padding:12px 14px;gap:10px;justify-content:flex-start}
+.home-quick .home-duo .ai-magic .ai-magic-text{flex:1;min-width:0}
+.home-quick .home-duo .ai-magic-text small{line-height:1.35}
+.mate-quick{display:flex;align-items:center;gap:10px;min-width:0;min-height:76px;padding:12px 14px;border-radius:20px;border:0;font:inherit;text-align:left;cursor:pointer;color:#eaf4ff;background:linear-gradient(100deg,#1f4a52 0%,#1d3a55 100%);box-shadow:inset 0 1px 0 #ffffff26,inset 0 0 0 1px #ffffff0f}
+.mate-quick:hover{filter:brightness(1.06)}
+.mate-quick:active{transform:scale(.985)}
+.mate-quick-icon{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#8ce4e0,#5ec8e7);color:#0d1326}
+.mate-quick-icon svg{width:24px;height:24px}
+.mate-quick .ai-magic-text b{font-size:18px;font-weight:700;color:#eafcff;background:none;-webkit-text-fill-color:currentColor}
+.mate-quick .ai-magic-text small{font-size:13px;line-height:1.35;color:#b9d6e4;word-break:keep-all}
+@media(max-width:650px){.home-quick .home-duo{gap:8px;margin-bottom:7px}.home-quick .home-duo .ai-magic,.mate-quick{min-height:68px;padding:10px 10px;gap:8px}.home-quick .home-duo .ai-magic .ai-magic-icon,.mate-quick-icon{width:36px;height:36px;border-radius:12px}.home-quick .home-duo .ai-magic .ai-magic-icon{font-size:19px}.mate-quick-icon svg{width:21px;height:21px}.home-quick .home-duo .ai-magic .ai-magic-text b,.mate-quick .ai-magic-text b{font-size:16px}.home-quick .home-duo .ai-magic .ai-magic-text small,.mate-quick .ai-magic-text small{font-size:12px}}
+@media(max-width:380px){.home-quick .home-duo .ai-magic-icon,.mate-quick-icon{display:none!important}}
+/* 방 순서 바꾸기 */
+.mate-ordbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 6px;min-height:32px}
+.mate-ordbar .hint{margin:0;font-size:12px}
+.mate-ordbar .text-button{font-size:13px;color:#9fd2ee;min-height:32px}
+.mate-room-ro{cursor:default}
+.mate-ord{display:flex;gap:6px}
+.mate-ord .mate-ib:disabled{opacity:.3}
+.mate-first{display:inline-block;margin:2px 0;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;color:#0d1326;background:#8ce4e0;width:max-content}

@@ -17,7 +17,7 @@ if(saved)bridge.setSession({uid:saved.uid,email:saved.email||'',refreshToken:sav
 const code=loadOrCreateCode(newCode);
 const keyPromise=deriveKey(code);
 // 보안 점검(2026-11-22): 포트 없는 http://localhost(다른 로컬 웹 서버)는 뺐다. 안드로이드 앱은 https://localhost.
-const origins=new Set(['https://studiohooje.github.io','http://localhost:4173','http://127.0.0.1:4173','capacitor://localhost','https://localhost']);
+const origins=new Set(['https://mylogue.fit','https://www.mylogue.fit','https://studiohooje.github.io','http://localhost:4173','http://127.0.0.1:4173','capacitor://localhost','https://localhost']);
 // 증명 실패는 10분에 10번까지. 넘으면 10분 잠금(다시 시작하지 않아도 풀림).
 let failures=[],lockedUntil=0;
 const fail=()=>{const now=Date.now();failures=failures.filter(t=>now-t<600000);failures.push(now);if(failures.length>=10)lockedUntil=now+600000};

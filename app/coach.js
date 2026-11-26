@@ -152,7 +152,7 @@ function clientFormHTML(kind){
 }
 function inviteHTML(c){
  if(!c.inviteCode) return `<button type="button" class="button secondary small" data-coach-invite="${esc(c.id)}">초대 코드 만들기</button>`;
- const url = `https://studiohooje.github.io/mylogue/?invite=${c.inviteCode}`;
+ const url = `https://mylogue.fit/?invite=${c.inviteCode}`;
  return `<div class="invite-box"><div><small>초대 코드 · ${c.inviteExpires?`${md(String(c.inviteExpires).slice(0,10))}까지`:'7일'}</small><b class="invite-code">${esc(c.inviteCode)}</b></div><div class="invite-qr" aria-label="초대 QR">${qrSVG(url)}</div><div class="actions"><button type="button" class="button secondary small" data-copy="${esc(url)}">링크 복사</button><button type="button" class="button secondary small" data-copy="${esc(c.inviteCode)}">코드 복사</button><button type="button" class="text-button" data-coach-invite="${esc(c.id)}">새로 만들기</button></div></div>`;
 }
 export function clientDetailHTML(data, c, {links=[], today='', assess='', tab='', passEdit='', holdOpen='', report='', reportNote=''}={}){

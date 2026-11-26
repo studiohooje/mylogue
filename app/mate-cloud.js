@@ -44,7 +44,8 @@ export async function createMateInvite(room){
   await fs.setDoc(fs.doc(c.db, 'mateInvites', code), {code, roomId: room.id, roomName: room.name, scope: room.scope, inviterUid: c.user.uid, inviterName: myMateName(c.user), memberCount: room.memberIds.length, expiresAt: fs.Timestamp.fromMillis(Date.now() + 7 * 864e5), createdAt: fs.serverTimestamp()});
   return code;
 }
-export const inviteLink = (code, base = globalThis.location ? `${location.origin}${location.pathname}` : 'https://studiohooje.github.io/mylogue/') => `${base.replace(/\/index\.html$/, '/')}#mate-${code}`;
+/* 5.4.3 공개 주소 mylogue.fit. 앱(APK)·로컬에서 만든 초대 링크도 공개 주소로 */
+export const inviteLink = (code, base = /(^|\.)mylogue\.fit$/.test(globalThis.location?.hostname || '') ? `${location.origin}${location.pathname}` : 'https://mylogue.fit/') => `${base.replace(/\/index\.html$/, '/')}#mate-${code}`;
 export async function readMateInvite(code){
   const c = await firestoreContext(), s = await c.fs.getDoc(c.fs.doc(c.db, 'mateInvites', String(code || '').toUpperCase()));
   if(!s.exists()) throw Error('초대 링크를 찾지 못했어요. 메이트에게 새 링크를 받아 주세요.');

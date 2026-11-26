@@ -39,6 +39,10 @@ const st = () => ($s.mate ||= {view: 'rooms', rooms: null, roomId: '', posts: {}
 const ready = () => !!cloudState.user && cloudState.approval === 'approved';
 const me = () => cloudState.user?.uid || '';
 const roomById = id => (st().rooms || []).find(r => r.id === id) || null;
+/* 5.4.3 대표님: 방 순서(맨 위 = 홈 '바로 찍기'가 올리는 방). 설정에 저장해 기기끼리 같이 간다 */
+export const mateOrder = () => { const o = $s.db?.settings?.mateOrder; return Array.isArray(o) ? o.filter(x => typeof x === 'string') : []; };
+export const orderRooms = (list, order = mateOrder()) => { const at = id => { const i = order.indexOf(id); return i < 0 ? 1e6 : i; }; return [...(list || [])].map((r, i) => [r, i]).sort((a, b) => (at(a[0].id) - at(b[0].id)) || (a[1] - b[1])).map(x => x[0]); };
+const saveOrder = ids => { $s.db = $f.save({...$s.db, settings: {...$s.db.settings, mateOrder: ids}}); };
 
 // ---------- 불러오기 ----------
 let lastShareSync = 0;
@@ -89,12 +93,16 @@ export function mytagSettingsHTML(){
 /* 5.3.0 전수검사 15: 초대 코드는 오른쪽 위 ＋ 안으로(방 만들기 / 초대 코드로 들어가기) */
 const plusPopHTML = () => { const s = st(); if(!s.plus) return ''; return `<div class="mate-plus-pop" role="menu" aria-label="방 추가">${s.plus === 'code' ? `<b>초대 코드로 들어가기</b><p class="hint">메이트에게 받은 8자리 코드(링크가 안 열릴 때도 이걸로)</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button">들어가기</button></form>` : `<button type="button" role="menuitem" data-mate-go="create"><i aria-hidden="true">＋</i><span><b>방 만들기</b><small>내 방 · 친구 방</small></span></button><button type="button" role="menuitem" data-mate-codeopen><i aria-hidden="true">#</i><span><b>초대 코드로 들어가기</b><small>받은 8자리 코드 적기</small></span></button>`}</div>`; };
 function roomsView(){
-  const s = st(), list = s.rooms || [];
-  const rows = list.map(r => `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b><span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
+  const s = st(), list = orderRooms(s.rooms || []), ro = !!s.reorder && list.length > 1;
+  const first = i => i === 0 && list.length > 1 ? '<span class="mate-first">홈 바로 찍기</span>' : '';
+  const rows = list.map((r, i) => ro
+    ? `<div class="mate-room mate-room-ro"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b>${first(i)}</span><span class="mate-ord"><button type="button" class="mate-ib" data-mate-up="${esc(r.id)}" aria-label="${esc(r.name)} 위로" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="mate-ib" data-mate-down="${esc(r.id)}" aria-label="${esc(r.name)} 아래로" ${i === list.length - 1 ? 'disabled' : ''}>↓</button></span></div>`
+    : `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b>${first(i)}<span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
+  const ordBar = list.length > 1 ? `<div class="mate-ordbar"><span class="hint">${ro ? '맨 위 방에 홈의 ‘바로 찍기’ 사진이 올라가요' : ''}</span><button type="button" class="text-button" data-mate-reorder>${ro ? '완료' : '순서 바꾸기'}</button></div>` : '';
   const dir = (s.direct || []).map(d => `<div class="mate-card mate-direct"><b>@${esc(d.fromTag || '메이트')} 님이 '${esc(d.roomName)}'에 초대했어요</b><div class="mate-row"><button type="button" class="button" data-mate-dirok="${esc(d.id)}">보고 들어가기</button><button type="button" class="button secondary" data-mate-dirno="${esc(d.id)}">거절</button></div></div>`).join('');
   return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib${st().plus ? ' on' : ''}" data-mate-plus aria-label="방 만들기·초대 코드" aria-expanded="${!!st().plus}">＋</button>`})}${plusPopHTML()}${/* 5.0.5 대표님: 마이태그는 메이트 전용이 아니라 전체 프로필 — 메이트 첫 화면에서 크게 권하지 않고, 맨 아래 작은 한 줄만 */''}${dir}
   ${s.loading === 'rooms' && !s.rooms ? '<p class="hint">방을 불러오는 중…</p>' : ''}
-  ${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
+  ${ordBar}${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
   <p class="mate-foot">대화·사진은 ${MATE_KEEP_DAYS}일 보관 · 기록에 남긴 숫자는 계속 남아요${myTagCached() ? '' : ' · 마이태그는 <button type="button" class="text-button" data-mate-tagedit>프로필</button>에서 정해요'}</p>`;
 }
 function postHTML(p, r, cont = false){
@@ -325,6 +333,29 @@ export async function openMatePicker(){
 }
 export function openMateJoin(code){ const s = st(); $s.page = 'mate'; s.view = 'join'; s.join = {loading: true, code}; $f.render(); if(!ready()) return; readMateInvite(code).then(inv => { s.join = {inv}; $f.render(); }).catch(e => { s.join = {err: e.message}; $f.render(); }); }
 
+async function uploadCap(){
+  const s = st(), c = s.cap; if(!c?.to.length || s.busy) return;
+    const kg = Number(String(document.getElementById('mate-kg')?.value || '').replace(',', '.'));
+    let rec = '';
+    if(c.mode === 'scale' && kg > 20 && kg < 400){ try{ const body = cleanBody({date: ymd(c.at), weight: Math.round(kg * 10) / 10, source: 'mate', measure: 'scale'}); $s.db = $f.save({...$s.db, body: [...($s.db.body || []), body]}); rec = `체중 ${body.weight}kg 기록`; }catch(e){ $f.toast(e.message); return; } }
+    s.busy = true; $f.render();
+    const done = [], fail = [];
+    for(const id of c.to){ try{ const key = await uploadPhoto(id, c.blob); await addPost(id, {kind: 'photo', photoKey: key, photoKind: c.mode, takenAt: c.at, rec}); done.push(id); }catch(e){ fail.push(e.message); } }
+    s.busy = false;
+    if(done.length){ if(!c.quick) saveLast([...c.to]); URL.revokeObjectURL(c.url); s.cap = null; const names = done.map(id => roomById(id)?.name).filter(Boolean).join(' · '); $f.toast(`${names}에 올렸어요${rec ? ` · ${rec}` : ''}${c.quick ? '' : '. 다음에도 이 방들이 먼저 골라져요'}`); if(!done.includes(s.roomId)) s.roomId = done[0]; loadRoom(s.roomId); }
+    else { $f.toast(fail[0] || '올리지 못했어요.'); $f.render(); }
+}
+// 5.4.3 대표님: 홈 '바로 찍기' — 카메라 바로 → 맨 위 방에 올리고 그 방으로
+async function quickShoot(){
+  const s = st();
+  if(!ready()){ openAuth('pick', {reason: '메이트로그는 로그인하고 이용 승인을 받으면 쓸 수 있어요.'}); return; }
+  if(!cameraSupported()){ $f.toast('이 기기·브라우저에서는 카메라를 열 수 없어요.'); return; }
+  try{ if(!s.rooms) s.rooms = (await listRooms()).map(withCoachScope); }catch(e){ $f.toast(e.message || '방을 불러오지 못했어요.'); return; }
+  const top = orderRooms(s.rooms)[0];
+  $s.page = 'mate';
+  if(!top){ s.view = 'rooms'; $f.toast('먼저 메이트로그 방을 하나 만들어 주세요(내 방도 돼요).'); $f.render(); return; }
+  s.roomId = top.id; s.quick = true; s.mate = null; s.err = ''; s.view = 'cam'; $f.render(); startCam();
+}
 export async function mateClick(t){
   if(!t?.closest) return false;
   const d = t.dataset || {}, s = st();
@@ -336,10 +367,14 @@ export async function mateClick(t){
   if(d.mateTagsave !== undefined){ const v = document.getElementById('mate-tag')?.value || ''; const p = tagProblem(v); if(p){ s.tag = {value: v, msg: p, ok: false}; $f.render(); return true; } s.busy = true; $f.render(); try{ const t = await setMyTag(v, {rooms: s.rooms || []}); s.busy = false; s.tagState = 'set'; s.view = 'rooms'; s.tag = null; $f.toast(`마이태그를 @${t}(으)로 정했어요.`); $f.render(); }catch(e){ s.busy = false; s.tag = {value: v, msg: e.message, ok: false}; $f.render(); } return true; }
   if(d.mateDirok){ const x = (s.direct || []).find(i => i.id === d.mateDirok); if(x){ s.direct = s.direct.filter(i => i.id !== x.id); dropDirectInvite(x.id); openMateJoin(x.code); } return true; }
   if(d.mateDirno){ s.direct = (s.direct || []).filter(i => i.id !== d.mateDirno); dropDirectInvite(d.mateDirno); $f.toast('초대를 거절했어요.'); $f.render(); return true; }
+  if(d.mateQuick !== undefined){ await quickShoot(); return true; }
+  if(d.mateReorder !== undefined){ s.reorder = !s.reorder; $f.render(); return true; }
+  if(d.mateUp || d.mateDown){ const ids = orderRooms(s.rooms || []).map(r => r.id), id = d.mateUp || d.mateDown, i = ids.indexOf(id), k = d.mateUp ? i - 1 : i + 1; if(i < 0 || k < 0 || k >= ids.length) return true; [ids[i], ids[k]] = [ids[k], ids[i]]; saveOrder(ids); $f.render(); return true; }
   if(d.matePicker !== undefined){ openMatePicker(); return true; }
   if(d.mateLogin !== undefined){ openAuth('pick', {reason: '메이트는 로그인하고 이용 승인을 받으면 쓸 수 있어요.'}); return true; }
   if(d.mateGo){ if(s.view === 'cam') stopCam(); go(d.mateGo); return true; }
   if(d.mateOpen){ s.roomId = d.mateOpen; s.view = 'room'; s.mate = null; $f.render(); loadRoom(d.mateOpen); return true; }
+  if(d.mateCamclose !== undefined && s.quick){ stopCam(); s.quick = false; s.camErr = ''; s.view = 'room'; $s.page = 'home'; $f.render(); return true; }
   if(d.mateCamclose !== undefined){ stopCam(); s.view = 'room'; s.camErr = ''; $f.render(); fillPhotos(); return true; }
   if(d.mateMode){ s.mode = d.mateMode; const el = document.querySelectorAll('[data-mate-mode]'); el.forEach(b => b.classList.toggle('on', b.dataset.mateMode === s.mode)); return true; }
   if(d.mateSnap !== undefined){
@@ -349,25 +384,15 @@ export async function mateClick(t){
       stopCam();
       const valid = new Set((s.rooms || []).map(r => r.id));
       let to = lastRooms().filter(id => valid.has(id)); if(!to.length && s.roomId) to = [s.roomId];
-      s.cap = {...shot, mode: s.mode, url: URL.createObjectURL(shot.blob), to}; s.view = 'room'; $f.render();
+      const quick = s.quick; s.quick = false; if(quick) to = [s.roomId];
+      s.cap = {...shot, mode: s.mode, url: URL.createObjectURL(shot.blob), to, quick}; s.view = 'room';
+      if(quick && s.mode !== 'scale') await uploadCap(); else $f.render();
     }catch(e){ $f.toast(e.message); }
     return true;
   }
   if(d.mateTo){ const c = s.cap, i = c.to.indexOf(d.mateTo); i < 0 ? c.to.push(d.mateTo) : c.to.splice(i, 1); $f.render(); return true; }
   if(d.mateCapcancel !== undefined){ if(s.cap?.url) URL.revokeObjectURL(s.cap.url); s.cap = null; $f.render(); fillPhotos(); return true; }
-  if(d.mateUpload !== undefined){
-    const c = s.cap; if(!c?.to.length || s.busy) return true;
-    const kg = Number(String(document.getElementById('mate-kg')?.value || '').replace(',', '.'));
-    let rec = '';
-    if(c.mode === 'scale' && kg > 20 && kg < 400){ try{ const body = cleanBody({date: ymd(c.at), weight: Math.round(kg * 10) / 10, source: 'mate', measure: 'scale'}); $s.db = $f.save({...$s.db, body: [...($s.db.body || []), body]}); rec = `체중 ${body.weight}kg 기록`; }catch(e){ $f.toast(e.message); return true; } }
-    s.busy = true; $f.render();
-    const done = [], fail = [];
-    for(const id of c.to){ try{ const key = await uploadPhoto(id, c.blob); await addPost(id, {kind: 'photo', photoKey: key, photoKind: c.mode, takenAt: c.at, rec}); done.push(id); }catch(e){ fail.push(e.message); } }
-    s.busy = false;
-    if(done.length){ saveLast([...c.to]); URL.revokeObjectURL(c.url); s.cap = null; const names = done.map(id => roomById(id)?.name).filter(Boolean).join(' · '); $f.toast(`${names}에 올렸어요${rec ? ` · ${rec}` : ''}. 다음에도 이 방들이 먼저 골라져요`); if(!done.includes(s.roomId)) s.roomId = done[0]; loadRoom(s.roomId); }
-    else { $f.toast(fail[0] || '올리지 못했어요.'); $f.render(); }
-    return true;
-  }
+  if(d.mateUpload !== undefined){ await uploadCap(); return true; }
   if(d.mateWho){ s.mate = d.mateWho; s.shares = null; $f.render(); const r = roomById(s.roomId); readShares(r, d.mateWho).then(x => { s.shares = x; $f.render(); }).catch(e => { s.shares = {body: {locked: true}, meal: {locked: true}, work: {locked: true}}; $f.toast(e.message); $f.render(); }); return true; }
   if(d.mateClose !== undefined){ s.mate = null; $f.render(); fillPhotos(); return true; }
   if(d.mateOvclose !== undefined && t.matches?.('[data-mate-ovclose]')){ return true; }
