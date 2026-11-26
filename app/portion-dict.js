@@ -19,12 +19,20 @@ export const PORTION_RULES = [
   {kind: '고기구이', re: /삼겹살|목살|갈비|등심|안심|차돌|항정|구이$|불고기/, units: {인분: 200, 점: 15, 조각: 15, 장: 30, 접시: 400}, share: true},
   {kind: '회', re: /회$|사시미|초밥/, units: {인분: 200, 접시: 400, 점: 15, 개: 25, 피스: 25}, share: true},
   {kind: '전', re: /전$|부침개|파전|빈대떡|동그랑땡|육전/, units: {장: 150, 조각: 40, 개: 40, 인분: 150}},
-  {kind: '만두', re: /만두|교자|딤섬/, units: {개: 30, 알: 30, 인분: 200, 접시: 300}},
+  {kind: '만두', re: /만두|교자|딤섬/, units: {개: 30, 알: 30, 인분: 200, 접시: 300}, count: true},
   {kind: '빵', re: /빵$|식빵|베이글|크루아상|모닝빵|토스트|샌드위치|머핀|도넛/, units: {개: 1, 조각: 1, 장: 1}, note: '빵은 제품 1개 단위가 정확'},
   {kind: '떡', re: /떡$|인절미|송편|가래떡|백설기|시루떡/, units: {개: 30, 조각: 30, 팩: 200, 인분: 150}},
-  {kind: '달걀', re: /달걀|계란|에그|메추리알/, units: {개: 50, 알: 50, 판: 1500}},
+  /* 5.1.0 음식 단위 검수: 개수로 먹는데 사전에 없던 음식 */
+  {kind: '핫도그소시지', re: /핫도그|소시지|소세지|후랑크|프랑크/, units: {개: 60, 줄: 60}, count: true},
+  {kind: '작은귤', re: /^귤|감귤|키위|자두|살구|금귤/, units: {개: 80, 알: 80}, count: true},
+  {kind: '고구마감자', re: /고구마|감자(?!탕|볶음|조림|채)|단호박/, units: {개: 150, 조각: 50, 토막: 50}, count: true},
+  {kind: '옥수수', re: /옥수수(?!.*(분말|가루|기름|통조림|콘))/, units: {개: 150, 자루: 150}, count: true},
+  {kind: '어묵', re: /어묵|오뎅/, units: {장: 30, 개: 15, 꼬치: 30}, count: true},
+  {kind: '주먹밥', re: /주먹밥|삼각김밥|유부초밥/, units: {개: 110}, count: true},
+  {kind: '치즈', re: /슬라이스\s*치즈|체다\s*치즈|치즈\s*슬라이스/, units: {장: 18}, count: true},
+  {kind: '달걀', re: /달걀|계란|에그|메추리알/, units: {개: 50, 알: 50, 판: 1500}, count: true},
   {kind: '두부', re: /두부/, units: {모: 300, '반 모': 150, 조각: 40, 팩: 300}},
-  {kind: '과일', re: /사과|배$|바나나|귤|오렌지|키위|복숭아|참외|감$|자두/, units: {개: 150, 알: 150, 조각: 30, 쪽: 30}, note: '중간 크기 가식부 기준(사과·배는 더 큼)'},
+  {kind: '과일', re: /사과|배$|바나나|귤|오렌지|키위|복숭아|참외|감$|자두/, units: {개: 150, 알: 150, 조각: 30, 쪽: 30}, count: true, note: '중간 크기 가식부 기준(사과·배는 더 큼)'},
   {kind: '작은과일', re: /포도|블루베리|딸기|방울토마토|체리|샤인머스캣/, units: {알: 8, 개: 15, 송이: 300, 컵: 150, 줌: 80}},
   {kind: '수박멜론', re: /수박|멜론/, units: {조각: 200, 쪽: 200, 컵: 150}},
   {kind: '견과', re: /견과|아몬드|호두|땅콩|캐슈|피스타치오|마카다미아|잣/, units: {줌: 25, 알: 1.2, 봉: 25, 개: 1.2}},
@@ -54,6 +62,11 @@ export function readQty(text) {
   m = s.match(/^([가-힣]+?)\s*(반)?$/); if (m && KNUM[m[1]] != null) return KNUM[m[1]] + (m[2] ? 0.5 : 0);
   return null;
 }
+// 5.1.0 g·ml 음식을 '개수'로도 넣기: 이름에 맞는 개수 단위와 1개 무게(g). 비율 단위(1=제품 1개)는 g 음식에 못 쓰므로 뺀다.
+const COUNT_ORDER = ['개', '장', '알', '조각', '토막', '줄', '모', '꼬치', '자루', '쪽'];
+/* 통째로 먹는 재료(달걀·과일·고구마·옥수수)는 요리·가공품이면 개수로 보지 않는다(달걀찜 '1개 50g'처럼 틀리지 않게) */const WHOLE = new Set(['달걀', '과일', '작은귤', '고구마감자', '옥수수', '작은과일', '핫도그소시지', '어묵']);
+const DISH = /찜|말이|탕|국|볶음|조림|무침|전$|죽|밥|국수|덮밥|샐러드|샌드위치|파이|빵|케이크|주스|즙|잼|청$|칩|분말|가루|말린|건조|통조림|소스|드레싱|우유|라떼|음료|스무디|튀김|프라이|후라이|스크램블|오믈렛|토스트|쿠키|맛탕|스틱/;
+export function countUnitFor(name){const r = ruleFor(name);if(!r)return null;if(WHOLE.has(r.kind) && DISH.test(String(name).replace(/\(.*?\)/g, ' ')))return null;for(const u of COUNT_ORDER){const g = r.units?.[u];if(g > 1)return {unit: u, grams: g, count: !!r.count, kind: r.kind}}return null}
 export function ruleFor(name) { const n = String(name ?? '').trim(); return PORTION_RULES.find(r => r.re.test(n)) || null; }
 // 음식 이름 + 단위 → {grams, perWhole}: g이 아닌 비율 단위(피자 조각=0.125판, 라면 1봉)는 perWhole로 돌려준다
 export function portionOf(name, unit) {

@@ -4,7 +4,7 @@ import {clearLive,liveActive} from './live-session.js';
 import {checkWorkout,applyFix} from './workout-check.js';
 import {nameSuggestion} from './workout-name.js';
 import {aiReviewPrompt,parseAiReview,sessionTimes} from './session-summary.js';
-import {quickWorkoutRecord,lastSession,findMachine} from './quick-entry.js';
+import {quickWorkoutRecord,lastSession,findMachine,countRow} from './quick-entry.js';
 import {prefillFor,withUnitMemory} from './set-prefill.js';
 import {cancelRestNotice} from './rest-screen.js';
 import {isPlus} from './plan.js';
@@ -19,6 +19,7 @@ const hasPending=s=>!!(s?.editing&&s.editIndex<0&&s.touched);
 export function liveClick(t){
  if(workoutMenuClick(t))return true;
  if(importClick(t))return true;
+ /* 5.1.0 음식 양을 개수로(삶은 달걀 1개 ≈ 50g) */if($s.modal==='quick-meal'&&$s.quickMeal){const q=$s.quickMeal,d=t.dataset||{};if(d.qCu){q.useCount=d.qCu==='count';$f.render();return true}if(d.qCnt){q.cnt=Number(d.qCnt);$f.render();return true}if(t.id==='q-confirm-food'&&q.useCount&&q.cu&&q.picked){const cnt=Number(document.getElementById('q-qty')?.value)/(q.share||1);if(!Number.isFinite(cnt)||cnt<=0)throw Error('먹은 양을 확인해 주세요.');q.share=1;const row=countRow(q.picked,Math.round(cnt*100)/100,q.cu);if(q.editIndex>=0)q.rows[q.editIndex]=row;else q.rows.push(row);q.picked=null;q.cuFor=null;q.editIndex=-1;$f.render();return true}if(t.id==='q-close-picker'||d.qFood||d.qDb)q.cuFor=null}
  if($s.modal==='workout-summary'||$s.modal==='ai-review')return summaryClick(t);
  if($s.modal!=='quick-workout')return false;
  const s=$s.quickWorkout;if(!s)return false;

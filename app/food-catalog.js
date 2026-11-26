@@ -4,7 +4,10 @@
 // 값은 식품의약품안전처 식품영양성분 데이터베이스·USDA 등 공개 자료의 일반적인 수준을 반올림한 '대표값'이다.
 // 제품마다 다르므로 제품 라벨이 있으면 라벨 값을 우선한다(제조사 제품은 사용자가 등록하거나 관리자가 공용 도감에 올린다).
 const F = (key, name, group, kcal, c, p, f, aliases=[]) => ({id:`food:base:${key}`, name, group, servingQty:100, servingUnit:'g', calories:kcal, carbs:c, protein:p, fat:f, source:'대표값', aliases});
-export const FOOD_CATALOG = Object.freeze([
+// 5.1.0 음식 단위 검수: 100g 기준 대표값에 '1개(장·토막…) 무게'를 붙여 개수로도 넣게. default: 처음 열 때 개수가 기본
+const COUNT = {'egg-boiled':['개',50,1],'egg-white':['개',33,1],'bread-white':['장',35,1],'bagel':['개',100,1],'tteok':['개',30,0],'ramen':['봉지',120,1],'banana':['개',100,1],'apple':['개',200,1],'tomato':['개',150,1],'sweet-potato':['개',150,1],'potato':['개',150,1],'tofu':['모',300,0],'salmon':['토막',100,0],'mackerel':['토막',70,0],'tuna-can':['캔',100,1],'chicken-breast-cooked':['덩이',100,0],'chicken-breast-raw':['덩이',100,0],'avocado':['개',150,1],'almond':['알',1.2,0],'walnut':['알',4,0],'peanut-butter':['큰술',15,0],'olive-oil':['큰술',13,0],'whey':['스쿱',30,1],'milk':['잔',200,0],'milk-lowfat':['잔',200,0],'soy-milk':['팩',190,1],'americano':['잔',355,1],'latte':['잔',355,1],'cola':['캔',355,1],'cola-zero':['캔',355,1],'greek-yogurt':['컵',100,0],'yogurt-plain':['컵',100,0],'rice-white':['공기',210,1],'rice-brown':['공기',210,1],'rice-multigrain':['공기',210,1]};
+const withCount = f => { const c = COUNT[f.id.replace('food:base:', '')]; return c ? {...f, countUnit: {unit: c[0], grams: c[1], ...(c[2] ? {default: true} : {})}} : f; };
+export const FOOD_CATALOG = Object.freeze(([
  F('chicken-breast-cooked','닭가슴살 (익힌 것)','닭가슴살',165,0,31,3.6,['닭가슴살','닭찌찌']),
  F('chicken-breast-raw','닭가슴살 (생것)','닭가슴살',106,0,23,1.2),
  F('chicken-thigh-cooked','닭다리살 (익힌 것, 껍질 제거)','닭다리살',209,0,26,10.9,['닭다리살','닭정육']),
@@ -53,4 +56,4 @@ export const FOOD_CATALOG = Object.freeze([
  F('latte','카페라테','커피',54,4.7,3,2.8,['라테']),
  F('cola','콜라','음료',42,10.6,0,0),
  F('cola-zero','제로 콜라','음료',0,0,0,0,['제로콜라']),
-]);
+].map(withCount)));
