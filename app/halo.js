@@ -169,8 +169,10 @@ const ymdOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0
 export function lockHeroHeight(hero, date, now = new Date()){
  if(!hero?.style) return;
  const w = Math.round(hero.clientWidth || 0);
- if(date === ymdOf(now)){ hero.style.minHeight = ''; const h = hero.offsetHeight; if(w && h) heroH.set(w, h); return; }
- const h = heroH.get(w); hero.style.minHeight = h ? `${h}px` : '';
+ /* 5.4.7 대표님: 웹에서 지난 날 큰 제목(47px)이 두 줄이라 박스가 커졌다 → 지난 날은 오늘 제목 크기로, 높이는 오늘과 똑같이 고정 */
+ hero.classList?.toggle('hero-past', date !== ymdOf(now));
+ if(date === ymdOf(now)){ hero.style.minHeight = ''; hero.style.height = ''; const h = hero.offsetHeight; if(w && h) heroH.set(w, h); return; }
+ const h = heroH.get(w); hero.style.minHeight = ''; hero.style.height = h ? `${h}px` : '';
 }
 export function mountHalo(hero, db, date, now=new Date()){
  if(!hero || typeof document==='undefined') return null;

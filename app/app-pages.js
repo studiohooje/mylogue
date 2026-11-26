@@ -1,5 +1,6 @@
 // 4.17.0 app.js에서 옮김(26개 함수). 화면 상태는 $s, 다른 app 함수는 $f로 부른다.
 import {workoutMenuHTML} from './workout-menu.js';
+import {buildRecap,recapHTML} from './monthly-recap.js';
 import {liveCardHTML} from './live-session.js';
 import {importPageHTML} from './data-import.js';
 import {$s,$f} from './app-state.js';
@@ -130,7 +131,7 @@ export function analysisPageInner(){
  // 운동 달력·회복 지도·새 기록·부위 균형·성장·식단·수치 함께 보기는 운동 페이지(타일)에서.
  const A=actualDB($s.db),td=$f.today(),prem=isPlus(),lose=!['bulk','leanbulk'].includes(typeof $s.db.settings?.phase?.type==='object'?$s.db.settings.phase.type?.id:$s.db.settings?.phase?.type);
  /* 5.4.6 대표님: 목표 도달 예측은 기본 기능(무료) */const fc=forecastHTML(forecast(A,td),{today:td}),premium=prem?`${fc}${maintenanceCardHTML(myMaintenance(A,td,energyEstimate($s.db.settings?.nutritionProfile||{})?.tdee))}${driversHTML(weightDrivers(A,td))}${monthCmpHTML(monthCompare(A,td),{lose})}`:`${fc}${maintenanceCardHTML(myMaintenance(A,td,energyEstimate($s.db.settings?.nutritionProfile||{})?.tdee))}<section class="section card pa-card pa-lock"><div class="section-title"><h3>프리미엄 분석</h3><span class="pa-badge">프리미엄</span></div><ul class="pa-list"><li><b>무엇이 내 체중을 움직였나</b><small>단백질·탄수·늦은 식사·운동과 다음 날 체중</small></li><li><b>이번 달 vs 지난 달</b><small>칼로리·단백질·운동·체중을 나란히</small></li></ul><p class="hint">마이로그 프리미엄에서 내 기록으로 바로 계산해 드려요.</p></section>`;
- return `<div class="page-head"><div><span class="eyebrow">Analysis</span><h2>분석</h2><p>내 기록으로 계산한 리포트예요. 건강 상태를 판단하지 않아요.</p></div></div>${(isPlus()&&aiUsable()?liveInsightHTML({db:$s.db,today:td,busy:!!$s.insight?.busy,msg:$s.insight?.msg||'',left:$s.insight?.left??null}):coachHTML({db:$s.db,today:td,name:profileOf($s.db,cloudState.user).name}))}${premium}${(()=>{const rp=buildReport(A,new Date(),{focus:$s.analysisExercise});return reportHTML(rp,{only:['card']})})()}${moreTilesHTML(pageSecs('analysis'))}`
+ return `<div class="page-head"><div><span class="eyebrow">Analysis</span><h2>분석</h2><p>내 기록으로 계산한 리포트예요. 건강 상태를 판단하지 않아요.</p></div></div>${(isPlus()&&aiUsable()?liveInsightHTML({db:$s.db,today:td,busy:!!$s.insight?.busy,msg:$s.insight?.msg||'',left:$s.insight?.left??null}):coachHTML({db:$s.db,today:td,name:profileOf($s.db,cloudState.user).name}))}${premium}${/* 5.4.7 대표님: 예전 월간 리포트 카드 대신 한 달 리캡(별자리 + 몸·운동·식단 + 업적·마일스톤, 말일에 완성) */(()=>{try{return recapHTML(buildRecap(A,td))}catch(e){console.warn(e);return ''}})()}${moreTilesHTML(pageSecs('analysis'))}`
 }
 function analysisDetailHTML(){
  const week=weeklyReport(actualDB($s.db)),month=monthlyReport(actualDB($s.db)),big3=threeLiftTotal(actualDB($s.db).workouts),parts=partSummary(actualDB($s.db),30),load=fatigueProxy(actualDB($s.db)),names=(()=>{/* 4.18.0 같은 종목(exerciseId)은 이름이 달라도 하나로 */const seen=new Set(),out=[];for(const w of $s.db.workouts)for(const e of w.exercises)if(e.kind!=='cardio'){const k=e.exerciseId||e.name;if(seen.has(k))continue;seen.add(k);out.push($f.allExercises().find(x=>x.id&&x.id===e.exerciseId)?.name||e.name)}return [...new Set(out)]})();

@@ -105,7 +105,7 @@ export function reportHTML(r, {exerciseOptions=[], grass='', only=null}={}){
  const diet = `<section class="ar-card"><div class="ar-head"><b>식단·수치와 함께 보기</b><small>최근 30일</small></div><p>${d.goal?`단백질 목표를 채운 날 <b>${d.proteinHit}/${d.mealDays||0}일</b>`:'단백질 목표를 정하면 채운 날을 세어 줘요'}${d.smmChange!==null?(d.smmChange===0?' · 골격근량 변화 없음':` · 골격근량 <b class="${d.smmChange>0?'up':'down'}">${d.smmChange>0?'+':''}${n0(d.smmChange,1)}kg</b>`):''}</p>${d.bodyPts.length>=2?lineChart({vals:d.bodyPts.map(b => b.skeletalMuscle), color:'#6fd6a3', h:80, tips:d.bodyPts.map(b => `<span class="d">${Number(b.date.slice(5,7))}/${Number(b.date.slice(8,10))}</span><b>골격근량 ${n0(b.skeletalMuscle,1)}kg</b>`), label:'최근 30일 골격근량 그래프'}):'<p class="ar-hint">인바디(골격근량)를 두 번 이상 기록하면 운동·식단과 함께 변화를 보여 줘요.</p>'}</section>`;
  // 5.0.4 only: 분석 페이지는 리포트 카드만(나머지는 운동 페이지로)
  const parts = {story, recover, prs, growth, balance, heat, card, diet};
- return `<div class="ar">${(only || Object.keys(parts)).map(k => parts[k] || '').join('')}</div>`;
+ return `<div class="ar">${(only || Object.keys(parts).filter(k => k !== 'card')).map(k => parts[k] || '').join('')}</div>`; // 5.4.7 예전 리포트 카드는 기본 목록에서 뺌
 }
 
 // 리포트 카드를 PNG로 그린다(브라우저 전용).

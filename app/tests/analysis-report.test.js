@@ -48,7 +48,10 @@ test('리포트: 이번 달 카드와 식단·몸 연결', () => {
  assert.equal(r.diet.proteinHit, 1);
  assert.equal(r.diet.smmChange, 0.6);
  const html = reportHTML(r, {exerciseOptions:r.growth.names});
- for(const k of ['이번 주 리포트','회복 지도','이번 달 새 기록','성장','부위 균형','꾸준함','리포트 카드','식단·수치와 함께 보기','id="apply-recommendation"','id="ar-share"','id="ar-exercise"']) assert.ok(html.includes(k), k);
+ for(const k of ['이번 주 리포트','회복 지도','이번 달 새 기록','성장','부위 균형','꾸준함','식단·수치와 함께 보기','id="apply-recommendation"','id="ar-exercise"']) assert.ok(html.includes(k), k);
+ // 5.4.7 대표님: 예전 월간 리포트 카드는 기본에서 숨김(새 리캡으로 바꿀 예정), only로 부를 때만
+ assert.ok(!html.includes('ar-share-fold'));
+ assert.ok(reportHTML(r, {only:['card']}).includes('id="ar-share"'));
 });
 
 test('리포트: 기록이 없어도 깨지지 않는다', () => {
