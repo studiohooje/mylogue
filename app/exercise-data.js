@@ -32,6 +32,8 @@ export const MORE_EXERCISES = [
  ['체스트 서포티드 T바 로우','등','머신',['back'],['biceps','traps']],
  ['시티드 로우 머신','등','머신',['back'],['biceps','traps'],{aliases:['로우 머신','미드 로우']}],
  ['아이소래터럴 로우','등','머신',['back'],['biceps','traps'],{aliases:['해머 로우']}],
+ ['와이드 그립 머신 로우','등','머신',['back','traps'],['shoulders','biceps'],{aliases:['와이드 머신 로우','와이드 리니어 로우','Wide Grip Machine Row']}], // 2026-11-27 대표님: 가온핏 리니어 로우 손잡이 넓게
+ ['내로우 그립 머신 로우','등','머신',['back'],['biceps','traps'],{aliases:['내로우 머신 로우','좁은 그립 머신 로우','클로즈 그립 머신 로우','Narrow Grip Machine Row']}],
  ['하이 로우 머신','등','머신',['back'],['biceps','traps'],{aliases:['하이 로우']}],
  ['체스트 서포티드 덤벨 로우','등','덤벨',['back'],['biceps','shoulders']],
  ['원암 케이블 로우','등','케이블',['back'],['biceps'],{u:1}],

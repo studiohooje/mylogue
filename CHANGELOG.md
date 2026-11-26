@@ -4,6 +4,14 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.5.0 — 2026-11-27 (배포됨)
+
+- 종목 묶음 46개(exercise-family.js, 기존 종목끼리) + 머신 로우 묶음(기본·와이드 그립·내로우 그립, 새 종목 2개).
+- 기구 도감 570 → 1,537 모델(19개 회사, 가온핏 Linear Row는 대표님 사진 근거 low). 필라테스 동작 479 → 513, 별칭 2,404.
+- 음식 DB 46,278 → 46,881행(다이어트 브랜드 공식몰 185 + 랭킹닭컴 나머지 분류 418).
+- 메이트로그 새 방 수치(체중·체성분) 공유 기본 꺼짐(mate-cloud createRoom·mate-ui).
+- 시험 추가: exercise-family.test.js, night1127-records.test.js(필라테스 수업·덤벨 소분류 세트 저장→타임라인→백업 왕복).
+
 ## Mylogue Beta 5.4.10 — 2026-11-26 (배포됨)
 
 - 무료 AI 사진 하루 3번(대표님 결정): AI 서버 LIMIT_PHOTO "3/20", plan.js ai-photo free 3, ai-chat 문구. 앱 PHOTO_PER_DAY.free(3)와 서버(1)가 어긋나던 것 해소.

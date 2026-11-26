@@ -264,6 +264,8 @@ export const EXERCISE_ART = {
  "원판 프론트 레이즈":"plate-front-raise",
  "아이소래터럴 체스트 프레스":"plate-loaded-iso-lateral-chest-press-machine",
  "아이소래터럴 로우":"plate-loaded-iso-lateral-row-machine",
+ "와이드 그립 머신 로우":"plate-loaded-iso-lateral-row-machine",
+ "내로우 그립 머신 로우":"plate-loaded-iso-lateral-row-machine",
  "머신 랫풀다운":"plate-loaded-lat-pulldown-machine-with-separate-",
  "파워 스쿼트":"plate-loaded-power-squat-machine-with-shoulder-p",
  "머신 프리처 컬":"preacher-curl-machine",

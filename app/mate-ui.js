@@ -250,7 +250,7 @@ function joinView(){
   ${roomsFull() ? `<p class="hint">${FULL_WHY}</p>` : ''}<button type="button" class="button" data-mate-joinok ${s.busy || roomsFull() ? 'disabled' : ''}>${s.busy ? '들어가는 중…' : '동의하고 들어가기'}</button><button type="button" class="button secondary" data-mate-go="rooms">들어가지 않기</button></div>`;
 }
 function createView(){
-  const c = st().create ||= {name: '', type: 'friends', scope: {body: true, meal: true, work: true}};
+  const c = st().create ||= {name: '', type: 'friends', scope: {body: false, meal: true, work: true}}; // 수치(체중)는 기본 꺼 둠
   return `${head('방 만들기', '', {back: 'rooms'})}
   <label class="field">방 이름<input id="mate-cname" maxlength="30" value="${esc(c.name)}" placeholder="예: 다이어트 메이트"></label>
   <div class="seg" role="group" aria-label="방 종류"><button type="button" data-mate-ctype="friends" class="${c.type === 'friends' ? 'active' : ''}" aria-pressed="${c.type === 'friends'}">친구 방</button><button type="button" data-mate-ctype="mine" class="${c.type === 'mine' ? 'active' : ''}" aria-pressed="${c.type === 'mine'}">내 방(나만 봐요)</button></div>

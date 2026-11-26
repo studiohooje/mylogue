@@ -31,7 +31,7 @@ export async function listRooms(){
 }
 export async function getRoom(id){ const c = await firestoreContext(), s = await c.fs.getDoc(c.fs.doc(c.db, 'rooms', id)); return s.exists() ? roomOf(s) : null; }
 
-export async function createRoom({name, type = 'friends', scope = {body: true, meal: true, work: true}}){
+export async function createRoom({name, type = 'friends', scope = {body: false, meal: true, work: true}}){ // 2026-11-27 안전 점검: 체중·체성분(수치)은 기본 비공개, 방 만들 때 켤 수 있음
   const c = await firestoreContext(), fs = c.fs, id = randomId(16), now = fs.serverTimestamp();
   const sc = Object.fromEntries(MATE_KINDS.map(k => [k, type === 'mine' ? true : scope[k] === true]));
   await fs.setDoc(fs.doc(c.db, 'rooms', id), {name: String(name || '').trim().slice(0, 30) || (type === 'mine' ? '내 방' : '메이트 방'), type, ownerUid: c.user.uid, memberIds: [c.user.uid], memberNames: {[c.user.uid]: myMateName(c.user)}, scope: sc, joinCode: '', appliedProposal: '', createdAt: now, updatedAt: now});

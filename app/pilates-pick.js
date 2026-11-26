@@ -1,5 +1,5 @@
 // 4.17.0 빠른 운동 기록에서 필라테스 동작 고르기(대표님: "필라테스 카테고리에 5개밖에 안 보여").
-// 수업 종류 5가지 아래에 기구별 동작(사전 479개)을 바로 보여 주고, 고르면 그 기구의 수업 기록에 동작이 담긴다.
+// 수업 종류 5가지 아래에 기구별 동작(사전 513개, 2026-11-27 보강)을 바로 보여 주고, 고르면 그 기구의 수업 기록에 동작이 담긴다.
 import {PILATES_DICT} from './pilates-moves-data.js';
 import {MOVES} from './pilates.js';
 import {pilatesArtHTML} from './pilates-art.js';
