@@ -1,17 +1,17 @@
-// 3.18.2 AI 인사이트(프리미엄) 틀: 오늘 남은 식단 · 다음 운동 · 주간 코칭 · 체중 흐름.
-// 대표님 결정: 나중에 AI 서버(ai-worker)와 구독이 준비되면 프리미엄 사용자만 쓴다.
+// 3.18.2 AI 인사이트(플러스) 틀: 오늘 남은 식단 · 다음 운동 · 주간 코칭 · 체중 흐름.
+// 대표님 결정: 나중에 AI 서버(ai-worker)와 구독이 준비되면 플러스 사용자만 쓴다.
 // 지금은 '예시 화면'을 보여 준다. 사용자의 실제 기록 숫자(목표·오늘 먹은 양·최근 쓴 부위·자주 하는 종목·체중)를
-// 예시 안에 넣어 '내 몸에 맞춰진다'는 느낌을 준다. 아래로 갈수록 흐려지고 '추후 공개 · 프리미엄' 막이 덮는다. 누를 수 있는 기능은 없다.
+// 예시 안에 넣어 '내 몸에 맞춰진다'는 느낌을 준다. 아래로 갈수록 흐려지고 '추후 공개 · 플러스' 막이 덮는다. 누를 수 있는 기능은 없다.
 // 켤 때: COACH_ENABLED와 사용자의 구독 여부(premium)를 함께 확인하고, ai-worker에 /coach 엔드포인트를 더한다.
 import {mealTotals, actualDB} from './domain.js';
 import {todayMuscleLoads} from './timeline-view.js';
 import {MUSCLE_LABELS} from './exercise-ui.js';
 import {scaleRecords, inbodyRecords} from './body-series.js';
 
-export const COACH_ENABLED = false; // 예전 버튼형 틀(쓰지 않음). 5.0.4부터 프리미엄은 아래 liveInsight로 실제 AI
+export const COACH_ENABLED = false; // 예전 버튼형 틀(쓰지 않음). 5.0.4부터 플러스는 아래 liveInsight로 실제 AI
 import {scopedKey} from './storage-scope.js';
 
-// 5.0.4 대표님: AI 인사이트를 실제 AI로. 프리미엄 계정이 '인사이트 받기'를 눌렀을 때만 부른다(자동·실시간 없음, 하루 3번).
+// 5.0.4 대표님: AI 인사이트를 실제 AI로. 플러스 계정이 '인사이트 받기'를 눌렀을 때만 부른다(자동·실시간 없음, 하루 3번).
 // 보내는 것: 앱이 계산한 숫자 요약(coachFacts)뿐. 결과는 이 기기에 남겨 새로고침해도 다시 부르지 않는다. 기록이 그대로면 다시 부르지 않는다.
 const INSIGHT_KEY = () => scopedKey('mylogue.aiInsight');
 export function lastInsight(){ try{ const v = JSON.parse(globalThis.localStorage?.getItem(INSIGHT_KEY()) || 'null'); return v && v.insight ? v : null; }catch{ return null; } }
@@ -45,7 +45,7 @@ export function liveInsightHTML({db = {}, today = '', busy = false, msg = '', le
  ${it.weight?.length ? `<article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul>${li(it.weight)}</ul></article>` : ''}
  <p class="hint coach-when">${esc(whenText(saved.at))} 분석 · 버튼을 누를 때만 새로 만들어요${left != null ? ` · 오늘 ${left}번 더` : ''}</p>`
  : `<p class="coach-line">식단·운동·수치 기록을 읽고 <b>오늘 남은 식단</b>, <b>다음 운동</b>, <b>이번 주 코칭</b>, <b>체중 흐름</b>을 내 몸에 맞춰 알려 드려요.</p><p class="hint">버튼을 눌렀을 때만 만들어요(하루 3번).</p>`;
- return `<section class="section coach coach-live" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">프리미엄</span></div>${basis}${body}${msg ? `<p class="hint warn" role="alert">${esc(msg)}</p>` : ''}<div class="actions">${btn}</div><p class="hint">AI 답은 참고용이에요. 진단이나 처방이 아니에요.</p></section>`;
+ return `<section class="section coach coach-live" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div>${basis}${body}${msg ? `<p class="hint warn" role="alert">${esc(msg)}</p>` : ''}<div class="actions">${btn}</div><p class="hint">AI 답은 참고용이에요. 진단이나 처방이 아니에요.</p></section>`;
 }
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const n0 = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
@@ -81,7 +81,7 @@ export function coachFacts(db={}, today){
 
 export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, today = '', name = '나'} = {}){
  const open = enabled && premium;
- if(open) return `<section class="section coach" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">프리미엄</span></div><div class="actions"><button type="button" class="button" data-coach="meal">오늘 남은 식단 제안</button><button type="button" class="button secondary" data-coach="workout">다음 운동 제안</button></div><div id="coach-result" aria-live="polite"></div></section>`;
+ if(open) return `<section class="section coach" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div><div class="actions"><button type="button" class="button" data-coach="meal">오늘 남은 식단 제안</button><button type="button" class="button secondary" data-coach="workout">다음 운동 제안</button></div><div id="coach-result" aria-live="polite"></div></section>`;
  const date = today || new Date().toISOString().slice(0, 10), f = coachFacts(db, date);
  const who = name && name!=='내 계정' && name!=='나' ? `${name}님` : '내', whoSub = who==='내' ? '내' : who;
  const dLabel = `${Number(date.slice(5,7))}월 ${Number(date.slice(8,10))}일 ${WD[new Date(`${date}T12:00:00`).getDay()]}요일`;
@@ -100,7 +100,7 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
  const trendTxt = f.trend!=null ? `7일 평균 ${f.trend>0?'+':''}${n1(f.trend)}kg` : '7일 평균 −0.4kg';
  const eta = f.target && f.nowW && f.trend && f.trend<0 ? (() => { const weeks = (f.nowW-f.target)/(-f.trend); if(!(weeks>0 && weeks<104)) return ''; const d = shift(date, Math.round(weeks*7)); return `지금 속도면 <b>${Number(d.slice(5,7))}월 ${Number(d.slice(8,10))}일</b>쯤 목표 ${n1(f.target)}kg에 닿아요`; })() : '지금 속도면 <b>12월 말</b>쯤 목표 체중에 닿아요';
  const bar = ([l, v, g, u]) => { const pct = g ? Math.round(v/g*100) : 0; return `<div class="cbar"><span>${l}</span><i><b style="width:${Math.min(100, pct)}%"></b></i><em>${pct}%</em></div>`; };
- return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">프리미엄</span></div>
+ return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div>
 <div class="coach-paper" aria-hidden="true">
 <div class="coach-report-head"><div><small>${esc(dLabel)} · 오늘의 맞춤 코칭</small><b>${esc(who)} 몸에 맞춘 리포트</b></div><span class="coach-example">예시 화면</span></div>
 <div class="coach-basis"><span>분석 근거</span><i>식사 ${f.meals14}끼</i><i>운동 ${f.works14}회</i><i>체중 ${f.weigh14}회</i><i>인바디 ${f.inbody}회</i><small>최근 14일</small></div>
@@ -110,6 +110,6 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
 <article class="coach-block"><h4><span class="coach-num">3</span>이번 주 코칭</h4><div class="coach-week">${f.days7.map(d => `<span class="${d.done?'done':d.rest?'rest':''}${d.today?' today':''}"><b>${d.wd}</b><i></i></span>`).join('')}</div><ul><li>이번 주 ${f.days7.filter(d => d.done).length}회 운동 · 목표 주 4회까지 ${Math.max(0, 4-f.days7.filter(d => d.done).length)}회 남았어요</li><li>가슴 세트가 지난주보다 줄었어요. 금요일에 가슴·삼두를 넣어 볼까요?</li><li>잠이 짧았던 날은 무게를 10% 낮추는 걸 권해요</li></ul></article>
 <article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul><li>${trendTxt} · 목표 속도(주 −0.5kg) 안에 있어요</li><li>${eta}</li><li>${f.muscleNow!=null&&f.muscleOld!=null?`인바디 골격근량 ${f.muscleNow-f.muscleOld>=0?'+':''}${n1(f.muscleNow-f.muscleOld)}kg(3주 전 대비)`:'탄수화물이 많은 다음 날 체중이 오르는 패턴(수분)이 보여요'}</li></ul></article>
 </div>
-<div class="coach-veil"><span class="coach-spark big" aria-hidden="true">✦</span><b>마이로그 프리미엄</b><p>${esc(who==='내'?'내':who+'의')} 식단·운동·수치 기록을 매일 읽고, 오늘 남은 식단과 다음 운동을 ${esc(whoSub)} 몸에 맞춰 코칭해 드려요.</p><ul class="coach-perks"><li>남은 끼니 메뉴 · 탄단지 맞춤</li><li>회복 부위를 피한 운동 플랜</li><li>내 기록 기반 무게 진행</li><li>체중 목표 도달 예측</li></ul><span class="coach-soon">프리미엄에서 쓸 수 있어요</span></div>
+<div class="coach-veil"><span class="coach-spark big" aria-hidden="true">✦</span><b>마이로그 플러스</b><p>${esc(who==='내'?'내':who+'의')} 식단·운동·수치 기록을 매일 읽고, 오늘 남은 식단과 다음 운동을 ${esc(whoSub)} 몸에 맞춰 코칭해 드려요.</p><ul class="coach-perks"><li>남은 끼니 메뉴 · 탄단지 맞춤</li><li>회복 부위를 피한 운동 플랜</li><li>내 기록 기반 무게 진행</li><li>체중 목표 도달 예측</li></ul><span class="coach-soon">플러스에서 쓸 수 있어요</span></div>
 </section>`;
 }

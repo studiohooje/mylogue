@@ -524,3 +524,36 @@ body:has(.live-sheet) .toast,body:has(.ss-sheet) .toast{top:calc(env(safe-area-i
 .mf-acts .chip.mf-go{border-color:#8ce4e0;color:#0d1326;background:#8ce4e0;font-weight:700}
 .mf-note{margin:4px 0 0;font-size:12px}
 @media(max-width:380px){.mf-shot{width:56px;height:56px}}
+
+/* 5.4.9 대표님(목업 C안): '오늘 운동 마무리하기' — 머리글 아래 넓은 버튼, 좌우는 아래 카드와 같은 14px */
+.live-end-bar{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 28px);margin:12px 14px 0;min-height:48px;padding:0 14px;border:0;border-radius:14px;font-size:15px;color:#fff;background:linear-gradient(135deg,#ff6b5a,#e2365a);box-shadow:0 4px 14px #e2365a33;cursor:pointer}.live-end-bar b{font-weight:800}.live-end-bar small{font-size:12px;font-weight:600;opacity:.88}
+@media (max-width:380px){.live-end-bar small{display:none}}
+/* 5.4.9 대표님(세트 입력 정리 목업): 좁은 화면에서 횟수 칸·칩이 넘치지 않게, 아래 상자들은 위 카드와 같은 좌우(14px)·같은 간격(12px) */
+.qs-steppers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.qs-field,.qs-row{min-width:0}.qs-row input{min-width:0;width:100%}
+.qs-reps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible}
+.qs-reps .chip{min-width:0;padding-left:4px;padding-right:4px}
+.quick-palette .sheet>.q-switch,.quick-palette .sheet>.quick-picked,.quick-palette .sheet>.quick-next{margin:12px 14px 0}
+.quick-palette .sheet>.quick-picked{margin-bottom:14px}
+.qs-unitseg button{min-width:0}
+.live-end-bar+.quick-flow{padding-top:12px}
+.quick-palette .sheet>.quick-flow+.q-switch,.quick-palette .sheet>.quick-flow+.quick-next{margin-top:4px}
+/* 5.4.9 대표님(목업 2안): 날짜·헬스장 한 줄 — 머리글 아래 */
+.q-date-bar{display:flex;align-items:center;gap:6px;width:100%;min-height:40px;padding:8px 18px;border:0;border-bottom:1px solid #2a4560;background:#16283d;color:#aec4d9;font-size:13px;text-align:left;cursor:pointer}
+.q-date-bar b{color:#e8f2fb;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.q-date-bar .sep{opacity:.5}
+.q-date-bar .go{margin-left:auto;color:#8ce4e0;font-weight:700;white-space:nowrap}
+/* 5.4.9 덤벨 데드리프트 같은 종목 묶음의 방식 칩 */
+.q-family{margin-top:8px}.q-family-label{display:block;font-size:12px;color:#aec4d9;margin-bottom:6px}
+.q-family-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.q-family-row .chip{min-width:0;min-height:40px;padding:0 6px}
+/* 5.4.9 필라테스: 수업 칸 안의 그 기구 동작 검색·목록 */
+.pm-class{margin-top:10px;display:grid;gap:8px}
+.pm-filter{width:100%;min-height:44px;border-radius:12px;border:1px solid #365876;background:#0f1d2e;color:#e8f2fb;padding:0 12px;font-size:16px}
+.pm-grid.pm-in-class{max-height:340px;overflow:auto}
+.pm-pick[hidden]{display:none}
+.quick-palette .sheet>.live-idle{margin:12px 14px 0;border-radius:14px}
+.live-idle+.quick-flow{padding-top:12px}
+/* 5.4.9 넓은 화면(650px 초과)에선 운동 창 안쪽 여백이 20px이라 아래 상자·마무리 버튼·안내 띠도 20px로 맞춘다(좁은 화면 14px은 위 규칙) */
+@media (min-width:651px){
+.live-end-bar{width:calc(100% - 40px);margin-left:20px;margin-right:20px}
+.quick-palette .sheet>.q-switch,.quick-palette .sheet>.quick-picked,.quick-palette .sheet>.quick-next,.quick-palette .sheet>.live-idle{margin-left:20px;margin-right:20px}
+}

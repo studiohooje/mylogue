@@ -98,7 +98,7 @@ export function routineProgress(routine, doneNames = []){
 export function routineBandHTML(routine, doneNames = []){
   if(!routine?.items?.length) return '';
   const {n, total, next} = routineProgress(routine, doneNames);
-  return `<div class="cl-band rt-band" role="status"><span class="cl-av" style="background:#8ce4e0">${Math.min(total, n + 1)}</span><div class="cl-band-t"><b>${esc(routine.from === 'class' ? '수업 운동' : '코치 루틴')} ${Math.min(total, n + (next ? 1 : 0))}/${total}${next ? ` · ${esc(next.name)}` : ' · 다 했어요 👏'}</b><small>${next ? `목표 ${esc(itemLine(next))}${routine.items[routine.items.indexOf(next) + 1] ? ` · 다음: ${esc(routine.items[routine.items.indexOf(next) + 1].name)}` : ''}` : '운동 끝내기를 누르면 코치님께 \'했어요\'가 가요'}</small></div></div>`;
+  return `<div class="cl-band rt-band" role="status"><span class="cl-av" style="background:#8ce4e0">${Math.min(total, n + 1)}</span><div class="cl-band-t"><b>${esc(routine.from === 'class' ? '수업 운동' : '코치 루틴')} ${Math.min(total, n + (next ? 1 : 0))}/${total}${next ? ` · ${esc(next.name)}` : ' · 다 했어요 👏'}</b><small>${next ? `목표 ${esc(itemLine(next))}${routine.items[routine.items.indexOf(next) + 1] ? ` · 다음: ${esc(routine.items[routine.items.indexOf(next) + 1].name)}` : ''}` : '오늘 운동 마무리하기를 누르면 코치님께 \'했어요\'가 가요'}</small></div></div>`;
 }
 export function weekDone(log = [], today = new Date()){
   const d0 = new Date(today); d0.setDate(d0.getDate() - ((d0.getDay() + 6) % 7)); const k = d0.toISOString().slice(0, 10);

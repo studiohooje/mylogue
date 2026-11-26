@@ -1,7 +1,7 @@
 // 5.1.0 실시간 운동 세션(대표님 헬스장 실사용 점검)
-// - 세션은 '운동 끝내기 → 정리 → 기록 완료'로만 끝난다. ×는 '잠시 나가기'(경고 없음).
+// - 세션은 '오늘 운동 마무리하기(예전 운동 끝내기) → 정리 → 기록 완료'로만 끝난다. ×는 '잠시 나가기'(경고 없음).
 // - 진행 중 세션은 이 기기에 저장해 다른 앱·새로고침·창 닫기에도 그대로 이어진다(입력하던 숫자까지).
-// - 머리글에 '운동 중 · 시작 시각 · N세트'와 붉은 '운동 끝내기'(늘 같은 자리), 오래 쉬면 한 번만 묻기.
+// - 머리글에 '운동 중 · 시작 시각 · N세트'와 '오늘 운동 마무리하기'(5.4.9부터 머리글 아래 넓은 버튼), 오래 쉬면 한 번만 묻기.
 import {scopedKey} from './storage-scope.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='mylogue.live';
@@ -16,8 +16,8 @@ const hm=t=>String(t||'').slice(11,16);
 export const liveStart=s=>(s.sets||[]).map(x=>x.completedAt).filter(Boolean).sort()[0]||'';
 export const liveLast=s=>(s.sets||[]).map(x=>x.completedAt).filter(Boolean).sort().at(-1)||'';
 const minsSince=(t,now=Date.now())=>{const d=new Date(t);return Number.isFinite(d.getTime())?Math.floor((now-d.getTime())/60000):0};
-// 머리글: 세션이 시작되면(세트 1개 이상) '운동 중' + 붉은 '운동 끝내기'
-export function liveHeadHTML(s){const n=(s.sets||[]).length,st=liveStart(s);return `<div class="sheet-head live-head"><div class="live-status"><i aria-hidden="true"></i><h2>운동 중<small>${st?`${esc(hm(st))}부터 · `:''}${n}세트 · 자동 저장 중</small></h2></div><button type="button" class="live-end" id="q-end"><i aria-hidden="true"></i>운동 끝내기</button><button class="close live-close" id="close" aria-label="잠시 나가기(이어서 할 수 있어요)">×<small>잠시 나가기</small></button></div>`}
+// 머리글: 세션이 시작되면(세트 1개 이상) '운동 중'. 5.4.9 대표님(목업 C안): 머리글 아래 넓은 '오늘 운동 마무리하기'(이번 세트가 아니라 오늘 운동 전체를 끝냄)
+export function liveHeadHTML(s){const n=(s.sets||[]).length,st=liveStart(s);return `<div class="sheet-head live-head"><div class="live-status"><i aria-hidden="true"></i><h2>운동 중<small>${st?`${esc(hm(st))}부터 · `:''}${n}세트 · 자동 저장 중</small></h2></div><button class="close live-close" id="close" aria-label="잠시 나가기(이어서 할 수 있어요)">×<small>잠시 나가기</small></button></div><button type="button" class="live-end-bar" id="q-end"><span aria-hidden="true">🏁</span><b>오늘 운동 마무리하기</b><small>· 오늘 한 운동을 정리해요</small></button>`}
 // 마지막 세트 뒤 25분이 지나면 한 번만
 export function idleHTML(s,now=Date.now()){if(s.idleDismissed||s.rest)return '';const last=liveLast(s);if(!last||minsSince(last,now)<IDLE_MIN)return '';return `<div class="live-idle" role="status"><span><b>마지막 세트 뒤 ${minsSince(last,now)}분이 지났어요.</b><br>운동 끝나셨어요?</span><button type="button" id="q-end">정리하기</button><button type="button" class="live-idle-x" id="q-idle-x" aria-label="계속할게요">계속</button></div>`}
 // 홈·운동 페이지: '운동 중 · 이어서 입력하기'

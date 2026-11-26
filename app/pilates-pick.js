@@ -41,3 +41,20 @@ export function addPickedMove(s, value) {
   if (list.some(m => m.name === name && m.apparatus === apparatus)) return s;
   return {...s, pmoves: [...list, {name, apparatus}].slice(0, 60)};
 }
+
+// 5.4.9 대표님: 필라테스는 '큰 종목(매트·리포머…) → 수업 전체 시간 또는 그 기구 동작'. 동작 목록과 검색은 수업 칸 안에.
+export const appOfClass = name => PM_APPS.find(a => classOf(a) === name) || '';
+export function classMovesHTML(s, className) {
+  const app = appOfClass(className), list = app ? movesFor(app) : [];
+  const picked = pickedMovesHTML(s).replace('선택 · 위 목록에서 눌러 담아요', '선택 · 아래에서 눌러 담아요');
+  if (!list.length) return picked;
+  const key = m => `${m.name} ${m.en}`.toLocaleLowerCase('ko').replace(/\s+/g, '');
+  return `${picked}<div class="pm-class"><p class="pm-head">${esc(app)} 동작 <small>${list.length}개 · 선택</small></p><input class="pm-filter" data-pm-filter type="search" autocomplete="off" placeholder="${esc(app)} 동작 검색 (예: ${esc(list.slice(0, 2).map(m => m.name).join(', '))})" aria-label="${esc(app)} 동작 검색"><div class="pm-grid pm-in-class">${list.map(m => moveBtn(m).replace('<button type="button" class="pm-pick"', `<button type="button" class="pm-pick" data-pm-key="${esc(key(m))}"`)).join('')}</div><p class="hint pm-none" hidden>찾는 동작이 없어요.</p></div>`;
+}
+// 동작 검색: 목록을 다시 그리지 않고 이 칸 안에서만 걸러 보인다(글자 입력이 끊기지 않게)
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('input', e => {
+  const t = e.target; if (!t?.matches?.('[data-pm-filter]')) return;
+  const q = String(t.value || '').toLocaleLowerCase('ko').replace(/\s+/g, ''), box = t.closest('.pm-class'); if (!box) return;
+  let n = 0; box.querySelectorAll('[data-pm-key]').forEach(b => { const on = !q || b.dataset.pmKey.includes(q); b.hidden = !on; if (on) n++; });
+  const none = box.querySelector('.pm-none'); if (none) none.hidden = n > 0;
+});

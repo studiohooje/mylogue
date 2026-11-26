@@ -4,6 +4,10 @@
 // 이 파일은 app.js를 import하지 않는다($s·$f로 앱과 이어진다).
 import {$s, $f} from './app-state.js';
 import {cloudState, cloudLogin} from './cloud-sync.js';
+import {isPlus} from './plan.js';
+// 5.4.9 무료는 들어가 있는 방 5개까지(코치방 제외). 다 차면 만들기·들어가기를 회색 + 이유 한 줄로.
+const roomsFull = () => mateRoomsFull(st().rooms, isPlus());
+const FULL_WHY = `무료는 방 ${MATE_ROOMS_FREE}개까지 들어가 있을 수 있어요. 방을 하나 나가거나 플러스를 쓰면 더 들어갈 수 있어요.`;
 import {brandIcon} from './brand-icons.js';
 import {qrMatrix} from './qr.js';
 import {scopedKey} from './storage-scope.js';
@@ -14,7 +18,7 @@ import {stampText, stampParts, openCamera, closeCamera, capture, cameraSupported
 const stampHTML = () => { const t = stampParts(); return `<div class="mate-stamp" id="mate-stamp" aria-label="찍은 시각 ${esc(stampText())}"><i aria-hidden="true"></i><p><b>${t.time}</b><span>${t.date} · <em>mylogue</em></span></p></div>`; };
 import {ensureCoachRoom, coachRoomId} from './mate-cloud.js';
 import {passOf, passCardHTML, ledgerHTML} from './coach-pass.js';
-import {MATE_MAX, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
+import {MATE_MAX, MATE_MAX_PLUS, MATE_ROOMS_FREE, mateRoomsFull, mateRoomCap, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
 import {openChatWithPhoto} from './app-chat.js';
 import {TAG_RE, tagProblem, loadMyTag, myTagCached, tagAvailable, setMyTag, inviteByTag, listDirectInvites, dropDirectInvite} from './mytag.js';
 import {newProfileEdit} from './profile.js';
@@ -91,7 +95,7 @@ export function mytagSettingsHTML(){
   return `<section class="section card"><h3>마이태그</h3><p>${t ? `<b class="mate-tagchip">@${esc(t)}</b>` : '아직 정하지 않았어요.'}</p><p class="hint">마이로그 전체에서 쓰는 나만의 고유한 이름이에요. 프로필·메이트에서 보이고, 이 태그로 초대받을 수 있어요.</p><button type="button" class="button secondary" data-mate-tagedit>${t ? '바꾸기' : '정하기'}</button></section>`;
 }
 /* 5.3.0 전수검사 15: 초대 코드는 오른쪽 위 ＋ 안으로(방 만들기 / 초대 코드로 들어가기) */
-const plusPopHTML = () => { const s = st(); if(!s.plus) return ''; return `<div class="mate-plus-pop" role="menu" aria-label="방 추가">${s.plus === 'code' ? `<b>초대 코드로 들어가기</b><p class="hint">메이트에게 받은 8자리 코드(링크가 안 열릴 때도 이걸로)</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button">들어가기</button></form>` : `<button type="button" role="menuitem" data-mate-go="create"><i aria-hidden="true">＋</i><span><b>방 만들기</b><small>내 방 · 친구 방</small></span></button><button type="button" role="menuitem" data-mate-codeopen><i aria-hidden="true">#</i><span><b>초대 코드로 들어가기</b><small>받은 8자리 코드 적기</small></span></button>`}</div>`; };
+const plusPopHTML = () => { const s = st(); if(!s.plus) return ''; return `<div class="mate-plus-pop" role="menu" aria-label="방 추가">${s.plus === 'code' ? `<b>초대 코드로 들어가기</b><p class="hint">메이트에게 받은 8자리 코드(링크가 안 열릴 때도 이걸로)</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button">들어가기</button></form>` : `<button type="button" role="menuitem" data-mate-go="create" ${roomsFull() ? 'disabled aria-disabled="true"' : ''}><i aria-hidden="true">＋</i><span><b>방 만들기</b><small>내 방 · 친구 방</small></span></button><button type="button" role="menuitem" data-mate-codeopen ${roomsFull() ? 'disabled aria-disabled="true"' : ''}><i aria-hidden="true">#</i><span><b>초대 코드로 들어가기</b><small>받은 8자리 코드 적기</small></span></button>${roomsFull() ? `<p class="hint">${FULL_WHY}</p>` : ''}`}</div>`; };
 function roomsView(){
   const s = st(), list = orderRooms(s.rooms || []), ro = !!s.reorder && list.length > 1;
   const first = i => i === 0 && list.length > 1 ? '<span class="mate-first">홈 바로 찍기</span>' : '';
@@ -219,8 +223,8 @@ function settingsView(){
     <p class="mate-foot">대화·사진은 ${MATE_KEEP_DAYS}일 보관 · 연동을 끊으면 이 방도 더는 쓸 수 없어요</p>`; }
   const owner = r.ownerUid === me(), pending = (s.props[r.id] || []).some(p => p.status === 'open');
   return `${head('방 설정', r.name, {back: 'room'})}
-  ${r.type === 'friends' ? `<div class="mate-card"><b>메이트 ${r.memberIds.length}명 <small class="hint">(최대 ${MATE_MAX}명)</small></b>${r.memberIds.map(m => `<div class="mate-row" style="justify-content:space-between"><span><span class="mate-av sm" style="--c:${colorOf(m)}">${esc((r.memberNames[m] || '메')[0])}</span>${esc(r.memberNames[m] || '메이트')}${m === r.ownerUid ? ' <span class="mate-tag on">방장</span>' : ''}${m === me() ? ' <small class="hint">나</small>' : ''}</span>${owner && m !== me() ? `<button type="button" class="button secondary" data-mate-hand="${esc(m)}">방장 넘기기</button>` : ''}</div>`).join('')}</div>
-  <button type="button" class="button" data-mate-go="invite" ${r.memberIds.length >= MATE_MAX ? 'disabled' : ''}>메이트 초대하기 · 링크·QR</button><form class="mate-row" data-mate-form="taginv"><span class="mate-at">@</span><input id="mate-taginv" maxlength="17" autocomplete="off" autocapitalize="off" placeholder="마이태그로 초대" aria-label="초대할 마이태그"><button type="submit" class="button secondary" ${r.memberIds.length >= MATE_MAX ? 'disabled' : ''}>초대</button></form><p class="hint">방장이 아니어도 초대할 수 있어요. 마이태그로 초대하면 상대의 메이트 탭 '받은 초대'에 떠요.</p>
+  ${r.type === 'friends' ? `<div class="mate-card"><b>메이트 ${r.memberIds.length}명 <small class="hint">(${(cap => cap ? `최대 ${cap}명` : `최대 ${MATE_MAX}명 · 방장이 플러스면 ${MATE_MAX_PLUS}명`)(mateRoomCap(r, me(), isPlus()))})</small></b>${r.memberIds.map(m => `<div class="mate-row" style="justify-content:space-between"><span><span class="mate-av sm" style="--c:${colorOf(m)}">${esc((r.memberNames[m] || '메')[0])}</span>${esc(r.memberNames[m] || '메이트')}${m === r.ownerUid ? ' <span class="mate-tag on">방장</span>' : ''}${m === me() ? ' <small class="hint">나</small>' : ''}</span>${owner && m !== me() ? `<button type="button" class="button secondary" data-mate-hand="${esc(m)}">방장 넘기기</button>` : ''}</div>`).join('')}</div>
+  <button type="button" class="button" data-mate-go="invite" ${r.memberIds.length >= (mateRoomCap(r, me(), isPlus()) || MATE_MAX_PLUS) ? 'disabled' : ''}>메이트 초대하기 · 링크·QR</button><form class="mate-row" data-mate-form="taginv"><span class="mate-at">@</span><input id="mate-taginv" maxlength="17" autocomplete="off" autocapitalize="off" placeholder="마이태그로 초대" aria-label="초대할 마이태그"><button type="submit" class="button secondary" ${r.memberIds.length >= (mateRoomCap(r, me(), isPlus()) || MATE_MAX_PLUS) ? 'disabled' : ''}>초대</button></form><p class="hint">방장이 아니어도 초대할 수 있어요. 마이태그로 초대하면 상대의 메이트 탭 '받은 초대'에 떠요.</p>
   <div class="mate-card"><b>메이트끼리 볼 수 있는 기록</b><p class="hint">세 가지를 따로 정해요. 바꿀 때마다 메이트 모두 동의해야 해요. 한 명이라도 거절하면 그대로예요.</p>
   ${MATE_KINDS.map(k => `<button type="button" class="mate-sw ${r.scope[k] ? 'on' : ''}" data-mate-scope="${k}" ${pending ? 'disabled' : ''} aria-pressed="${r.scope[k]}"><span>${MATE_KIND_LABEL[k]}<small class="hint">${r.scope[k] ? '공개 중' : '비공개'}</small></span><span class="tog"></span></button>`).join('')}
   ${pending ? '<p class="hint warn">변경 요청이 진행 중이에요. 끝나면 다시 바꿀 수 있어요.</p>' : ''}</div>` : '<p class="hint">내 방은 나만 봐요.</p>'}
@@ -243,7 +247,7 @@ function joinView(){
   return `${head('초대받았어요', '', {back: 'rooms'})}<div class="mate-card"><b class="mate-big">${esc(inv.inviterName)} 님이 '${esc(inv.roomName)}'에 초대했어요</b><p class="hint">메이트 ${inv.memberCount}명 · 사진으로 체중·식사·운동을 같이 남기는 방이에요.</p>
   <b>이 방에서는 메이트끼리 이 기록을 서로 볼 수 있어요</b><div class="mate-list">${MATE_KINDS.map(k => `<div class="mate-li"><b>${MATE_KIND_LABEL[k]}</b><span>${inv.scope[k] ? '서로 볼 수 있어요(보기만)' : '보지 않아요'}</span></div>`).join('')}</div>
   <p class="hint">나중에 바꾸려면 메이트 모두 동의해야 해요. 방의 대화·사진은 ${MATE_KEEP_DAYS}일 동안 보관돼요.</p>
-  <button type="button" class="button" data-mate-joinok ${s.busy ? 'disabled' : ''}>${s.busy ? '들어가는 중…' : '동의하고 들어가기'}</button><button type="button" class="button secondary" data-mate-go="rooms">들어가지 않기</button></div>`;
+  ${roomsFull() ? `<p class="hint">${FULL_WHY}</p>` : ''}<button type="button" class="button" data-mate-joinok ${s.busy || roomsFull() ? 'disabled' : ''}>${s.busy ? '들어가는 중…' : '동의하고 들어가기'}</button><button type="button" class="button secondary" data-mate-go="rooms">들어가지 않기</button></div>`;
 }
 function createView(){
   const c = st().create ||= {name: '', type: 'friends', scope: {body: true, meal: true, work: true}};
@@ -361,7 +365,7 @@ export async function mateClick(t){
   if(!t?.closest) return false;
   const d = t.dataset || {}, s = st();
   if(d.matePlus !== undefined){ s.plus = s.plus ? null : 'menu'; $f.render(); return true; }
-  if(d.mateCodeopen !== undefined){ s.plus = 'code'; $f.render(); globalThis.requestAnimationFrame?.(() => document.getElementById('mate-code')?.focus()); return true; }
+  if(d.mateCodeopen !== undefined){ if(roomsFull()){ $f.toast(FULL_WHY); return true; } s.plus = 'code'; $f.render(); globalThis.requestAnimationFrame?.(() => document.getElementById('mate-code')?.focus()); return true; }
   if(s.plus && !t.closest('.mate-plus-pop')){ s.plus = null; if(!d.mateGo){ $f.render(); } }
   if(d.mateTagedit !== undefined){ $s.pfEdit = newProfileEdit($s.db, cloudState.user, myTagCached()); $s.modal = 'profile-edit'; $f.render(); return true; }
   if(d.mateTagcheck !== undefined){ const v = document.getElementById('mate-tag')?.value || ''; s.tag = {value: v, msg: '확인하는 중…', ok: false}; $f.render(); tagAvailable(v).then(r => { s.tag = {value: v, msg: r.msg, ok: r.ok}; $f.render(); }).catch(e => { s.tag = {value: v, msg: e.message, ok: false}; $f.render(); }); return true; }
@@ -373,7 +377,7 @@ export async function mateClick(t){
   if(d.mateUp || d.mateDown){ const ids = orderRooms(s.rooms || []).map(r => r.id), id = d.mateUp || d.mateDown, i = ids.indexOf(id), k = d.mateUp ? i - 1 : i + 1; if(i < 0 || k < 0 || k >= ids.length) return true; [ids[i], ids[k]] = [ids[k], ids[i]]; saveOrder(ids); $f.render(); return true; }
   if(d.matePicker !== undefined){ openMatePicker(); return true; }
   if(d.mateLogin !== undefined){ openAuth('pick', {reason: '메이트는 로그인하고 이용 승인을 받으면 쓸 수 있어요.'}); return true; }
-  if(d.mateGo){ if(s.view === 'cam') stopCam(); go(d.mateGo); return true; }
+  if(d.mateGo){ if(d.mateGo === 'create' && roomsFull()){ $f.toast(FULL_WHY); return true; } if(s.view === 'cam') stopCam(); go(d.mateGo); return true; }
   if(d.mateOpen){ s.roomId = d.mateOpen; s.view = 'room'; s.mate = null; $f.render(); loadRoom(d.mateOpen); return true; }
   if(d.mateCamclose !== undefined && s.quick){ stopCam(); s.quick = false; s.camErr = ''; s.view = 'room'; $s.page = 'home'; $f.render(); return true; }
   if(d.mateCamclose !== undefined){ stopCam(); s.view = 'room'; s.camErr = ''; $f.render(); fillPhotos(); return true; }
@@ -436,6 +440,7 @@ export async function mateClick(t){
   if(d.mateShare !== undefined){ const r = roomById(s.roomId); try{ await navigator.share({title: '마이로그 메이트 초대', text: `'${r?.name || '메이트 방'}'에 같이 기록해요`, url: inviteLink(s.invite?.code || '')}); }catch{} return true; }
   if(d.mateJoinok !== undefined){
     const inv = s.join?.inv; if(!inv || s.busy) return true;
+    if(!Array.isArray(s.rooms)){ try{ s.rooms = await listRooms(); }catch{} } if(roomsFull()){ $f.toast(FULL_WHY); $f.render(); return true; }
     s.busy = true; $f.render();
     try{ const id = await joinRoom(inv); s.busy = false; s.join = null; try{ history.replaceState(history.state, '', location.pathname + location.search); }catch{} s.rooms = await listRooms(); s.roomId = id; s.view = 'room'; $f.toast(`'${inv.roomName}'에 들어왔어요`); loadRoom(id); }
     catch(e){ s.busy = false; $f.toast(e.message); $f.render(); }

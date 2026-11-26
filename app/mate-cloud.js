@@ -6,7 +6,14 @@ import {aiWorkerUrl} from './ai-config.js';
 import {sharesFor, shareKey, MATE_KINDS} from './mate-share.js';
 import {myTagCached} from './mytag.js';
 
-export const MATE_MAX = 8;
+// 5.4.9 대표님(2026-11-26): 방 인원은 무료 10명, 방장이 플러스면 50명. 무료 사용자는 들어가 있는 방(만든 방 + 초대받은 방, 코치방 제외) 5개까지.
+export const MATE_MAX = 10;
+export const MATE_MAX_PLUS = 50;
+export const MATE_ROOMS_FREE = 5;
+export const mateRoomCount = rooms => (rooms || []).filter(r => r && r.type !== 'coach').length;
+export const mateRoomsFull = (rooms, plus) => !plus && Array.isArray(rooms) && mateRoomCount(rooms) >= MATE_ROOMS_FREE;
+// 방 정원: 내가 방장이면 내 플러스 여부로 정해지고, 아니면 앱에선 알 수 없어(서버 규칙이 방장 기준으로 막는다) null.
+export const mateRoomCap = (room, uid, plus) => room?.ownerUid === uid ? (plus ? MATE_MAX_PLUS : MATE_MAX) : (room?.memberIds?.length > MATE_MAX ? MATE_MAX_PLUS : null);
 // 대표님(2026-11-25): 방의 대화·사진은 90일만 보관(지나면 자동 삭제). '내 기록에 남기기'로 옮긴 숫자는 기록으로 영구히 남는다.
 export const MATE_KEEP_DAYS = 90;
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -54,10 +61,10 @@ export async function readMateInvite(code){
 }
 export async function joinRoom(inv){
   const c = await firestoreContext(), fs = c.fs;
-  if(inv.memberCount >= MATE_MAX) throw Error(`이 방은 ${MATE_MAX}명이 다 찼어요.`);
+  if(inv.memberCount >= MATE_MAX_PLUS) throw Error(`이 방은 ${MATE_MAX_PLUS}명이 다 찼어요.`);
   try {
     await fs.updateDoc(fs.doc(c.db, 'rooms', inv.roomId), {memberIds: fs.arrayUnion(c.user.uid), [`memberNames.${c.user.uid}`]: myMateName(c.user), joinCode: inv.code, updatedAt: fs.serverTimestamp()});
-  } catch(e){ throw Error(/permission/i.test(String(e?.code || e?.message)) ? `들어가지 못했어요. 이미 들어가 있거나 방이 다 찼을 수 있어요(최대 ${MATE_MAX}명).` : '들어가지 못했어요. 잠시 뒤 다시 해 주세요.'); }
+  } catch(e){ throw Error(/permission/i.test(String(e?.code || e?.message)) ? `들어가지 못했어요. 이미 들어가 있거나 방이 다 찼을 수 있어요(최대 ${MATE_MAX}명 · 방장이 플러스면 ${MATE_MAX_PLUS}명).` : '들어가지 못했어요. 잠시 뒤 다시 해 주세요.'); }
   return inv.roomId;
 }
 export async function leaveRoom(room){

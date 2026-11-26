@@ -24,7 +24,7 @@ test('슈퍼관리자: 기본 플러스, 일반 보기로 바꾸면 기능도 �
   cloudState.user = {uid: 'admin-x', email: ADMIN_EMAILS[0], emailVerified: true}; cloudState.approval = 'approved';
   assert.equal(plan.isSuperAdmin(), true); assert.equal(plan.planOf(), 'plus');
   plan.setAdminView('free'); assert.equal(plan.planOf(), 'free'); assert.equal(plan.can('ai-review'), false);
-  assert.match(aiCoachCardHTML({}, esc), /프리미엄에서 쓸 수 있어요/);
+  assert.match(aiCoachCardHTML({}, esc), /플러스에서 쓸 수 있어요/);
   plan.setAdminView('plus'); assert.equal(plan.isPlus(), true); assert.equal(plan.allowance('ai-chat'), 10);
   assert.match(plan.adminPlanCardHTML(esc), /data-plan-view="free"/);
 });

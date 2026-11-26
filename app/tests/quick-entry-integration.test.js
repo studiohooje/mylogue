@@ -24,7 +24,7 @@ test('실제 앱 버튼에서 빠른 식사와 연속 운동 세트를 같은 �
   await click({qFood:'현미밥|g'});fields.set('q-qty',{value:'210'});await click({},'q-confirm-food');await click({},'q-save-meal');
   let db=JSON.parse(disk.get('mylogue.v1'));assert.equal(db.meals.length,2);assert.equal(db.meals[1].servingQty,210);assert.equal(db.meals[1].calories,346.5);
   await click({modal:'workout'});assert.match(root.innerHTML,/어떻게 기록할까요/);await click({qLive:'1'});assert.match(root.innerHTML,/종목 고르기/);assert.match(root.innerHTML,/modal-backdrop quick-palette/);assert.match(root.innerHTML,/운동 기록/);
-  await click({qEx:leg.id});assert.match(root.innerHTML,/LP-A/);assert.match(root.innerHTML,/주·보조 근육 그림 보기/);assert.match(root.innerHTML,/quick-mini-back-back/);
+  await click({qEx:leg.id});assert.match(root.innerHTML,/LP-A/);/* 5.4.9 대표님: 세트 화면의 접힌 근육 그림 칸은 뺌 */assert.doesNotMatch(root.innerHTML,/이 종목이 쓰는 근육/);
   await click({},'q-first-set');fields.set('q-set-weight',{value:'120'});fields.set('q-set-reps',{value:'10'});fields.set('q-set-time',{value:'2026-11-13T13:40'});await click({},'q-save-set');
   await click({},'q-repeat-set');db=JSON.parse(disk.get('mylogue.v1'));assert.equal(db.workouts.length,1);assert.equal(db.workouts[0].exercises[0].sets.length,2);assert.equal(db.workouts[0].exercises[0].machineId,seed.machines[0].id);assert.equal(db.workouts[0].exercises[0].sets[0].completedAt,'2026-11-13T13:40');assert.equal(toasts.some(x=>x.includes('실패')),false);
   // 4.21.0 세트를 저장하면 휴식 화면 → 🔥 다음 세트 시작을 눌러야 입력으로

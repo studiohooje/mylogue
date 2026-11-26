@@ -9,7 +9,7 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 .nav{background:linear-gradient(90deg,#121d32,#1b2444);border-top:1px solid #4b6383;padding-top:8px}.nav button.active{color:#8ce4e0}.nav button b{margin-bottom:5px}.nav button svg{width:23px;height:23px;display:block;margin:0 auto 5px}.nav button[data-modal=quick] b{width:41px;height:41px;border-radius:14px;display:grid;place-items:center;margin:-13px auto 3px;box-shadow:0 8px 21px #72aaca55}.nav button[data-modal=quick] svg{margin:0;width:23px;height:23px}
 .modal-backdrop{background:#030713b5;backdrop-filter:blur(5px)}.sheet{background:#1b2943;border:1px solid #6681a1;box-shadow:0 -20px 55px #0005;border-radius:25px 25px 0 0;padding:25px 22px calc(24px + env(safe-area-inset-bottom))}.sheet h2{font-size:21px;line-height:1.35}.sheet-head{gap:16px;margin-bottom:15px}.sheet form{gap:14px}.toast{background:#e4f3f6;color:#17283c;border-radius:14px;padding:13px 17px;font-size:13px;line-height:1.5}
 .timeline-hero{position:relative;overflow:hidden;isolation:isolate;max-width:none;background:radial-gradient(circle at 84% 24%,#7c6db7a1,transparent 29%),radial-gradient(circle at 24% 82%,#1c7a92a1,transparent 42%),#283758;border:1px solid #7089a8;border-radius:22px;box-shadow:0 0 30px #5a9cb228;padding:clamp(25px,5vw,46px);min-height:210px}.timeline-hero:after{content:'';position:absolute;border:2px solid #a5c5ef9c;border-radius:50%;width:190px;height:190px;top:-87px;right:-45px;box-shadow:0 0 20px #8cc7ec66,0 0 0 29px #8ce4e00d;z-index:-1}.timeline-date{font-size:12px;letter-spacing:.16em;color:#8ce4e0}.timeline-hero h2{font-size:clamp(29px,4.4vw,47px);line-height:1.15;margin:17px 0 13px}.timeline-hero h2 em{font-style:normal;color:#8ce4e0}.timeline-hero>p:last-of-type{color:#cedde9;font-size:14px}
-.home-quick{margin-top:25px}.home-quick .actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.home-quick .button{min-height:42px;padding:8px 13px;text-align:left;display:flex;justify-content:space-between;align-items:center;border:1px solid #587390;background:linear-gradient(125deg,#293a5b,#303c69);color:#ecf6f8;box-shadow:inset 0 1px #9ec5ff45}.home-quick .button:first-child{border-color:#84d6d5}.home-quick .button span{color:#8ce4e0}
+.home-quick{margin-top:25px}.home-quick .actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.home-quick .button{min-height:42px;padding:8px 13px;text-align:left;display:flex;justify-content:space-between;align-items:center;border:1px solid #587390;background:linear-gradient(125deg,#293a5b,#303c69);color:#ecf6f8;box-shadow:inset 0 1px #9ec5ff45}/* 5.4.9 대표님: 첫 버튼(수치 기록)만 밝은 테두리 → 세 버튼 통일(규칙 제거) */.home-quick .button span{color:#8ce4e0}
 .home-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.home-stat{min-width:0;background:linear-gradient(165deg,#24375a,#1d2943);border:1px solid #617294;border-radius:19px;padding:20px}.home-stat small{display:block;color:#b6c6d5;font-size:12px}.home-stat strong{display:block;margin:12px 0 6px;font-size:clamp(24px,3vw,31px);line-height:1.1}.home-stat strong span{font-size:13px;font-weight:600;margin-left:4px;color:#a8d8e1}.home-stat p{color:#a8bcd0;font-size:12px;line-height:1.5}
 .timeline-section{max-width:none}.timeline-list{gap:13px}.timeline-card{background:linear-gradient(120deg,#202d4c,#202840);border-color:#4b6286;padding:20px}.timeline-card-top{color:#8ce4e0}.timeline-card h3{margin:12px 0 8px}.timeline-value strong{font-family:MylogueSUIT,'Malgun Gothic',sans-serif;letter-spacing:-.04em}.macrobar i:nth-child(1){background:#f7c270}.macrobar i:nth-child(2){background:#60d0bf}.macrobar i:nth-child(3){background:#ef8e83}.ai-entry-card{margin-top:28px}
 @media(max-width:650px){.shell{padding:calc(16px + env(safe-area-inset-top)) 16px 112px}.header{margin-bottom:20px}.timeline-hero{padding:24px;min-height:187px}.timeline-hero h2{font-size:30px}.home-quick .actions{gap:7px}.home-quick .button{padding:8px 9px;font-size:12px}.home-stat-grid{gap:7px}.home-stat{padding:13px 10px;border-radius:14px}.home-stat strong{font-size:22px}.home-stat strong span{display:block;margin:3px 0 0;font-size:12px}.section-title h3{font-size:17px}.section-title small{font-size:12px}.nav button{min-width:0;flex:1;font-size:12px}.nav button svg{width:21px;height:21px}.card{padding:18px}}
@@ -334,6 +334,8 @@ input,select,textarea{background:#17263e;border:1px solid #57728e;border-radius:
 /* 3.10.0 카드에서 바로 수정 */
 .tl-right{display:inline-flex;align-items:center;gap:8px}
 .tl-edit{min-height:36px;padding:0 6px;font-size:13px;color:#8ce4e0}
+/* 5.4.9 대표님: 식사 '수정'(34px)과 운동 '⋯'(44px) 폭이 달라 시간이 한 열에 안 섬 → 오른쪽 버튼 자리를 44px로 통일 */
+.tl-right>.tl-edit,.tl-right>.wmenu-wrap{min-width:44px;display:inline-flex;justify-content:flex-end}
 .qe{display:flex;flex-direction:column;gap:12px}
 .qe-meta{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px}.qe-meta.two{grid-template-columns:1fr 1fr}
 .qe-meta input,.qe-meta select{font-size:16px}
@@ -688,7 +690,7 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .nav button.nav-home.active b{background:linear-gradient(#1d3a48,#1d3a48) padding-box,linear-gradient(145deg,#8ce4e0,#a9a5ee) border-box;color:#e9fbff}
 .nav button.nav-add b{color:#142538;}
 @media (max-width:420px){.nav button{font-size:12px;padding:6px 1px}}
-/* 3.18.2 분석: AI 코치(프리미엄) 예시 화면 — 아래로 갈수록 흐려지고 '추후 공개' 막 */
+/* 3.18.2 분석: AI 코치(플러스) 예시 화면 — 아래로 갈수록 흐려지고 '추후 공개' 막 */
 .coach{position:relative;padding:18px;border-radius:20px;border:1px solid transparent;background:linear-gradient(#141c33,#141c33) padding-box,linear-gradient(120deg,#7aa7ff,#b48cff 45%,#5ee7d8) border-box;overflow:hidden}
 .coach-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 .coach-head h3{margin:0;display:flex;align-items:center;gap:8px;font-size:18px}
@@ -872,7 +874,7 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .sc-month{align-items:center;justify-content:space-between}
 .plan-form{display:grid;gap:10px}.plan-form .chips{display:flex;flex-wrap:wrap;gap:6px}
 @media (min-width:651px){.sc-cell{min-height:86px;padding:6px}.sc-cell i{font-size:12px}.sc-day{font-size:13px}}
-/* 4.0.0 PC AI 직접 연결 프리미엄 카드(지시문 설명 다음, 맨 아래) */
+/* 4.0.0 PC AI 직접 연결 플러스 카드(지시문 설명 다음, 맨 아래) */
 .ai-pc-card{position:relative;overflow:hidden;display:grid;gap:8px;margin-top:18px;padding:18px;border-radius:18px;border:1px solid #b48cff66;background:linear-gradient(135deg,#2a1f4a 0%,#1b2a4a 60%,#16324a 100%);box-shadow:0 8px 30px -12px #b48cff88}
 .ai-pc-glow{position:absolute;inset:-40% -20% auto auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,#b48cff55,transparent 70%);pointer-events:none}
 .ai-pc-tag{justify-self:start;font-size:12px;font-weight:700;letter-spacing:.02em;padding:3px 10px;border-radius:999px;background:linear-gradient(90deg,#8ce4e0,#b48cff);color:#120f24}
@@ -1444,7 +1446,7 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .ex-ladder{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:13px;margin:8px 0}.ex-ladder b{margin-right:4px}.ex-ladder span{padding:2px 8px;border-radius:999px;background:#ffffff0a;color:var(--muted)}.ex-ladder span.on{background:#8ce4e033;color:var(--text);font-weight:700}.ex-ladder i{font-style:normal;color:var(--muted)}
 .mastery-card ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:6px}.mastery-card li{font-size:14px}.mastery-card small{color:var(--muted);font-size:12px;margin-left:4px}
 .coach-note{display:grid;gap:8px}.coach-note .cn-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.coach-note p{margin:0;font-size:14px;line-height:1.6;word-break:keep-all}.coach-note.safety{border-color:#f0c07455;background:linear-gradient(0deg,#f0c0740d,#f0c0740d),var(--surface)}.cn-why summary{font-size:12px;color:var(--muted);cursor:pointer;min-height:32px;display:flex;align-items:center}.cn-why small{font-size:12px;color:var(--muted)}
-/* 4.17.0 프리미엄·AI 코치 */
+/* 4.17.0 플러스·AI 코치 */
 .plus-lock{margin:6px 0;font-size:14px;color:var(--muted);word-break:keep-all}.plus-lock b{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:999px;background:#3a4f8655;color:var(--ice);font-size:12px}.plus-lock small{display:block;font-size:12px;margin-top:2px}
 .plus-admin .seg{margin:8px 0}.plus-list{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}.plus-list li{font-size:14px}.plus-list small{color:var(--muted);font-size:12px;margin-left:4px}
 .ai-coach .actions{display:flex;flex-wrap:wrap;gap:8px}.ai-answer{margin:12px 0;padding:12px 14px;border-radius:14px;background:#ffffff0a;font-size:14px;line-height:1.65;word-break:keep-all}
@@ -1547,7 +1549,7 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .mr-bar{position:relative;height:10px;border-radius:99px;background:#ffffff12}.mr-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#8ce4e0}.mr-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ffffffaa}
 .s-high .mr-bar i{background:#f3c27a}.s-low .mr-bar i{background:#8fb8ff}.s-unknown .mr-bar i{background:#ffffff33}
 .mr-status{margin:0;font-size:13px}.mr-status small{color:var(--muted)}.mr-top{margin:0;font-size:13px;color:var(--muted);word-break:keep-all}.mr-today{font-size:14px;margin:8px 0}
-/* 4.17.0 프리미엄 도구 */
+/* 4.17.0 플러스 도구 */
 .sim-seg,.sit-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}.plus-sim>.hint{margin:10px 0 0;font-size:13px}
 .sim-out{margin:14px 0 6px;padding:14px 16px;border-radius:14px;background:#ffffff08}.sim-out p{margin:0}.sim-out b{font-size:17px;font-variant-numeric:tabular-nums}.sim-out .hint{margin-top:6px}
 .sit-step{margin-top:12px}.sit-step b{font-size:14px;color:var(--ice,#8ce4e0)}.sit-step ul{margin:6px 0 0;padding-left:18px;display:grid;gap:6px}.sit-step li{font-size:14px;line-height:1.6;word-break:keep-all}
@@ -2080,8 +2082,8 @@ button.chat-cam{border:0;cursor:pointer}
 .coach .coach-week{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:4px 0 8px}
 .coach .coach-week span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8796b3}
 .coach-live .coach-when{margin:6px 0 0}
-/* 5.0.4 프로필 아이콘(기본 10개) + 테두리 2종: 일반 / 프리미엄면 자동으로 마이로그 그라데이션 프리미엄 테두리 */
-/* 5.0.4 대표님: 일반 테두리는 바탕과 어울리는 단색, 프리미엄만 마이로그 그라데이션 */
+/* 5.0.4 프로필 아이콘(기본 10개) + 테두리 2종: 일반 / 플러스면 자동으로 마이로그 그라데이션 플러스 테두리 */
+/* 5.0.4 대표님: 일반 테두리는 바탕과 어울리는 단색, 플러스만 마이로그 그라데이션 */
 .mlg-avatar{position:relative;display:inline-grid;place-items:center;flex:none;border-radius:50%!important;padding:2px;background:#2c3c5c;box-shadow:0 0 0 1px #ffffff0d;overflow:visible!important}
 .mlg-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;background:#16223b}
 .mlg-avatar.av-plus{padding:2.5px;background:conic-gradient(from 210deg,#8ce4e0,#9fd2ee,#b8aaf2,#d4a6dc,#f2a98a,#8ce4e0);box-shadow:0 0 0 1px #ffffff22,0 0 12px #b8aaf266}
@@ -2122,7 +2124,7 @@ button.chat-cam{border:0;cursor:pointer}
 .gc-ylab span{position:absolute;left:2px;transform:translateY(-115%);font-size:11px;color:#a6bbcb;opacity:.7;font-variant-numeric:tabular-nums}
 .gc-goal{position:absolute;right:2px;margin-top:4px;transform:translateY(-120%);font-size:11px;font-weight:700;color:#f2a98a;pointer-events:none}
 
-/* 5.0.4 한 줄 카드 · 프리미엄 분석 카드 */
+/* 5.0.4 한 줄 카드 · 플러스 분석 카드 */
 .pg-line{--mg:linear-gradient(90deg,#8ce4e0 0%,#9fd2ee 22%,#b8aaf2 50%,#d4a6dc 74%,#f2a98a 100%);display:flex;align-items:center;gap:12px;width:100%;min-height:64px;margin:12px 0 14px;padding:12px 14px;border-radius:18px;border:1px solid #ffffff1a;background:#1d2a44;color:#eaf4ff;text-align:left;cursor:pointer;font:inherit}
 .pg-line:hover{border-color:#8ce4e066}
 .pg-line .set-ic{width:40px;height:40px;flex:none}.pg-line .set-ic svg{width:22px;height:22px}
@@ -2649,3 +2651,12 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .mr-gt{flex:1;height:8px;border-radius:4px;background:#ffffff0d;overflow:hidden;display:block}
 .mr-gt i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#b8aaf2,#8ce4e0)}
 .mr-gp{flex:0 0 44px;text-align:right;color:#7fe0b0;font-weight:700;font-variant-numeric:tabular-nums}
+/* 5.4.9 설정 › 음식·운동 도감: 내 음식·내 종목 */
+.my-book h3 small{font-weight:500;margin-left:4px}
+.mb-tabs{display:flex;gap:6px;margin:8px 0 4px}.mb-tabs button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #365876;background:transparent;color:#aec4d9;font-size:13px;font-weight:700}
+.mb-tabs button.on{background:#2d5a6b;color:#e8fbff;border-color:#84d6d5}
+.mb-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid #24405a}
+.mb-name{min-width:0;flex:1}.mb-name b{display:block;font-size:14px;color:#e8f2fb;word-break:keep-all}.mb-name small{display:block;font-size:12px;color:#aec4d9}
+.mb-tag{font-size:11px;font-weight:800;padding:3px 7px;border-radius:999px;white-space:nowrap}.mb-tag.dup{background:#1f4a45;color:#8ce4e0}.mb-tag.own{background:#3a3550;color:#c9b8ff}.mb-tag.wait{background:#24405a;color:#aec4d9}
+.mb-del{min-height:36px;border:1px solid #5a3a46;color:#ff9b8e;background:transparent;border-radius:10px;font-size:12px;font-weight:700;padding:0 10px;white-space:nowrap}
+.mb-all{margin-top:10px;width:100%;min-height:44px;border-radius:12px;border:1px solid #5a3a46;background:#ff6b5a1a;color:#ffb3a8;font-weight:800}

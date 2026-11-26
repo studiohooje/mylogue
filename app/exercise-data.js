@@ -210,6 +210,7 @@ export const MORE_EXERCISES = [
  ["티비알리스 레이즈","하체","맨몸",["calves"],[],{aliases:["정강이 레이즈","티비얼리스 레이즈","tib 레이즈"]}],
  ["스미스 불가리안 스플릿 스쿼트","하체","스미스",["quads","glutes"],["hamstrings"],{u:1}],
  ["덤벨 스모 데드리프트","하체","덤벨",["glutes","adductors","hamstrings"],["quads"],{aliases:["덤벨 스모 데드"]}],
+ ["덤벨 스티프 레그 데드리프트","하체","덤벨",["hamstrings","glutes"],["erectors"],{aliases:["덤벨 SLDL","덤벨 스티프 데드리프트","덤벨 스티프 데드","Dumbbell Stiff-Leg Deadlift"]}], // 5.4.9 대표님: 덤벨 데드리프트 소분류(일반·스티프 레그·루마니안)
  ["덤벨 리어 델트 로우","어깨","덤벨",["shoulders"],["back","traps"],{aliases:["리어 델트 로우"]}],
  ["케이블 업라이트 로우","어깨","케이블",["shoulders","traps"],[],{}],
  ["하이 풀","어깨","바벨",["traps","shoulders"],["glutes","hamstrings"],{aliases:["바벨 하이 풀","클린 하이 풀"]}],

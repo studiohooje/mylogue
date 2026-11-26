@@ -37,7 +37,7 @@ test('운동 빠른 수정: 세트 무게·횟수·삭제, 빈 종목은 막음'
  assert.match(quickWorkoutHTML(quickWorkoutState(db.workouts[0])), /자세히 수정/);
 });
 
-test('5.0.4 프로필: 기본 아이콘 10개 중에서만, 성별로 기본값, 테두리는 플러스면 자동 프리미엄', () => {
+test('5.0.4 프로필: 기본 아이콘 10개 중에서만, 성별로 기본값, 테두리는 플러스면 자동 플러스', () => {
  const user = {displayName:'Moon', email:'m@x.com', photoURL:'https://p/x.jpg'};
  assert.equal(profileOf({settings:{}}, user).name, 'Moon');
  assert.equal(profileOf({settings:{}}, user).id, 'm1');

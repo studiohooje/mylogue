@@ -34,7 +34,7 @@ test('무료 계정: 사진 하루 1번, 리뷰·묻기·레시피는 플러스 
   const second = await route(await post('parse', {images: [img('b')]}, tok), s.deps);
   assert.equal(second.status, 429);
   for (const [p, b] of [['review', {summary: 'x'.repeat(40)}], ['chat', {question: '단백질 얼마나?'}], ['recipe', {text: '김치찌개 김치 200g'}]]) {
-    const r = await route(await post(p, b, tok), s.deps); assert.equal(r.status, 402, p); assert.match((await r.json()).error, /프리미엄/);
+    const r = await route(await post(p, b, tok), s.deps); assert.equal(r.status, 402, p); assert.match((await r.json()).error, /플러스/);
   }
 });
 test('플러스 계정(계정 plan 또는 베타 전체 플러스): 모델 선택과 한도', async () => {

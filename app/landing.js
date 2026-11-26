@@ -1,7 +1,7 @@
 // 4.9.0 로그인 전 첫 화면(랜딩)과 '둘러보기' 체험.
 // - 랜딩: 로그인하지 않았고, 이 기기에 기록이 없고, '로그인 없이 시작'을 고르지 않았을 때만 보인다(기존 게스트 기록은 그대로).
 // - 둘러보기: 예시 기록을 'demo-tour' 저장 칸에 따로 만들어 실제 앱 화면을 써 보게 한다. 진짜 기록과 섞이지 않고, 끝내면 지운다.
-// 문구 원칙: 기록만으로도 이미 절반을 해낸 거라고 말해 준다. 프리미엄은 '필요하면' 정도로만.
+// 문구 원칙: 기록만으로도 이미 절반을 해낸 거라고 말해 준다. 플러스는 '필요하면' 정도로만.
 import {personaCardsHTML} from './personas.js';
 export const DEMO_ACCOUNT = 'demo-tour';
 const SKIP_KEY = 'mylogue.landing.skip', DEMO_FLAG = 'mylogue.demo', VIEW_FLAG = 'mylogue.landing.view';
@@ -146,7 +146,7 @@ export function landingHTML({installHTML='', returning=false}={}){
    ${feature('운동', '내 헬스장 머신 그대로', lines('그 헬스장에 있는 머신이|맨 위에.', '지난번 무게가|자동으로 채워지고,', '‘같은 값으로 한 세트 더’|한 번이면 끝.'))}
    ${feature('인바디', '결과지 사진 한 장', lines('인바디 결과지를 찍으면|체중·골격근·체지방이 한 번에.', '체중계 기록과 나란히|흐름으로 봐요.'))}
    ${feature('AI', '말하듯 남기면, 초안으로', lines('“점심 비빔밥, 저녁 닭가슴살”|하고 남기면|AI가 받아 적어요.', '확정은 언제나 내가 해요.'))}
-   ${feature('분석', '내 기록으로 만든 리포트', lines('지금 흐름이면|언제쯤 목표에 닿을지,', '무엇이 내 체중을 움직였는지|내 기록으로 계산해요.', 'AI 인사이트는|버튼을 누를 때만. <small>(프리미엄)</small>'))}
+   ${feature('분석', '내 기록으로 만든 리포트', lines('지금 흐름이면|언제쯤 목표에 닿을지,', '무엇이 내 체중을 움직였는지|내 기록으로 계산해요.', 'AI 인사이트는|버튼을 누를 때만. <small>(플러스)</small>'))}
    ${feature('메이트', '함께 남기는 사진 기록', lines('친구·가족과 방을 만들어|오늘 먹은 것, 운동한 것을|사진으로 나눠요.', '마이태그로 초대하고,|사진은 90일 뒤 사라져요.'))}
    ${feature('코치', '내 강사님과 연결', lines('PT·필라테스 강사님이|보낸 수업을 확인하고|확정하면 내 기록이 돼요.', '기록의 주인은 나예요. <small>(시험 중)</small>'))}
   </div>
@@ -155,7 +155,7 @@ export function landingHTML({installHTML='', returning=false}={}){
    <button type="button" class="ld-btn primary" id="landing-demo2">예시 기록으로 둘러보기 →</button>
   </div>
   <div class="ld-personas">
-   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>${lines('성별·나이·체중·목표가 다른|여덟 명의 120일 예시예요.', '누르면 그 사람의 기록으로|앱 전체를 둘러봐요.', '분석과 프리미엄 기능도|모두 열려 있어요.')}</p>
+   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>${lines('성별·나이·체중·목표가 다른|여덟 명의 120일 예시예요.', '누르면 그 사람의 기록으로|앱 전체를 둘러봐요.', '분석과 플러스 기능도|모두 열려 있어요.')}</p>
    ${personaCardsHTML()}
   </div>
  </section>
@@ -174,7 +174,7 @@ export function landingHTML({installHTML='', returning=false}={}){
 
  <section class="ld-sec ld-end" id="ld-end">
   <h2>오늘의 한 줄부터.</h2>
-  <p>${lines('손 기록·그래프·검색은|계속 무료예요.', '더 깊은 분석과 AI(프리미엄)는|베타 동안 시험 계정에서|먼저 다듬고 있어요.', '정식 출시 뒤에는|필요할 때 골라도 충분해요.')}</p>
+  <p>${lines('손 기록·그래프·검색은|계속 무료예요.', '더 깊은 분석과 AI(플러스)는|베타 동안 시험 계정에서|먼저 다듬고 있어요.', '정식 출시 뒤에는|필요할 때 골라도 충분해요.')}</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup2">무료로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo3">먼저 둘러보기</button>

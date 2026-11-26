@@ -1,4 +1,4 @@
-// 5.0.4 대표님: 분석은 '프리미엄다운' 카드로 — 목표 도달 예측, 무엇이 내 체중을 움직였나, 이번 달 vs 지난 달.
+// 5.0.4 대표님: 분석은 '고급스러운' 카드로 — 목표 도달 예측, 무엇이 내 체중을 움직였나, 이번 달 vs 지난 달.
 // 모두 내 기록만으로 계산한다(AI·서버 없음). 원인이라고 단정하지 않고, 확정이 아닌 범위로 보여 준다.
 // 이 파일은 app.js를 import하지 않는다.
 import {scaleRecords} from './body-series.js';
@@ -102,7 +102,7 @@ export function driversHTML(r){
   const rows = r?.rows || [];
   const max = Math.max(0.3, ...rows.map(x => Math.abs(x.delta)));
   const body = rows.length ? `<div class="pa-corr">${rows.map(x => `<div><span>${esc(x.label)}</span><i aria-hidden="true"><em style="${x.delta < 0 ? `right:50%;width:${Math.abs(x.delta) / max * 50}%;background:#6fd6a3` : `left:50%;width:${x.delta / max * 50}%;background:#f2a98a`}"></em></i><b class="${x.delta < 0 ? 'dn' : 'up'}">${sgn(x.delta)}kg</b><small>${x.n}번 · ${x.delta < 0 ? '다른 날보다 가벼웠어요' : '다른 날보다 무거웠어요 — 대부분 수분이라 2~3일이면 돌아와요'}</small></div>`).join('')}</div>` : `<p class="hint">체중과 식단·운동 기록이 같은 날에 더 쌓이면 보여 드려요(최근 8주, 다음 날 체중이 있는 날 ${r?.days || 0}일).</p>`;
-  return `<section class="section card pa-card"><div class="section-title"><h3>무엇이 내 체중을 움직였나</h3><span class="pa-badge">프리미엄</span></div><p class="hint" style="margin-top:0">최근 8주 내 기록에서 찾은 관계예요. 다음 날 체중이 그 전 7일 평균보다 얼마나 달랐는지 비교했어요. 원인이라고 단정하진 않아요.</p>${body}</section>`;
+  return `<section class="section card pa-card"><div class="section-title"><h3>무엇이 내 체중을 움직였나</h3><span class="pa-badge">플러스</span></div><p class="hint" style="margin-top:0">최근 8주 내 기록에서 찾은 관계예요. 다음 날 체중이 그 전 7일 평균보다 얼마나 달랐는지 비교했어요. 원인이라고 단정하진 않아요.</p>${body}</section>`;
 }
 
 // 이번 달 vs 지난 달(같은 날짜까지)
@@ -125,5 +125,5 @@ export function monthHTML(c, {lose = true} = {}){
   const tons = v => v >= 1000 ? `${(v / 1000).toFixed(1)}t` : `${n0(v)}kg`;
   const row = (label, a, b, fmt, better) => { const has = a != null && b != null, diff = has ? a - b : null, good = diff == null || diff === 0 ? '' : (better(diff) ? 'up' : 'dn'); return `<tr><td>${label}</td><td>${a == null ? '—' : fmt(a)}</td><td>${b == null ? '—' : fmt(b)}</td><td class="${good}">${diff == null || Math.abs(diff) < 1e-9 ? '' : (diff > 0 ? '+' : '−') + fmt(Math.abs(diff)).replace(/^[+−]/, '')}</td></tr>`; };
   const t = c.now, p = c.prev;
-  return `<section class="section card pa-card"><div class="section-title"><h3>이번 달 vs 지난 달</h3><span class="pa-badge">프리미엄</span></div><p class="hint" style="margin-top:0">${c.label[0]}월 1~${c.day}일과 ${c.label[1]}월 같은 기간을 나란히 놓았어요.</p><table class="pa-cmp"><thead><tr><th></th><th>${c.label[0]}월</th><th>${c.label[1]}월</th><th></th></tr></thead><tbody>${row('하루 평균 칼로리', t.kcal, p.kcal, v => `${n0(v)}`, d => lose ? d < 0 : d > 0)}${row('하루 평균 단백질', t.protein, p.protein, v => `${n0(v)}g`, d => d > 0)}${row('운동한 날', t.workDays, p.workDays, v => `${v}일`, d => d > 0)}${row('들어 올린 무게', t.volume || null, p.volume || null, tons, d => d > 0)}${row('체중 변화', t.weight, p.weight, v => `${sgn(v)}kg`, d => lose ? d < 0 : d > 0)}</tbody></table></section>`;
+  return `<section class="section card pa-card"><div class="section-title"><h3>이번 달 vs 지난 달</h3><span class="pa-badge">플러스</span></div><p class="hint" style="margin-top:0">${c.label[0]}월 1~${c.day}일과 ${c.label[1]}월 같은 기간을 나란히 놓았어요.</p><table class="pa-cmp"><thead><tr><th></th><th>${c.label[0]}월</th><th>${c.label[1]}월</th><th></th></tr></thead><tbody>${row('하루 평균 칼로리', t.kcal, p.kcal, v => `${n0(v)}`, d => lose ? d < 0 : d > 0)}${row('하루 평균 단백질', t.protein, p.protein, v => `${n0(v)}g`, d => d > 0)}${row('운동한 날', t.workDays, p.workDays, v => `${v}일`, d => d > 0)}${row('들어 올린 무게', t.volume || null, p.volume || null, tons, d => d > 0)}${row('체중 변화', t.weight, p.weight, v => `${sgn(v)}kg`, d => lose ? d < 0 : d > 0)}</tbody></table></section>`;
 }

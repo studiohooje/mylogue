@@ -106,6 +106,7 @@ export const EXERCISE_ART = {
  "덤벨 리어 델트 로우":"dumbbell-rear-delt-row",
  "리버스 런지":"dumbbell-reverse-lunge",
  "덤벨 루마니안 데드리프트":"dumbbell-romanian-deadlift",
+ "덤벨 스티프 레그 데드리프트":"dumbbell-romanian-deadlift",
  "덤벨 슈러그":"dumbbell-shrug",
  "덤벨 사이드 벤드":"dumbbell-side-bend",
  "사이드 런지":"dumbbell-side-lunge",

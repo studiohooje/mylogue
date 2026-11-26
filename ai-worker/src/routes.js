@@ -1,4 +1,4 @@
-// 4.17.0 AI 서버 기능별 처리: 계정 상태(승인·프리미엄), 기능별 하루 한도, 같은 사진 재시도·인식 실패 미차감, 가짜 AI.
+// 4.17.0 AI 서버 기능별 처리: 계정 상태(승인·플러스), 기능별 하루 한도, 같은 사진 재시도·인식 실패 미차감, 가짜 AI.
 // 대표님 방침: 인식에 실패한 사진은 횟수에서 빼지 않음, 같은 사진 재시도 미차감, 한도에 닿아도 손 기록은 계속.
 import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
@@ -19,7 +19,7 @@ export async function accountOf(user, token, {projectId, fetchImpl = fetch, plus
   const doc = await r.json(), approved = doc?.fields?.status?.stringValue === 'approved';
   return {approved, plus: approved && (plusAll || doc?.fields?.plan?.stringValue === 'plus'), admin: false};
 }
-// 기능별 하루 한도: LIMIT_X = "무료/프리미엄"
+// 기능별 하루 한도: LIMIT_X = "무료/플러스"
 export const FEATURES = Object.freeze({parse: 'DAILY_LIMIT', photo: 'LIMIT_PHOTO', review: 'LIMIT_REVIEW', chat: 'LIMIT_CHAT', recipe: 'LIMIT_RECIPE', insight: 'LIMIT_INSIGHT'});
 const FEATURE_NAME = {photo: '사진 기록', review: 'AI 주간 리뷰', chat: 'AI에게 묻기', recipe: '레시피 자동 분해', insight: 'AI 인사이트'};
 const topic = w => { const c = String(w).slice(-1).charCodeAt(0); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '은' : '는'); };
@@ -32,7 +32,7 @@ export async function refundFeature(db, uid, day, feature) {
   await db.prepare('UPDATE usage_feature SET n = MAX(0, n - 1) WHERE uid = ?1 AND day = ?2 AND feature = ?3').bind(uid, day, feature).first();
 }
 export async function useFeature(db, uid, day, feature, limit) {
-  if (limit <= 0) throw new HttpError(402, `${topic(FEATURE_NAME[feature] || '이 기능')} 프리미엄에서 쓸 수 있어요.`);
+  if (limit <= 0) throw new HttpError(402, `${topic(FEATURE_NAME[feature] || '이 기능')} 플러스에서 쓸 수 있어요.`);
   const row = await db.prepare('INSERT INTO usage_feature (uid, day, feature, n) VALUES (?1, ?2, ?3, 1) ON CONFLICT(uid, day, feature) DO UPDATE SET n = n + 1 RETURNING n').bind(uid, day, feature).first();
   const n = Number(row?.n || 0);
   if (n > limit) { await refundFeature(db, uid, day, feature); throw new HttpError(429, `오늘 ${topic(FEATURE_NAME[feature] || 'AI')} ${limit}번까지 쓸 수 있어요. 손으로 기록하는 건 계속할 수 있어요.`); }
@@ -153,7 +153,7 @@ export async function route(request, deps) {
       return reply(200, {plus: acct.plus, admin: acct.admin, fake: env.FAKE_AI === '1', limits: Object.fromEntries(Object.keys(FEATURES).map(f => [f, limitOf(env, f, acct.plus)])), month: cap > 0 && !acct.admin ? {usedPct: Math.min(100, Math.round(Number(row?.n || 0) / (cap * 10) * 100))} : null, global});
     }
     // 4.28.x 'AI 기록' 대화: 앞의 대화(최근 10턴, 글만)를 함께 보내고, 마지막 사용자 말에 사진·기록 요약을 붙인다.
-    // 횟수: 사진이 있으면 사진 한도, 없으면 말 기록 한도(무료도 기록은 되고, 묻기는 지시문이 프리미엄 안내로 답함).
+    // 횟수: 사진이 있으면 사진 한도, 없으면 말 기록 한도(무료도 기록은 되고, 묻기는 지시문이 플러스 안내로 답함).
     if (path === 'converse') {
      const hist = Array.isArray(body?.messages) ? body.messages.slice(-10) : [];
      const turns = hist.map(m => ({role: m?.role === 'assistant' ? 'assistant' : 'user', text: String(m?.text || '').trim().slice(0, 1500)})).filter(m => m.text);
@@ -198,7 +198,7 @@ export async function route(request, deps) {
       if (!machine.name) { await refundFeature(env.DB, user.uid, day, 'photo'); return reply(200, {machine, left: (quota.left ?? 0) + 1, refunded: true}); }
       return reply(200, {machine, model: out.model, left: quota.left});
     }
-    // 5.0.4 AI 인사이트(프리미엄, 버튼을 눌렀을 때만): 앱이 계산한 요약 → 오늘의 맞춤 코칭 JSON
+    // 5.0.4 AI 인사이트(플러스, 버튼을 눌렀을 때만): 앱이 계산한 요약 → 오늘의 맞춤 코칭 JSON
     if (path === 'insight') {
       const facts = String(body?.facts || '').trim().slice(0, LIMITS.contextChars);
       if (facts.length < 40) throw new HttpError(400, '인사이트를 만들 기록이 부족해요. 며칠 더 기록한 뒤 해 주세요.');

@@ -1,5 +1,5 @@
 // 5.1.0 '오늘 운동 정리'(기록 완료 화면) — 대표님이 확정한 목업(mockups/session-summary) 그대로.
-// 첫 화면(스크롤 없이): 숫자 4칸 → 이름 제안 → [이대로 기록 완료] → [AI 오입력 검토 · 프리미엄] → '계속 운동하기'
+// 첫 화면(스크롤 없이): 숫자 4칸 → 이름 제안 → [이대로 기록 완료] → [AI 오입력 검토 · 플러스] → '계속 운동하기'
 // 아래: 부위별 세트(웜업 제외, 고르지 않은 부위는 '이름엔 안 넣음') → 오늘 부하 근육 지도 → 종목별 펼치기 → 운동 페이지에 들어갈 내용 → 기록 완료
 import {nameSuggestion,setsByPart,chosenParts,isWarm} from './workout-name.js';
 import {muscleMapHTML} from './exercise-ui.js';
@@ -25,7 +25,7 @@ export function summaryHTML(w,s,{burn=null,plus=false,state={}}={}){
  <p class="ss-meta">${date} ${start?`${hm(start)} – ${hm(end)}`:''}${start&&end&&dur(start,end)?` · ${dur(start,end)}`:''}${w.gymName?` · ${esc(w.gymName)}`:''}</p>
  <div class="ss-stats"><div><small>종목</small><b>${st.n}</b></div><div><small>세트</small><b>${st.sets}</b></div><div><small>볼륨</small><b>${fmt(st.vol,0)}<small>kg</small></b></div><div><small>소모</small><b>${burn?`약 ${fmt(burn,0)}`:'—'}</b></div></div>
  <section class="ss-name"><small>오늘 운동 이름${chosen.length?` · 처음 고른 부위: ${esc(chosen.join('·'))}`:' · 부위는 자유롭게'}</small><h3>${esc(pick)}</h3>${sug.line?`<p>${sug.line}</p>`:''}<div class="ss-choice">${opts.map(o=>`<button type="button" class="${o.title===pick?'on':''}" data-ss-name="${esc(o.title)}">${o.title===pick?'✓ ':''}${esc(o.label)}</button>`).join('')}<button type="button" data-ss-name-edit>직접 고치기</button></div>${nameEdit}</section>
- <div class="ss-actions"><button type="button" class="ss-done" id="ss-done">이대로 기록 완료</button><button type="button" class="ss-ai${plus?'':' off'}" id="ss-ai" ${plus?'':'aria-disabled="true"'}>✦ AI 오입력 검토 <span class="pa-badge">프리미엄</span></button>${plus?'':'<p class="ss-ai-note">kg·lb 꼬임, 평소와 너무 다른 중량을 내 AI가 찾아 줘요 · 프리미엄에서 열려요</p>'}<button type="button" class="ss-cont" id="ss-cont">아직 안 끝났어요 · 계속 운동하기</button></div>
+ <div class="ss-actions"><button type="button" class="ss-done" id="ss-done">이대로 기록 완료</button><button type="button" class="ss-ai${plus?'':' off'}" id="ss-ai" ${plus?'':'aria-disabled="true"'}>✦ AI 오입력 검토 <span class="pa-badge">플러스</span></button>${plus?'':'<p class="ss-ai-note">kg·lb 꼬임, 평소와 너무 다른 중량을 내 AI가 찾아 줘요 · 플러스에서 열려요</p>'}<button type="button" class="ss-cont" id="ss-cont">아직 안 끝났어요 · 계속 운동하기</button></div>
  <section class="ss-sec"><h4>부위별 세트 <small>웜업 세트 빼고</small></h4><div class="ss-parts">${by.map(([k,n])=>{const out=!pick.includes(k);return `<div class="ss-part${out?' extra':''}"><span>${k}${out?'<em>이름엔 안 넣음</em>':''}</span><i><s style="width:${Math.round(n/top*100)}%"></s></i><b>${n}세트</b></div>`}).join('')||'<p class="hint">무게 운동 세트가 없어요.</p>'}</div></section>
  <section class="ss-sec ss-map"><h4>오늘 부하 걸린 곳</h4>${muscleMapHTML([],[],{key:'ss',mode:'load',loads:sessionLoads(w)}).replace('최근 기록의 추정부하','오늘 이 운동의 추정부하').replace(/최근 14일[^<]*/,'오늘 한 세트(웜업 제외)로 추정한 부하예요.')}</section>
  <section class="ss-sec"><h4>종목별 기록 <small>눌러서 펼치기</small></h4>${(w.exercises||[]).map(exRow).join('')}</section>
@@ -33,7 +33,7 @@ export function summaryHTML(w,s,{burn=null,plus=false,state={}}={}){
  <div class="ss-actions ss-bottom"><button type="button" class="ss-done" id="ss-done2">이대로 기록 완료</button></div>
 </div>${state.issues?.length?checkPopHTML(state.issues):''}`}
 export function checkPopHTML(issues){return `<div class="ss-dim"><div class="ss-pop" role="alertdialog" aria-label="중량 확인"><h3>이 중량이 맞나요?</h3><p>평소와 많이 달라 보이는 값이 ${issues.length}개 있어요. 맞으면 그대로 저장해요.</p>${issues.slice(0,6).map((x,i)=>`<div class="row1">${exArtHTML(x.name,'ex-art-md',{fallback:true})}<span><b>${esc(x.name)} ${x.n}세트 · ${fmt(x.weight)}${esc(unitText(x.unit))} × ${x.reps}회</b><small>${esc(x.text)}</small>${x.fix?`<button type="button" class="ss-fix" data-ss-fix="${i}">${esc(fixLabel(x))}</button>`:''}</span></div>`).join('')}<div class="btns"><button type="button" class="keep" id="ss-keep">아니에요, 제대로 입력한 게 맞아요</button><button type="button" class="ss-back" id="ss-check-back">돌아가서 보기</button></div></div></div>`}
-// 프리미엄: 내 AI에게 검토 맡기기(앱은 AI를 부르지 않음 — 비용 0, 사용자가 자기 GPT·Claude에 붙여 넣음)
+// 플러스: 내 AI에게 검토 맡기기(앱은 AI를 부르지 않음 — 비용 0, 사용자가 자기 GPT·Claude에 붙여 넣음)
 export function aiReviewPrompt(w){const rows=(w.exercises||[]).map(e=>({종목:e.name,세트:(e.sets||[]).map((s,i)=>({번호:i+1,중량:s.weight,단위:s.unit,횟수:s.reps,...(isWarm(s)?{웜업:true}:{})}))}));return `아래는 오늘 헬스장에서 실시간으로 입력한 운동 기록이에요. 오입력(오타)을 찾아 주세요.
 찾을 것: 같은 종목 안에서 kg/lb가 섞인 세트, 앞뒤 세트나 같은 종목 평소 무게와 비교해 너무 다른 중량(자릿수 오타), 덤벨·케이블로 불가능한 무게, 횟수 오타.
 정상일 수 있는 것(웜업, 점점 무게를 올리는 피라미드, 드롭세트)은 고치라고 하지 마세요.

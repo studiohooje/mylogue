@@ -401,13 +401,15 @@ service cloud.firestore {
     }
     function roomScopeOn(r, k) { return r.get('type', '') == 'coach' ? coachScopeOn(r, k) : r.scope[k] == true; }
     function mateNameOk(n) { return n is string && n.size() >= 1 && n.size() <= 30; }
-    function mateMemberNamesOk(m) { return m is map && m.size() <= 8 && (!(request.auth.uid in m) || (m[request.auth.uid] is string && m[request.auth.uid].size() <= 20)); }
+    function mateMemberNamesOk(m) { return m is map && m.size() <= 50 && (!(request.auth.uid in m) || (m[request.auth.uid] is string && m[request.auth.uid].size() <= 20)); }
+    // 5.4.9 대표님(2026-11-26): 방 정원은 무료 10명, 방장이 플러스(users/{uid}.plan == 'plus')면 50명
+    function mateCap(ownerUid) { return exists(/databases/$(database)/documents/users/$(ownerUid)) && get(/databases/$(database)/documents/users/$(ownerUid)).data.get('plan', '') == 'plus' ? 50 : 10; }
     function mateInvite(code) { return get(/databases/$(database)/documents/mateInvites/$(code)).data; }
     function mateProposal(roomId, pid) { return getAfter(/databases/$(database)/documents/rooms/$(roomId)/proposals/$(pid)).data; }
     function mateJoinOk(roomId, was, now) {
       return !(request.auth.uid in was.memberIds) && was.type == 'friends'
         && now.diff(was).affectedKeys().hasOnly(['memberIds','memberNames','joinCode','updatedAt'])
-        && now.memberIds == was.memberIds.concat([request.auth.uid]) && now.memberIds.size() <= 8
+        && now.memberIds == was.memberIds.concat([request.auth.uid]) && now.memberIds.size() <= mateCap(was.ownerUid)
         && now.memberNames.diff(was.memberNames).affectedKeys().hasOnly([request.auth.uid]) && mateMemberNamesOk(now.memberNames)
         && exists(/databases/$(database)/documents/mateInvites/$(now.joinCode))
         && mateInvite(now.joinCode).roomId == roomId

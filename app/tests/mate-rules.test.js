@@ -95,3 +95,28 @@ test('5.0.0 로그메이트 규칙', {skip: !host}, async () => {
   await assertFails(deleteDoc(doc(b, 'rooms', R)));
  } finally { await env.cleanup(); }
 });
+
+// 5.4.9 대표님(2026-11-26): 방 정원은 무료 10명, 방장이 플러스면 50명
+test('5.4.9 메이트 방 정원: 무료 방장 10명 · 플러스 방장 50명', {skip: !host}, async () => {
+ const [h, p] = host.split(':');
+ const rules = await readFile(new URL('../firestore.rules', import.meta.url), 'utf8');
+ const env = await initializeTestEnvironment({projectId: 'mylogue-mate-cap-test', firestore: {host: h, port: Number(p), rules}});
+ try {
+  const scope = {body: true, meal: true, work: true};
+  const ten = Array.from({length: 10}, (_, i) => `m${i}`);
+  const exp = Timestamp.fromMillis(Date.now() + 864e5);
+  await env.withSecurityRulesDisabled(async ctx => {
+   const d = ctx.firestore();
+   for (const u of ['free', 'plus', 'joiner']) await setDoc(doc(d, 'users', u), {status: 'approved', ...(u === 'plus' ? {plan: 'plus'} : {})});
+   for (const [room, owner] of [['roomFree000001', 'free'], ['roomPlus000001', 'plus']]) {
+    const ids = [owner, ...ten.slice(1)];
+    await setDoc(doc(d, 'rooms', room), {name: room, type: 'friends', ownerUid: owner, memberIds: ids, memberNames: Object.fromEntries(ids.map(x => [x, x])), scope, joinCode: '', appliedProposal: '', createdAt: exp, updatedAt: exp});
+    await setDoc(doc(d, 'mateInvites', room === 'roomFree000001' ? 'FREE2345' : 'PLUS2345'), {code: room === 'roomFree000001' ? 'FREE2345' : 'PLUS2345', roomId: room, roomName: room, scope, inviterUid: owner, inviterName: owner, memberCount: 10, expiresAt: exp, createdAt: exp});
+   }
+  });
+  const j = env.authenticatedContext('joiner', {email: 'j@example.com', email_verified: true}).firestore();
+  const join = (room, code) => updateDoc(doc(j, 'rooms', room), {memberIds: arrayUnion('joiner'), 'memberNames.joiner': 'joiner', joinCode: code, updatedAt: serverTimestamp()});
+  await assertFails(join('roomFree000001', 'FREE2345'), '무료 방장 방은 10명에서 막힘');
+  await assertSucceeds(join('roomPlus000001', 'PLUS2345'), '플러스 방장 방은 11번째도 들어옴');
+ } finally { await env.cleanup(); }
+});

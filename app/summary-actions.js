@@ -71,7 +71,7 @@ function summaryClick(t){
  if(t.dataset?.ssFix!==undefined){const x=st.issues?.[Number(t.dataset.ssFix)];if(x?.fix){put(applyFix(w,x));const s=$s.quickWorkout;const row=s?.sets?.filter(r=>r.exerciseId===(w.exercises[x.ei]?.exerciseId))?.[x.si];if(row){if(x.fix.weight!=null)row.weight=Number(x.fix.weight);if(x.fix.unit)row.unit=x.fix.unit}st.issues=checkWorkout(cur(),$s.db);if(!st.issues.length){st.issues=null;$f.toast('고쳤어요. 이제 기록 완료를 눌러 주세요.')}$f.render()}return true}
  if(t.id==='ss-keep'){st.checked=true;st.issues=null;finish();return true}
  if(t.id==='ss-check-back'){st.issues=null;$f.render();return true}
- if(t.id==='ss-ai'){if(!isPlus()){$f.toast('AI 오입력 검토는 프리미엄에서 열려요.');return true}$s.airSt={};$s.modal='ai-review';$f.render();return true}
+ if(t.id==='ss-ai'){if(!isPlus()){$f.toast('AI 오입력 검토는 플러스에서 열려요.');return true}$s.airSt={};$s.modal='ai-review';$f.render();return true}
  if(t.id==='air-back'){$s.modal='workout-summary';$f.render();return true}
  if(t.id==='air-copy'){const text=aiReviewPrompt(w);(navigator.clipboard?.writeText?navigator.clipboard.writeText(text):Promise.reject()).then(()=>$f.toast('복사했어요. 내 AI 대화에 붙여 넣어 주세요.')).catch(()=>{$s.airSt={...$s.airSt,text};$f.render();$f.toast('복사가 막혀 있어요. 아래 칸의 글을 길게 눌러 복사해 주세요.')});return true}
  if(t.id==='air-read'){const text=document.getElementById('air-text')?.value||'';$s.airSt={text,found:parseAiReview(text,w)};$f.render();return true}

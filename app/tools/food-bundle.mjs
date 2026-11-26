@@ -13,6 +13,8 @@ import {fileURLToPath} from 'node:url';
 import {flagDoubts} from './food-db-check.mjs';
 import {deepFix} from './food-deep-audit.mjs';
 import {normalizeUnit} from './unit-normalize.mjs';
+// 2026-11-26 대표님: 흔히 부르는 이름으로도 찾게(관리자 '내 음식' 정리 — 같은 값이 이미 기본 DB에 있던 것)
+const EXTRA_ALIASES = {'고구마(구운것)': ['군고구마'], '돼지고기(목심(목심살), 생것)': ['돼지고기 목살', '목살', '돼지고기 목살 조리 전'], '돼지고기(목심(목심살), 구운것(팬))': ['돼지고기 목살 구이', '목살구이', '돼지고기 목살 구이 조리 후'], '블랙페퍼 닭가슴살 더블 컷': ['김단단', '김단단 블랙페퍼 닭가슴살 더블 컷'], '오리지널 그릴드 닭가슴살 더블 컷': ['김단단']};
 // 4.27.0 전수검사 F-01: 근거 없이 값을 바꾸지 않고(대표님 원칙) '값 확인 필요'로 내려 검색 뒤로.
 // 한식 대표(k·e) 중 1회 무게가 0인 그릇·인분 행과, 1회분 열량이 3~10배 낮게 들어간 것으로 확인된 행.
 export const KR_DOUBT = new Set(['라면','짜장라면','비빔면','막국수','토마토스파게티','카레라이스','동태탕','꽃게탕','설렁탕','잔치국수','바지락칼국수','쌀국수','콩나물해장국','알탕','도가니탕','버섯전골','샤브샤브']);
@@ -125,7 +127,7 @@ export function buildRows({dishes = [], foodsDish = [], foodsRaw = [], products 
     const lkey = brand && `${brand}|${name.replace(/[\s()·]/g, '')}|${unit}`.toLocaleLowerCase('ko');
     if (lkey && loose.has(lkey)) { const r = loose.get(lkey); if (Math.abs(r[4] - vals[0]) <= Math.max(10, r[4] * 0.08)) { merged.push(`${brand} ${name}`); seen.add(key); seen.add(key2); if (r._sameNameOnly != null) r[10] = r._sameNameOnly; return; } }
     seen.add(key); seen.add(key2);
-    aliases = [...aliases, ...autoAliases(name)];
+    aliases = [...aliases, ...autoAliases(name), ...(EXTRA_ALIASES[name] || [])];
     const row = [name, brand || '', unit, grams ? Math.round(grams * 10) / 10 : 0, ...vals, tag, [...new Set(aliases.filter(a => a && a !== name))].join(' '), ...(mic ? [doubt ? Number(doubt) : 0, mic] : doubt ? [Number(doubt)] : [])];
     rows.push(row);
     if (lkey) { const codes = (cur?.flags || []).map(f => typeof f === 'string' ? f : f?.code); row._sameNameOnly = row[10] === 1 && codes.includes('sameNameDiffValues') && codes.every(c => SAME_NAME_OK.has(c)) ? (codes.some(c => GONE_ONLY.has(c)) ? 2 : 0) : null; loose.set(lkey, row); }

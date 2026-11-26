@@ -1,4 +1,4 @@
-// 4.17.0 영양 심화 리포트(프리미엄): 나트륨·당류·식이섬유·포화지방을 주 단위로, 어디서 많이 왔는지까지.
+// 4.17.0 영양 심화 리포트(플러스): 나트륨·당류·식이섬유·포화지방을 주 단위로, 어디서 많이 왔는지까지.
 // 참고선(2020 한국인 영양소 섭취기준): 나트륨 만성질환위험감소섭취량 2,300mg, 식이섬유 충분섭취량 남 30g·여 20g(19~64세),
 // 포화지방 에너지의 7% 미만, 총당류 에너지의 10~20%(20% 넘지 않게). 판정이 아니라 비교용 참고선.
 // 값이 없는 음식(가공식품·외식은 식이섬유 표시 의무가 없음)은 0으로 세지 않고, '값이 있는 비율'을 함께 보여 준다.
@@ -35,7 +35,7 @@ export function microReport(db, today, days = 7) {
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const fmt = n => Number(n).toLocaleString('ko-KR');
 const STATUS = {high: '참고선보다 많아요', near: '참고선 근처예요', ok: '참고선 안이에요', low: '참고선보다 적어요', unknown: '값이 있는 음식이 적어 판단하기 어려워요'};
-// 무료: 오늘 한 줄(나트륨·당류), 프리미엄: 주간 전체
+// 무료: 오늘 한 줄(나트륨·당류), 플러스: 주간 전체
 export function microTodayLine(db, today) {
   const ms = (db.meals || []).filter(m => !m.planned && m.date === today);
   const s = ms.filter(m => Number.isFinite(m.sodium)).reduce((a, m) => a + m.sodium, 0), g = ms.filter(m => Number.isFinite(m.sugar)).reduce((a, m) => a + m.sugar, 0);
