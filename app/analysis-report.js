@@ -20,7 +20,7 @@ const done = ex => (ex.sets||[]).filter(s => s.completed!==false && s.type!=='�
 const primaryOf = e => e.primaryMuscleIds?.length ? e.primaryMuscleIds : (EXERCISE_CATALOG.find(x => x.id===e.exerciseId || x.name===e.name)?.primaryMuscleIds || []);
 const partOf = e => { const p = primaryOf(e)[0]; return MUSCLE_PART[p] || (PARTS.includes(e.part) ? e.part : e.part==='전신' ? '하체' : null); };
 const when = w => { const v = new Date(w.loggedAt || ''); return Number.isNaN(v.getTime()) ? at(w.date, 18) : v; };
-const best1RM = ex => Math.max(0, ...done(ex).map(s => estimate1RM(setWeightKg(s), Number(s.reps)||0)));
+const best1RM = ex => Math.max(0, ...done(ex).filter(s => s.type !== '웜업').map(s => estimate1RM(setWeightKg(s), Number(s.reps)||0)));
 const exKey = e => e.exerciseId || e.name;
 
 export function buildReport(db, now=new Date(), {focus=''}={}){

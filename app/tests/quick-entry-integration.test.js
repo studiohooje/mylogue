@@ -28,10 +28,10 @@ test('실제 앱 버튼에서 빠른 식사와 연속 운동 세트를 같은 �
   await click({},'q-first-set');fields.set('q-set-weight',{value:'120'});fields.set('q-set-reps',{value:'10'});fields.set('q-set-time',{value:'2026-11-13T13:40'});await click({},'q-save-set');
   await click({},'q-repeat-set');db=JSON.parse(disk.get('mylogue.v1'));assert.equal(db.workouts.length,1);assert.equal(db.workouts[0].exercises[0].sets.length,2);assert.equal(db.workouts[0].exercises[0].machineId,seed.machines[0].id);assert.equal(db.workouts[0].exercises[0].sets[0].completedAt,'2026-11-13T13:40');assert.equal(toasts.some(x=>x.includes('실패')),false);
   // 4.21.0 세트를 저장하면 휴식 화면 → 🔥 다음 세트 시작을 눌러야 입력으로
-  assert.match(root.innerHTML,/휴식 끝, 다음 세트 시작/);assert.match(root.innerHTML,/다음 세트 준비/);
+  assert.match(root.innerHTML,/휴식 끝, 다음 세트 시작/);assert.match(root.innerHTML,/다음 세트 미리 준비/);assert.match(root.innerHTML,/방금 한 세트/);
   await click({},'close');await click({modal:'workout'});assert.match(root.innerHTML,/휴식 끝, 다음 세트 시작/);
   await click({},'rest-go');assert.match(root.innerHTML,/2세트 · 저장됨/);assert.match(root.innerHTML,/3세트 기록/);
-  await click({},'q-new-workout');
+  assert.doesNotMatch(root.innerHTML,/새 운동 기록 시작/);await click({},'q-ex-clear');
   const bulgarian=EXERCISE_CATALOG.find(x=>x.name==='불가리안 스플릿 스쿼트');
   await click({qEx:bulgarian.id});
   assert.match(root.innerHTML,/중량은 한 손 기준 · 양손 각각/);

@@ -27,11 +27,14 @@ test('사용 안 하기: 타이머 없이 다음 세트 준비만, 문구는 바
   assert.doesNotMatch(h, /rt-dial/); assert.match(h, /다음 운동 고르기/); assert.match(h, /휴식 끝, 다음 세트 시작/);
   assert.equal(restMode({settings: {}}), 'alarm');
 });
-test('다음 세트 기본값: 지난번 웜업이 있으면 웜업부터, 방식은 머신이 되는 것만', () => {
-  const db = {workouts: [{id: 'w1', date: '2026-11-20', exercises: [{exerciseId: sq.id, name: '스쿼트', sets: [{weight: 40, reps: 10}, {weight: 80, reps: 8}, {weight: 80, reps: 8}]}]}]};
-  const s = {...st, sets: [], weight: 0, reps: 10, unit: 'kg'};
-  const n = defaultNext(s, {lastSession, fillMode: 'warm', db});
-  assert.equal(n.weight, 40); assert.equal(n.kind, 'warm');
+test('5.1.0 다음 세트 기본값: 방금 한 세트 그대로, 방금이 웜업이면 일반 세트 갈래(지난 기록의 마지막 일반 세트)', () => {
+  const db = {workouts: [{id: 'w1', date: '2026-11-20', exercises: [{exerciseId: sq.id, name: '스쿼트', sets: [{weight: 40, reps: 10, type: '웜업'}, {weight: 80, reps: 8}, {weight: 85, reps: 6}]}]}]};
+  const warmDone = {...st, sets: [{exerciseId: st.exerciseId, machineId: st.machineId, weight: 20, reps: 12, unit: 'kg', type: '웜업'}], weight: 0, reps: 10, unit: 'kg'};
+  const n = defaultNext(warmDone, {lastSession, db});
+  assert.equal(n.weight, 85); assert.equal(n.reps, 6); assert.equal(n.kind, 'main');
+  const mainDone = {...st, sets: [{exerciseId: st.exerciseId, machineId: st.machineId, weight: 82.5, reps: 7, unit: 'kg', type: '본세트'}]};
+  const m = defaultNext(mainDone, {lastSession, db});
+  assert.equal(m.weight, 82.5); assert.equal(m.reps, 7);
   assert.deepEqual(sideOptions(null), []);
   assert.deepEqual(sideOptions({id: 'gm:leg-press-45', baseId: 'gm:leg-press-45', load: 'plate'}), ['both', 'single']);
   assert.equal(clock(95), '1:35');

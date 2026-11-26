@@ -8,7 +8,7 @@ export function dietTrend(db,days=7,now=new Date()){
 export function exerciseTrend(db,name,days=90,now=new Date(),options={},legacyOptions){
  options=legacyOptions||options||{};
  const q=String(name||'').trim().toLocaleLowerCase('ko');
- return dayList(days,now).flatMap(date=>{const entries=(db.workouts||[]).filter(w=>w.date===date).flatMap(w=>w.exercises||[]).filter(e=>(options.exerciseId?e.exerciseId===options.exerciseId:e.name.trim().toLocaleLowerCase('ko')===q)&&(!Object.hasOwn(options,'machineId')||(e.machineId||null)===(options.machineId||null))&&e.kind!=='cardio');if(!entries.length)return [];let volume=0,sets=0,maxWeight=0,best1RM=0;for(const e of entries)for(const s of e.sets||[]){if(s.completed===false)continue;volume+=setVolume(e,s);sets++;maxWeight=Math.max(maxWeight,setWeightKg(s));best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0))}return [{date,name:entries[0].name,volume:round(volume),sets,maxWeight,best1RM}]});
+ return dayList(days,now).flatMap(date=>{const entries=(db.workouts||[]).filter(w=>w.date===date).flatMap(w=>w.exercises||[]).filter(e=>(options.exerciseId?e.exerciseId===options.exerciseId:e.name.trim().toLocaleLowerCase('ko')===q)&&(!Object.hasOwn(options,'machineId')||(e.machineId||null)===(options.machineId||null))&&e.kind!=='cardio');if(!entries.length)return [];let volume=0,sets=0,maxWeight=0,best1RM=0;for(const e of entries)for(const s of e.sets||[]){if(s.completed===false)continue;volume+=setVolume(e,s);sets++;maxWeight=Math.max(maxWeight,setWeightKg(s));best1RM=s.type==='웜업'?best1RM:Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0))}return [{date,name:entries[0].name,volume:round(volume),sets,maxWeight,best1RM}]});
 }
 export function partSummary(db,days=30,now=new Date()){
  const dates=new Set(dayList(days,now)),parts=new Map();
@@ -45,7 +45,7 @@ export function machineBreakdown(db, pick, group, days = 84, now = new Date()){
   for(const e of w.exercises||[]){
    if(e.kind==='cardio' || !pick(e)) continue;
    const g = group(e.machineId||''), r = by.get(g.key) || by.set(g.key, {key:g.key, label:g.label, dates:new Set(), sets:0, volume:0, best1RM:0, topKg:0, last:''}).get(g.key);
-   for(const s of e.sets||[]){ if(s.completed===false) continue; const kg = setWeightKg(s); r.sets++; r.volume += setVolume(e, s); r.topKg = Math.max(r.topKg, kg); r.best1RM = Math.max(r.best1RM, estimate1RM(kg, s.reps||0)); }
+   for(const s of e.sets||[]){ if(s.completed===false) continue; const kg = setWeightKg(s); r.sets++; r.volume += setVolume(e, s); r.topKg = Math.max(r.topKg, kg); if (s.type !== '웜업') r.best1RM = Math.max(r.best1RM, estimate1RM(kg, s.reps||0)); }
    r.dates.add(w.date); if(w.date > r.last) r.last = w.date;
   }
  }

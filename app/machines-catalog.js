@@ -62,7 +62,7 @@ export const GENERIC_MACHINES = ([
  // 어깨
  M('shoulder-press','숄더 프레스 (스택식)','숄더 프레스 머신','stack','both'),
  M('shoulder-press-iso','아이소래터럴 숄더 프레스 (원판식)','숄더 프레스 머신','plate','iso'),
- M('lateral-raise','레터럴 레이즈 머신','머신 레터럴 레이즈','stack','both'),
+ M('lateral-raise','레터럴 레이즈 머신','사이드 레터럴 레이즈 머신','stack','both'),
  M('rear-delt','리어 델트 (리버스 펙덱)','리버스 펙덱','stack','both'),
  M('shrug','슈러그 머신','머신 슈러그','plate','both'),
  M('cable-station','케이블 스테이션 (단일)','케이블 레터럴 레이즈','cable','single'),

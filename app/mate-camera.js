@@ -8,7 +8,9 @@ export const stampText = (d = new Date()) => `${p2(d.getMonth() + 1)}.${p2(d.get
 export const MAX_EDGE = 720;
 export const QUALITY = 0.72;
 
-let stream = null;
+let stream = null, digitalZoom = 1;
+export const ZOOM = 2;
+export const ASPECT = 4 / 3; // 5.1.0 세로로 들어도 가로로 넓게(가로 4 : 세로 3)
 export const cameraSupported = () => !!globalThis.navigator?.mediaDevices?.getUserMedia;
 export async function openCamera(video, {facing = 'environment'} = {}){
   closeCamera();
@@ -19,6 +21,10 @@ export async function openCamera(video, {facing = 'environment'} = {}){
     const n = e?.name || '';
     throw Error(n === 'NotAllowedError' ? '카메라 권한이 꺼져 있어요. 기기 설정에서 마이로그의 카메라 권한을 켜 주세요.' : n === 'NotFoundError' ? '쓸 수 있는 카메라가 없어요.' : '카메라를 열지 못했어요. 잠시 뒤 다시 해 주세요.');
   }
+  /* 5.1.0 대표님: 기본이 너무 광각 → 2배로. 카메라가 줌을 지원하면 하드웨어 줌, 아니면 가운데를 잘라 2배(미리보기도 같은 배율) */
+  digitalZoom = 2;
+  try{ const t = stream.getVideoTracks()[0], cap = t?.getCapabilities?.(); if(cap?.zoom && cap.zoom.max >= 1.5){ const z = Math.min(cap.zoom.max, Math.max(cap.zoom.min || 1, ZOOM)); await t.applyConstraints({advanced: [{zoom: z}]}); digitalZoom = Math.max(1, ZOOM / z); } }catch{}
+  video.style.transform = digitalZoom > 1 ? `scale(${digitalZoom})` : '';
   video.srcObject = stream; video.setAttribute('playsinline', ''); video.muted = true;
   try{ await video.play(); }catch{}
   return stream;
@@ -26,14 +32,18 @@ export async function openCamera(video, {facing = 'environment'} = {}){
 export function closeCamera(){ if(stream){ for(const t of stream.getTracks()) t.stop(); stream = null; } }
 
 // 비디오 한 장면 → 워터마크 → Blob
-export async function capture(video, {at = new Date()} = {}){
+export async function capture(video, {at = new Date(), stamp = true, maxEdge = MAX_EDGE} = {}){
   const vw = video.videoWidth, vh = video.videoHeight;
   if(!vw || !vh) throw Error('카메라가 아직 준비되지 않았어요. 잠시 뒤 다시 눌러 주세요.');
-  const k = Math.min(1, MAX_EDGE / Math.max(vw, vh)), w = Math.round(vw * k), h = Math.round(vh * k);
+  // 5.1.0 가운데를 2배로 자르고(하드웨어 줌이 없을 때), 가로 4:3으로 맞춘다(세로로 찍어도 가로로 넓게)
+  let cw = vw / digitalZoom, ch = vh / digitalZoom;
+  if(cw / ch < ASPECT) ch = cw / ASPECT; else cw = ch * ASPECT;
+  const sx = (vw - cw) / 2, sy = (vh - ch) / 2;
+  const k = Math.min(1, maxEdge / cw), w = Math.round(cw * k), h = Math.round(ch * k);
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d');
-  g.drawImage(video, 0, 0, w, h);
-  drawStamp(g, w, at);
+  g.drawImage(video, sx, sy, cw, ch, 0, 0, w, h);
+  if(stamp) drawStamp(g, w, at);
   const blob = await new Promise(res => c.toBlob(b => res(b), 'image/webp', QUALITY));
   const out = blob && blob.type === 'image/webp' ? blob : await new Promise(res => c.toBlob(b => res(b), 'image/jpeg', QUALITY));
   if(!out) throw Error('사진을 만들지 못했어요. 다시 찍어 주세요.');

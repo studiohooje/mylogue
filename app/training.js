@@ -1,6 +1,6 @@
 import {estimate1RM,round,setWeightKg} from './domain.js';
 const plate=(n)=>Math.max(0,Math.round(n/2.5)*2.5);
-export function latestEstimate(workouts,name){let best=0;for(const w of workouts||[])for(const e of w.exercises||[])if(e.kind!=='cardio'&&e.name.trim().toLowerCase()===String(name).trim().toLowerCase())for(const s of e.sets||[])if(s.completed!==false)best=Math.max(best,estimate1RM(setWeightKg(s),s.reps||0));return best}
+export function latestEstimate(workouts,name){let best=0;for(const w of workouts||[])for(const e of w.exercises||[])if(e.kind!=='cardio'&&e.name.trim().toLowerCase()===String(name).trim().toLowerCase())for(const s of e.sets||[])if(s.completed!==false&&s.type!=='웜업')best=Math.max(best,estimate1RM(setWeightKg(s),s.reps||0));return best}
 export function lastExerciseRecord(workouts,name,beforeDate=null){
  const q=String(name||'').trim().toLocaleLowerCase('ko');if(!q)return null;
  const sessions=[...(workouts||[])].filter(w=>!beforeDate||w.date<beforeDate).sort((a,b)=>b.date.localeCompare(a.date)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));

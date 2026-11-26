@@ -1,6 +1,7 @@
 // 4.0.0 운동 페이지 새 구성(대표님 승인): 내 운동 장소(종류·누적 방문) · 이번 주 흐름 · 예정된 운동(세트별 완료·확정) · 이번 주 부위 균형.
 // '총 운동 횟수·누적 볼륨'은 뺐다.
 import {daySummary, workoutTitle} from './timeline-view.js';
+import {workoutMenuHTML} from './workout-menu.js';
 import {REST_ICON} from './quick-entry.js';
 import {partSummary} from './reports.js';
 
@@ -45,5 +46,5 @@ export function partBalanceHTML(db, now=new Date()){
 export function dayWorkoutsHTML(db, date){
  const ws = (db.workouts||[]).filter(w => w.date===date);
  if(!ws.length) return `<section class="section card wp-day empty"><p class="hint">이 날은 운동 기록이 없어요. ‘＋ 운동’이나 일정에서 예정을 넣을 수 있어요.</p></section>`;
- return `<section class="section wp-day">${ws.map(w => w.rest ? `<article class="card wp-day-card rest"><b>${REST_ICON} 의도적 휴식</b><button type="button" class="text-button" data-delete="workouts:${esc(w.id)}">지우기</button></article>` : `<article class="card wp-day-card${w.planned?' planned':''}"><div><b>${w.planned?'<span class="plan-badge">예정</span> ':''}${esc(workoutTitle(w))}</b><small>${esc(daySummary([w])||'')}${w.gymName?` · ${esc(w.gymName)}`:''}</small></div><button type="button" class="button secondary small" data-qw="${esc(w.id)}">수정</button></article>`).join('')}</section>`;
+ return `<section class="section wp-day">${ws.map(w => w.rest ? `<article class="card wp-day-card rest"><b>${REST_ICON} 의도적 휴식</b><button type="button" class="text-button" data-delete="workouts:${esc(w.id)}">지우기</button></article>` : `<article class="card wp-day-card${w.planned?' planned':''}"><div><b>${w.planned?'<span class="plan-badge">예정</span> ':''}${esc(workoutTitle(w))}</b><small>${esc(daySummary([w])||'')}${w.gymName?` · ${esc(w.gymName)}`:''}</small></div>${workoutMenuHTML(w,db)}</article>`).join('')}</section>`;
 }

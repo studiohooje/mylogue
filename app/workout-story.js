@@ -63,7 +63,7 @@ export function prCards(db, date, limit = 12) {
   for (const w of db.workouts || []) if (done(w)) for (const e of w.exercises || []) {
     if (e.kind === 'cardio') continue;
     const key = e.exerciseId || e.name, x = g.get(key) || {key, name: e.name, exerciseId: e.exerciseId || null, part: e.part, best: 0, bestReps: 0, bestDate: '', best1RM: 0, days: new Set(), weeks: {}};
-    for (const s of e.sets || []) { if (s.completed === false) continue; const kg = setWeightKg(s); if (kg > x.best || (kg === x.best && (s.reps || 0) > x.bestReps)) { x.best = kg; x.bestReps = s.reps || 0; x.bestDate = w.date; } x.best1RM = Math.max(x.best1RM, estimate1RM(kg, s.reps || 0)); const wk = mondayOf(w.date); x.weeks[wk] = Math.max(x.weeks[wk] || 0, kg); }
+    for (const s of e.sets || []) { if (s.completed === false) continue; const kg = setWeightKg(s); if (kg > x.best || (kg === x.best && (s.reps || 0) > x.bestReps)) { x.best = kg; x.bestReps = s.reps || 0; x.bestDate = w.date; } if (s.type !== '웜업') x.best1RM = Math.max(x.best1RM, estimate1RM(kg, s.reps || 0)); const wk = mondayOf(w.date); x.weeks[wk] = Math.max(x.weeks[wk] || 0, kg); }
     x.days.add(w.date); g.set(key, x);
   }
   const thisMon = mondayOf(date);
@@ -166,7 +166,7 @@ function newRecordsIn(db, mon, sun) {
   let n = 0; const best = new Map();
   for (const w of [...(db.workouts || [])].filter(done).sort((a, b) => a.date.localeCompare(b.date))) for (const e of w.exercises || []) {
     if (e.kind === 'cardio') continue;
-    const top = Math.max(0, ...(e.sets || []).filter(s => s.completed !== false && s.reps > 0).map(s => estimate1RM(setWeightKg(s) ?? 0, s.reps)));
+    const top = Math.max(0, ...(e.sets || []).filter(s => s.completed !== false && s.type !== '웜업' && s.reps > 0).map(s => estimate1RM(setWeightKg(s) ?? 0, s.reps)));
     if (!top) continue;
     const prev = best.get(e.name);
     if (prev != null && top > prev && w.date >= mon && w.date <= sun) n++;

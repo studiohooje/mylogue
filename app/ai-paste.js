@@ -116,7 +116,7 @@ export function parsePaste(text){
  const code = extractCode(text);
  const records = Array.isArray(code) ? code : Array.isArray(code.records) ? code.records : code.type ? [code] : [];
  if(!records.length) throw Error('마이로그 코드에 기록(records)이 없어요.');
- if(records.length>20) throw Error('한 번에 20개까지 넣을 수 있어요.');
+ if(records.length>20) throw Error('한 번에 20개까지 넣을 수 있어요. 지난 기록이 많으면 설정 › 다른 곳 기록 가져오기에 붙여 넣어 주세요(개수 제한 없음).');
  const said = String(code.said || code.originalUtterance || '').trim().slice(0, 1000);
  return records.map((r, i) => {
   const type = TYPE[String(r?.type||'').toLocaleLowerCase('ko')];
@@ -157,7 +157,7 @@ export function aiInputHTML(state={}, {pending=0, ready=true, server=false}={}){
   <li><b>지시문 복사</b>를 눌러, 평소 쓰는 AI(ChatGPT·Gemini·Claude 등, 무료 버전·휴대폰 앱 모두 괜찮아요) 대화창에 한 번 붙여넣어요.</li>
   <li>그 대화에서 평소 말투로 말하세요. 예: “점심에 제육덮밥 먹고 콜라 한 캔”, “하체 했어. 레그프레스 100키로 12개 3세트”, “아침 체중 72.4”</li>
   <li>AI가 <b>마이로그 코드</b>를 줘요. 코드 블록의 복사 버튼으로 복사해 아래 칸에 붙여넣으면 끝이에요.</li>
- </ol><p class="hint">다음부터는 같은 대화에서 말만 하면 돼요. 붙여넣은 기록은 AI 검토함에서 확인한 뒤 확정돼요.</p><p class="hint">지시문에는 <b>최근 기록한 음식·운동 목록</b>(기록한 날 기준 30일)이 함께 들어가요. AI가 같은 이름과 값을 다시 써서 중복이 줄어요. 가끔 새 대화에서 지시문을 다시 붙여 주면 목록이 최신으로 바뀌어요.</p></div>
+ </ol><p class="hint ai-backfill-tip"><b>지난 기록도 돼요.</b> "11월 3일 저녁에 삼겹살", "지난주 화요일 하체 운동"처럼 날짜를 붙여 말하면 그날 기록으로 들어가요. 예전 메모나 다른 앱 기록이 많으면 <b>설정 › 다른 곳 기록 가져오기</b>에서 한 번에 넣을 수 있어요.</p><p class="hint">다음부터는 같은 대화에서 말만 하면 돼요. 붙여넣은 기록은 AI 검토함에서 확인한 뒤 확정돼요.</p><p class="hint">지시문에는 <b>최근 기록한 음식·운동 목록</b>(기록한 날 기준 30일)이 함께 들어가요. AI가 같은 이름과 값을 다시 써서 중복이 줄어요. 가끔 새 대화에서 지시문을 다시 붙여 주면 목록이 최신으로 바뀌어요.</p></div>
  <div class="ai-in-prompt"><button type="button" class="button secondary" id="ai-copy-prompt">지시문 복사</button><details><summary>지시문 내용 보기</summary><pre>${h(state.fullPrompt||AI_PROMPT)}</pre></details></div>
  <label class="field ai-in-field">AI가 준 코드 붙여넣기<textarea id="ai-code" rows="6" placeholder="여기에 AI 답을 붙여넣어요 (설명 글이 같이 붙어도 괜찮아요)" spellcheck="false" autocomplete="off">${h(state.text||'')}</textarea></label>
  <div class="ai-in-tools"><button type="button" class="button secondary small" id="ai-paste-clip">클립보드에서 붙여넣기</button>${state.text?'<button type="button" class="text-button" id="ai-code-clear">지우기</button>':''}</div>

@@ -4,6 +4,7 @@
 // - 앞의 대화를 함께 보내 "콜라는 제로였어"처럼 이어서 고칠 수 있다(AI 서버 converse).
 // - 사진은 'AI가 읽어 주기'와 '사진만 남기고 직접 입력' 중에서 고른다.
 // 이 파일은 app.js를 import하지 않는다. 저장·검토함 넣기는 app이 넘겨준 함수로 한다.
+import {cameraSupported} from './snap-camera.js';
 import {parsePaste} from './ai-paste.js';
 import {MASS} from './domain.js';
 
@@ -95,6 +96,6 @@ export function chatHTML(st, esc, {plus = false, left = null, connected = true, 
  ${connected ? '' : '<p class="hint warn">AI가 아직 연결되지 않았어요. 연결되면 바로 대화할 수 있어요.</p>'}
  <div class="chat-log" id="chat-log" aria-live="polite">${empty}${msgs}${st.asking ? '<div class="chat-msg ai typing"><span class="who">마이로그 AI</span><p>정리하는 중…</p></div>' : ''}</div>
  ${choose}
- ${st.camMenu ? `<div class="chat-cam-menu" role="menu" aria-label="사진 넣기"><label class="chat-cam-item" role="menuitem">📸 사진 찍기<input id="chat-photo-cam" type="file" accept="image/*" capture="environment" hidden></label><label class="chat-cam-item" role="menuitem">🖼 앨범에서 고르기<input id="chat-photo" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label><button type="button" class="chat-cam-item" role="menuitem" data-mate-picker>👥 메이트로그에서 가져오기</button></div>` : ''}<div class="chat-input"><button type="button" class="chat-cam" data-chat-cam aria-label="사진 넣기(찍기·앨범·메이트로그)" aria-expanded="${!!st.camMenu}">📷</button><textarea id="chat-text" rows="1" placeholder="말하듯 적어 주세요" ${st.asking ? 'disabled' : ''}>${esc(st.input || '')}</textarea><button type="button" class="chat-send" id="chat-send" aria-label="보내기" ${st.asking ? 'disabled' : ''}>↑</button></div>
+ ${st.camMenu ? `<div class="chat-cam-menu" role="menu" aria-label="사진 넣기">${cameraSupported()?`<button type="button" class="chat-cam-item" role="menuitem" id="chat-cam-live">📸 사진 찍기</button>`:`<label class="chat-cam-item" role="menuitem">📸 사진 찍기<input id="chat-photo-cam" type="file" accept="image/*" capture="environment" hidden></label>`}<label class="chat-cam-item" role="menuitem">🖼 앨범에서 고르기<input id="chat-photo" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label><button type="button" class="chat-cam-item" role="menuitem" data-mate-picker>👥 메이트로그에서 가져오기</button></div>` : ''}<div class="chat-input"><button type="button" class="chat-cam" data-chat-cam aria-label="사진 넣기(찍기·앨범·메이트로그)" aria-expanded="${!!st.camMenu}">📷</button><textarea id="chat-text" rows="1" placeholder="말하듯 적어 주세요" ${st.asking ? 'disabled' : ''}>${esc(st.input || '')}</textarea><button type="button" class="chat-send" id="chat-send" aria-label="보내기" ${st.asking ? 'disabled' : ''}>↑</button></div>
  <p class="hint chat-foot">AI 답은 참고용이에요. 진단이나 처방이 아니에요.</p></div>`;
 }

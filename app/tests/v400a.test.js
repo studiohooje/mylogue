@@ -13,7 +13,7 @@ test('홈 타임라인 수정 버튼은 식사·운동을 정확히 가리킨다
  const w = cleanWorkout({id:'w1', date:T, exercises:[{name:'스쿼트', sets:[{weight:60, reps:8}]}]});
  const html = renderHomeTimeline({meals:[{id:'a', date:T, name:'밥', servingQty:1, servingUnit:'공기', calories:300, loggedAt:`${T}T12:00:00`, mealGroupId:'g1'}], workouts:[w], body:[], settings:{}}, T);
  assert.match(html, /data-qm="g1"/);
- assert.match(html, /data-qw="w1"/);
+ assert.match(html, /data-wmenu="w1"/); // 5.1.0 수정은 ⋯ 메뉴 안으로
  assert.doesNotMatch(html, /data-q[mw]=""/);
 });
 

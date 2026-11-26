@@ -1,5 +1,6 @@
 // 4.28.x 'AI 기록' 대화창의 동작(보내기·양 바꾸기·다른 음식·기록하기·되돌리기·나중에 확인·사진 갈래). 화면은 ai-chat.js.
 // 이 파일은 app.js를 import하지 않는다($s·$f로 앱 상태와 공용 함수를 쓴다).
+import {openSnapCamera} from './snap-camera.js';
 import {$s, $f} from './app-state.js';
 import {newChat, replyToMsg, historyForServer, scaleItem, swapItem, CHAT_MAX} from './ai-chat.js';
 import {aiRequest} from './ai-client.js';
@@ -87,6 +88,7 @@ function openMode(mode) {
 }
 export function openAIEntry() { const m = aiModeDefault(); if (m) openMode(m); else { $s.aiPick = {}; $s.modal = 'ai-pick'; $f.render(); } }
 export function chatClick(t) {
+ if (chatCamLive(t)) return true;
  const d0 = t.dataset || {};
  // 5.0.1 '다른 방법으로 입력': 쓰던 게 있으면 지워진다고 먼저 묻는다
  const busyChat = () => { const s = $s.aiChat; return !!s && ((s.msgs || []).some(m => m.role === 'user') || !!String(s.input || '').trim() || (s.photos || []).length > 0); };
@@ -134,6 +136,8 @@ export function chatInput(t) {
  if (t.id === 'chat-swap-q') { runSearch(t.value); globalThis.requestAnimationFrame?.(() => { const i = document.getElementById('chat-swap-q'); if (i && document.activeElement !== i) { i.focus(); i.setSelectionRange?.(i.value.length, i.value.length); } }); return true; }
  return false;
 }
+// 5.1.0 앱 안 카메라(기본 2배 · 가로 4:3)로 찍어 AI에게
+export function chatCamLive(t){ if (t.id !== 'chat-cam-live') return false; st().camMenu = false; $f.render(); openSnapCamera(file => readPhotos({files: [file]}), {title: '음식 사진'}); return true; }
 export function chatChange(t) {
  if (t.id !== 'chat-photo' && t.id !== 'chat-photo-cam') return false;
  st().camMenu = false;
