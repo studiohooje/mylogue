@@ -69,3 +69,18 @@ test('사이드 레터럴 레이즈 머신: 서서·앉아서 하는 머신을 �
   assert.equal(resolveExercise('사레레').name, '사이드 레터럴 레이즈');
   assert.equal(resolveExercise('케이블 레터럴 레이즈').name, '케이블 레터럴 레이즈');
 });
+test('여러 창 보호: 다른 탭이 저장한 뒤 오래된 탭이 덮어쓰지 못한다(5.1.1)', async () => {
+  const disk = new Map();
+  globalThis.localStorage = {getItem: k => disk.get(k) ?? null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k)};
+  const store = await import('../store.js?stale=' + Date.now());
+  const {emptyDB} = await import('../domain.js');
+  const db = store.load();
+  store.save({...db, settings: {...db.settings, note: 'A'}});
+  assert.equal(store.isStale(), false);
+  disk.set(store.STORAGE_KEY, JSON.stringify({...emptyDB(), settings: {...emptyDB().settings, note: 'B(다른 탭)'}}));
+  assert.equal(store.isStale(), true);
+  assert.throws(() => store.save({...db, settings: {...db.settings, note: 'C(오래된 탭)'}}), e => e.staleTab === true);
+  assert.match(disk.get(store.STORAGE_KEY), /다른 탭/);
+  store.load();
+  assert.equal(store.isStale(), false);
+});

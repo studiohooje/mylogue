@@ -311,7 +311,7 @@ export async function cloudClick(target){
   if(id==='cloud-resolve')for(const [i,c] of cloudState.conflicts.entries()){const side=document.querySelector(`[data-cloud-conflict="${i}"]`)?.value;if(!side)throw Error('모든 충돌 기록에서 유지할 내용을 선택해 주세요.');choices[c.key]={side,local:c.local,remote:c.remote};}
   if(!confirm(`${cloudState.user?.email||'현재 계정'}의 계정 서버에 수치·식단·운동·설정 기록을 전송하고 서버 변경과 삭제를 반영할까요? 사진·초안은 전송하지 않습니다.`))return true;
   $s.backupBusy=true;
-  try{const result=await synchronize($s.db,saveLocal,choices);if(result.db)$s.db=result.db;$f.render();$f.toast(result.conflicts.length?'충돌 내용을 확인해 주세요.':'기록 동기화를 완료했습니다.');}finally{$s.backupBusy=false}
+  try{const result=await synchronize($f.freshDB(),saveLocal,choices);if(result.db)$s.db=result.db;$f.render();$f.toast(result.conflicts.length?'충돌 내용을 확인해 주세요.':'기록 동기화를 완료했습니다.');}finally{$s.backupBusy=false}
   return true;
  }
  return false;

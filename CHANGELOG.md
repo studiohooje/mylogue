@@ -4,6 +4,10 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.1.1 — 2026-11-26 (배포됨)
+
+- 여러 창(탭) 보호: store.isStale(다른 탭이 저장한 뒤 다시 읽지 않은 탭) → save()는 덮어쓰지 않고 staleTab 오류(앱이 최신을 다시 읽음), 모든 synchronize 호출은 freshDB()로 최신 기록부터, storage·focus·visibility에서 db·진행 중 세션 다시 읽기. 원인: 대표님 폰 크롬의 오래된 탭이 11:28에 07:53 기록(1세트)을 서버에 덮어씀(rev 24).
+
 ## Mylogue Beta 5.1.0 — 2026-11-26 (배포됨)
 
 - 실시간 세션 개편(대표님 헬스장 실사용 점검): live-session.js(기기 저장·운동 중 머리글·붉은 운동 끝내기·잠시 나가기·오래 쉼 알림·홈 이어서 카드), session-summary.js(오늘 운동 정리·이름 제안·근육 지도·자동 검토 팝업·내 AI 오입력 검토), summary-actions.js, '새 운동 기록 시작' 삭제(세션 나뉨 원인).

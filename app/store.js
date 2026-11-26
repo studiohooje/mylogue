@@ -6,6 +6,8 @@ onStorageScopeChange(()=>{STORAGE_KEY=scopedKey('mylogue.v1');RESTORE_PENDING_KE
 let status={blocked:false,reason:''};
 let loadedRaw;
 export function getLoadedRaw(){return loadedRaw}
+/* 5.1.0 여러 창(탭) 보호: 다른 탭이 저장한 뒤로 이 탭이 다시 읽지 않았으면 '오래된 탭'. 오래된 기억으로 덮어쓰면 다른 탭에서 넣은 기록이 사라진다(대표님 2026-11-26 운동 22세트 → 1세트로 덮인 사고) */
+export function isStale(){try{const raw=localStorage.getItem(STORAGE_KEY);return loadedRaw!==undefined&&raw!=null&&raw!==loadedRaw}catch{return false}}
 export function getStorageStatus(){return {...status}}
 export function getRecoveryRaw(){return localStorage.getItem(STORAGE_KEY)}
 export function load(){
@@ -22,6 +24,7 @@ export function save(db){ /* db를 바꿔 쓰므로 let처럼 다룸 */
  if(status.blocked||localStorage.getItem(RESTORE_PENDING_KEY))throw Error('기존 기록 보호를 위해 저장을 잠갔습니다. 원본을 내려받고 백업을 복원해 주세요.');
  const raw=localStorage.getItem(STORAGE_KEY);
  let old=null;if(raw){try{old=normalizeDB(JSON.parse(raw),{lenient:true})}catch(error){status={blocked:true,reason:error.message};throw Error('기존 기록을 읽을 수 없어 저장하지 않았습니다. 원본 복구가 필요합니다.')}}
+ if(loadedRaw!==undefined&&raw!=null&&raw!==loadedRaw){const e=Error('다른 창(탭)에서 기록이 바뀌어 최신 기록으로 다시 불러왔어요. 방금 한 것을 한 번 더 해 주세요.');e.staleTab=true;throw e}
  // 따로 보관한 기록은 다른 화면이 db를 새로 만들어도 잃지 않게 이어 붙인다
  if(old?.quarantine?.length&&!db.quarantine?.length)db={...db,quarantine:old.quarantine};
  const encoded=JSON.stringify(db);try{localStorage.setItem(STORAGE_KEY,encoded)}catch(error){/* 4.27.0 전수검사 DAT-03: 용량 초과가 영어 오류로만 보였다 */if(/quota|exceed/i.test(String(error?.name||'')+String(error?.message||'')))throw Error('이 기기의 저장 공간이 가득 찼어요. 지금 기록은 그대로 있어요. 설정에서 백업 파일을 저장한 뒤 다시 시도해 주세요.');throw error}loadedRaw=encoded;return db;
