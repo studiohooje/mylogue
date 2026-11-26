@@ -21,7 +21,7 @@ export const FEATURES = [
   {id: 'simulator', name: '목표 시뮬레이터', free: 0, plus: Infinity, ai: false},
   {id: 'micro-report', name: '영양 심화 리포트', free: 0, plus: Infinity, ai: false, note: '무료도 하루 나트륨·당류 한 줄은 봄'},
   {id: 'program-auto', name: '운동 프로그램 자동 설계', free: 0, plus: Infinity, ai: false},
-  {id: 'ai-photo', name: '음식 사진 기록', free: 1, plus: 20, ai: true, note: '하루 횟수, 인식 실패는 빼지 않음'},
+  {id: 'ai-photo', name: '음식 사진 기록', free: 3, plus: 20, ai: true, note: '하루 횟수, 인식 실패는 빼지 않음'},
   {id: 'ai-review', name: 'AI 주간 리뷰', free: 0, plus: 1, ai: true, note: '하루 횟수'},
   {id: 'ai-chat', name: 'AI에게 묻기', free: 0, plus: 10, ai: true, note: '하루 횟수'},
   {id: 'ai-recipe', name: '레시피 글 자동 분해', free: 0, plus: 10, ai: true, note: '하루 횟수'},
