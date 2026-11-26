@@ -4,6 +4,11 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.4.8 — 2026-11-26 (배포됨)
+
+- 운동 기록 방식 '다 끝나고 한 번에'(workoutMode after)일 때 홈 '운동 기록'이 예전 after-workout 폼을 열던 것을 새 운동 창(quick-workout)을 '한 번에 입력'(live=false)으로 여는 것으로 바꿈 — 같은 기능 두 곳 금지(app.js). 아이폰 사파리 사용자 제보로 발견(설정 문제, 기기 무관).
+- 맥미니 이식: `app/tools/perf-render.mjs` 맥 크롬 경로, `app/android/gradlew` 실행 권한.
+
 ## Mylogue Beta 5.4.7 — 2026-11-26 (배포됨)
 
 - 한 달 리캡(분석): 헤일로 개수 구간 × 내부 등급 → 실존 별자리(recap-stars.js), 몸·운동·식단 + 이달의 업적·마일스톤(monthly-recap.js), 말일에 완성 표시. 예전 월간 리포트 카드 대체.
