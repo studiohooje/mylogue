@@ -149,9 +149,16 @@ export function progressLine(s) {
   if (t.id === 'recomp') return s.fatNow ? `체지방률 ${s.fatNow.v}% · 목표 ${tg.fatPct}%` : `목표 체지방률 ${tg.fatPct}%`;
   return s.weightChange == null ? `±${tg.rangeKg}kg 유지` : `${sign(s.weightChange)}kg · ±${tg.rangeKg}kg 안${s.inRange ? '' : '을 벗어났어요'}`;
 }
+// 5.3.1 대표님: '1/16주차'는 날짜처럼 읽히고, 배지에 지금 체지방률이 그대로 보이는 건 어색 → '16주 중 1주째' + 진행 막대 + '목표 N%'
+export function badgeProg(s) {
+  if (s.goalPct != null) return `달성 ${Math.round(s.goalPct * 100)}%`;
+  if (s.inRange != null) return s.inRange ? '유지 범위 안' : '유지 범위 밖';
+  if (s.type.id === 'recomp') return '인바디를 재면 진행도가 보여요';
+  return `기간 ${Math.round(s.timePct * 100)}%`;
+}
 export function phaseBadgeHTML(s) {
   if (!s) return `<button type="button" class="phase-badge empty" data-modal="phase">지금 목표 페이즈 정하기</button>`;
-  return `<button type="button" class="phase-badge ph-${s.type.id}" data-modal="phase" aria-label="${esc(s.type.name)} 페이즈 자세히"><b>${esc(s.type.name)} 페이즈</b><span>${s.over ? '기간 끝' : `${s.week}/${s.weeks}주차`}</span><span class="ph-prog">${esc(progressLine(s))}</span></button>`;
+  return `<button type="button" class="phase-badge ph-${s.type.id}" data-modal="phase" aria-label="${esc(s.type.name)} 페이즈 자세히"><b>${esc(s.type.name)}</b><span class="ph-week">${s.over ? '기간 끝' : `${s.weeks}주 중 ${s.week}주째`}</span><span class="ph-bar" aria-hidden="true"><i style="width:${Math.round((s.goalPct ?? s.timePct) * 100)}%"></i></span><span class="ph-prog">${esc(badgeProg(s))}</span></button>`;
 }
 
 // 매일·인바디 변화에 맞춘 제안(최대 2개, 재촉 없이). 2주 전엔 판단하지 않는다.

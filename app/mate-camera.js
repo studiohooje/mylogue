@@ -36,8 +36,10 @@ export async function capture(video, {at = new Date(), stamp = true, maxEdge = M
   const vw = video.videoWidth, vh = video.videoHeight;
   if(!vw || !vh) throw Error('카메라가 아직 준비되지 않았어요. 잠시 뒤 다시 눌러 주세요.');
   // 5.1.0 가운데를 2배로 자르고(하드웨어 줌이 없을 때), 가로 4:3으로 맞춘다(세로로 찍어도 가로로 넓게)
+  /* 5.4.0 대표님: 찍힌 사진 = 카메라 화면에 보이던 그대로. 미리보기 칸(object-fit: cover + 배율)의 실제 모양을 읽어 같은 부분만 자른다 */
+  const box = video.parentElement?.getBoundingClientRect?.(), aspect = box && box.width > 0 && box.height > 0 ? box.width / box.height : ASPECT;
   let cw = vw / digitalZoom, ch = vh / digitalZoom;
-  if(cw / ch < ASPECT) ch = cw / ASPECT; else cw = ch * ASPECT;
+  if(cw / ch < aspect) ch = cw / aspect; else cw = ch * aspect;
   const sx = (vw - cw) / 2, sy = (vh - ch) / 2;
   const k = Math.min(1, maxEdge / cw), w = Math.round(cw * k), h = Math.round(ch * k);
   const c = document.createElement('canvas'); c.width = w; c.height = h;

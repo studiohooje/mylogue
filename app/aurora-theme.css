@@ -2298,3 +2298,93 @@ html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,ht
 .mate-send svg{width:22px;height:22px}
 .mate-compose{isolation:isolate}
 .mate-compose:before{content:"";position:absolute;z-index:-1;left:-20px;right:-20px;top:-10px;bottom:-90px;background:linear-gradient(180deg,transparent,var(--bg) 14px)}
+
+/* 5.3.1 페이즈 배지: 'N주 중 M주째' + 진행 막대 + 목표 % */
+.phase-badge .ph-bar{display:inline-block;width:56px;height:6px;border-radius:999px;background:#ffffff22;overflow:hidden;vertical-align:middle}
+.phase-badge .ph-bar i{display:block;height:100%;border-radius:999px;background:#9fe6dc;min-width:4px}
+.phase-badge:not(.empty){flex-wrap:nowrap;white-space:nowrap;max-width:100%}.phase-badge:not(.empty) b{overflow:hidden;text-overflow:ellipsis}
+
+/* 5.4.0 코치로그 1차 — 작은 머리글·대시보드·출석 */
+.coach-nav .nav-inner{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.coach-head2{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px}
+.coach-head2 h2{margin:0;font-size:24px;letter-spacing:-.03em}.coach-head2 small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.cl-card{min-width:0;display:grid;gap:10px}
+.cl-card h3{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}.cl-card h3 small{font-size:12.5px;color:var(--muted);font-weight:600}
+.cl-row{min-width:0;display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0;border-top:1px solid #ffffff10;flex-wrap:wrap}.cl-card h3+.cl-row{border-top:0}
+.cl-time{width:52px;flex:none;font-weight:800;font-variant-numeric:tabular-nums;font-size:15px}
+.cl-who{flex:1;min-width:0}.cl-who b{display:block;font-size:15px}.cl-who small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-go{min-height:44px;padding:0 14px;border:0;border-radius:12px;background:#8ce4e0;color:#0f1a2b;font:inherit;font-weight:800;font-size:13.5px;white-space:nowrap;cursor:pointer}
+.cl-ghost{min-height:44px;padding:0 12px;border:1px solid #ffffff24;border-radius:12px;background:transparent;color:var(--text);font:inherit;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer}
+.cl-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#101625;flex:none}
+.cl-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#ffffff10;color:#cfe0ee;white-space:nowrap}
+.cl-pill.warn{background:#f2a98a26;color:#f6c3ab}.cl-pill.ok{background:#7fe0b026;color:#9ff0c8}.cl-pill.mint{background:#8ce4e026;color:#8ce4e0}
+.cl-alert{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.cl-alert>div{min-height:64px;border-radius:14px;border:1px solid #ffffff17;background:#ffffff08;padding:8px 12px}
+.cl-alert b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.cl-alert small{color:var(--muted);font-size:12.5px;word-break:keep-all}
+.cl-empty{text-align:center;padding:26px 16px}.cl-empty .cl-big{font-size:40px}.cl-empty h3{justify-content:center;font-size:19px}.cl-empty p{color:var(--muted);font-size:14px;line-height:1.55;margin:4px 0 8px}
+.cl-btns{display:grid;gap:8px}
+.cl-att3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex-basis:100%;padding-left:64px}
+.cs-load-h{display:flex;justify-content:space-between;align-items:center}
+
+.cl-crow{display:flex!important;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px!important;margin-bottom:8px}
+.cl-crow .cl-who b{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cl-ib{width:44px;height:44px;flex:none;border-radius:12px;border:1px solid #ffffff1f;background:#1d2a44;color:var(--text);font-size:20px;display:grid;place-items:center;cursor:pointer}
+.coach-detail .coach-head2 h2{font-size:21px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.coach-detail .coach-head2 small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cl-sum div{background:#ffffff08;border-radius:12px;padding:8px 10px}.cl-sum small{display:block;color:var(--muted);font-size:12px}.cl-sum b{font-size:17px;font-variant-numeric:tabular-nums}.cl-sum b span{font-size:13px;color:var(--muted)}
+.cl-lines{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px}.cl-lines li:before{content:"·";color:#8ce4e0;margin-right:6px;font-weight:800}
+.cl-btns2{grid-template-columns:1fr 1fr}
+.cl-tabs{display:flex;gap:4px;background:#ffffff0a;border-radius:12px;padding:4px;margin:0 0 10px}.cl-tabs button{flex:1;min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-weight:700;cursor:pointer}.cl-tabs .on{background:#8ce4e0;color:#0f1a2b}
+
+.cl-wk{display:flex;gap:6px}
+.cl-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:0 0 10px}
+.cl-days button{min-height:58px;border-radius:12px;border:1px solid #ffffff17;background:#ffffff06;color:var(--text);font:inherit;display:grid;place-items:center;gap:0;padding:4px 0;cursor:pointer}
+.cl-days small{font-size:12px;color:var(--muted)}.cl-days b{font-size:16px;font-variant-numeric:tabular-nums}.cl-days i{font-style:normal;color:#8ce4e0;font-size:12px;line-height:1;min-height:12px}
+.cl-days .today{border-color:#8ce4e077}.cl-days .on{background:#8ce4e0;color:#0f1a2b;border-color:#8ce4e0}.cl-days .on small,.cl-days .on i{color:#0f1a2b}
+.cl-addbook{width:100%}
+
+/* 5.4.0 코치 수업(실시간 입력 위 회원 띠 · 수업 정리) */
+.cl-band{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#8ce4e026,#b8aaf226);border:1px solid #8ce4e055;margin:10px 14px 0}
+.cl-band-t{flex:1;min-width:0}.cl-band-t b{display:block;font-size:14px}.cl-band-t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-band-x{font-size:12.5px;min-height:36px}
+.ss-coach{margin:12px 0;padding:14px;border-radius:18px;background:#1b2943;border:1px solid #8ce4e055}
+.cl-chips{display:flex;flex-wrap:wrap;gap:6px}.cl-chips button{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid #ffffff24;background:transparent;color:var(--text);font:inherit;font-size:13px;cursor:pointer}.cl-chips .on{background:#8ce4e0;color:#0f1a2b;border-color:#8ce4e0;font-weight:700}
+.cl-send{width:100%;min-height:52px;border:0;border-radius:14px;background:#8ce4e0;color:#0f1a2b;font:inherit;font-weight:800;font-size:16px;cursor:pointer}
+
+.cl-plan-h{display:grid;gap:8px;margin-bottom:10px}
+.cl-plan{border:1px solid #ffffff17;border-radius:14px;padding:10px 12px;margin-bottom:8px;background:#ffffff06}
+.cl-plan-t{display:flex;justify-content:space-between;gap:8px}.cl-plan-t span{font-weight:800;font-variant-numeric:tabular-nums}
+.cl-plan ul{margin:6px 0;padding:0;list-style:none;font-size:13.5px;display:grid;gap:2px}.cl-plan li{display:flex;justify-content:space-between;gap:8px}.cl-plan li span:last-child{color:var(--muted)}
+.cl-plan-a{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cl-plan-a small{flex:1;color:var(--muted);font-size:12px}
+.mh-att{padding-left:0}
+
+/* 5.4.0 코치방 고정 카드 */
+.cl-pins{display:grid;gap:8px;margin:0 0 10px}
+.cl-sc,.cl-att{border-radius:16px;background:#1f2e4b;border:1px solid #8ce4e055;padding:12px;display:grid;gap:8px}
+.cl-sc .h{display:flex;justify-content:space-between;align-items:center;gap:6px}.cl-sc .h b{font-size:14.5px}
+.cl-sc .acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cl-att .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.cl-att .acts button{min-height:40px;font-size:12.5px;padding:0 4px}
+.cl-note{font-size:13.5px;color:#cfe0ee;line-height:1.55;margin:0}
+
+/* 5.4.0 수강권·장부·리포트 */
+.cl-pass{border-radius:18px;padding:16px;background:linear-gradient(135deg,#25405f,#2c2f5c);border:1px solid #8ce4e055;display:grid;gap:10px}
+.cl-pass .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.cl-pass .t b{font-size:17px}
+.cl-pass .n{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}.cl-pass .n small{font-size:15px;color:var(--muted);font-weight:600}
+.cl-bar{height:8px;border-radius:999px;background:#ffffff1c;overflow:hidden}.cl-bar i{display:block;height:100%;background:#8ce4e0;border-radius:999px}
+.cl-li{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:8px 0;border-top:1px solid #ffffff10}.cl-li span:last-child{color:var(--muted);white-space:nowrap}
+.cl-led{font-size:13px}.cl-led .cl-li{align-items:flex-start}.cl-led em{font-style:normal;color:#9ff0c8;font-size:12px}
+.cl-sub{margin:14px 0 4px;font-size:15px;display:flex;justify-content:space-between}.cl-sub small{font-size:12.5px;color:var(--muted)}
+.cl-cut{width:56px;min-height:36px;display:inline-block;padding:0 6px;font-size:16px}
+.cl-pass-form .cd-pt-row{flex-wrap:wrap}
+.cl-ledger-fold summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-weight:700}.cl-ledger-fold summary small{color:var(--muted);font-weight:500}
+.cl-rep{border-radius:20px;padding:18px;background:radial-gradient(120% 90% at 100% 0,#8ce4e033,transparent 60%),#18243c;border:1px solid #ffffff1f;display:grid;gap:12px}
+.cl-rep .big{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cl-rep .big div{background:#ffffff0a;border-radius:14px;padding:10px 12px}.cl-rep .big small{display:block;color:var(--muted);font-size:12px}.cl-rep .big b{font-size:20px}
+.cl-tag{font-size:12px;font-weight:700;color:#b8aaf2;letter-spacing:.02em}
+/* 5.4.0 대표님: 메이트로그 사진이 카메라 화면 구도 그대로 보이게 — 5.1.0부터 가로 4:3으로 저장하는데 세로 3:4 칸에 꽉 채워(cover) 가운데만 보였음. 사진 전체를 그대로(contain) */
+.mate-photo{aspect-ratio:4/3;width:min(240px,64vw)}
+.mate-pic .mate-photo{width:min(240px,62vw)}
+.mate-photo img{object-fit:contain;background:#0d1526}
+.mate-prev{width:128px;aspect-ratio:4/3;object-fit:contain;background:#0d1526}
+.mate-pickph img{aspect-ratio:4/3;object-fit:contain;background:#0d1526}
+.mate-pic{max-width:min(66vw,252px)}

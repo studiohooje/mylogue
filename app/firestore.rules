@@ -237,10 +237,17 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && (
           (resource.data.memberUid == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scope','shared','status','endedAt','endedBy','memberName','updatedAt'])
-            && scopeOk(request.resource.data.scope))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scope','shared','status','endedAt','endedBy','memberName','attend','ptAgreedAt','updatedAt'])
+            && scopeOk(request.resource.data.scope)
+            // 5.4.0 D6 전날 출석 응답: 예약 id → 'yes'|'change'|'no' (최대 60개)
+            && (!('attend' in request.resource.data) || (request.resource.data.attend is map && request.resource.data.attend.size() <= 60))
+            // 5.4.0 D7 수강권 규칙 확인 시각
+            && (!('ptAgreedAt' in request.resource.data) || (request.resource.data.ptAgreedAt is string && request.resource.data.ptAgreedAt.size() <= 40)))
           || (resource.data.trainerUid == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pt','schedule','trainerName','warnedTrainerAt','status','endedAt','endedBy','updatedAt']))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pt','schedule','trainerName','warnedTrainerAt','status','endedAt','endedBy','mealPlans','routines','updatedAt'])
+            // 5.4.0 D15·D17 식단 제안·개인 운동 루틴: 목록, 각 최대 12개
+            && (!('mealPlans' in request.resource.data) || (request.resource.data.mealPlans is list && request.resource.data.mealPlans.size() <= 12))
+            && (!('routines' in request.resource.data) || (request.resource.data.routines is list && request.resource.data.routines.size() <= 12)))
         );
       allow delete: if false;
     }
@@ -373,6 +380,24 @@ service cloud.firestore {
         && sc.body is bool && sc.meal is bool && sc.work is bool;
     }
     function mateKind(k) { return k in ['body','meal','work']; }
+    // 5.4.0 D1·D2 코치방: 코치·회원 연동(links)이 살아 있을 때 둘만의 방. 공개 범위는 방이 아니라 연동의 동의 범위를 따른다.
+    function coachLink(id) { return get(/databases/$(database)/documents/links/$(id)).data; }
+    function coachRoomCreateOk(d) {
+      return d.keys().hasOnly(['name','type','ownerUid','memberIds','memberNames','scope','joinCode','appliedProposal','linkId','createdAt','updatedAt'])
+        && d.type == 'coach' && mateNameOk(d.name) && d.linkId is string
+        && coachLink(d.linkId).status == 'active'
+        && (request.auth.uid == coachLink(d.linkId).trainerUid || request.auth.uid == coachLink(d.linkId).memberUid)
+        && d.ownerUid == request.auth.uid
+        && d.memberIds == [coachLink(d.linkId).trainerUid, coachLink(d.linkId).memberUid]
+        && d.memberNames is map && d.memberNames.keys().hasOnly([coachLink(d.linkId).trainerUid, coachLink(d.linkId).memberUid])
+        && mateScopeOk(d.scope) && d.joinCode == '' && d.appliedProposal == ''
+        && d.createdAt == request.time && d.updatedAt == request.time;
+    }
+    function coachScopeOn(r, k) {
+      return coachLink(r.linkId).status == 'active'
+        && ((k == 'body' && coachLink(r.linkId).scope.body == true) || (k == 'meal' && coachLink(r.linkId).scope.diet == true) || (k == 'work' && coachLink(r.linkId).scope.workouts == true));
+    }
+    function roomScopeOn(r, k) { return r.get('type', '') == 'coach' ? coachScopeOn(r, k) : r.scope[k] == true; }
     function mateNameOk(n) { return n is string && n.size() >= 1 && n.size() <= 30; }
     function mateMemberNamesOk(m) { return m is map && m.size() <= 8 && (!(request.auth.uid in m) || (m[request.auth.uid] is string && m[request.auth.uid].size() <= 20)); }
     function mateInvite(code) { return get(/databases/$(database)/documents/mateInvites/$(code)).data; }
@@ -414,6 +439,7 @@ service cloud.firestore {
     }
     match /rooms/{roomId} {
       allow get, list: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if approved() && roomId.matches('^[A-Za-z0-9]{12,24}$') && coachRoomCreateOk(request.resource.data);
       allow create: if approved()
         && roomId.matches('^[A-Za-z0-9]{12,24}$')
         && request.resource.data.keys().hasOnly(['name','type','ownerUid','memberIds','memberNames','scope','joinCode','appliedProposal','createdAt','updatedAt'])
@@ -462,12 +488,12 @@ service cloud.firestore {
       }
       // 메이트에게 보여 줄 요약: 문서 이름은 '{uid}_{종류}'. 방이 그 종류를 공개할 때만 남이 읽는다(비공개로 바뀌면 바로 못 읽음).
       match /shares/{shareId} {
-        allow get: if inRoom() && (resource == null || resource.data.uid == request.auth.uid || room().scope[resource.data.kind] == true);
+        allow get: if inRoom() && (resource == null || resource.data.uid == request.auth.uid || roomScopeOn(room(), resource.data.kind));
         allow create, update: if approved() && inRoom()
           && request.resource.data.keys().hasOnly(['uid','kind','name','data','updatedAt'])
           && request.resource.data.uid == request.auth.uid && mateKind(request.resource.data.kind)
           && shareId == request.auth.uid + '_' + request.resource.data.kind
-          && room().scope[request.resource.data.kind] == true
+          && roomScopeOn(room(), request.resource.data.kind)
           && request.resource.data.name is string && request.resource.data.name.size() <= 20
           && request.resource.data.data is map
           && request.resource.data.updatedAt == request.time;

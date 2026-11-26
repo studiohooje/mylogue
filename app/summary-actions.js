@@ -1,10 +1,13 @@
 // 5.1.0 실시간 세션 끝내기 · 정리 화면 · 세트 지우기 · 저장 안 한 세트 묻기 · 내 AI 오입력 검토
 import {$s,$f} from './app-state.js';
+import {coachLiveClick,coachLiveInput} from './coach-live.js';
+import {photoQuota,usePhoto} from './input-sources.js';
+import {aiPhotoFromCamera} from './app-chat.js';
 import {clearLive,liveActive} from './live-session.js';
 import {checkWorkout,applyFix} from './workout-check.js';
 import {nameSuggestion} from './workout-name.js';
 import {aiReviewPrompt,parseAiReview,sessionTimes} from './session-summary.js';
-import {quickWorkoutRecord,lastSession,findMachine,countRow} from './quick-entry.js';
+import {quickWorkoutRecord,lastSession,findMachine,countRow,mealToRow} from './quick-entry.js';
 import {prefillFor,withUnitMemory} from './set-prefill.js';
 import {cancelRestNotice} from './rest-screen.js';
 import {isPlus} from './plan.js';
@@ -16,10 +19,16 @@ function openSummary(){const s=$s.quickWorkout;if(!cur()){$f.toast('아직 저�
 function finish(){const s=$s.quickWorkout,w=cur();if(!w){$s.modal=null;$f.render();return}const st=$s.sumSt||{},sug=nameSuggestion(w.exercises,s?.targets||w.targets||[]),title=st.title??(sug.options[0]?.title||sug.title);put({...w,title,finishedAt:new Date().toISOString(),updatedAt:new Date().toISOString()});try{if(s?.rest)cancelRestNotice()}catch{}clearLive();$s.quickWorkout=null;$s.sumSt=null;$s.airSt=null;$s.modal=null;$s.selectedDate=w.date;$f.render();$f.toast('오늘 운동을 기록했어요. 잘했어요!')}
 const pendingOf=s=>{const w=document.getElementById('q-set-weight'),r=document.getElementById('q-set-reps');return {n:(s.sets||[]).filter(x=>x.exerciseId===s.exerciseId&&x.machineId===s.machineId).length+1,weight:w?.value??s.weight,reps:r?.value??s.reps,unit:s.unit}};
 const hasPending=s=>!!(s?.editing&&s.editIndex<0&&s.touched);
-export function liveClick(t){
+export function liveClick(t){if(coachLiveClick(t))return true;
  if(workoutMenuClick(t))return true;
  if(importClick(t))return true;
- /* 5.1.0 음식 양을 개수로(삶은 달걀 1개 ≈ 50g) */if($s.modal==='quick-meal'&&$s.quickMeal){const q=$s.quickMeal,d=t.dataset||{};if(d.qAgainSave){/* 5.1.0 지난 식사 '통째로 기록': 담고 바로 저장(되돌리기 가능) */$f.quickClickRaw({dataset:{qAgainMeal:d.qAgainSave},id:''});const before=$s.db.meals;$f.quickClickRaw({dataset:{},id:'q-save-meal'});const ids=new Set(($s.db.meals||[]).filter(m=>!before.includes(m)).map(m=>m.id));if(ids.size)$f.toastUndo(`${ids.size}가지를 그대로 기록했어요.`,()=>{$s.db=$f.save({...$s.db,meals:$s.db.meals.filter(m=>!ids.has(m.id))});$f.render()});return true}if(d.qSrc){q.src=d.qSrc;$f.render();if(d.qSrc==='self')setTimeout(()=>document.getElementById('q-food-search')?.focus(),30);return true}if(d.qCu){q.useCount=d.qCu==='count';$f.render();return true}if(d.qCnt){q.cnt=Number(d.qCnt);$f.render();return true}if(t.id==='q-confirm-food'&&q.useCount&&q.cu&&q.picked){const cnt=Number(document.getElementById('q-qty')?.value)/(q.share||1);if(!Number.isFinite(cnt)||cnt<=0)throw Error('먹은 양을 확인해 주세요.');q.share=1;const row=countRow(q.picked,Math.round(cnt*100)/100,q.cu);if(q.editIndex>=0)q.rows[q.editIndex]=row;else q.rows.push(row);q.picked=null;q.cuFor=null;q.editIndex=-1;$f.render();return true}if(t.id==='q-close-picker'||d.qFood||d.qDb)q.cuFor=null}
+ /* 5.4.0 운동 창 세 갈래(지난 운동 · 도움받기 · 직접 고르기) */if($s.modal==='quick-workout'){const d=t.dataset||{};if(d.hsOff!==undefined){$f.toast(d.hsWhy||'지금은 쓸 수 없어요.');return true}
+if(d.qWsrc!==undefined&&$s.quickWorkout){$s.quickWorkout.wsrc=d.qWsrc||'self';$f.render();return true}
+if(d.qWpast&&$s.quickWorkout){/* 지난 운동 그대로: 고른 부위·이름을 그대로 가져와 시작 */const w=($s.db.workouts||[]).find(x=>x.id===d.qWpast),qw=$s.quickWorkout;if(!w)return true;const tg=new Set(w.targets||[]);if(!tg.size)for(const e of w.exercises||[]){const p=e.part||'';if(p){tg.add('웨이트');tg.add(`웨이트:${p}`)}}qw.targets=[...tg];if(w.title)qw.title=w.title;qw.wsrc='self';$f.render();$f.toast(`'${w.title||'지난 운동'}' 부위로 시작해요. 하던 순서대로 보여 드릴게요.`);return true}
+if(d.qWroutine&&$s.quickWorkout){/* 5.4.0 D17 준비: 코치 루틴 — 이름·부위를 채우고 종목 순서를 기억(실시간 입력에서 순서대로 보여 줄 자리) */const r=(globalThis.__mylogueCoachRoutines?.()||[]).find(x=>x.id===d.qWroutine),qw=$s.quickWorkout;if(!r)return true;const tg=new Set();for(const it of r.items||[]){if(it.part){tg.add('웨이트');tg.add(`웨이트:${it.part}`)}}if(tg.size)qw.targets=[...tg];qw.title=r.title||qw.title;qw.coachRoutine={id:r.id,names:(r.items||[]).map(x=>x.name)};qw.wsrc='self';$f.render();$f.toast(`코치님 루틴 '${r.title||'루틴'}'으로 시작해요.`);return true}
+if(d.qAiWphoto!==undefined){const qt=photoQuota(isPlus());if(qt.left<=0){$f.toast(`오늘 ${qt.limit}번을 다 썼어요.`);return true}aiPhotoFromCamera(()=>usePhoto(),'이 사진의 운동을 세트별로 기록해 줘');return true}
+}
+ /* 5.1.0 음식 양을 개수로(삶은 달걀 1개 ≈ 50g) */if($s.modal==='quick-meal'&&$s.quickMeal){const q=$s.quickMeal,d=t.dataset||{};if(d.qAgainSave){/* 5.1.0 지난 식사 '통째로 기록': 담고 바로 저장(되돌리기 가능) */$f.quickClickRaw({dataset:{qAgainMeal:d.qAgainSave},id:''});const before=$s.db.meals;$f.quickClickRaw({dataset:{},id:'q-save-meal'});const ids=new Set(($s.db.meals||[]).filter(m=>!before.includes(m)).map(m=>m.id));if(ids.size)$f.toastUndo(`${ids.size}가지를 그대로 기록했어요.`,()=>{$s.db=$f.save({...$s.db,meals:$s.db.meals.filter(m=>!ids.has(m.id))});$f.render()});return true}if(d.hsOff!==undefined){$f.toast(d.hsWhy||'지금은 쓸 수 없어요.');return true}if(d.qAiPhoto!==undefined){const qt=photoQuota(isPlus());if(qt.left<=0){$f.toast(`오늘 ${qt.limit}번을 다 썼어요.`);return true}aiPhotoFromCamera(()=>usePhoto());return true}if(d.qCoachMeal||d.qCoachSave){/* 5.4.0 D16 코치 제안 식단: 세부 수정=담기, 통째로=담고 바로 저장(되돌리기) */const pl=(globalThis.__mylogueCoachPlans?.()||[]).find(x=>x.id===(d.qCoachMeal||d.qCoachSave));if(!pl)return true;q.rows=(pl.items||[]).map(m=>mealToRow(m));if(pl.slot&&!q.slotTouched)q.slot=pl.slot;if(d.qCoachMeal){$f.render();$f.toast(`${q.rows.length}가지를 담았어요. 양이 다르면 −/+로 바꿔 주세요.`);return true}const before=$s.db.meals;$f.quickClickRaw({dataset:{},id:'q-save-meal'});const ids=new Set(($s.db.meals||[]).filter(m=>!before.includes(m)).map(m=>m.id));if(ids.size)$f.toastUndo(`코치님 제안 ${ids.size}가지를 그대로 기록했어요.`,()=>{$s.db=$f.save({...$s.db,meals:$s.db.meals.filter(m=>!ids.has(m.id))});$f.render()});return true}if(d.qSrc){q.src=d.qSrc;$f.render();if(d.qSrc==='self')setTimeout(()=>document.getElementById('q-food-search')?.focus(),30);return true}if(d.qCu){q.useCount=d.qCu==='count';$f.render();return true}if(d.qCnt){q.cnt=Number(d.qCnt);$f.render();return true}if(t.id==='q-confirm-food'&&q.useCount&&q.cu&&q.picked){const cnt=Number(document.getElementById('q-qty')?.value)/(q.share||1);if(!Number.isFinite(cnt)||cnt<=0)throw Error('먹은 양을 확인해 주세요.');q.share=1;const row=countRow(q.picked,Math.round(cnt*100)/100,q.cu);if(q.editIndex>=0)q.rows[q.editIndex]=row;else q.rows.push(row);q.picked=null;q.cuFor=null;q.editIndex=-1;$f.render();return true}if(t.id==='q-close-picker'||d.qFood||d.qDb)q.cuFor=null}
  if($s.modal==='workout-summary'||$s.modal==='ai-review')return summaryClick(t);
  if($s.modal!=='quick-workout')return false;
  const s=$s.quickWorkout;if(!s)return false;
@@ -66,4 +75,4 @@ function summaryClick(t){
 }
 export {liveActive};
 // 휴식 화면의 '다른 운동 찾기' 칸: 칸은 그대로 두고 결과만(한글 조합 보호)
-export function liveInput(t){if($s.modal!=='quick-workout'||!$s.quickWorkout)return false;if(t.id==='rest-ex-search'){$s.quickWorkout.restQuery=t.value;if(!$s.composingSearch)$f.patchKeep('rest-ex-search');return true}return false}
+export function liveInput(t){if(coachLiveInput(t))return true;if($s.modal!=='quick-workout'||!$s.quickWorkout)return false;if(t.id==='rest-ex-search'){$s.quickWorkout.restQuery=t.value;if(!$s.composingSearch)$f.patchKeep('rest-ex-search');return true}return false}

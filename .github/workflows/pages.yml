@@ -32,7 +32,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm install --global firebase-tools@15.20.0
-      - run: firebase emulators:exec --only firestore --project demo-mylogue-approval "node --test tests/approval-rules.test.js tests/admin-access-rules.test.js tests/plan-rules.test.js tests/consent-rules.test.js tests/request-quota-rules.test.js tests/coach-rules.test.js tests/gym-request-rules.test.js tests/record-rewrite-rules.test.js tests/mate-rules.test.js tests/auth-rules.test.js tests/tag-rules.test.js tests/coach-role-rules.test.js"
+      - run: firebase emulators:exec --only firestore --project demo-mylogue-approval "node --test tests/approval-rules.test.js tests/admin-access-rules.test.js tests/plan-rules.test.js tests/consent-rules.test.js tests/request-quota-rules.test.js tests/coach-rules.test.js tests/coach-room-rules.test.js tests/gym-request-rules.test.js tests/record-rewrite-rules.test.js tests/mate-rules.test.js tests/auth-rules.test.js tests/tag-rules.test.js tests/coach-role-rules.test.js"
       - run: npm run build
       - run: node verify-build.mjs
       # 4.27.0 재검사 N-10: 배포 전 연기 시험(헤드리스 크롬으로 탭·창을 열어 콘솔 오류 0)

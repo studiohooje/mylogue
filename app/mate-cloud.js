@@ -15,7 +15,7 @@ export const randomId = (n = 16, chars = ID_CHARS) => { const a = new Uint8Array
 export const newMateCode = () => randomId(8, CODE_CHARS);
 export const myMateName = user => String(myTagCached() || user?.displayName || (user?.email || '').split('@')[0] || '나').trim().slice(0, 20) || '나';
 const ms = t => t?.toMillis ? t.toMillis() : (typeof t === 'number' ? t : Date.parse(t || '') || 0);
-const roomOf = snap => { const d = snap.data() || {}; return {id: snap.id, name: d.name, type: d.type, ownerUid: d.ownerUid, memberIds: d.memberIds || [], memberNames: d.memberNames || {}, scope: {body: false, meal: false, work: false, ...(d.scope || {})}, appliedProposal: d.appliedProposal || '', updatedAt: ms(d.updatedAt)}; };
+const roomOf = snap => { const d = snap.data() || {}; return {id: snap.id, name: d.name, type: d.type, ownerUid: d.ownerUid, memberIds: d.memberIds || [], memberNames: d.memberNames || {}, scope: {body: false, meal: false, work: false, ...(d.scope || {})}, appliedProposal: d.appliedProposal || '', linkId: d.linkId || '', updatedAt: ms(d.updatedAt)}; };
 
 export async function listRooms(){
   const c = await firestoreContext(), fs = c.fs;
@@ -31,6 +31,14 @@ export async function createRoom({name, type = 'friends', scope = {body: true, m
   return id;
 }
 
+// 5.4.0 D1 코치방: 코치·회원 연동(links)마다 하나. 방 id는 연동에서 정해지고(둘 중 누가 먼저 열어도 같은 방), 공유는 연동 동의 범위를 따른다.
+export function coachRoomId(linkId){ let h1 = 0x811c9dc5, h2 = 0x01000193; for(const ch of String(linkId)){ const c = ch.charCodeAt(0); h1 = Math.imul(h1 ^ c, 16777619) >>> 0; h2 = Math.imul(h2 ^ (c * 31), 2246822519) >>> 0; } return `co${h1.toString(16).padStart(8, '0')}${h2.toString(16).padStart(8, '0')}`; }
+export async function ensureCoachRoom(link){
+  const id = coachRoomId(link.id), have = await getRoom(id).catch(() => null); if(have) return id;
+  const c = await firestoreContext(), fs = c.fs, now = fs.serverTimestamp();
+  await fs.setDoc(fs.doc(c.db, 'rooms', id), {name: `${String(link.trainerName || '코치').slice(0, 12)} 코치 · ${String(link.memberName || '회원').slice(0, 12)}`, type: 'coach', ownerUid: c.user.uid, memberIds: [link.trainerUid, link.memberUid], memberNames: {[link.trainerUid]: String(link.trainerName || '코치').slice(0, 20), [link.memberUid]: String(link.memberName || '회원').slice(0, 20)}, scope: {body: false, meal: false, work: false}, joinCode: '', appliedProposal: '', linkId: link.id, createdAt: now, updatedAt: now});
+  return id;
+}
 export async function createMateInvite(room){
   const c = await firestoreContext(), fs = c.fs, code = newMateCode();
   await fs.setDoc(fs.doc(c.db, 'mateInvites', code), {code, roomId: room.id, roomName: room.name, scope: room.scope, inviterUid: c.user.uid, inviterName: myMateName(c.user), memberCount: room.memberIds.length, expiresAt: fs.Timestamp.fromMillis(Date.now() + 7 * 864e5), createdAt: fs.serverTimestamp()});

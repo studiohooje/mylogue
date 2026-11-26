@@ -12,6 +12,8 @@ import {MATE_KINDS, MATE_KIND_LABEL} from './mate-share.js';
 import {stampText, stampParts, openCamera, closeCamera, capture, cameraSupported} from './mate-camera.js';
 // 5.0.4 카메라 미리보기 도장: 저장되는 사진(drawStamp)과 같은 모양
 const stampHTML = () => { const t = stampParts(); return `<div class="mate-stamp" id="mate-stamp" aria-label="찍은 시각 ${esc(stampText())}"><i aria-hidden="true"></i><p><b>${t.time}</b><span>${t.date} · <em>mylogue</em></span></p></div>`; };
+import {ensureCoachRoom, coachRoomId} from './mate-cloud.js';
+import {passOf, passCardHTML, ledgerHTML} from './coach-pass.js';
 import {MATE_MAX, MATE_KEEP_DAYS, sweepExpired, listRooms, getRoom, createRoom, createMateInvite, inviteLink, readMateInvite, joinRoom, leaveRoom, handOver, listPosts, addPost, deletePost, uploadPhoto, photoURL, photoBlob, syncMyShares, readShares, listProposals, propose, vote} from './mate-cloud.js';
 import {openChatWithPhoto} from './app-chat.js';
 import {TAG_RE, tagProblem, loadMyTag, myTagCached, tagAvailable, setMyTag, inviteByTag, listDirectInvites, dropDirectInvite} from './mytag.js';
@@ -40,12 +42,13 @@ const roomById = id => (st().rooms || []).find(r => r.id === id) || null;
 
 // ---------- 불러오기 ----------
 let lastShareSync = 0;
+const withCoachScope = r => { if(r?.type !== 'coach') return r; const l = $s.coach?.linkById?.(r.linkId), sc = l?.status === 'active' ? l.scope || {} : {}; return {...r, scope: {body: !!sc.body, meal: !!sc.diet, work: !!sc.workouts}}; };
 async function loadRooms(force = false){
   const s = st(); if(!ready()) return;
   if(s.rooms && !force) return;
   s.loading = 'rooms'; $f.render();
   try{
-    s.rooms = await listRooms(); s.err = '';
+    s.rooms = (await listRooms()).map(withCoachScope); s.err = '';
     if(Date.now() - lastShareSync > 60_000){ lastShareSync = Date.now(); syncMyShares(s.rooms, $s.db, $f.today()).catch(e => console.warn(e)); }
   }catch(e){ s.err = e.message || '방을 불러오지 못했어요.'; s.rooms = s.rooms || []; }
   s.loading = ''; $f.render();
@@ -54,7 +57,7 @@ async function loadRoom(id){
   const s = st(); s.loading = 'room'; $f.render();
   try{
     const fresh = await getRoom(id); if(!fresh){ s.err = '방을 찾지 못했어요. 나갔거나 지워졌을 수 있어요.'; s.view = 'rooms'; s.rooms = null; await loadRooms(true); return; }
-    s.rooms = [fresh, ...(s.rooms || []).filter(r => r.id !== id)];
+    s.rooms = [withCoachScope(fresh), ...(s.rooms || []).filter(r => r.id !== id)];
     const [posts, props] = await Promise.all([listPosts(id), fresh.type === 'friends' ? listProposals(id) : Promise.resolve([])]);
     s.posts[id] = posts; s.props[id] = props; s.err = '';
     sweepExpired(id).catch(() => {});
@@ -77,7 +80,7 @@ const icon = (n, on = false) => brandIcon(n, '', on);
 function head(title, sub = '', {back = '', right = ''} = {}){
   return `<div class="mate-top">${back ? `<button type="button" class="mate-ib" data-mate-go="${esc(back)}" aria-label="뒤로">‹</button>` : ''}<div class="mate-title"><h2>${esc(title)}</h2>${sub ? `<small>${esc(sub)}</small>` : ''}</div>${right}</div>`;
 }
-const scopeTags = r => r.type === 'mine' ? '<span class="mate-tag">내 방 · 나만 봐요</span>' : `<span class="mate-tag">${r.memberIds.length}명</span>${MATE_KINDS.map(k => `<span class="mate-tag ${r.scope[k] ? 'on' : 'off'}">${MATE_KIND_LABEL[k]}</span>`).join('')}`;
+const scopeTags = r => r.type === 'coach' ? `<span class="mate-tag on">코치방</span>${MATE_KINDS.map(k => `<span class="mate-tag ${r.scope[k] ? 'on' : 'off'}">${MATE_KIND_LABEL[k]}</span>`).join('')}` : r.type === 'mine' ? '<span class="mate-tag">내 방 · 나만 봐요</span>' : `<span class="mate-tag">${r.memberIds.length}명</span>${MATE_KINDS.map(k => `<span class="mate-tag ${r.scope[k] ? 'on' : 'off'}">${MATE_KIND_LABEL[k]}</span>`).join('')}`;
 export function mytagSettingsHTML(){
   if(!ready()) return '';
   const t = myTagCached();
@@ -110,14 +113,38 @@ function proposalHTML(p, r){
   <div class="mate-votes">${r.memberIds.map(m => `<span class="mate-vote ${p.yes.includes(m) ? 'y' : p.no.includes(m) ? 'n' : 'w'}">${esc(r.memberNames[m] || '메이트')} ${p.yes.includes(m) ? '동의' : p.no.includes(m) ? '거절' : '기다리는 중'}</span>`).join('')}</div>
   ${voted ? '' : `<div class="mate-row"><button type="button" class="button" data-mate-vote="${esc(p.id)}|1">동의</button><button type="button" class="button secondary" data-mate-vote="${esc(p.id)}|0">거절</button></div>`}</div>`;
 }
+/* 5.4.0 D1~D4·D6 코치방: 메이트로그 방 그대로 + 위에 '확정 기다리는 수업'·'다음 수업 출석' 카드. 공유는 연동 동의 범위(설정에서 한 곳) */
+export async function openCoachRoom(link){
+  if(!link?.id) return; const s = st(); $s.page = 'mate'; s.view = 'room'; s.roomId = coachRoomId(link.id); s.loading = 'room'; $f.render();
+  try{ await ensureCoachRoom(link); s.rooms = null; await loadRooms(true); await loadRoom(s.roomId); }catch(e){ s.err = e.message || '코치방을 열지 못했어요.'; s.loading = ''; $f.render(); }
+}
+const linkOfRoom = r => (r?.type === 'coach' && $s.coach?.linkById?.(r.linkId)) || null;
+const KIND_KEY = {body: 'body', meal: 'diet', work: 'workouts'};
+function coachPinsHTML(r){
+  const l = linkOfRoom(r); if(!l) return '';
+  const meMember = l.memberUid === me(), out = [];
+  if(meMember){
+    const drafts = ($s.aiDrafts || []).filter(d => d.sourceModel === 'trainer' && (!d.status || d.status === 'pending') && (!d.evidence?.trainerUid || d.evidence.trainerUid === l.trainerUid));
+    for(const d of drafts.slice(0, 3)) out.push(`<div class="cl-sc"><div class="h"><b>🏋 ${esc(d.parsedData?.title || d.evidence?.title || '코치 수업')}</b><span class="cl-pill">확정 전</span></div>${d.evidence?.memberNote ? `<p class="cl-note">“${esc(d.evidence.memberNote)}”</p>` : ''}<div class="acts"><button type="button" class="cl-go" data-ai-quick="${esc(d.id)}">그대로 확정</button><button type="button" class="cl-ghost" data-page="ai-inbox">고쳐서 확정</button></div></div>`);
+  } else {
+    const waiting = $s.coach?.waitingFor?.(l.id) || [];
+    if(waiting.length) out.push(`<div class="cl-sc"><div class="h"><b>보낸 수업 ${waiting.length}개 확정 기다림</b></div><p class="cl-note">${waiting.slice(0, 3).map(x => esc(x)).join(' · ')}</p></div>`);
+  }
+  const now = new Date(), nowKey = `${now.toISOString().slice(0, 10)}T${now.toTimeString().slice(0, 5)}`;
+  const next = (l.schedule || []).filter(x => x.status !== 'canceled' && String(x.startAt) >= nowKey).sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)))[0];
+  if(next){ const a = l.attend?.[next.id], ans = {yes: '갈게요 ✓', change: '변경 요청', no: '못 가요'};
+    out.push(`<div class="cl-att"><b>📅 ${esc(String(next.startAt).slice(5, 10).replace('-', '/'))} ${esc(String(next.startAt).slice(11, 16))} ${esc(next.title || '수업')}</b>${a ? `<span class="hint" style="margin:0">${meMember ? '내 답' : '회원 답'}: ${esc(ans[a] || a)}</span>` : meMember ? `<div class="acts"><button type="button" class="cl-go" data-mc-attend="${esc(l.id)}:${esc(next.id)}:yes">갈게요</button><button type="button" class="cl-ghost" data-mc-attend="${esc(l.id)}:${esc(next.id)}:change">변경 요청</button><button type="button" class="cl-ghost" data-mc-attend="${esc(l.id)}:${esc(next.id)}:no">못 가요</button></div>` : '<span class="hint" style="margin:0">아직 답이 없어요</span>'}</div>`); }
+  return out.length ? `<div class="cl-pins">${out.join('')}</div>` : '';
+}
+function coachScopeSub(r){ const l = linkOfRoom(r); if(!l) return '코치방'; const on = [['body', '수치'], ['meal', '식단'], ['work', '운동']].filter(([k]) => l.scope?.[KIND_KEY[k]]).map(([, n]) => n); return `코치방 · 보낸 수업${on.length ? ` · ${on.join('·')}` : ''} 공유`; }
 function roomView(){
   const s = st(), r = roomById(s.roomId); if(!r) return roomsView();
   const posts = s.posts[r.id] || [], props = (s.props[r.id] || []).filter(p => p.status === 'open');
   let lastDay = '', feed = '';
   let prev = null; for(const p of posts){ const at = p.takenAt || p.createdAt, d = dayOf(at); let cont = !!prev && prev.uid === p.uid && at - (prev.takenAt || prev.createdAt) < 10 * 60_000; if(d !== lastDay){ feed += `<div class="mate-day"><span>${esc(d)}</span></div>`; lastDay = d; cont = false; } feed += postHTML(p, r, cont); prev = p; }
-  const sub = r.type === 'mine' ? '내 방 · 나만 봐요' : `${r.memberIds.length}명 · ${MATE_KINDS.filter(k => r.scope[k]).map(k => MATE_KIND_LABEL[k]).join('·') || '기록 비공개'}${MATE_KINDS.some(k => r.scope[k]) ? ' 공개' : ''}`;
+  const sub = r.type === 'coach' ? coachScopeSub(r) : r.type === 'mine' ? '내 방 · 나만 봐요' : `${r.memberIds.length}명 · ${MATE_KINDS.filter(k => r.scope[k]).map(k => MATE_KIND_LABEL[k]).join('·') || '기록 비공개'}${MATE_KINDS.some(k => r.scope[k]) ? ' 공개' : ''}`;
   return `${head(r.name, sub, {back: 'rooms', right: `<button type="button" class="mate-ib" data-mate-go="settings" aria-label="방 설정">⋯</button>`})}
-  ${props.map(p => proposalHTML(p, r)).join('')}
+  ${props.map(p => proposalHTML(p, r)).join('')}${r.type === 'coach' ? coachPinsHTML(r) : ''}
   <div class="mate-feed" aria-live="polite">${s.loading === 'room' && !posts.length ? '<p class="hint">불러오는 중…</p>' : feed || `<div class="mate-empty"><b>첫 사진을 찍어 보세요</b><p class="hint">체중계 숫자, 먹은 것 포장지, 운동한 순간을 찍어 남겨요. 찍은 시각이 사진에 새겨져요.</p></div>`}</div>
   <form class="mate-compose" data-mate-form="say"><button type="button" class="mate-shoot" data-mate-go="cam" aria-label="사진 찍기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button><input id="mate-say" maxlength="500" placeholder="메시지 보내기" aria-label="메시지" autocomplete="off" enterkeyhint="send"><button type="submit" class="mate-send" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>`;
 }
@@ -175,6 +202,12 @@ function detailView(){
 }
 function settingsView(){
   const s = st(), r = roomById(s.roomId); if(!r) return roomsView();
+  if(r.type === 'coach'){ const l = linkOfRoom(r), mine = l?.memberUid === me();
+    return `${head('코치방 설정', r.name, {back: 'room'})}<div class="mate-card"><b>${mine ? '코치님이 볼 수 있는 기록' : '회원이 공유한 기록'}</b>
+    <label class="check-row disabled"><input type="checkbox" checked disabled> 코치님이 보낸 수업(항상)</label>${[['diet', '식단'], ['body', '수치'], ['workouts', '내가 따로 한 운동']].map(([k, t]) => `<label class="check-row${mine ? '' : ' disabled'}"><input type="checkbox" ${mine ? `data-mc-scope="${esc(l?.id || '')}:${k}"` : 'disabled'} ${l?.scope?.[k] ? 'checked' : ''}> ${t}</label>`).join('')}
+    <p class="hint">${mine ? '여기서 한 번만 정하면 돼요. 코치 연동 공유 범위와 같은 설정이에요. 끄면 코치님은 바로 못 봐요.' : '회원이 켠 것만 보여요. 공유를 강요해선 안 됩니다.'}</p></div>
+    ${l?.pt?.total ? `<div class="mate-card"><b>수강권 · 회차 장부</b>${passCardHTML(passOf({pt: {...l.pt, agreedAt: l.ptAgreedAt || l.pt.agreedAt}}), {who: mine ? 'member' : 'view', linkId: l.id})}<details class="cl-ledger-fold"><summary>회차 장부 보기 <small>코치님과 같은 장부</small></summary>${ledgerHTML(passOf({pt: l.pt}))}</details></div>` : ''}
+    <p class="mate-foot">대화·사진은 ${MATE_KEEP_DAYS}일 보관 · 연동을 끊으면 이 방도 더는 쓸 수 없어요</p>`; }
   const owner = r.ownerUid === me(), pending = (s.props[r.id] || []).some(p => p.status === 'open');
   return `${head('방 설정', r.name, {back: 'room'})}
   ${r.type === 'friends' ? `<div class="mate-card"><b>메이트 ${r.memberIds.length}명 <small class="hint">(최대 ${MATE_MAX}명)</small></b>${r.memberIds.map(m => `<div class="mate-row" style="justify-content:space-between"><span><span class="mate-av sm" style="--c:${colorOf(m)}">${esc((r.memberNames[m] || '메')[0])}</span>${esc(r.memberNames[m] || '메이트')}${m === r.ownerUid ? ' <span class="mate-tag on">방장</span>' : ''}${m === me() ? ' <small class="hint">나</small>' : ''}</span>${owner && m !== me() ? `<button type="button" class="button secondary" data-mate-hand="${esc(m)}">방장 넘기기</button>` : ''}</div>`).join('')}</div>
