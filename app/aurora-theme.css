@@ -2566,3 +2566,31 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .q-live-ico .rest-ico{width:20px;height:20px;vertical-align:0}
 .q-live-card.alt{border-style:dashed;border-color:#6f7fb3aa;background:#ffffff05}
 .q-live-card.alt .q-live-ico{background:#b8aaf222;color:#c9b8ff}
+/* 5.4.6 대표님: 운동 칸 크기·배치는 그대로. 요일 7줄이 칸(84px)보다 길어 삐져나오던 것만 — 칸 안에 딱 맞게, 점 줄은 가운데 */
+@media(max-width:650px){.home-stat-work .wv-week{justify-content:center}.home-stat-work .week-list{height:100%;justify-content:space-between}.home-stat-work .wl-row{line-height:12px}}
+.home-stat-work .wl-more{font-style:normal;margin-left:2px;padding:0 3px;border-radius:5px;background:#ffffff14;color:#8ce4e0;cursor:pointer}
+.home-stat .stat-head em b{color:#8ce4e0;font-weight:700}
+.home-stat-work .stat-head small{flex:none;min-width:max-content;overflow:visible}
+/* 5.4.6 대표님: 한눈에 보기 세 칸 — 내용은 그대로, 빈칸만 줄여 상하로 컴팩트(폰·웹 모두) */
+.home-stat{padding:16px 18px}
+.home-stat strong{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:4px;row-gap:0;margin:6px 0 4px}
+.home-stat strong span,.home-stat strong .stat-goal{display:inline;margin:0}
+.home-stat .stat-vis{margin-top:auto}
+@media(min-width:651px){.home-stat .stat-vis,.home-stat-work .stat-vis.work-vis{height:104px}.home-stat-work .wl-row{line-height:1.2}}
+@media(max-width:650px){.home-stat{padding:12px 10px}.home-stat strong{margin:4px 0 4px}}
+@media(max-width:650px){.home-stat strong{font-size:20px;column-gap:3px}.home-stat strong .stat-goal{font-size:12px}}
+@media(max-width:380px){.home-stat strong{font-size:18px;column-gap:2px}.home-stat{padding:12px 8px}}
+/* 5.4.6 대표님: 접은 화면(좁은 칸)은 운동한 날에 '웨이트'처럼 종류만 작게, 누르거나 마우스를 올리면 부위가 말풍선으로 */
+.home-stat-work .wl-cat,.home-stat-work .wl-pop{display:none}
+.home-stat-work .wv-week{position:relative}
+@media(max-width:650px){
+ .home-stat-work .wl-row.done{grid-template-columns:12px auto!important;cursor:pointer;position:relative}
+ .home-stat-work .wl-row.done em{width:auto!important;height:auto!important;border-radius:4px!important;background:#8ce4e022!important;font-size:10px!important;line-height:12px!important;padding:0 3px;color:#8ce4e0;overflow:visible!important;white-space:nowrap}
+ .home-stat-work .wl-row.today.done em{background:#8ce4e0!important;color:#0d1326;box-shadow:none!important}
+ .home-stat-work .wl-row.done .wl-txt{display:none}
+ .home-stat-work .wl-row.done .wl-cat{display:inline}
+ .home-stat-work .wl-row.done .wl-pop{position:absolute;right:calc(100% + 4px);top:50%;transform:translateY(-50%);z-index:5;padding:4px 8px;border-radius:8px;background:#e4f3f6;color:#17283c;font-size:12px;font-weight:600;line-height:1.3;white-space:nowrap;box-shadow:0 6px 16px #000a}
+ .home-stat-work .wl-row.done.open .wl-pop{display:block}
+ @media(hover:hover){.home-stat-work .wl-row.done:hover .wl-pop{display:block}}
+}
+@media(max-width:380px){.home-stat-work .wl-row.done{gap:3px!important}.home-stat-work .wl-row.done em{padding:0 2px;letter-spacing:-.4px}.home-stat-work .wv-fig .mini-atlas{gap:1px}}

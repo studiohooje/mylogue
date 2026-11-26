@@ -25,6 +25,6 @@ test('홈: 기록 버튼은 수치·식사·운동 순, 운동 칸 오른쪽에 
  assert.ok(a < b && b < c);
  assert.equal((html.match(/class="wl-row/g)||[]).length, 7);
  assert.match(html, /wl-row today"><b>토<\/b><em><\/em>/, '오늘 기록 없음 → 빈칸');
- assert.match(html, /title="금 · 웨이트\(하체\)"><b>금<\/b><em>하체<\/em>/); // 4.17.0 좁은 칸이라 '웨이트(하체)' → '하체'(전체 이름은 title)
+ assert.match(html, /data-wl-more="2026-11-20" title="금 · 하체"><b>금<\/b><em><span class="wl-txt">하체<\/span><span class="wl-cat">웨이트<\/span>/); // 5.4.6 넓은 칸은 부위, 좁은 칸은 종류만(누르면 부위)
  assert.match(html, /wl-row rest"[^>]*><b>목<\/b><em><svg class="rest-ico"/);
 });
