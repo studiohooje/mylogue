@@ -77,7 +77,7 @@ export function createCoachController({getDB, save, render, toast, setPage, getP
   if(!active()) return false;
   const d = data();
   if(ds.coachAssess!==undefined){ st.assess = ds.coachAssess; render(); return true; }
-  if(ds.coachNew!==undefined){ st.form = ds.coachNew; render(); return true; }
+  if(ds.coachNew!==undefined){ st.form = ds.coachNew; st.open = ''; if(getPage()!=='coach-clients') setPage('coach-clients'); else render(); if(ds.coachNew) setTimeout(() => { const f = document.getElementById('coach-client-form'); f?.scrollIntoView?.({block:'center'}); f?.querySelector('input')?.focus(); }, 60); return true; }
   if(ds.coachPassEdit!==undefined){ st.passEdit = ds.coachPassEdit; st.holdOpen = ''; render(); return true; }
   if(ds.coachHold!==undefined){ st.holdOpen = ds.coachHold; st.passEdit = ''; render(); return true; }
   if(ds.coachReport!==undefined){ st.report = ds.coachReport; st.reportNote = ''; render(); return true; }

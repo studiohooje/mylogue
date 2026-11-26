@@ -2313,11 +2313,11 @@ html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,ht
 .cl-row{min-width:0;display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0;border-top:1px solid #ffffff10;flex-wrap:wrap}.cl-card h3+.cl-row{border-top:0}
 .cl-time{width:52px;flex:none;font-weight:800;font-variant-numeric:tabular-nums;font-size:15px}
 .cl-who{flex:1;min-width:0}.cl-who b{display:block;font-size:15px}.cl-who small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cl-go{min-height:44px;padding:0 14px;border:0;border-radius:12px;background:#8ce4e0;color:#0f1a2b;font:inherit;font-weight:800;font-size:13.5px;white-space:nowrap;cursor:pointer}
+.cl-go{min-height:44px;padding:0 14px;border:0;border-radius:12px;background:var(--cl-accent,#8ce4e0);color:#0f1a2b;font:inherit;font-weight:800;font-size:13.5px;white-space:nowrap;cursor:pointer}
 .cl-ghost{min-height:44px;padding:0 12px;border:1px solid #ffffff24;border-radius:12px;background:transparent;color:var(--text);font:inherit;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer}
 .cl-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#101625;flex:none}
 .cl-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#ffffff10;color:#cfe0ee;white-space:nowrap}
-.cl-pill.warn{background:#f2a98a26;color:#f6c3ab}.cl-pill.ok{background:#7fe0b026;color:#9ff0c8}.cl-pill.mint{background:#8ce4e026;color:#8ce4e0}
+.cl-pill.warn{background:#f2a98a26;color:#f6c3ab}.cl-pill.ok{background:#7fe0b026;color:#9ff0c8}.cl-pill.mint{background:var(--cl-accent,#8ce4e0)26;color:var(--cl-accent,#8ce4e0)}
 .cl-alert{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
 .cl-alert>div{min-height:64px;border-radius:14px;border:1px solid #ffffff17;background:#ffffff08;padding:8px 12px}
 .cl-alert b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.cl-alert small{color:var(--muted);font-size:12.5px;word-break:keep-all}
@@ -2333,24 +2333,24 @@ html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,ht
 .coach-detail .coach-head2 small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cl-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .cl-sum div{background:#ffffff08;border-radius:12px;padding:8px 10px}.cl-sum small{display:block;color:var(--muted);font-size:12px}.cl-sum b{font-size:17px;font-variant-numeric:tabular-nums}.cl-sum b span{font-size:13px;color:var(--muted)}
-.cl-lines{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px}.cl-lines li:before{content:"·";color:#8ce4e0;margin-right:6px;font-weight:800}
+.cl-lines{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px}.cl-lines li:before{content:"·";color:var(--cl-accent,#8ce4e0);margin-right:6px;font-weight:800}
 .cl-btns2{grid-template-columns:1fr 1fr}
-.cl-tabs{display:flex;gap:4px;background:#ffffff0a;border-radius:12px;padding:4px;margin:0 0 10px}.cl-tabs button{flex:1;min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-weight:700;cursor:pointer}.cl-tabs .on{background:#8ce4e0;color:#0f1a2b}
+.cl-tabs{display:flex;gap:4px;background:#ffffff0a;border-radius:12px;padding:4px;margin:0 0 10px}.cl-tabs button{flex:1;min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-weight:700;cursor:pointer}.cl-tabs .on{background:var(--cl-accent,#8ce4e0);color:#0f1a2b}
 
 .cl-wk{display:flex;gap:6px}
 .cl-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:0 0 10px}
 .cl-days button{min-height:58px;border-radius:12px;border:1px solid #ffffff17;background:#ffffff06;color:var(--text);font:inherit;display:grid;place-items:center;gap:0;padding:4px 0;cursor:pointer}
-.cl-days small{font-size:12px;color:var(--muted)}.cl-days b{font-size:16px;font-variant-numeric:tabular-nums}.cl-days i{font-style:normal;color:#8ce4e0;font-size:12px;line-height:1;min-height:12px}
-.cl-days .today{border-color:#8ce4e077}.cl-days .on{background:#8ce4e0;color:#0f1a2b;border-color:#8ce4e0}.cl-days .on small,.cl-days .on i{color:#0f1a2b}
+.cl-days small{font-size:12px;color:var(--muted)}.cl-days b{font-size:16px;font-variant-numeric:tabular-nums}.cl-days i{font-style:normal;color:var(--cl-accent,#8ce4e0);font-size:12px;line-height:1;min-height:12px}
+.cl-days .today{border-color:var(--cl-accent,#8ce4e0)77}.cl-days .on{background:var(--cl-accent,#8ce4e0);color:#0f1a2b;border-color:var(--cl-accent,#8ce4e0)}.cl-days .on small,.cl-days .on i{color:#0f1a2b}
 .cl-addbook{width:100%}
 
 /* 5.4.0 코치 수업(실시간 입력 위 회원 띠 · 수업 정리) */
-.cl-band{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#8ce4e026,#b8aaf226);border:1px solid #8ce4e055;margin:10px 14px 0}
+.cl-band{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,var(--cl-accent,#8ce4e0)26,#b8aaf226);border:1px solid var(--cl-accent,#8ce4e0)55;margin:10px 14px 0}
 .cl-band-t{flex:1;min-width:0}.cl-band-t b{display:block;font-size:14px}.cl-band-t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cl-band-x{font-size:12.5px;min-height:36px}
 .ss-coach{margin:12px 0;padding:14px;border-radius:18px;background:#1b2943;border:1px solid #8ce4e055}
-.cl-chips{display:flex;flex-wrap:wrap;gap:6px}.cl-chips button{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid #ffffff24;background:transparent;color:var(--text);font:inherit;font-size:13px;cursor:pointer}.cl-chips .on{background:#8ce4e0;color:#0f1a2b;border-color:#8ce4e0;font-weight:700}
-.cl-send{width:100%;min-height:52px;border:0;border-radius:14px;background:#8ce4e0;color:#0f1a2b;font:inherit;font-weight:800;font-size:16px;cursor:pointer}
+.cl-chips{display:flex;flex-wrap:wrap;gap:6px}.cl-chips button{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid #ffffff24;background:transparent;color:var(--text);font:inherit;font-size:13px;cursor:pointer}.cl-chips .on{background:var(--cl-accent,#8ce4e0);color:#0f1a2b;border-color:var(--cl-accent,#8ce4e0);font-weight:700}
+.cl-send{width:100%;min-height:52px;border:0;border-radius:14px;background:var(--cl-accent,#8ce4e0);color:#0f1a2b;font:inherit;font-weight:800;font-size:16px;cursor:pointer}
 
 .cl-plan-h{display:grid;gap:8px;margin-bottom:10px}
 .cl-plan{border:1px solid #ffffff17;border-radius:14px;padding:10px 12px;margin-bottom:8px;background:#ffffff06}
@@ -2361,24 +2361,24 @@ html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,ht
 
 /* 5.4.0 코치방 고정 카드 */
 .cl-pins{display:grid;gap:8px;margin:0 0 10px}
-.cl-sc,.cl-att{border-radius:16px;background:#1f2e4b;border:1px solid #8ce4e055;padding:12px;display:grid;gap:8px}
+.cl-sc,.cl-att{border-radius:16px;background:#1f2e4b;border:1px solid var(--cl-accent,#8ce4e0)55;padding:12px;display:grid;gap:8px}
 .cl-sc .h{display:flex;justify-content:space-between;align-items:center;gap:6px}.cl-sc .h b{font-size:14.5px}
 .cl-sc .acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .cl-att .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.cl-att .acts button{min-height:40px;font-size:12.5px;padding:0 4px}
 .cl-note{font-size:13.5px;color:#cfe0ee;line-height:1.55;margin:0}
 
 /* 5.4.0 수강권·장부·리포트 */
-.cl-pass{border-radius:18px;padding:16px;background:linear-gradient(135deg,#25405f,#2c2f5c);border:1px solid #8ce4e055;display:grid;gap:10px}
+.cl-pass{border-radius:18px;padding:16px;background:linear-gradient(135deg,#25405f,#2c2f5c);border:1px solid var(--cl-accent,#8ce4e0)55;display:grid;gap:10px}
 .cl-pass .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.cl-pass .t b{font-size:17px}
 .cl-pass .n{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}.cl-pass .n small{font-size:15px;color:var(--muted);font-weight:600}
-.cl-bar{height:8px;border-radius:999px;background:#ffffff1c;overflow:hidden}.cl-bar i{display:block;height:100%;background:#8ce4e0;border-radius:999px}
+.cl-bar{height:8px;border-radius:999px;background:#ffffff1c;overflow:hidden}.cl-bar i{display:block;height:100%;background:var(--cl-accent,#8ce4e0);border-radius:999px}
 .cl-li{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:8px 0;border-top:1px solid #ffffff10}.cl-li span:last-child{color:var(--muted);white-space:nowrap}
 .cl-led{font-size:13px}.cl-led .cl-li{align-items:flex-start}.cl-led em{font-style:normal;color:#9ff0c8;font-size:12px}
 .cl-sub{margin:14px 0 4px;font-size:15px;display:flex;justify-content:space-between}.cl-sub small{font-size:12.5px;color:var(--muted)}
 .cl-cut{width:56px;min-height:36px;display:inline-block;padding:0 6px;font-size:16px}
 .cl-pass-form .cd-pt-row{flex-wrap:wrap}
 .cl-ledger-fold summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-weight:700}.cl-ledger-fold summary small{color:var(--muted);font-weight:500}
-.cl-rep{border-radius:20px;padding:18px;background:radial-gradient(120% 90% at 100% 0,#8ce4e033,transparent 60%),#18243c;border:1px solid #ffffff1f;display:grid;gap:12px}
+.cl-rep{border-radius:20px;padding:18px;background:radial-gradient(120% 90% at 100% 0,var(--cl-accent,#8ce4e0)33,transparent 60%),#18243c;border:1px solid #ffffff1f;display:grid;gap:12px}
 .cl-rep .big{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cl-rep .big div{background:#ffffff0a;border-radius:14px;padding:10px 12px}.cl-rep .big small{display:block;color:var(--muted);font-size:12px}.cl-rep .big b{font-size:20px}
 .cl-tag{font-size:12px;font-weight:700;color:#b8aaf2;letter-spacing:.02em}
 /* 5.4.0 대표님: 메이트로그 사진이 카메라 화면 구도 그대로 보이게 — 5.1.0부터 가로 4:3으로 저장하는데 세로 3:4 칸에 꽉 채워(cover) 가운데만 보였음. 사진 전체를 그대로(contain) */
@@ -2388,3 +2388,29 @@ html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,ht
 .mate-prev{width:128px;aspect-ratio:4/3;object-fit:contain;background:#0d1526}
 .mate-pickph img{aspect-ratio:4/3;object-fit:contain;background:#0d1526}
 .mate-pic{max-width:min(66vw,252px)}
+
+/* 5.4.1 대표님: 코치로그 테마 — 모양은 마이로그 그대로, 색감은 주황·레드(코치 모드일 때 html.coach-theme) */
+html.coach-theme{--cl-accent:#ff9466;--blue:#ff9466;--good:#ffb27a;--ice:#ffc59a;--coach-grad:linear-gradient(135deg,#ffb36b,#ff7a59 55%,#f0566e)}
+html.coach-theme body{background:radial-gradient(120% 60% at 50% -10%,#3a1e1e 0%,transparent 60%),#15111a}
+html.coach-theme .nav.nav6{--mg:linear-gradient(90deg,#ffc46b 0%,#ffa25e 25%,#ff7a59 50%,#f2566e 75%,#e0508f 100%);border-top:1px solid #ff8a5c44}
+html.coach-theme .nav.nav6 .nav-inner{grid-template-columns:repeat(5,minmax(0,1fr))}
+html.coach-theme .nav.nav6 button.nv6-b.active b{box-shadow:0 0 0 2px #ffffffd9,0 6px 16px #ff7a5944!important}
+html.coach-theme .header.coach-mode{box-shadow:inset 0 -2px 0 #ff7a59,0 6px 24px -12px #ff7a59aa}
+html.coach-theme .coach-toggle button.active{background:linear-gradient(90deg,#ffb36b,#f0566e);color:#24100c}
+html.coach-theme .button:not(.secondary):not(.danger){background:var(--coach-grad);color:#24100c;border-color:transparent}
+html.coach-theme .cl-go,html.coach-theme .cl-send{background:var(--coach-grad);color:#24100c}
+html.coach-theme .cl-tabs .on,html.coach-theme .cl-days .on,html.coach-theme .cl-chips .on{background:var(--coach-grad);color:#24100c;border-color:transparent}
+html.coach-theme .cl-days .on small,html.coach-theme .cl-days .on i{color:#24100c}
+html.coach-theme .cl-pill.mint{background:#ff946626;color:#ffb48f}
+html.coach-theme .cl-pass{background:linear-gradient(135deg,#4a2a2a,#3d2540);border-color:#ff946655}
+html.coach-theme .cl-rep{background:radial-gradient(120% 90% at 100% 0,#ff946633,transparent 60%),#22182a}
+html.coach-theme .cl-band{background:linear-gradient(135deg,#ff946626,#f0566e26);border-color:#ff946655}
+html.coach-theme .card,html.coach-theme .section.card{border-color:#ff94662a}
+html.coach-theme .chip.active,html.coach-theme .tabs button.active{background:#5a3a36;border-color:#ff9466}
+html.coach-theme .text-button{color:#ffb48f}
+html.coach-theme .scope-chip.on{border-color:#ff9466;color:#ffc59a}
+html.coach-theme input:focus,html.coach-theme select:focus,html.coach-theme textarea:focus{outline-color:#ff9466;border-color:#ff9466}
+html.coach-theme input[type=checkbox]{accent-color:#ff7a59}
+html.coach-theme .status-badge.ok{color:#ffc59a}
+html.coach-theme .coach-head2 h2{color:#fff3ec}
+html.coach-theme .cdash-card,html.coach-theme .coach-client{border-color:#ff94662e}
