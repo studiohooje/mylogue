@@ -425,3 +425,33 @@ body:has(.live-sheet) .toast,body:has(.ss-sheet) .toast{top:calc(env(safe-area-i
 .mv-acts button{min-height:40px;border-radius:10px;font:inherit;font-size:13px;font-weight:800;padding:0 4px;white-space:nowrap}
 .mv-go{border:0;background:#8ce4e0;color:#101625}
 .mv-edit{border:1px solid var(--line);background:transparent;color:var(--text)}
+/* 5.1.0 대표님: 일반 체중계에는 체성분 칸을 숨긴다(인바디일 때만) */
+#body-form:has(input[name="measure"][value="scale"]:checked) .b-more{display:none}
+/* 5.1.0 체중 기록 창: 숫자판이 있으면 '체중 kg' 칸은 숨김(숫자판이 곧 입력), 측정일은 글자 한 줄 + 칩(누르면 날짜 고르기) */
+#body-form:has(#w-pad-val) .b-rows>label.field:has(input[name="weight"]){display:none}
+.w-pad-input{width:100%;min-width:0;text-align:center;font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;color:#f2b49b;background:transparent;border:0;border-bottom:1px dashed #f2b49b66;border-radius:0;padding:0;-moz-appearance:textfield}
+.w-pad-input::-webkit-outer-spin-button,.w-pad-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.w-pad-input:focus{outline:none;border-bottom-color:#f2b49b}
+#body-form .when-block{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:16px;border:1px solid var(--line);background:var(--surface)}
+#body-form .when-title{font-size:13px;color:var(--muted);margin:0}
+#body-form .when-main{flex:1;min-width:0;margin:0}
+#body-form .when-pill{position:relative;display:flex;align-items:center;min-height:44px;margin:0;padding:0;border:0;background:none;font-size:0}
+#body-form .when-pill input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+#body-form .when-pill .when-cap{display:block;font-size:17px;font-weight:800;color:var(--text);pointer-events:none}
+#body-form .when-pill .when-cap::after{content:" ▾";font-size:12px;color:var(--muted)}
+#body-form .when-chips{margin:0}
+#body-form .when-chip[data-when="d:1"]{display:none}
+/* 5.1.0 수치 기록: 먼저 '체중 기록 / 인바디 기록' 고르기(식사·운동 시작 화면과 같은 모양) */
+.body-kind-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:40px}
+.body-kind-line b{font-size:15px}
+.b-inbody{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:12px 14px}
+.b-inbody-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.b-inbody-head b{font-size:15px}
+.b-inbody-head small{font-size:12px;color:var(--muted)}
+#body-form:has(#w-pad-val) .b-rows>label.field:has(input[name="weight"]){display:none}
+/* 5.3.0 분석: 리포트 카드는 접어 두기 */
+.ar-share-fold{margin:12px 0}
+.ar-share-fold>summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:48px;padding:10px 14px;border-radius:14px;border:1px dashed var(--line);color:var(--text);font-weight:800;cursor:pointer}
+.ar-share-fold>summary::-webkit-details-marker{display:none}
+.ar-share-fold>summary small{font-weight:500;color:var(--muted);font-size:12px}
+.ar-share-fold[open]>summary{margin-bottom:10px}

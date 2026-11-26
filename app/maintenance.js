@@ -18,7 +18,7 @@ const r50 = n => Math.round(n / 50) * 50;
 function intakeByDay(db){ const m = new Map(); for(const x of db.meals||[]){ if(x.planned) continue; const k = Number(x.calories ?? x.kcal); if(!(k >= 0)) continue; m.set(x.date, (m.get(x.date)||0) + k); } return m; }
 function weightsByDay(db){ const m = new Map(); for(const b of db.body||[]) if(Number(b.weight) > 0) m.set(b.date, Number(b.weight)); return m; }
 // 4.23.0 체중이 흔들릴 만한 일: 그날 꼬리표(생리·짠 음식·아픔)는 덜 믿고, 약 용량·크레아틴은 체중 높이가 한 번에 바뀌는 '계단'으로 본다
-const SOFT = new Set(['period', 'salty', 'sick']), STEP = new Set(['med', 'creatine']);
+const SOFT = new Set(['period', 'salty', 'overeat', 'alcohol', 'sick']), STEP = new Set(['med', 'creatine']);
 function flagsByDay(db){ const m = new Map(); for(const b of db.body||[]) if(Array.isArray(b.flags)) m.set(b.date, new Set([...(m.get(b.date)||[]), ...b.flags])); return m; }
 // 가중 최소제곱(작은 연립방정식) — 기울기와 계단 높이를 함께 맞춘다
 function wls(rows, cols){ const k = cols, A = Array.from({length: k}, () => Array(k).fill(0)), y = Array(k).fill(0); for(const {x, kg, w} of rows){ for(let i = 0; i < k; i++){ y[i] += w * x[i] * kg; for(let j = 0; j < k; j++) A[i][j] += w * x[i] * x[j]; } } for(let i = 0; i < k; i++){ let p = i; for(let r = i + 1; r < k; r++) if(Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r; [A[i], A[p]] = [A[p], A[i]]; [y[i], y[p]] = [y[p], y[i]]; if(Math.abs(A[i][i]) < 1e-12) return null; for(let r = 0; r < k; r++){ if(r === i) continue; const f = A[r][i] / A[i][i]; for(let c = i; c < k; c++) A[r][c] -= f * A[i][c]; y[r] -= f * y[i]; } } return y.map((v, i) => v / A[i][i]); }

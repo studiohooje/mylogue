@@ -83,24 +83,26 @@ export function mytagSettingsHTML(){
   const t = myTagCached();
   return `<section class="section card"><h3>마이태그</h3><p>${t ? `<b class="mate-tagchip">@${esc(t)}</b>` : '아직 정하지 않았어요.'}</p><p class="hint">마이로그 전체에서 쓰는 나만의 고유한 이름이에요. 프로필·메이트에서 보이고, 이 태그로 초대받을 수 있어요.</p><button type="button" class="button secondary" data-mate-tagedit>${t ? '바꾸기' : '정하기'}</button></section>`;
 }
-const codeCardHTML = () => `<div class="mate-card"><b>초대 코드로 다른 방 들어가기</b><p class="hint">메이트에게 받은 8자리 코드를 적어 주세요(링크가 안 열릴 때도 이걸로 들어가요).</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button secondary">들어가기</button></form></div>`;
+/* 5.3.0 전수검사 15: 초대 코드는 오른쪽 위 ＋ 안으로(방 만들기 / 초대 코드로 들어가기) */
+const plusPopHTML = () => { const s = st(); if(!s.plus) return ''; return `<div class="mate-plus-pop" role="menu" aria-label="방 추가">${s.plus === 'code' ? `<b>초대 코드로 들어가기</b><p class="hint">메이트에게 받은 8자리 코드(링크가 안 열릴 때도 이걸로)</p><form class="mate-row" data-mate-form="code"><input id="mate-code" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="예: ABCD 2345" aria-label="초대 코드"><button type="submit" class="button">들어가기</button></form>` : `<button type="button" role="menuitem" data-mate-go="create"><i aria-hidden="true">＋</i><span><b>방 만들기</b><small>내 방 · 친구 방</small></span></button><button type="button" role="menuitem" data-mate-codeopen><i aria-hidden="true">#</i><span><b>초대 코드로 들어가기</b><small>받은 8자리 코드 적기</small></span></button>`}</div>`; };
 function roomsView(){
   const s = st(), list = s.rooms || [];
   const rows = list.map(r => `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b><span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
   const dir = (s.direct || []).map(d => `<div class="mate-card mate-direct"><b>@${esc(d.fromTag || '메이트')} 님이 '${esc(d.roomName)}'에 초대했어요</b><div class="mate-row"><button type="button" class="button" data-mate-dirok="${esc(d.id)}">보고 들어가기</button><button type="button" class="button secondary" data-mate-dirno="${esc(d.id)}">거절</button></div></div>`).join('');
-  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib" data-mate-go="create" aria-label="방 만들기">＋</button>`})}${/* 5.0.5 대표님: 마이태그는 메이트 전용이 아니라 전체 프로필 — 메이트 첫 화면에서 크게 권하지 않고, 맨 아래 작은 한 줄만 */''}${dir}
+  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib${st().plus ? ' on' : ''}" data-mate-plus aria-label="방 만들기·초대 코드" aria-expanded="${!!st().plus}">＋</button>`})}${plusPopHTML()}${/* 5.0.5 대표님: 마이태그는 메이트 전용이 아니라 전체 프로필 — 메이트 첫 화면에서 크게 권하지 않고, 맨 아래 작은 한 줄만 */''}${dir}
   ${s.loading === 'rooms' && !s.rooms ? '<p class="hint">방을 불러오는 중…</p>' : ''}
   ${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
-  ${codeCardHTML()}
-  <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 동안 보관돼요. '내 기록에도 남기기'로 옮긴 숫자는 기록으로 계속 남아요.</p>${myTagCached() ? '' : '<p class="hint mate-tag-hint">마이태그는 오른쪽 위 프로필에서 정해요. 정해 두면 메이트가 @태그로 나를 초대할 수 있어요. <button type="button" class="text-button" data-mate-tagedit>프로필 열기</button></p>'}`;
+  <p class="mate-foot">대화·사진은 ${MATE_KEEP_DAYS}일 보관 · 기록에 남긴 숫자는 계속 남아요${myTagCached() ? '' : ' · 마이태그는 <button type="button" class="text-button" data-mate-tagedit>프로필</button>에서 정해요'}</p>`;
 }
-function postHTML(p, r){
+function postHTML(p, r, cont = false){
+  /* 5.3.0 전수검사 17: 메신저처럼 — 내 글은 오른쪽 민트 말풍선, 남의 글은 왼쪽(이어 쓴 글은 얼굴·이름 생략), 시각은 말풍선 옆, 사진도 말풍선 안 */
   const mine = p.uid === me(), name = r.memberNames[p.uid] || p.name || '메이트';
-  const who = mine ? '' : `<button type="button" class="mate-av" style="--c:${colorOf(p.uid)}" data-mate-who="${esc(p.uid)}" aria-label="${esc(name)} 기록 보기">${esc(name.slice(0, 1))}</button>`;
-  const nameBtn = mine ? '' : `<button type="button" class="mate-name" data-mate-who="${esc(p.uid)}">${esc(name)}</button>`;
-  const body = p.kind === 'text' ? `<div class="mate-txt">${esc(p.text)}</div>`
-    : `<div class="mate-photo"><img alt="${esc(name)}님이 ${esc(hmOf(p.takenAt))}에 찍은 사진" data-mate-key="${esc(p.photoKey)}"></div>${p.rec ? `<div class="mate-rec">✓ ${esc(p.rec)}</div>` : ''}${mine ? `<div class="mate-acts">${p.photoKind !== 'scale' ? `<button type="button" data-mate-tofood="${esc(p.id)}">식단으로 가져오기</button>` : ''}<button type="button" data-mate-del="${esc(p.id)}">지우기</button></div>` : ''}`;
-  return `<div class="mate-msg ${mine ? 'me' : ''}">${who}<div class="mate-col"><div class="mate-who">${nameBtn}<time>${esc(hmOf(p.takenAt || p.createdAt))}</time></div>${body}${mine && p.kind === 'text' ? `<div class="mate-acts"><button type="button" data-mate-del="${esc(p.id)}">지우기</button></div>` : ''}</div></div>`;
+  const who = mine ? '' : cont ? '<span class="mate-av-sp" aria-hidden="true"></span>' : `<button type="button" class="mate-av" style="--c:${colorOf(p.uid)}" data-mate-who="${esc(p.uid)}" aria-label="${esc(name)} 기록 보기">${esc(name.slice(0, 1))}</button>`;
+  const nameBtn = mine || cont ? '' : `<div class="mate-who"><button type="button" class="mate-name" data-mate-who="${esc(p.uid)}">${esc(name)}</button></div>`;
+  const bub = p.kind === 'text' ? `<div class="mate-bub mate-txt">${esc(p.text)}</div>`
+    : `<div class="mate-bub mate-pic"><div class="mate-photo"><img alt="${esc(name)}님이 ${esc(hmOf(p.takenAt))}에 찍은 사진" data-mate-key="${esc(p.photoKey)}"></div>${p.rec ? `<div class="mate-rec">✓ ${esc(p.rec)}</div>` : ''}</div>`;
+  const acts = mine ? `<div class="mate-acts">${p.kind !== 'text' && p.photoKind !== 'scale' ? `<button type="button" data-mate-tofood="${esc(p.id)}">식단으로 가져오기</button>` : ''}<button type="button" data-mate-del="${esc(p.id)}">지우기</button></div>` : '';
+  return `<div class="mate-msg ${mine ? 'me' : ''} ${cont ? 'cont' : ''}">${who}<div class="mate-col">${nameBtn}<div class="mate-line">${bub}<time>${esc(hmOf(p.takenAt || p.createdAt))}</time></div>${acts}</div></div>`;
 }
 function proposalHTML(p, r){
   const label = MATE_KIND_LABEL[p.kind], my = me(), voted = p.yes.includes(my) || p.no.includes(my);
@@ -112,12 +114,12 @@ function roomView(){
   const s = st(), r = roomById(s.roomId); if(!r) return roomsView();
   const posts = s.posts[r.id] || [], props = (s.props[r.id] || []).filter(p => p.status === 'open');
   let lastDay = '', feed = '';
-  for(const p of posts){ const d = dayOf(p.takenAt || p.createdAt); if(d !== lastDay){ feed += `<div class="mate-day">${esc(d)}</div>`; lastDay = d; } feed += postHTML(p, r); }
+  let prev = null; for(const p of posts){ const at = p.takenAt || p.createdAt, d = dayOf(at); let cont = !!prev && prev.uid === p.uid && at - (prev.takenAt || prev.createdAt) < 10 * 60_000; if(d !== lastDay){ feed += `<div class="mate-day"><span>${esc(d)}</span></div>`; lastDay = d; cont = false; } feed += postHTML(p, r, cont); prev = p; }
   const sub = r.type === 'mine' ? '내 방 · 나만 봐요' : `${r.memberIds.length}명 · ${MATE_KINDS.filter(k => r.scope[k]).map(k => MATE_KIND_LABEL[k]).join('·') || '기록 비공개'}${MATE_KINDS.some(k => r.scope[k]) ? ' 공개' : ''}`;
   return `${head(r.name, sub, {back: 'rooms', right: `<button type="button" class="mate-ib" data-mate-go="settings" aria-label="방 설정">⋯</button>`})}
   ${props.map(p => proposalHTML(p, r)).join('')}
   <div class="mate-feed" aria-live="polite">${s.loading === 'room' && !posts.length ? '<p class="hint">불러오는 중…</p>' : feed || `<div class="mate-empty"><b>첫 사진을 찍어 보세요</b><p class="hint">체중계 숫자, 먹은 것 포장지, 운동한 순간을 찍어 남겨요. 찍은 시각이 사진에 새겨져요.</p></div>`}</div>
-  <form class="mate-compose" data-mate-form="say"><button type="button" class="mate-shoot" data-mate-go="cam" aria-label="사진 찍기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button><input id="mate-say" maxlength="500" placeholder="메시지 보내기" aria-label="메시지" autocomplete="off"><button type="submit" class="button secondary">보내기</button></form>`;
+  <form class="mate-compose" data-mate-form="say"><button type="button" class="mate-shoot" data-mate-go="cam" aria-label="사진 찍기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button><input id="mate-say" maxlength="500" placeholder="메시지 보내기" aria-label="메시지" autocomplete="off" enterkeyhint="send"><button type="submit" class="mate-send" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>`;
 }
 function camView(){
   const s = st(), modes = [['food', '음식'], ['scale', '체중계'], ['etc', '운동·기타']];
@@ -181,7 +183,7 @@ function settingsView(){
   ${MATE_KINDS.map(k => `<button type="button" class="mate-sw ${r.scope[k] ? 'on' : ''}" data-mate-scope="${k}" ${pending ? 'disabled' : ''} aria-pressed="${r.scope[k]}"><span>${MATE_KIND_LABEL[k]}<small class="hint">${r.scope[k] ? '공개 중' : '비공개'}</small></span><span class="tog"></span></button>`).join('')}
   ${pending ? '<p class="hint warn">변경 요청이 진행 중이에요. 끝나면 다시 바꿀 수 있어요.</p>' : ''}</div>` : '<p class="hint">내 방은 나만 봐요.</p>'}
   ${s.confirmLeave ? `<div class="mate-card"><b>정말 나갈까요?</b><p class="hint">${r.memberIds.length <= 1 ? '혼자 있는 방이라 나가면 방이 지워져요.' : '내가 올린 사진·글은 보관 기간이 끝날 때까지 남아요. 메이트에게 보이던 내 기록 요약은 바로 지워져요.'}</p><div class="mate-row"><button type="button" class="button" data-mate-leave="yes">나가기</button><button type="button" class="button secondary" data-mate-leave="no">그만두기</button></div></div>` : `<button type="button" class="button secondary" data-mate-leave="ask">방 나가기</button>`}
-  <p class="hint">방의 대화·사진은 ${MATE_KEEP_DAYS}일 뒤 자동으로 지워져요. 기록에 남긴 숫자는 그대로예요.</p>${codeCardHTML()}`;
+  <p class="mate-foot">방의 대화·사진은 ${MATE_KEEP_DAYS}일 뒤 자동으로 지워져요. 기록에 남긴 숫자는 그대로예요.</p>`;
 }
 function qrSVG(text){ try{ const m = qrMatrix(text), n = m.length, q = 2; let d = ''; m.forEach((row, y) => row.forEach((on, x) => { if(on) d += `M${x + q} ${y + q}h1v1h-1z`; })); return `<svg viewBox="0 0 ${n + q * 2} ${n + q * 2}" class="mate-qr" role="img" aria-label="초대 QR 코드"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#101625"/></svg>`; }catch{ return ''; } }
 function inviteView(){
@@ -293,6 +295,9 @@ export function openMateJoin(code){ const s = st(); $s.page = 'mate'; s.view = '
 export async function mateClick(t){
   if(!t?.closest) return false;
   const d = t.dataset || {}, s = st();
+  if(d.matePlus !== undefined){ s.plus = s.plus ? null : 'menu'; $f.render(); return true; }
+  if(d.mateCodeopen !== undefined){ s.plus = 'code'; $f.render(); globalThis.requestAnimationFrame?.(() => document.getElementById('mate-code')?.focus()); return true; }
+  if(s.plus && !t.closest('.mate-plus-pop')){ s.plus = null; if(!d.mateGo){ $f.render(); } }
   if(d.mateTagedit !== undefined){ $s.pfEdit = newProfileEdit($s.db, cloudState.user, myTagCached()); $s.modal = 'profile-edit'; $f.render(); return true; }
   if(d.mateTagcheck !== undefined){ const v = document.getElementById('mate-tag')?.value || ''; s.tag = {value: v, msg: '확인하는 중…', ok: false}; $f.render(); tagAvailable(v).then(r => { s.tag = {value: v, msg: r.msg, ok: r.ok}; $f.render(); }).catch(e => { s.tag = {value: v, msg: e.message, ok: false}; $f.render(); }); return true; }
   if(d.mateTagsave !== undefined){ const v = document.getElementById('mate-tag')?.value || ''; const p = tagProblem(v); if(p){ s.tag = {value: v, msg: p, ok: false}; $f.render(); return true; } s.busy = true; $f.render(); try{ const t = await setMyTag(v, {rooms: s.rooms || []}); s.busy = false; s.tagState = 'set'; s.view = 'rooms'; s.tag = null; $f.toast(`마이태그를 @${t}(으)로 정했어요.`); $f.render(); }catch(e){ s.busy = false; s.tag = {value: v, msg: e.message, ok: false}; $f.render(); } return true; }

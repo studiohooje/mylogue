@@ -80,7 +80,7 @@ function tile(series, k, s, big){
  const head = `<div class="df-tt"><span class="df-nm"><i></i>${label}</span>${goal?`<span class="df-goal">목표 ${n0(goal)}${unit}</span>`:''}</div>`;
  const value = k==='score'
   ? (v==null ? `<div class="df-tv"><b>—</b><small>${Number(s.calorieGoal) ? '이 날 기록이 없어요' : '목표 칼로리를 정하면 점수가 나와요'}</small></div>` : `<div class="df-tv"><b>${v}</b><small>점</small><span class="df-word">${last.date===ymd(new Date())&&new Date().getHours()<21?'오늘은 진행 중':scoreWord(v)}</span></div>`)
-  : `<div class="df-tv"><b>${v==null?'—':n0(v)}</b><small>${unit}${v!=null&&goal?` · ${Math.round(v/goal*100)}%`:''}</small></div>`;
+  : (()=>{/* 5.3.0 전수 검사: 오늘 숫자는 위 '하루 누적'에 있으니 여기선 기간 평균 */const base=(done&&done.length?done:rec).filter(x=>x!=null),av=base.length?base.reduce((a,b)=>a+b,0)/base.length:null;return `<div class="df-tv"><b>${av==null?'—':n0(av)}</b><small>${unit} · 평균${av!=null&&goal?` · 목표의 ${Math.round(av/goal*100)}%`:''}</small></div>`})();
  const parts = k==='score' && last.parts?.protein!=null ? `<div class="df-parts" aria-label="이 날 점수 구성">${PARTS.map(([pk]) => `<i style="width:${last.parts[pk]}%;background:${color(pk)}"></i>`).join('')}</div><div class="df-pl">${PARTS.map(([pk, pl, mx]) => `<span style="--pc:${color(pk)}">${pl} ${last.parts[pk]}/${mx}</span>`).join('')}</div>` : '';
  const hitRow = hit!=null && done.length ? `<div class="df-hit"><span>${k==='score'?'80점 이상':'범위 안'} ${hit}/${done.length}일${live?' (오늘 빼고)':''}</span><span class="df-hbar"><i style="width:${Math.round(hit/done.length*100)}%"></i></span></div>` : '';
  return `<div class="df-tile${big?' big':''}" style="--c:${c}">${head}${value}${parts}${chart}${hitRow}</div>`;

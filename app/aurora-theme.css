@@ -2237,3 +2237,64 @@ html[data-theme="light"] .mplan-bar>*,html[data-theme="light"] .macro-label i,ht
 .simple-save{min-height:52px;margin-top:6px}
 .simple-rest{justify-self:center}
 @media (max-width:379px){.simple-opts{grid-template-columns:1fr}}
+
+/* 5.3.0 입력 창 통일(전수검사 13·14): 모든 입력 창은 아래에서 올라오는 같은 모양 · 같은 머리글(제목 20px · 닫기 44px) */
+.modal-backdrop.quick-palette{align-items:flex-end;padding:0;background:#030713c8}
+.modal-backdrop .sheet,.quick-palette .sheet{width:min(100%,600px);max-height:92dvh;border-radius:22px 22px 0 0;border:1px solid #5a7da0;border-bottom:0;box-shadow:0 -20px 55px #0006}
+.modal-backdrop:not(.quick-palette) .sheet{padding:0 18px calc(20px + env(safe-area-inset-bottom))}
+.modal-backdrop:not(.quick-palette) .sheet>.sheet-head{position:sticky;top:0;z-index:5;margin:0 -18px 14px;padding:10px 12px 10px 18px;background:#1b2943}
+.quick-palette .sheet{padding:0 0 calc(10px + env(safe-area-inset-bottom))}
+.modal-backdrop .sheet>.sheet-head{align-items:center;min-height:64px;border-bottom:1px solid #ffffff14}
+.quick-palette .sheet>.sheet-head{padding:10px 12px 10px 18px;background:#1b2943}
+.modal-backdrop .sheet>.sheet-head h2{font-size:20px;line-height:1.3;margin:0;letter-spacing:-.03em}
+.modal-backdrop .sheet>.sheet-head .close{width:44px;height:44px;min-width:44px;min-height:44px;border-radius:12px;background:#ffffff12;color:#eaf4ff;font-size:20px;line-height:1;display:grid;place-items:center;padding:0}
+.q-live-start>.hint{margin:-4px 0 2px}
+.body-pick .body-pick-scan{justify-self:center;margin-top:2px}
+@media (min-width:650px){.modal-backdrop.quick-palette,.modal-backdrop{align-items:flex-end}}
+
+/* 5.3.0 메이트로그 — ＋ 메뉴 · 작은 안내 · 메신저형 방 */
+.mate-ib.on{background:#8ce4e0;color:#101625}
+.mate-plus-pop{position:relative;z-index:8;margin:-4px 0 10px auto;width:min(100%,300px);display:grid;gap:4px;padding:8px;border-radius:16px;background:#1f2e4b;border:1px solid #ffffff24;box-shadow:0 18px 40px #0009}
+.mate-plus-pop>button{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 10px;border:0;border-radius:12px;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.mate-plus-pop>button:hover,.mate-plus-pop>button:focus-visible{background:#ffffff10}
+.mate-plus-pop>button i{font-style:normal;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#8ce4e022;color:#8ce4e0;font-weight:800;flex:none}
+.mate-plus-pop>button b{display:block;font-size:15px}.mate-plus-pop>button small{display:block;font-size:12px;color:var(--muted)}
+.mate-plus-pop>b{padding:4px 4px 0;font-size:15px}.mate-plus-pop>.hint{margin:0 4px;font-size:12.5px}
+.mate-plus-pop .mate-row{padding:4px}.mate-plus-pop input{flex:1;min-width:0;min-height:44px;font-size:16px}
+.mate-foot{margin:18px 0 6px;text-align:center;font-size:12px;line-height:1.6;color:#8193a8;word-break:keep-all}
+.mate-foot .text-button{font-size:12px;padding:0;min-height:0;min-width:0;color:#9fd2ee}
+.mate-feed{gap:4px;padding-bottom:8px}
+.mate-day{justify-self:stretch;display:flex;align-items:center;gap:10px;margin:12px 0 6px;background:none;padding:0;font-size:12px;color:#8193a8}
+.mate-day:before,.mate-day:after{content:"";flex:1;height:1px;background:#ffffff14}
+.mate-day span{padding:3px 10px;border-radius:999px;background:#ffffff0b}
+.mate-msg{grid-template-columns:36px minmax(0,1fr);gap:8px;margin-top:8px}
+.mate-msg.cont{margin-top:0}
+.mate-msg.me{grid-template-columns:minmax(0,1fr);margin-top:8px}
+.mate-msg.me.cont{margin-top:0}
+.mate-av-sp{width:36px}
+.mate-col{gap:3px}
+.mate-who{font-size:12.5px}
+.mate-line{display:flex;align-items:flex-end;gap:6px;max-width:100%}
+.mate-msg.me .mate-line{flex-direction:row-reverse}
+.mate-line time{flex:none;font-size:12px;color:#8193a8;font-variant-numeric:tabular-nums;padding-bottom:2px}
+.mate-bub{min-width:0}
+.mate-txt{background:#26375a;color:#eaf4ff;border-radius:4px 16px 16px 16px;padding:9px 13px;line-height:1.45;max-width:min(68vw,300px)}
+.mate-msg.cont:not(.me) .mate-txt{border-radius:16px}
+.mate-msg.me .mate-txt{background:#8ce4e0;color:#0f1a2b;border-radius:16px 4px 16px 16px;font-weight:500}
+.mate-msg.me.cont .mate-txt{border-radius:16px}
+.mate-pic{background:#26375a;border-radius:4px 16px 16px 16px;padding:4px;overflow:hidden;max-width:min(60vw,240px)}
+.mate-msg.me .mate-pic{background:#8ce4e0;border-radius:16px 4px 16px 16px}
+.mate-pic .mate-photo{width:min(180px,50vw);border-radius:12px}
+.mate-pic .mate-rec{padding:5px 8px 3px;font-size:12.5px;color:#cfe9ff;margin:0;max-width:min(180px,50vw)}
+.mate-msg.me .mate-pic .mate-rec{color:#0f1a2b;font-weight:700}
+.mate-msg.me .mate-acts{justify-content:flex-end}
+.mate-acts{display:flex;gap:2px}
+.mate-acts button{min-height:32px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:#8193a8;font:inherit;font-size:12px;cursor:pointer}
+.mate-acts button:hover{background:#ffffff0d;color:var(--text)}
+.mate-compose{padding:6px;border-radius:999px;gap:6px;background:#141e33f5}
+.mate-compose input{border-radius:999px;min-height:44px;padding:0 16px;background:#ffffff0d;border:1px solid #ffffff14}
+.mate-compose .mate-shoot{width:44px;height:44px;flex:none}
+.mate-send{width:44px;height:44px;flex:none;border:0;border-radius:50%;display:grid;place-items:center;background:#8ce4e0;color:#0f1a2b;cursor:pointer}
+.mate-send svg{width:22px;height:22px}
+.mate-compose{isolation:isolate}
+.mate-compose:before{content:"";position:absolute;z-index:-1;left:-20px;right:-20px;top:-10px;bottom:-90px;background:linear-gradient(180deg,transparent,var(--bg) 14px)}

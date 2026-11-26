@@ -10,7 +10,7 @@ test('빠른 식단은 실제 사용자 음식 두 개를 각각 계산하고 �
  const db=emptyDB();db.meals=[cleanMeal({date:'2026-11-12',name:'현미밥',servingQty:200,servingUnit:'g',calories:330,carbs:72,protein:7,fat:2,loggedAt:'2026-11-12T09:00:00'}),cleanMeal({date:'2026-11-12',name:'닭가슴살',servingQty:100,servingUnit:'g',calories:110,carbs:0,protein:23,fat:1})];
  const state=emptyQuickMeal(date,'13:35');state.rows=[{name:'현미밥',servingQty:210,servingUnit:'g',calories:165,carbs:36,protein:3.5,fat:1,source:'manual'},{name:'닭가슴살',servingQty:150,servingUnit:'g',calories:110,carbs:0,protein:23,fat:1,source:'manual'}];
  const html=quickMealHTML(db,state),records=quickMealRecords(state),total=mealTotals(records);
- assert.match(html,/최근 음식/);assert.match(html,/nutrition-goal kcal/);assert.match(html,/nutrition-goal protein/);assert.match(html,/이번 식사 ÷ 현재 하루 누적/);
+ assert.match(html,/최근 음식/);assert.doesNotMatch(html,/날짜·시각 · 오늘 누적/);/* 5.1.0 겹치는 아래 칸 뺌 */assert.match(html,/이번 식사 ÷ 현재 하루 누적/);
  assert.equal(records.length,2);assert.equal(records[0].servingQty,210);assert.equal(records[1].servingQty,150);assert.equal(new Set(records.map(x=>x.mealGroupId)).size,1);assert.equal(total.calories,511.5);
 });
 test('추정 음식을 다른 중량으로 재사용하면 칼로리와 추정 범위도 함께 환산한다',()=>{
