@@ -51,3 +51,12 @@ test('예정 포함은 계정 설정에 남는다', async () => {
   assert.equal(db.settings.preferences.showPlanned, true);
   assert.equal(normalizeDB(withPrefs(db, {showPlanned: false})).settings.preferences.showPlanned, false);
 });
+
+// 2026-11-27 대표님: 운동 시작 때 헬스장과 3km 넘게 떨어지면 확인
+test('헬스장 거리 확인', async () => {
+  const {kmBetween, FAR_KM, locWarnHTML} = await import('../places.js');
+  const ansan = {lat: 37.3189, lng: 126.8309}, ilsan = {lat: 37.6584, lng: 126.7700};
+  assert.ok(kmBetween(ansan, ilsan) > 30 && kmBetween(ansan, ilsan) < 45);
+  assert.ok(kmBetween(ansan, {lat: 37.3200, lng: 126.8320}) < FAR_KM);
+  assert.match(locWarnHTML({gym: '헬스플러스 안산1호점', km: 37.8, where: '경기 고양시 일산동구'}), /약 <b>38km<\/b>/);
+});

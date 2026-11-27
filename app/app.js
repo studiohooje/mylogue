@@ -1,3 +1,5 @@
+import {planMachineAssign,applyMachineAssign,changesTable} from './record-tools.js';
+import {gymsWithMachines} from './gym-browse.js';
 import './intl-cache.js';
 import {nativeAuthAvailable} from './native-auth.js';
 import {APP_VERSION,installChip,installModalBody,installClick,initInstall} from './install.js';
@@ -421,8 +423,12 @@ function quickPreviousSet(exerciseId,machineId){for(const w of $s.recent($s.db.w
 // 4.12 상세 입력에서 음식 DB 검색(화면 전체를 다시 그리지 않고 결과만 바꿈)
 function batchDbInput(t){if(t.id!=='batch-db-search')return false;const q=t.value,box=document.getElementById('batch-db-results');const draw=()=>{if(!box)return;box.innerHTML=q.trim()?searchFoodDB(q,{limit:12}).map(x=>`<button type="button" class="chip" data-batch-db="${$s.esc(x.id)}">${$s.esc(x.name)} <small>${x.calories==null?'':`${Math.round(x.calories)}kcal/${MASS.has(x.servingUnit)?'100'+$s.esc(x.servingUnit):$s.esc(unitLabel(1,x.servingUnit,x.unitGrams))}${x.dbDoubt?" · 확인 필요":""}`}</small></button>`).join('')||'<small class="hint">찾는 음식이 없어요</small>':''};if(foodDBReady())draw();else{if(box)box.innerHTML='<small class="hint">음식 DB를 불러오는 중이에요…</small>';loadFoodDB().then(draw).catch(e=>{if(box)box.textContent=e.message})}return true}
 
+/* 2026-11-27 대표님: 지난 기록에 머신 붙이기 — 숨은 관리자 작업(화면·메뉴 없음, 관리자 계정에서만 동작). Claude가 콘솔로 실행: backup → plan → (대표님 확인) → apply */
+globalThis.__mylogueRecordTools={admin:()=>isCatalogAdmin(cloudState.user),backupJSON:()=>{if(!isCatalogAdmin(cloudState.user))throw Error('관리자만');return JSON.stringify($s.db)},plan:(rules)=>{if(!isCatalogAdmin(cloudState.user))throw Error('관리자만');const c=planMachineAssign($s.db,rules,{exerciseName:id=>$f.allExercises().find(x=>x.id===id)?.name||id});return {count:c.length,table:changesTable(c),changes:c}},apply:(changes,opt={})=>{if(!isCatalogAdmin(cloudState.user))throw Error('관리자만');$s.db=save(applyMachineAssign($s.db,changes,opt));render();return changes.length}};
+$f.openGymPick=(name,key='')=>{if(cloudState.approval!=='approved')throw Error('로그인하고 승인된 뒤에 헬스장 머신을 등록할 수 있어요.');$s.gymPick=newGymPicker($s.sharedCatalog,$s.db.settings,name,key);$s.gymPick.newModels=new Map();$s.modal='gym-machines';render()};
 $s.root.addEventListener('click',async event=>{
  if(handleWhenClick(event.target))return;
+ {const mm=event.target.closest?.('.m-more');if(mm?.classList?.contains?.('m-more')){/* 2026-11-27 기구 전체 이름 '…' — 카드를 고르지 않고 이름만 펼침 */mm.focus?.();return}}
  {const wm=event.target.closest?.('[data-wl-more]');if(wm?.dataset?.wlMore){/* 5.4.6 홈 운동 칸 요일별 부위 '…' 펼치기(칸 전체를 눌러 이동하지 않게) */toggleWeekPart(wm.dataset.wlMore);render();return}}
  const target=event.target.closest('button,[data-page],[data-metric],[data-filter-part],[data-gm-pick]');if(!target)return;
  if(target.id==='hc-connect'||target.id==='hc-read'){await healthFlow(target.id==='hc-connect');return}
@@ -474,6 +480,7 @@ $s.root.addEventListener('click',async event=>{
   if(target.dataset.planToggle!==undefined){$s.showPlanned=!$s.planOn();try{localStorage.setItem('mylogue.showPlanned',$s.showPlanned?'1':'0')}catch{}$s.db=save(withPrefs($s.db,{showPlanned:$s.showPlanned}));render();return}
   if(target.dataset.planConfirm){confirmPlanned(target.dataset.planConfirm);return}
   if(target.dataset.wstep){const i=document.querySelector('#body-form [name="weight"]');if(!i)return;const v=Math.max(20,Math.round(((Number(i.value)||$s.lastScaleW()||60)+Number(target.dataset.wstep))*10)/10);i.value=v.toFixed(1);const o=document.getElementById('w-pad-val');if(o){if(o.tagName==='INPUT')o.value=v.toFixed(1);else o.textContent=v.toFixed(1)}$s.sheetDirty=true;$s.dirtyModal=$s.modal;return}
+  if(target.dataset.gbDel){/* 2026-11-27 관리자: 헬스장 둘러보기에서 기구 하나 빼기(확인 후) */if(!isCatalogAdmin(cloudState.user))return;const [key,id]=target.dataset.gbDel.split('|'),g=gymsWithMachines($s.sharedCatalog).find(x=>x.key===key);if(!g)return;if(!confirm('이 헬스장에서 이 기구를 뺄까요? 모든 사람에게 바로 반영돼요.'))return;const st=newGymPicker($s.sharedCatalog,$s.db.settings,g.name,g.key);st.checked.delete(id);const {remove}=gymChanges(st,$s.sharedCatalog);for(const x of remove)await saveSharedCatalogItem('gymMachines',x);await refreshCatalog();render();toast('뺐어요. 이 헬스장을 쓰는 모든 사람에게 바로 반영돼요.');return}
   if(target.dataset.gymMachines!==undefined){if(cloudState.approval!=='approved')throw Error('로그인하고 승인된 뒤에 헬스장 머신을 등록할 수 있어요.');const name=$s.db.settings.gyms?.[Number(target.dataset.gymMachines)];if(!name)return;$s.gymPick=newGymPicker($s.sharedCatalog,$s.db.settings,name);$s.gymPick.newModels=new Map();$s.modal='gym-machines';render();return}
   if(target.dataset.gmPart&&$s.gymPick){$s.gymPick.part=target.dataset.gmPart;render();return}
   if(target.dataset.gmOpen&&$s.gymPick){$s.gymPick.open[target.dataset.gmOpen]=!($s.gymPick.open[target.dataset.gmOpen]??false);render();return}
@@ -660,6 +667,7 @@ $s.root.addEventListener('submit',async event=>{
   if($s.coach.visible()&&await $s.coach.submit(form,d))return;
   if($s.backupBusy)throw Error('백업·복원 완료 후 저장해 주세요.');
   if(getStorageStatus().blocked)throw Error('기존 기록 보호를 위해 먼저 복구해 주세요.');
+  if(form.id==='gb-search'){$s.gymBrowse={...($s.gymBrowse||{}),q:String(d.q||'').trim(),mode:'all',open:null};render();return}
   if(form.id==='gym-search-form'){const q=String(d.q||'').trim();if(!q)throw Error('장소 이름이나 동네를 입력해 주세요.');$s.gymSearch={q,status:'loading',results:[]};render();try{$s.gymSearch={q,status:'done',results:await searchPlaces(q)}}catch(e){$s.gymSearch={q,status:'error',message:e.message,results:[]}}render();return}
   if(form.id==='gym-map-form'){const name=String(d.name||'').trim();if(!name)throw Error('헬스장 이름을 입력해 주세요.');const c=$s.gymMap?.center||{};let address='';try{address=await addressAt(c.lat,c.lng)}catch{}$s.db=save(addGymPlace($s.db,{name,address,lat:c.lat,lng:c.lng,provider:'manual'}));closeGymMap();render();toast(`내 운동 장소에 ‘${name}’ 추가했어요.`);return}
   if(form.id==='after-workout-form'){$s.afterWorkout=readAfterWorkoutForm(form);const w=$s.planWorkout($s.afterWorkout&&afterWorkoutRecord($s.afterWorkout));$s.db=save({...$s.db,workouts:[...$s.db.workouts,w]});$s.afterWorkout=null;$s.modal=null;$s.page='workout';render();recordHint();toast(`${w.exercises.length}종목을 저장했습니다.`);return}

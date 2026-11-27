@@ -1,3 +1,4 @@
+import {gymBrowseHTML,gymDetailHTML} from './gym-browse.js';
 import {myBookHTML} from './my-book.js';
 // 4.17.0 app.js에서 옮김(26개 함수). 화면 상태는 $s, 다른 app 함수는 $f로 부른다.
 import {workoutMenuHTML} from './workout-menu.js';
@@ -153,6 +154,7 @@ const SET_ICON={
  screen:'<rect x="4" y="4.5" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4.5v15" stroke="currentColor" stroke-width="2"/><path d="M12 4.5h5a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-5z" fill="currentColor"/>',
  bell:'<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14zM10 20.5h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>',
  gym:'<path d="M3.5 10v4M6.5 8v8M17.5 8v8M20.5 10v4M6.5 12h11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+ pin:'<circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>',
  ai:'<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z" fill="currentColor"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor"/>',
  health:'<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.5 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 12h3l1.2-2.2 1.8 4.4 1.2-2.2H17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
  backup:'<path d="M12 4v10M8 10l4 4 4-4M5 16.5v2a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -171,6 +173,7 @@ function settingsSections(){
   ['screen','screen','화면','어두운 화면·밝은 화면',()=>`<section class="section card theme-card"><h3>화면 모드</h3><p class="hint">지금 화면은 어두운 모드예요. 밝은 화면은 시험 중이라 일부 색이 다르게 보일 수 있어요.</p><div class="chip-row">${[['dark','어두운 화면'],['light','밝은 화면 (시험)']].map(([k,l])=>`<button type="button" class="chip ${$s.themePref()===k?'active':''}" data-theme-set="${k}">${l}</button>`).join('')}</div></section>`],
   ['bell','bell','알림','기록 알림 시각',()=>reminderSettingsHTML($s.db)],
   ['gym','gym','운동 장소','다니는 헬스장·머신',()=>$f.gymSettingsHTML()],
+  /* 2026-11-27 대표님: 헬스장 둘러보기(기구가 등록된 헬스장·비치 기구) */['gymbrowse','pin','헬스장 둘러보기','주변·이름으로 찾고 비치 기구 보기',()=>$s.gymBrowse?.open?gymDetailHTML($s.gymBrowse.open,$s.sharedCatalog,{admin:isCatalogAdmin(cloudState.user)}):gymBrowseHTML($s.gymBrowse||{},$s.sharedCatalog,$s.db.settings,{signedIn:cloudState.approval==='approved'})],
   ['ai','ai','AI 연결','내 AI 연결·AI 입력 방식',()=>aiSettingsHTML()],
   ['health','health','건강 앱 연동','삼성 헬스·헬스 커넥트 걸음·체중',()=>healthSettingsHTML({native:!!healthPlugin(),status:$s.hc?.status,granted:$s.hc?.granted,auto:!!$s.db.settings?.healthAuto})],
   ['import','backup','다른 곳 기록 가져오기','예전 기록·다른 앱 기록을 날짜별로 한 번에',()=>importPageHTML($s.db,$s.impSt||{})],

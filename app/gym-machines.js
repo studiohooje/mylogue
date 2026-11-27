@@ -1,3 +1,4 @@
+import {makerColor} from './machine-tag.js';
 import {MACHINE_SPEC_BY_ID} from './machine-brands.js';
 // 4.7.0 헬스장 머신 한꺼번에 등록(대표님: 다니는 헬스장 머신을 싹 다 등록하고 싶다).
 // - 헬스장마다 '어떤 머신이 있는지'를 공용 도감(gymMachines)에 둔다. 머신은 일반 머신 종류(gm:…)·앱 기본 제조사 모델(bm:…)·
@@ -64,8 +65,8 @@ export function specMissing(st, shared = {}){
 export function registeredAt(shared = {}, key = '', name = ''){
  return new Set((shared.gymMachines||[]).filter(g => !g.removed && (g.gymKey ? g.gymKey===key : g.gymName===name)).map(g => g.modelId));
 }
-export function newGymPicker(shared, settings, gymName){
- const key = gymKeyOf(settings, gymName), have = registeredAt(shared, key, gymName), spec = {};
+export function newGymPicker(shared, settings, gymName, gymKey = ''){
+ const key = gymKey || gymKeyOf(settings, gymName), have = registeredAt(shared, key, gymName), spec = {};
  for(const g of shared.gymMachines||[]) if(!g.removed && have.has(g.modelId) && (g.gymKey ? g.gymKey===key : g.gymName===gymName) && cleanGymSpec(g.spec)) spec[g.modelId] = cleanGymSpec(g.spec);
  return {gymName, key, part:'가슴', open:{}, checked:new Set(have), initial:new Set(have), spec, initialSpec:JSON.parse(JSON.stringify(spec)), adding:false};
 }
@@ -98,7 +99,7 @@ export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
  const gens = GENERIC_MACHINES.filter(g => partOf(g)===st.part).sort((a, b) => score(b) - score(a));
  const missing = specMissing(admin ? st : {...st, checked:new Set([...st.checked].filter(id => !st.initial.has(id)))}, shared), changedSpec = [...st.checked].filter(id => st.initial.has(id) && JSON.stringify(st.spec?.[id]||{})!==JSON.stringify(st.initialSpec?.[id]||{})).length;
  const count = [...st.checked].length, added = [...st.checked].filter(x => !st.initial.has(x)).length, removed = [...st.initial].filter(x => !st.checked.has(x)).length;
- const box = (m, sub = false) => `<div class="gm-item"><label class="gm-row${sub?' sub':''}${!admin&&st.initial.has(m.id)?' locked':''}"><input type="checkbox" data-gm-pick="${h(m.id)}" ${st.checked.has(m.id)?'checked':''} ${!admin&&st.initial.has(m.id)?'disabled title="이미 등록된 머신이에요"':''}><span>${m.makerLabel?`<b class="m-maker">${h(m.makerLabel)}</b><b class="m-model">${h(m.modelLabel)}</b>${m.lineLabel?`<small>${h(m.lineLabel)}</small>`:''}`:h(m.name)}${!sub&&m.exercise?`<small>${h(m.exercise)}</small>`:''}${sub&&cnt.get(m.id)?`<small>마이로그 헬스장 ${cnt.get(m.id)}곳</small>`:''}${sub?specLine(m.id):''}</span></label>${st.checked.has(m.id)&&(admin||!st.initial.has(m.id))?specHTML(st, models, m.id):!admin&&st.initial.has(m.id)?'<small class="gm-done">등록됨</small>':''}</div>`;
+ const box = (m, sub = false) => `<div class="gm-item"><label class="gm-row${sub?' sub':''}${!admin&&st.initial.has(m.id)?' locked':''}"><input type="checkbox" data-gm-pick="${h(m.id)}" ${st.checked.has(m.id)?'checked':''} ${!admin&&st.initial.has(m.id)?'disabled title="이미 등록된 머신이에요"':''}><span>${m.makerLabel?`<b class="m-maker"${makerColor(m.manufacturer)?` style="color:${makerColor(m.manufacturer)}"`:''}>${h(m.makerLabel)}</b><b class="m-model">${h(m.modelLabel)}</b>${m.lineLabel?`<small>${h(m.lineLabel)}</small>`:''}`:h(m.name)}${!sub&&m.exercise?`<small>${h(m.exercise)}</small>`:''}${sub&&cnt.get(m.id)?`<small>마이로그 헬스장 ${cnt.get(m.id)}곳</small>`:''}${sub?specLine(m.id):''}</span></label>${st.checked.has(m.id)&&(admin||!st.initial.has(m.id))?specHTML(st, models, m.id):!admin&&st.initial.has(m.id)?'<small class="gm-done">등록됨</small>':''}</div>`;
  return `<div class="gm gap"><p class="hint"><b>${h(st.gymName)}</b>에 있는 머신을 골라요. ${admin?'관리자라 저장하면 바로 이 헬스장을 쓰는 모든 사람에게 보여요.':'보내면 관리자가 확인한 뒤 이 헬스장을 쓰는 모든 사람에게 보여요.'} 제조사를 모르면 머신 종류만 골라도 돼요.</p>
  ${admin?'':`<p class="gm-key">이미 등록된 머신은 '등록됨'으로 보여요. 다른 분이 먼저 요청한 머신은 자동으로 건너뛰고, 한 번에 ${MAX_PER_SEND}개·하루 ${MAX_PER_DAY}개까지 보낼 수 있어요. 방식이 틀린 머신은 운영진에게 알려 주세요.</p>`}<p class="gm-key">${st.key.startsWith('kakao:')?'지도에서 찾은 장소라 같은 곳을 등록한 사람과 함께 써요.':'이름만 적은 장소예요. 지도에서 찾아 등록하면 다른 사람과 더 잘 맞춰져요.'}</p>
  <div class="chip-row gm-parts" role="tablist">${PARTS.map(p => `<button type="button" class="chip ${p===st.part?'active':''}" data-gm-part="${p}">${p}</button>`).join('')}</div>

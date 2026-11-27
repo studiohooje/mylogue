@@ -4,6 +4,14 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.7.0 — 2026-11-27 (배포됨)
+
+- 헬스장별 기구: 설정 › 헬스장 둘러보기(gym-browse.js: 기구 등록된 헬스장 목록·이름 검색·카카오 내 주변·기존 지도), 헬스장 기구(기준운동별, 일반 요청·관리자 추가/수정/삭제, newGymPicker gymKey 인자).
+- 기구 이름 표시(machine-tag.js): 제조사 대표색(대비 4.5 보정), 좁은 칸은 한글 제조사명 + '…' 전체 이름.
+- 그 헬스장 기준 머신별 자주 한 순(machineFreqAt·choiceRows, data-q-mach).
+- 운동 시작 위치 확인(places.js kmBetween·locWarnHTML, 3km).
+- 지난 기록 머신 붙이기 숨은 관리자 작업(record-tools.js, globalThis.__mylogueRecordTools).
+
 ## Mylogue Beta 5.6.0 — 2026-11-27 (배포됨)
 
 - 운동: 숫자 유지(쉬는 시간·세트 칸·방금 세트 고치기, typedKey·fixDraft·hidden 저장), 근처 무게 칩(nearWeights), 방식 줄 양쪽 함께·한쪽씩·번갈아(sideModes, side:'alt', canSingle 전수 점검), 원판 한쪽 기준 총 무게(isoMachine·armsIso, setLoadText '40kg씩 (총 80kg)', repairIsoWeights), 쉬는 시간 중복 링크·방식 바꾸기 삭제, 타이머 가림(alignRest).

@@ -156,3 +156,16 @@ export function mapResultsHTML(state={}){
  if(!state.results?.length) return state.status==='done' ? '<p class="hint">이 근처에서 찾은 운동 장소가 없어요. 지도를 옮기거나 아래에서 이름을 붙여 주세요.</p>' : '';
  return placeListHTML(state.results, 'gym-mappick') + '<p class="place-credit">장소 정보: 카카오</p>';
 }
+
+// 2026-11-27 대표님: 운동을 시작할 때 고른 헬스장과 지금 위치가 3km 넘게 떨어지면 '이 헬스장이 맞나요?'(배달 앱 주소 확인처럼). 위치는 그때 한 번만 보고 저장하지 않는다.
+export const FAR_KM = 3;
+export function kmBetween(a, b){
+ const R = 6371, rad = d => d * Math.PI / 180, dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+ const x = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+ return 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+}
+export function locWarnHTML(w){
+ if(!w) return '';
+ const km = w.km >= 10 ? Math.round(w.km) : Math.round(w.km * 10) / 10;
+ return `<div class="ss loc-warn"><div class="ss-dim"><div class="ss-pop" role="alertdialog" aria-label="헬스장 확인"><h3>이 헬스장이 맞나요?</h3><p>지금 위치가 <b>${h(w.gym)}</b>에서 약 <b>${km}km</b> 떨어져 있어요.${w.where ? ` (${h(w.where)} 근처)` : ''}</p><div class="btns"><button type="button" class="keep" data-loc-ok>맞아요, 그대로 시작</button><button type="button" class="ss-back" data-loc-change>헬스장 바꾸기</button></div><p class="hint">운동을 시작할 때 한 번만 위치를 확인해요. 위치는 저장하지 않아요.</p></div></div></div>`;
+}
