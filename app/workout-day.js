@@ -20,7 +20,7 @@ const real = w => !w.planned && !w.rest && !w.recalled;
 const perHand = e => e.weightBasis === 'per-hand' && e.handCount === 2;
 // 세트 무게 표시용 단위(무게 옆에 붙임): kg·lb·단계
 const unitOf = s => s?.unit === 'level' ? '단계' : s?.unit === 'lb' ? 'lb' : 'kg';
-const topSet = e => doneSets(e).reduce((b, s) => (+s.weight || 0) > (+b?.weight || 0) ? s : b, null);
+const topSet = (e, one = null) => doneSets(e).filter(s => one == null || (s.side === 'single') === one).reduce((b, s) => (+s.weight || 0) > (+b?.weight || 0) ? s : b, null);
 
 // 같은 종목의 지난 기록과 비교한 칭찬 한 줄(점수 없이 — 늘었다·처음 해 봤다·지난번처럼)
 export function exerciseNote(db, date, e){
@@ -30,14 +30,16 @@ export function exerciseNote(db, date, e){
  const last = prev.find(w => (w.exercises || []).some(same));
  if(!last) return {k: 'new', t: '처음 해 본 운동'};
  if(e.machineId && !prev.some(w => (w.exercises || []).some(x => same(x) && x.machineId === e.machineId))) return {k: 'new', t: '처음 해 본 머신'};
- const pe = last.exercises.find(same), pt = topSet(pe);
+ /* 2026-11-27 양쪽 함께·한쪽씩은 따로 비교: 같은 방식으로 한 가장 최근 기록과 */const one = top?.side === 'single', lastM = prev.find(w => (w.exercises || []).some(x => same(x) && topSet(x, one)));
+ if(top && !lastM) return {k: 'new', t: one ? '한쪽씩 첫 기록' : '양쪽 함께 첫 기록'};
+ const pe = lastM ? lastM.exercises.find(x => same(x) && topSet(x, one)) : null, pt = pe ? topSet(pe, one) : null;
  if(!top || !pt || unitOf(top) !== unitOf(pt) || (pe.machineId || '') !== (e.machineId || '')) return null;
  const a = +pt.weight || 0, b = +top.weight || 0, u = unitOf(top);
  if(b > a) return {k: 'up', t: `최고 무게 ${n0(a)} → ${n0(b)}${u}`};
  if(b === a && b > 0){
-  const reps = x => Math.max(0, ...doneSets(x).filter(s => +s.weight === b).map(s => +s.reps || 0));
+  const reps = x => Math.max(0, ...doneSets(x).filter(s => +s.weight === b && (s.side === 'single') === one).map(s => +s.reps || 0));
   if(reps(e) > reps(pe)) return {k: 'up', t: `같은 무게로 ${reps(pe)} → ${reps(e)}회`};
-  return {k: 'same', t: `지난번(${md(last.date)})처럼 ${n0(b)}${u}까지`};
+  return {k: 'same', t: `지난번(${md(lastM.date)})처럼 ${n0(b)}${u}까지`};
  }
  return null;
 }

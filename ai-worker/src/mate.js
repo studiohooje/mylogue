@@ -1,6 +1,7 @@
 // 5.0.0 로그메이트 사진: Cloudflare R2(비공개 버킷 MATE). AI를 부르지 않으니 AI 비용과 무관하다.
 // 올리기·보기·지우기 모두 Firebase 로그인 + 그 방 멤버인지(Firestore 규칙으로 방 문서를 읽을 수 있는지) 확인한 뒤에만.
 // 사진 경로: rooms/{roomId}/{uid}/{id}.webp|jpg — 앱이 줄여서(긴 변 1280px) 보낸다.
+import {stripMeta} from './strip-meta.js';
 import {HttpError} from './handler.js';
 
 const ROOM = /^[A-Za-z0-9]{12,24}$/;
@@ -62,8 +63,9 @@ export async function mateRoute(path, request, {env, user, token, fetchImpl, now
     if (await storedBytes(env.DB) + Math.max(len, 1) > totalCapBytes(env)) throw new HttpError(507, '사진 저장 공간이 가득 찼어요. 운영자가 정리할 때까지 사진 대신 글로 남겨 주세요.');
     const day = new Date(now + 9 * 3600_000).toISOString().slice(0, 10);
     if (await countUpload(env.DB, user.uid, day) > dailyUploads(env)) throw new HttpError(429, `사진은 하루 ${dailyUploads(env)}장까지 올릴 수 있어요. 내일 다시 해 주세요.`);
-    const buf = await request.arrayBuffer();
-    if (!buf.byteLength || buf.byteLength > MATE_MAX_BYTES) throw new HttpError(413, '사진이 너무 커요. 다시 찍어 주세요.');
+    const raw = await request.arrayBuffer();
+    if (!raw.byteLength || raw.byteLength > MATE_MAX_BYTES) throw new HttpError(413, '사진이 너무 커요. 다시 찍어 주세요.');
+    const buf = stripMeta(raw, type); /* 2026-11-27 위치·기기 정보 지우기 */
     await addBytes(env.DB, buf.byteLength);
     await bucket.put(key, buf, {httpMetadata: {contentType: type, cacheControl: 'private, max-age=31536000, immutable'}, customMetadata: {uid: user.uid}});
     return reply(200, {key});

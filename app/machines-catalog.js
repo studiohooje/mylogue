@@ -4,7 +4,6 @@
 // 스택에 적힌 숫자는 도르래·캠 비율 때문에 실제 저항과 다를 수 있어, 다른 제조사 머신끼리 숫자 비교는 대략적이다.
 // 근거: research_notes/gym_machines/machines.md (Life Fitness·Cybex·Technogym·Matrix·Precor·Hammer Strength 사양, 2026-11-20 조사)
 import {EXERCISE_CATALOG, resolveExercise} from './catalog.js';
-import {BRAND_MODELS} from './machine-brands.js';
 // 4.27.0 전수검사 S-01: 공용 도감의 헬스장 머신 방식 값은 읽을 때도 허용 목록만(이미 저장된 이상한 값이 화면에 나가지 않게)
 export function safeGymSpec(s){ if(!s||typeof s!=='object') return null; const ok=(v,l)=>l.includes(v)?v:'', n=v=>{const x=Number(v);return v!=null&&v!==''&&Number.isFinite(x)&&x>=0&&x<=1000?x:undefined}; const r={load:ok(s.load,['plate','stack','cable','smith','body']),sided:ok(s.sided,['both','iso','single']),unit:ok(s.unit,['kg','lb','level'])}; const lf=n(s.levelFirst),ls=n(s.levelStep); if(lf!==undefined)r.levelFirst=lf; if(ls!==undefined)r.levelStep=ls; return r.load||r.sided||r.unit?r:null; }
 
@@ -98,9 +97,32 @@ for(const m of GENERIC_MACHINES){ const t = T[m.id.slice(3)]; if(t){ m.primaryMu
 GENERIC_MACHINES.forEach(Object.freeze); Object.freeze(GENERIC_MACHINES);
 const byId = new Map(GENERIC_MACHINES.map(m => [m.id, m]));
 // 제조사 모델은 연결된 머신 종류의 방식·좌우·근육을 물려받는다.
-export const BUILTIN_BRANDS = Object.freeze(BRAND_MODELS.filter(b => byId.has(b.baseId)).map(b => { const g = byId.get(b.baseId); return Object.freeze({...b, name:`${b.makerLabel||b.manufacturer} ${b.modelLabel||b.model}`, exercise:g.exercise, load:g.load, sided:g.sided, note:g.note, primaryMuscleIds:g.primaryMuscleIds, secondaryMuscleIds:g.secondaryMuscleIds}); }));
-const brandById = new Map(BUILTIN_BRANDS.map(b => [b.id, b]));
-export const brandsOf = genericId => BUILTIN_BRANDS.filter(b => b.baseId===genericId);
+// 2026-11-27 대표님: 제조사 머신 도감(약 600KB)은 앱을 켤 때 받지 않는다. 내가 쓴 머신·다니는 헬스장 머신은 기기에 작은 사본(mylogue.brandCache.v1),
+// 사본에 없는 머신이 필요할 때(새 헬스장·기구 등록·검색·AI 붙여넣기)만 전체를 받는다(loadBrands). 시험(Node)에서는 처음부터 전체.
+const withBase = b => { const g = byId.get(b.baseId); return g && Object.freeze({...b, name:`${b.makerLabel||b.manufacturer} ${b.modelLabel||b.model}`, exercise:g.exercise, load:g.load, sided:g.sided, note:g.note, primaryMuscleIds:g.primaryMuscleIds, secondaryMuscleIds:g.secondaryMuscleIds}); };
+export let BUILTIN_BRANDS = Object.freeze([]);
+let brandById = new Map(), brandsFull = false, brandsLoading = null;
+const brandWaiters = new Set(), BRAND_CACHE = 'mylogue.brandCache.v1', NODE = typeof window === 'undefined';
+function setBrands(models){ BUILTIN_BRANDS = Object.freeze((models||[]).map(withBase).filter(Boolean)); brandById = new Map(BUILTIN_BRANDS.map(b => [b.id, b])); }
+export const brandsReady = () => brandsFull;
+export function loadBrands(){
+ if(brandsFull) return Promise.resolve(true);
+ return brandsLoading ||= import('./machine-brands.js').then(m => { setBrands(m.BRAND_MODELS); brandsFull = true; for(const f of brandWaiters) try{ f(); }catch{} return true; }).catch(e => { brandsLoading = null; throw e; });
+}
+export const onBrandsReady = f => { brandWaiters.add(f); };
+// 사본에 없는 머신을 찾을 때 → 전체를 받아 두고 다 받으면 다시 그린다(onBrandsReady)
+export const wantBrands = () => { if(!brandsFull && !NODE) loadBrands().catch(() => {}); };
+// 다 받은 뒤: 쓴 머신·다니는 헬스장 머신만 사본으로(파생값은 빼고 원래 행만)
+export function rememberBrands(ids = []){
+ if(!brandsFull) return 0;
+ const raw = [...new Set(ids)].map(id => brandById.get(id)).filter(Boolean).map(({name, exercise, load, sided, note, primaryMuscleIds, secondaryMuscleIds, ...r}) => r);
+ try{ globalThis.localStorage?.setItem(BRAND_CACHE, JSON.stringify(raw)); }catch{}
+ return raw.length;
+}
+if(NODE){ setBrands((await import('./machine-brands.js')).BRAND_MODELS); brandsFull = true; }
+else { let c = []; try{ c = JSON.parse(globalThis.localStorage?.getItem(BRAND_CACHE) || '[]'); }catch{} setBrands(Array.isArray(c) ? c : []); }
+export const brandSpec = id => brandById.get(id)?.spec || null;
+export const brandsOf = genericId => { wantBrands(); return BUILTIN_BRANDS.filter(b => b.baseId===genericId); };
 // 같은 머신으로 하는 다른 종목들(3.14.1 전수 점검). 케이블 운동은 듀얼 케이블·단일 스테이션 둘 다 가능.
 const CABLE = ['cable-crossover','cable-station'];
 const ALSO = {
@@ -123,7 +145,7 @@ const MACHINE_ONLY = new Set(['머신','케이블','스미스']);
 // 머신 없이는 할 수 없는 종목(레그 프레스, 케이블 운동, 스미스 운동 등)
 export const needsMachine = ex => !!ex && MACHINE_ONLY.has(ex.equipment);
 // 일반 머신·앱 기본 제조사 모델을 ID로 찾는다.
-export const genericMachine = id => byId.get(id) || brandById.get(id) || null;
+export const genericMachine = id => byId.get(id) || brandById.get(id) || (String(id||'').startsWith('bm:') ? (wantBrands(), null) : null);
 // 2026-11-27 대표님: 양팔이 따로 움직이는 머신(원판 한쪽 기준 무게)인지 — 세트 칸 안내와 저장(총 무게 ×2)이 같은 판단을 쓰게. 내 머신·헬스장 머신은 고른 움직임, 없으면 바탕 머신 종류
 export const pairLever = m => !!m && m.gymSpec?.sided !== 'iso' && (m.spec?.sided || genericMachine(m.id)?.spec?.sided) === 'pair';
 // 2026-11-27 대표님: 무게판이 둘인 케이블(뉴텍 멀티 풀리)은 양쪽 손잡이를 같이 쓰는 종목만 '한쪽 무게판 값'(크로스오버·플라이 등). 페이스 풀·푸시다운·컬처럼 한 줄이면 적은 값 그대로
@@ -172,6 +194,7 @@ export const SIDED_LABEL = {both:'양쪽 함께', iso:'양쪽 따로 움직임 �
 // 4.7.0 헬스장에 등록된 머신: 일반 머신 종류·앱 기본 제조사 모델·관리자가 더한 모델 모두. 지도 장소 ID(gymKey)가 있으면 그걸로 맞춘다. removed는 뺀 것.
 export function brandMachinesAt(shared={}, gymName='', exerciseId='', gymKey=''){
  const models = new Map([...GENERIC_MACHINES.map(g => [g.id, {...g, generic:true}]), ...BUILTIN_BRANDS.map(b => [b.id, b]), ...(shared.machineModels||[]).map(m => [m.id, m])]);
+ if((shared.gymMachines||[]).some(g => !g.removed && String(g.modelId||'').startsWith('bm:') && !models.has(g.modelId))) wantBrands();
  const gens = exerciseId ? new Set(genericMachinesFor(exerciseId).map(g => g.id)) : null;
  const fits = m => !exerciseId || (m.generic ? gens.has(m.id) : m.baseId ? gens.has(m.baseId) || m.exerciseId===exerciseId : (!m.exerciseId || m.exerciseId===exerciseId));
  // 헬스장에서 고른 방식(spec: 무게 방식·움직임·무게 표시)을 모델 기본값 위에 덮는다
@@ -225,7 +248,7 @@ export const machineKey = (maker, model) => `${makerKey(maker)}|${modelKey(model
 const keyOf = m => machineKey(m.manufacturer, m.model || m.name);
 // 같은 머신으로 이미 있는 모델들(앱 기본 모델 먼저). 기본 모델은 같은 이름이 라인별로 여럿일 수 있어(해머 Plate-Loaded·MTS) 후보를 모두 돌려준다.
 export function findSameMachines(maker, model, shared = {}){
- const k = machineKey(maker, model); if(k.endsWith('|')) return [];
+ wantBrands(); const k = machineKey(maker, model); if(k.endsWith('|')) return [];
  const lineKey = b => machineKey(b.manufacturer, `${b.line||''} ${b.model}`);
  return [...BUILTIN_BRANDS.filter(b => keyOf(b)===k || lineKey(b)===k), ...(shared.machineModels||[]).filter(m => !m.hidden && keyOf(m)===k)];
 }

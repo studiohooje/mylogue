@@ -1,6 +1,6 @@
 // 4.16.0 운동 화면 개선(대표님 2026-11-23): 점수 없이 '운동했다'를 칭찬하고, 내 기록을 눈으로 구경하게 한다.
 // 원칙: 무게·세트로 점수를 매기지 않는다. 링은 '이번 주 운동한 날 / 주간 횟수' 하나. 재촉·비교 없음. 과하게 하면 쉬라고 말한다.
-import {partOf} from './body-part.js';
+import {partOf, oneSide, sideLabel} from './body-part.js';
 import {workoutTotals, setWeightKg, estimate1RM} from './domain.js';
 import {exArtHTML} from './exercise-art-ui.js';
 import {shareButtonsHTML} from './share-cards.js';
@@ -63,9 +63,11 @@ export function prCards(db, date, limit = 12) {
   const g = new Map();
   for (const w of db.workouts || []) if (done(w)) for (const e of w.exercises || []) {
     if (e.kind === 'cardio') continue;
-    const key = e.exerciseId || e.name, x = g.get(key) || {key, name: e.name, exerciseId: e.exerciseId || null, part: e.part, best: 0, bestReps: 0, bestDate: '', best1RM: 0, days: new Set(), weeks: {}};
-    for (const s of e.sets || []) { if (s.completed === false) continue; const kg = setWeightKg(s); if (kg > x.best || (kg === x.best && (s.reps || 0) > x.bestReps)) { x.best = kg; x.bestReps = s.reps || 0; x.bestDate = w.date; } if (s.type !== '웜업') x.best1RM = Math.max(x.best1RM, estimate1RM(kg, s.reps || 0)); const wk = mondayOf(w.date); x.weeks[wk] = Math.max(x.weeks[wk] || 0, kg); }
+    for (const one of [false, true]) { if (!(e.sets || []).some(s => s.completed !== false && oneSide(s) === one)) continue;
+    const key = (e.exerciseId || e.name) + (one ? '|한쪽' : ''), x = g.get(key) || {key, name: e.name + sideLabel(one), exerciseId: e.exerciseId || null, part: e.part, best: 0, bestReps: 0, bestDate: '', best1RM: 0, days: new Set(), weeks: {}};
+    for (const s of e.sets || []) { if (s.completed === false || oneSide(s) !== one) continue; const kg = setWeightKg(s); if (kg > x.best || (kg === x.best && (s.reps || 0) > x.bestReps)) { x.best = kg; x.bestReps = s.reps || 0; x.bestDate = w.date; } if (s.type !== '웜업') x.best1RM = Math.max(x.best1RM, estimate1RM(kg, s.reps || 0)); const wk = mondayOf(w.date); x.weeks[wk] = Math.max(x.weeks[wk] || 0, kg); }
     x.days.add(w.date); g.set(key, x);
+    }
   }
   const thisMon = mondayOf(date);
   return [...g.values()].filter(x => x.best > 0).map(x => {

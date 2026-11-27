@@ -40,3 +40,42 @@ test('운동 페이지 2안: 그날 운동 요약·한 운동 줄·칭찬(늘었
  const empty = workoutDayHTML(db, '2026-11-25', {today: '2026-11-27'});
  assert.match(empty, /운동 기록이 없어요/);
 });
+
+test('최고 기록·칭찬: 양쪽 함께와 한쪽씩은 따로 비교', async () => {
+ const {exerciseNote} = await import('../workout-day.js');
+ const {newRecords} = await import('../workout-flow.js');
+ const st = (w, r, one) => ({weight: w, unit: 'kg', reps: r, completed: true, ...(one ? {side: 'single'} : {})});
+ const a = cleanWorkout({id: 'a', date: '2026-11-20', exercises: [{name: '시티드 로우', part: '등', sets: [st(60, 10)]}]});
+ const b = cleanWorkout({id: 'b', date: '2026-11-23', exercises: [{name: '시티드 로우', part: '등', sets: [st(55, 10, true)]}]});
+ const c = cleanWorkout({id: 'c', date: '2026-11-27', exercises: [{name: '시티드 로우', part: '등', sets: [st(62.5, 12, true)]}]});
+ const db = {workouts: [a, b, c], settings: {}};
+ assert.deepEqual(exerciseNote(db, '2026-11-23', b.exercises[0]), {k: 'new', t: '한쪽씩 첫 기록'}, '양쪽 60kg보다 가벼워도 한쪽씩은 첫 기록');
+ assert.deepEqual(exerciseNote(db, '2026-11-27', c.exercises[0]), {k: 'up', t: '최고 무게 55 → 62.5kg'}, '한쪽씩끼리 비교');
+ const prs = newRecords(db, '2026-11-27');
+ assert.ok(prs.some(r => r.name === '시티드 로우 (한쪽씩)' && r.from === 55 && r.to === 62.5));
+ assert.ok(!prs.some(r => r.name === '시티드 로우' && r.to === 62.5), '양쪽 기록(60)과 섞지 않음');
+});
+
+test('머신 도감: 다 받은 뒤 쓴 머신만 작은 사본으로', async () => {
+ const mem = new Map(); globalThis.localStorage = {getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k)};
+ const {rememberBrands, brandsReady, BUILTIN_BRANDS, genericMachine} = await import('../machines-catalog.js');
+ assert.equal(brandsReady(), true, '시험(Node)에서는 처음부터 전체');
+ const id = 'bm:cybex:ft-360:ft-360-functional-trainer';
+ assert.ok(genericMachine(id), '도감에 있음');
+ assert.equal(rememberBrands([id, 'bm:없는:모델:x']), 1);
+ const saved = JSON.parse(mem.get('mylogue.brandCache.v1'));
+ assert.equal(saved[0].id, id); assert.equal(saved[0].makerKo, '사이벡스'); assert.equal(saved[0].name, undefined, '파생값은 빼고 원래 행만');
+ assert.ok(BUILTIN_BRANDS.length > 1900);
+});
+
+test('음식 DB: 제조사명이 이름에 붙은 같은 제품 두 줄은 하나로(열량 다르면 둘 다)', async () => {
+ const {dedupeBrandRows} = await import('../food-dedupe.js');
+ const rows = [
+  ['기대식 저당 닭가슴살 커리맛', '기대식', '개', 0, 119, 1, 2, 3, 'm'],
+  ['저당 닭가슴살 커리맛', '기대식', '개', 0, 119, 1, 2, 3, 'p'],
+  ['널담 고단백 저당 쿠키', '널담', '개', 0, 224, 1, 2, 3, 'p'],
+  ['고단백 저당 쿠키', '널담', '개', 0, 260, 1, 2, 3, 'p'],
+ ];
+ const out = dedupeBrandRows(rows).map(r => r[0]);
+ assert.deepEqual(out, ['저당 닭가슴살 커리맛', '널담 고단백 저당 쿠키', '고단백 저당 쿠키']);
+});

@@ -88,3 +88,21 @@ test('5.0.4 AI 인사이트: 플러스만, 요약이 짧으면 거절, JSON을 �
   const f = await route(await post('insight', {facts: '최근 14일 식사 30끼, 운동 6회, 체중 10회. 오늘 남은 단백질 60g, 칼로리 700kcal.'}, await token('u8')), free.deps);
   assert.equal(f.status, 402, '무료는 플러스 안내');
 });
+
+test('메이트 사진: 서버에서 EXIF·XMP를 지우고 그림은 그대로', async () => {
+ const {stripMeta} = await import('../src/strip-meta.js');
+ const seg = (m, body) => [0xFF, m, ((body.length + 2) >> 8) & 255, (body.length + 2) & 255, ...body];
+ const exif = [...'Exif'].map(c => c.charCodeAt(0)).concat([0, 0, 1, 2, 3]);
+ const jpg = new Uint8Array([0xFF, 0xD8, ...seg(0xE0, [74, 70, 73, 70, 0]), ...seg(0xE1, exif), ...seg(0xDB, [1, 2]), 0xFF, 0xDA, 0, 4, 9, 9, 0xFF, 0xD9]);
+ const out = stripMeta(jpg.buffer, 'image/jpeg');
+ assert.equal(out.length, jpg.length - (exif.length + 4));
+ assert.ok(!Buffer.from(out).includes(Buffer.from('Exif')));
+ assert.deepEqual([...out.slice(-8)], [...jpg.slice(-8)], '그림 데이터(SOS 뒤)는 그대로');
+ const chunk = (t, body) => { const p = body.length & 1 ? [0] : []; return [...t].map(c => c.charCodeAt(0)).concat([body.length & 255, 0, 0, 0], body, p); };
+ const inner = [...chunk('VP8X', [0x0C, 0, 0, 0, 0, 0, 0, 0, 0, 0]), ...chunk('VP8 ', [1, 2, 3, 4]), ...chunk('EXIF', [5, 6, 7])];
+ const webp = new Uint8Array([...'RIFF'].map(c => c.charCodeAt(0)).concat([(inner.length + 4) & 255, 0, 0, 0], [...'WEBP'].map(c => c.charCodeAt(0)), inner));
+ const w = stripMeta(webp.buffer, 'image/webp'), s = Buffer.from(w);
+ assert.ok(!s.includes(Buffer.from('EXIF'))); assert.ok(s.includes(Buffer.from('VP8 ')));
+ assert.equal(w[12 + 8] & 0x0C, 0, 'VP8X의 EXIF·XMP 표시 끔'); assert.equal(webp[12 + 8] & 0x0C, 0x0C);
+ assert.equal(w[4] | (w[5] << 8), w.length - 8, 'RIFF 크기 다시 계산');
+});

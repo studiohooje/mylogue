@@ -79,6 +79,7 @@ import {bodyOverviewHTML} from '../body-flow.js';
 test('수치 화면 목표는 진행 중인 페이즈 목표와 같다', () => {
   const body = [{date: '2026-11-20', weight: 79}, {date: '2026-11-22', weight: 78.2}];
   const html = bodyOverviewHTML({body, settings: {goalWeight: 76.5, phase: {type: 'diet', startWeight: 82.3, target: {loseKg: 7.5}}}}, {today: '2026-11-22'});
-  assert.match(html, /페이즈 목표 74.8kg/);
-  assert.match(bodyOverviewHTML({body, settings: {goalWeight: 76.5}}, {today: '2026-11-22'}), /목표 76.5kg/);
+  // 5.7.3 네 칸을 한 줄로 작게: 목표 칸은 '74.8kg까지 / 남은 양'
+  assert.match(html, /74.8kg까지/);
+  assert.match(bodyOverviewHTML({body, settings: {goalWeight: 76.5}}, {today: '2026-11-22'}), /76.5kg까지/);
 });

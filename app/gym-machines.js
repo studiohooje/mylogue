@@ -1,12 +1,12 @@
 import {makerColor} from './machine-tag.js';
-import {MACHINE_SPEC_BY_ID} from './machine-brands.js';
+
 // 4.7.0 헬스장 머신 한꺼번에 등록(대표님: 다니는 헬스장 머신을 싹 다 등록하고 싶다).
 // - 헬스장마다 '어떤 머신이 있는지'를 공용 도감(gymMachines)에 둔다. 머신은 일반 머신 종류(gm:…)·앱 기본 제조사 모델(bm:…)·
 //   관리자가 더한 제조사 모델(mm:…) 중에서 고른다.
 // - 헬스장 구분: 지도(카카오)로 등록한 곳은 장소 ID로(이름을 조금 다르게 적어도 같은 곳), 이름만 적은 곳은 이름으로.
 // - 관리자: 고른 대로 바로 공용에 저장(뺀 것은 removed:true — 규칙상 지우기 대신 표시).
 // - 일반 사용자: 고른 것을 '등록 요청'으로 한 번에 보내고, 관리자가 '이 헬스장 요청 모두 승인'으로 한 번에 반영.
-import {GENERIC_MACHINES, BUILTIN_BRANDS, gymMachineId, LOAD_LABEL, UNIT_LABEL, findSameMachines, canonicalModelId, makerKey} from './machines-catalog.js';
+import {GENERIC_MACHINES, BUILTIN_BRANDS, brandSpec, wantBrands, gymMachineId, LOAD_LABEL, UNIT_LABEL, findSameMachines, canonicalModelId, makerKey} from './machines-catalog.js';
 import {EXERCISE_CATALOG} from './catalog.js';
 
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -19,7 +19,7 @@ export function gymKeyOf(settings = {}, name = ''){
 }
 // 모든 고를 수 있는 머신: id → {id, name, kind:'generic'|'brand', baseId, manufacturer, model}
 export function allModels(shared = {}){
- const out = new Map();
+ const out = new Map(); wantBrands();
  for(const g of GENERIC_MACHINES) out.set(g.id, {id:g.id, name:g.name, kind:'generic', baseId:g.id, exercise:g.exercise});
  for(const b of BUILTIN_BRANDS) out.set(b.id, {id:b.id, name:b.name, kind:'brand', baseId:b.baseId, manufacturer:b.manufacturer, model:b.model, exercise:b.exercise, makerLabel:b.makerLabel, modelLabel:b.modelLabel, lineLabel:b.lineLabel});
  for(const m of shared.machineModels||[]) if(!out.has(m.id)) out.set(m.id, {id:m.id, name:m.manufacturer&&m.model?`${m.manufacturer} ${m.model}`:m.name, kind:'brand', baseId:m.baseId||'', manufacturer:m.manufacturer, model:m.model, exerciseId:m.exerciseId||''});
@@ -89,7 +89,7 @@ const specHTML = (st, models, id) => { const sp = st.spec?.[id]||{}, o = specOpt
  const lvl = sp.unit==='level' ? `<div class="gm-spec-row gm-level"><span>숫자 → kg</span><div class="gm-lv"><label>첫 칸<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelFirst" value="${h(sp.levelFirst??'')}" placeholder="5">kg</label><label>한 칸마다<input type="number" inputmode="decimal" min="0" step="any" data-gm-level="${h(id)}|levelStep" value="${h(sp.levelStep??'')}" placeholder="5">kg</label>${sug?`<button type="button" class="gm-sug" data-gm-spec="${h(id)}|levelPreset|${sug.first}/${sug.step}">${sug.maker?`제조사 사양: 한 칸 ${sug.step}kg${sug.total?` · 스택 ${sug.total}kg`:''}`:`다른 헬스장 ${sug.n}곳: 첫 칸 ${sug.first} · 한 칸 ${sug.step}kg`}</button>`:''}<small>머신 옆 라벨에 적혀 있어요. 모르면 비워 두세요. 첫 칸 5kg · 한 칸 5kg으로 추정해 계산하고, 나중에 고칠 수 있어요.</small></div></div>` : '';
  return `<div class="gm-spec${miss?' miss':''}">${miss?'<small class="gm-need">이 헬스장 머신을 보고 골라 주세요</small>':''}${grp('load','무게 방식',o.load,LOAD_LABEL)}${grp('sided','움직임',o.sided,SIDED_SHORT)}${grp('unit','무게 표시',o.unit,UNIT_LABEL)}${lvl}</div>`; };
 // 4.12 제조사 사양 한 줄(근거 있는 값만)
-const specLine = id => { const sp = MACHINE_SPEC_BY_ID.get(id); if(!sp) return ''; const t = [sp.load==='stack'?'핀식':sp.load==='plate'?'원판식':sp.load==='cable'?'케이블':'', sp.sided==='iso'?'좌우 따로':'', sp.totalKg?`스택 ${sp.totalKg}kg`:'', sp.stepKg?`한 칸 ${sp.stepKg}kg`:'', sp.unit==='lb'?'lb 표시':''].filter(Boolean); return t.length ? `<small class="gm-specline">${h(t.join(' · '))}</small>` : ''; };
+const specLine = id => { const sp = brandSpec(id); if(!sp) return ''; const t = [sp.load==='stack'?'핀식':sp.load==='plate'?'원판식':sp.load==='cable'?'케이블':'', sp.sided==='iso'?'좌우 따로':'', sp.totalKg?`스택 ${sp.totalKg}kg`:'', sp.stepKg?`한 칸 ${sp.stepKg}kg`:'', sp.unit==='lb'?'lb 표시':''].filter(Boolean); return t.length ? `<small class="gm-specline">${h(t.join(' · '))}</small>` : ''; };
 export function gymPickerHTML(st, shared = {}, {admin = false} = {}){
  st._shared = shared;
  const models = allModels(shared), brandsBy = new Map(), cnt = gymCounts(shared), makers = makerCounts(shared);
@@ -161,6 +161,6 @@ export function levelSuggest(shared = {}, modelId = ''){
  const c = new Map(); for(const g of shared.gymMachines||[]) if(!g.removed && g.modelId===modelId && g.spec?.unit==='level' && g.spec.levelFirst!=null && g.spec.levelStep!=null){ const k = `${g.spec.levelFirst}/${g.spec.levelStep}`; c.set(k, (c.get(k)||0) + 1); }
  const best = [...c.entries()].sort((a, b) => b[1]-a[1])[0];
  // 4.12 다른 헬스장 값이 없으면 제조사 사양(한 칸 kg)으로 제안 — 첫 칸은 사양에 있으면 그 값, 없으면 한 칸과 같게(추정)
- if(!best){ const sp = MACHINE_SPEC_BY_ID.get(modelId); if(sp?.stepKg > 0) return {first:sp.firstKg ?? sp.stepKg, step:sp.stepKg, n:0, maker:true, total:sp.totalKg}; return null; }
+ if(!best){ const sp = brandSpec(modelId); if(sp?.stepKg > 0) return {first:sp.firstKg ?? sp.stepKg, step:sp.stepKg, n:0, maker:true, total:sp.totalKg}; return null; }
  const [f, s] = best[0].split('/').map(Number); return {first:f, step:s, n:best[1]};
 }

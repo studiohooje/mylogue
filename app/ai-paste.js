@@ -5,7 +5,7 @@ import {scanHTML} from './scan-fx.js';
 import {cleanMeal, cleanWorkout, cleanBody} from './domain.js';
 import {foodIssue} from './food-check.js';
 import {findExercise, resolveExercise} from './catalog.js';
-import {GENERIC_MACHINES, BUILTIN_BRANDS} from './machines-catalog.js';
+import {GENERIC_MACHINES, BUILTIN_BRANDS, wantBrands} from './machines-catalog.js';
 
 import {AI_PROMPT} from './ai-prompt.js';
 export {AI_PROMPT};
@@ -51,12 +51,12 @@ export function extractCode(text){
 }
 
 const TYPE = {meal:'meal', 식사:'meal', 식단:'meal', food:'meal', workout:'workout', 운동:'workout', exercise:'workout', body:'body', 몸:'body', 수치:'body', 체중:'body', 인바디:'body', inbody:'body'};
-const MACHINES = [...GENERIC_MACHINES, ...BUILTIN_BRANDS];
+const machinesAll = () => { wantBrands(); return [...GENERIC_MACHINES, ...BUILTIN_BRANDS]; };
 // 사용자가 말한 머신 이름을 앱의 머신 종류·제조사 모델에 맞춘다(모르면 비워 두고 검토함에서 고른다).
 export function matchMachine(name, exercise){
  const q = norm(name); if(!q) return null;
  const names = m => [m.name, ...(m.aliases||[]), m.model||'', m.manufacturer&&m.model?`${m.manufacturer} ${m.model}`:''].map(norm).filter(Boolean); /* 2026-11-27 보이는 이름이 한글(영문)이 되어도 영문 원래 이름으로 찾는다 */
- const exact = MACHINES.find(m => names(m).includes(q));
+ const MACHINES = machinesAll(), exact = MACHINES.find(m => names(m).includes(q));
  if(exact) return exact;
  const hits = MACHINES.filter(m => names(m).some(n => n.includes(q) || q.includes(n)));
  const same = exercise ? hits.filter(m => findExercise(m.exercise)?.id===exercise.id) : hits;

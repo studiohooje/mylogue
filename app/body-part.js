@@ -8,5 +8,8 @@ export function armPart(name = '', primary = []){
  if((p.has('biceps') || p.has('forearms')) && !p.has('triceps')) return '이두';
  return TRI.test(String(name)) ? '삼두' : '이두';
 }
+// 2026-11-27 대표님: 최고 기록·성장은 '양쪽 함께'와 '한쪽씩'을 따로 비교한다(한쪽씩 55kg과 양쪽 55kg은 다른 기록)
+export const oneSide = s => s?.side === 'single';
+export const sideLabel = one => one ? ' (한쪽씩)' : '';
 // 기록·도감 항목의 부위(예전 '팔'이면 이두/삼두로)
 export const partOf = x => x?.part === '팔' ? armPart(x.name || x.exerciseId || '', x.primaryMuscleIds || []) : (x?.part || '');

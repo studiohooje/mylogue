@@ -1,5 +1,5 @@
 // 4.3.0 운동 볼거리(대표님: 식단처럼 다양하게) — 이번 주 요약 · 12주 운동 잔디 · 운동 흐름(세트·볼륨·운동 일수·유산소) · 종목 성장 · 새 기록
-import {partOf} from './body-part.js';
+import {partOf, oneSide, sideLabel} from './body-part.js';
 import {workoutTotals, setWeightKg} from './domain.js';
 import {lineChart, barChart, hoverButton} from './band-chart.js';
 
@@ -55,14 +55,15 @@ export function liftGrowth(db, end){
  const from = addDays(end, -84), count = new Map();
  for(const w of real(db)) if(w.date>=from && w.date<=end) for(const e of w.exercises||[]) if(e.kind!=='cardio') count.set(e.name, (count.get(e.name)||0)+1);
  const name = [...count.entries()].sort((a, b) => b[1]-a[1])[0]?.[0]; if(!name) return null;
- const pts = []; for(const w of [...real(db)].sort((a, b) => a.date.localeCompare(b.date))){ if(w.date<from || w.date>end) continue; let best = 0; for(const e of w.exercises||[]) if(e.name===name) for(const s of e.sets||[]) if(s.completed!==false) best = Math.max(best, setWeightKg(s)); if(best>0) pts.push({date:w.date, w:best}); }
- return pts.length>1 ? {name, pts} : null;
+ const track = one => { const pts = []; for(const w of [...real(db)].sort((a, b) => a.date.localeCompare(b.date))){ if(w.date<from || w.date>end) continue; let best = 0; for(const e of w.exercises||[]) if(e.name===name) for(const s of e.sets||[]) if(s.completed!==false && oneSide(s)===one) best = Math.max(best, setWeightKg(s)); if(best>0) pts.push({date:w.date, w:best}); } return pts; };
+ const both = track(false), single = both.length>1 ? [] : track(true), pts = both.length>1 ? both : single;
+ return pts.length>1 ? {name: name + sideLabel(pts===single), pts} : null;
 }
 export function newRecords(db, end, days = 28){
  const from = addDays(end, -days), before = new Map(), out = [];
  for(const w of [...real(db)].sort((a, b) => a.date.localeCompare(b.date))){
-  for(const e of w.exercises||[]){ if(e.kind==='cardio') continue; let best = 0; for(const s of e.sets||[]) if(s.completed!==false) best = Math.max(best, setWeightKg(s)); if(!best) continue;
-   const prev = before.get(e.name); if(w.date>=from && w.date<=end && prev!=null && best>prev) out.push({name:e.name, from:prev, to:best, date:w.date}); if(prev==null || best>prev) before.set(e.name, best); }
+  for(const e of w.exercises||[]){ if(e.kind==='cardio') continue; for(const one of [false, true]){ let best = 0; for(const s of e.sets||[]) if(s.completed!==false && oneSide(s)===one) best = Math.max(best, setWeightKg(s)); if(!best) continue;
+   const nm = e.name + sideLabel(one), prev = before.get(nm); if(w.date>=from && w.date<=end && prev!=null && best>prev) out.push({name:nm, from:prev, to:best, date:w.date}); if(prev==null || best>prev) before.set(nm, best); } }
  }
  const last = new Map(); for(const r of out) last.set(r.name, {...(last.get(r.name)||{from:r.from}), name:r.name, to:r.to, date:r.date});
  return [...last.values()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);

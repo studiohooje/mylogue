@@ -1,7 +1,6 @@
 // 2026-11-27 대표님: 좁은 칸에서는 제조사 한글명만(예: 해머 스트렝스), ⓘ(또는 제조사 이름)를 누르면
 // 제조사(영문) / 모델(영문) / 방식 전체 이름. 제조사 글자는 그 회사 대표색(어두운 바탕에서 읽히게 밝기 보정).
 // 이 파일은 app.js를 import하지 않는다.
-import {MAKER_NAMES} from './machine-names-ko.js';
 
 // 각 회사 로고·홈페이지에서 쓰는 대표색(어림값). 없으면 마이로그 기본 글자색.
 const CI = {
@@ -27,13 +26,13 @@ export function makerColor(maker){
  if(!cache.has(maker)) cache.set(maker, readable(CI[maker]));
  return cache.get(maker);
 }
-export const makerKo = maker => MAKER_NAMES[maker]?.[0] || String(maker || '');
+export const makerKo = (maker, m = null) => m?.makerKo || String(maker || '').replace(/\(.*\)$/, '').trim();
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 // m: 머신(브랜드면 manufacturer·makerLabel·modelLabel·lineLabel, 일반 종류면 name), spec: '원판식 · kg' 같은 한 줄
 export function machineTagHTML(m, spec = ''){
  if(!m) return '';
- const maker = m.manufacturer || '', short = maker ? makerKo(maker) : (m.name || m.model || '');
+ const maker = m.manufacturer || '', short = maker ? makerKo(maker, m) : (m.name || m.model || '');
  if(!maker) return `<span class="m-tag"><b class="m-mk">${esc(short)}</b></span>`;
  const col = makerColor(maker), full = [m.makerLabel || maker, m.modelLabel || m.model || '', [...new Set([m.lineLabel, ...String(spec).split(' · ')].filter(Boolean))].join(' · ')].filter(Boolean);
  return `<span class="m-tag has-more"><b class="m-mk"${col ? ` style="color:${col}"` : ''}>${esc(short)}</b><span class="m-more" role="button" tabindex="0" aria-label="${esc(full.join(', '))}" title="${esc(full.join('\n'))}"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 7.2v4M8 4.8v.01" stroke-linecap="round"/></svg><span class="m-tip" role="tooltip"><b${col ? ` style="color:${col}"` : ''}>${esc(full[0])}</b>${full.slice(1).map(x => `<span>${esc(x)}</span>`).join('')}</span></span></span>`;

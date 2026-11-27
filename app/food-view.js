@@ -35,7 +35,7 @@ export function microLineHTML(meals){
 }
 export function renderFoodPage(db,date,{stateHtml='',trendHtml='',planned=null,plannedCount=0,showPlanned=false,dateBar='',checkHtml='',openMeal=null,tiles=''}={}){
  const meals=(db.meals||[]).filter(x=>x.date===date),groups=mealGroups(meals),day=mealTotals(meals.filter(x=>!x.planned)),s=db.settings||{};
- const header=`<div class="page-head"><div><h2>식단 기록</h2>${dateBar||'<p>먹은 음식과 양을 하나씩 남겨보세요.</p>'}</div><button class="button" data-modal="batch">＋ 식사 기록</button></div>${dateBar?'':`<label class="field nutrition-date">기록 날짜<input id="selected-date" type="date" value="${esc(date)}"></label>`}`;
+ const header=`<div class="page-head"><div><h2>식단 기록</h2>${dateBar?'':'<p>먹은 음식과 양을 하나씩 남겨보세요.</p>'}</div><button class="button" data-modal="batch">＋ 식사 기록</button></div>${dateBar?`<div class="wd-datebar">${dateBar}</div>`:''}${dateBar?'':`<label class="field nutrition-date">기록 날짜<input id="selected-date" type="date" value="${esc(date)}"></label>`}`;
  const lastW=scaleRecords(db).at(-1)?.weight||[...(db.body||[])].filter(x=>x.weight).sort((x,y)=>String(x.date).localeCompare(String(y.date))).at(-1)?.weight||null;
  const ratio=macroPlanCardHTML(s,lastW?Number(lastW):null);
  // 4.7.0 지난 날 섭취가 권고의 영양 부족 위험선(여성 1,200·남성 1,800kcal)보다 많이 낮으면 조용히 한 줄(재촉 없음, 지난 날만)

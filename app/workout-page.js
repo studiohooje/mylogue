@@ -43,8 +43,3 @@ export function partBalanceHTML(db, now=new Date()){
 }
 
 // 4.2.0 날짜 바로 고른 날의 운동(카드에서 바로 수정)
-export function dayWorkoutsHTML(db, date){
- const ws = (db.workouts||[]).filter(w => w.date===date);
- if(!ws.length) return `<section class="section card wp-day empty"><p class="hint">이 날은 운동 기록이 없어요. ‘＋ 운동’이나 일정에서 예정을 넣을 수 있어요.</p></section>`;
- return `<section class="section wp-day">${ws.map(w => w.rest ? `<article class="card wp-day-card rest"><b>${REST_ICON} 의도적 휴식</b><button type="button" class="text-button" data-delete="workouts:${esc(w.id)}">지우기</button></article>` : `<article class="card wp-day-card${w.planned?' planned':''}"><div><b>${w.planned?'<span class="plan-badge">예정</span> ':''}${esc(workoutTitle(w))}</b><small>${esc(daySummary([w])||'')}${w.gymName?` · ${esc(w.gymName)}`:''}</small></div>${workoutMenuHTML(w,db)}</article>`).join('')}</section>`;
-}
