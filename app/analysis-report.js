@@ -1,5 +1,6 @@
 // 3.13.0 운동 분석 'A 주간 리포트형': 숫자보다 말로 먼저, 다음 할 일, 새 기록 축하, 식단·몸 연결.
 // 모든 값은 사용자가 입력한 완료 세트에서 계산한 '대략'이며 건강 상태를 판단하지 않는다.
+import {partOf as bodyPart} from './body-part.js';
 import {workoutTotals, setWeightKg, estimate1RM} from './domain.js';
 import {anatomySvg, MUSCLE_LABELS} from './exercise-ui.js';
 import {EXERCISE_CATALOG} from './catalog.js';
@@ -13,12 +14,12 @@ export const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDa
 const at = (date, hh=12) => new Date(`${date}T${pad(hh)}:00:00`);
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
 export const weekStart = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const wd = (x.getDay()+6)%7; return addDays(x, -wd); };
-const PARTS = ['가슴','등','어깨','팔','하체','복근'];
-const MUSCLE_PART = {chest:'가슴',back:'등',erectors:'등',traps:'등',shoulders:'어깨',biceps:'팔',triceps:'팔',forearms:'팔',quads:'하체',hamstrings:'하체',glutes:'하체',calves:'하체',adductors:'하체',abs:'복근',obliques:'복근'};
+const PARTS = ['가슴','등','어깨','이두','삼두','하체','복근'];
+const MUSCLE_PART = {chest:'가슴',back:'등',erectors:'등',traps:'등',shoulders:'어깨',biceps:'이두',triceps:'삼두',forearms:'이두',quads:'하체',hamstrings:'하체',glutes:'하체',calves:'하체',adductors:'하체',abs:'복근',obliques:'복근'};
 const PUSH = new Set(['chest','shoulders','triceps']), PULL = new Set(['back','biceps','traps']);
 const done = ex => (ex.sets||[]).filter(s => s.completed!==false && s.type!=='워밍업');
 const primaryOf = e => e.primaryMuscleIds?.length ? e.primaryMuscleIds : (EXERCISE_CATALOG.find(x => x.id===e.exerciseId || x.name===e.name)?.primaryMuscleIds || []);
-const partOf = e => { const p = primaryOf(e)[0]; return MUSCLE_PART[p] || (PARTS.includes(e.part) ? e.part : e.part==='전신' ? '하체' : null); };
+const partOf = e => { const p = primaryOf(e)[0]; return MUSCLE_PART[p] || (PARTS.includes(bodyPart(e)) ? bodyPart(e) : e.part==='전신' ? '하체' : null); };
 const when = w => { const v = new Date(w.loggedAt || ''); return Number.isNaN(v.getTime()) ? at(w.date, 18) : v; };
 const best1RM = ex => Math.max(0, ...done(ex).filter(s => s.type !== '웜업').map(s => estimate1RM(setWeightKg(s), Number(s.reps)||0)));
 const exKey = e => e.exerciseId || e.name;
@@ -39,7 +40,7 @@ export function buildReport(db, now=new Date(), {focus=''}={}){
  const lastPart = {};
  for(const w of ws) for(const e of w.exercises||[]){ const p = partOf(e); if(p && done(e).length && (!lastPart[p] || w.date > lastPart[p])) lastPart[p] = w.date; }
  const restDays = p => lastPart[p] ? Math.round((at(today) - at(lastPart[p]))/86400000) : null;
- const rested = ['등','가슴','하체','어깨','팔'].map(p => [p, restDays(p)]).filter(([, d]) => d!==null && d>=4).sort((a, b) => b[1]-a[1])[0] || null;
+ const rested = ['등','가슴','하체','어깨','이두','삼두'].map(p => [p, restDays(p)]).filter(([, d]) => d!==null && d>=4).sort((a, b) => b[1]-a[1])[0] || null;
  const volDelta = P.volume>0 ? Math.round((W.volume-P.volume)/P.volume*100) : null;
  // 회복 지도(근육별 마지막 자극과 지난 시간)
  const lastHit = new Map();

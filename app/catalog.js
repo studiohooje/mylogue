@@ -1,4 +1,5 @@
 // General exercise names only. No third-party media or proprietary programs.
+import {armPart} from './body-part.js';
 import {MORE_EXERCISES,MORE_CARDIO,NAME_RULES,SOURCES,MORE_TIMED} from './exercise-data.js';
 import {EXERCISE_ENRICH} from './exercise-enrich.js';
 import {STRENGTH_TEMPLATES} from './templates-data.js';
@@ -97,7 +98,7 @@ const enrich=x=>{const e=EXERCISE_ENRICH[x.id];if(!e)return x;return {...x,alias
 const RENAMED={'케이블 오버헤드 익스텐션':'케이블 트라이셉스 익스텐션',/* 5.1.0 대표님: 서서·앉아서 하는 레터럴 머신을 한 기준 운동으로 */'머신 레터럴 레이즈':'사이드 레터럴 레이즈 머신'};
 /* 5.1.0 두 부위에서 다 찾히는 종목(페이스 풀: 뒤 어깨 중심이라 어깨·등 둘 다) */const ALSO_PARTS={'페이스 풀':['어깨','등']};const alsoP=x=>ALSO_PARTS[x.name]?{...x,alsoParts:ALSO_PARTS[x.name].filter(p=>p!==x.part)}:x;
 const renamed=x=>RENAMED[x.name]?{...x,name:RENAMED[x.name],aliases:[...new Set([x.name,...(x.aliases||[])])]}:x;
-export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO,...TIMED].map(enrich).map(renamed).map(alsoP));
+export const EXERCISE_CATALOG=Object.freeze([...BASE,...MORE,...CARDIO,...TIMED].map(enrich).map(renamed).map(alsoP).map(x=>x.part==='팔'?{...x,part:armPart(x.name,x.primaryMuscleIds)}:x));/* 2026-11-27 '팔' → 이두·삼두 */
 // 4.29.x 맞춤법이 갈리는 말은 같은 말로(래터럴/레터럴, 티바/T바, 바이셉/바이셉스, 트라이셉/트라이셉스)
 const SPELL=[[/래터럴/g,'레터럴'],[/티바/g,'t바'],[/바이셉(?!스)/g,'바이셉스'],[/트라이셉(?!스)/g,'트라이셉스']];
 const norm=v=>SPELL.reduce((t,[re,to])=>t.replace(re,to),String(v||'').toLocaleLowerCase('ko').replace(/[\s·()\-_/]/g,''));

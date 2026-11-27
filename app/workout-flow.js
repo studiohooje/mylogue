@@ -1,4 +1,5 @@
 // 4.3.0 운동 볼거리(대표님: 식단처럼 다양하게) — 이번 주 요약 · 12주 운동 잔디 · 운동 흐름(세트·볼륨·운동 일수·유산소) · 종목 성장 · 새 기록
+import {partOf} from './body-part.js';
 import {workoutTotals, setWeightKg} from './domain.js';
 import {lineChart, barChart, hoverButton} from './band-chart.js';
 
@@ -10,14 +11,14 @@ const n0 = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
 const monday = date => { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return ymd(d); };
 const addDays = (date, n) => { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate()+n); return ymd(d); };
 const CW = () => Math.max(320, Math.min(760, ((globalThis.innerWidth||700) > 760 ? 760 : (globalThis.innerWidth||700) - 56)));
-const PART_COLOR = {'가슴':'#ff7b93','등':'#8ce4e0','하체':'#f0d466','어깨':'#b8aaf2','팔':'#6fd6a3','복근':'#f2b49b','전신':'#9cc8ed'};
+const PART_COLOR = {'가슴':'#ff7b93','등':'#8ce4e0','하체':'#f0d466','어깨':'#b8aaf2','이두':'#6fd6a3','삼두':'#58a6ff','복근':'#f2b49b','전신':'#9cc8ed'};
 export const WF_METRICS = [['sets','세트','#b8aaf2'], ['volume','볼륨','#8ce4e0'], ['days','운동 일수','#f7c270'], ['cardio','유산소','#6fd6a3']];
 
 const real = db => (db.workouts||[]).filter(w => !w.planned && !w.rest);
 function weekStats(db, k){
  const e = addDays(k, 6), ws = real(db).filter(w => w.date>=k && w.date<=e), parts = {};
  let sets = 0, volume = 0, cardio = 0;
- for(const w of ws){ const t = workoutTotals(w); sets += t.sets; volume += t.volume; cardio += t.cardioMinutes; for(const ex of w.exercises||[]){ if(ex.kind==='cardio') continue; const n = (ex.sets||[]).filter(s => s.completed!==false).length; const p = PART_COLOR[ex.part] ? ex.part : '기타'; parts[p] = (parts[p]||0) + n; } }
+ for(const w of ws){ const t = workoutTotals(w); sets += t.sets; volume += t.volume; cardio += t.cardioMinutes; for(const ex of w.exercises||[]){ if(ex.kind==='cardio') continue; const n = (ex.sets||[]).filter(s => s.completed!==false).length; const p0 = partOf(ex), p = PART_COLOR[p0] ? p0 : '기타'; parts[p] = (parts[p]||0) + n; } }
  return {k, sets, volume, cardio, days:new Set(ws.map(w => w.date)).size, parts};
 }
 export function weeks(db, end, n = 8){ const out = []; let k = monday(end); for(let i=0; i<n; i++){ out.unshift(weekStats(db, k)); k = addDays(k, -7); } return out; }
@@ -79,3 +80,10 @@ export function workoutFlowHTML(db, {end, metric = 'sets'}){
  <section class="section card wf-flow"><div class="wf-sub"><b>운동 흐름</b><span class="df-tools"><small>최근 8주</small>${hoverButton()}</span></div><div class="df-tabs" role="tablist">${WF_METRICS.map(([k, l, c]) => `<button type="button" role="tab" class="df-tab${k===metric?' on':''}" style="--c:${c}" data-wf-metric="${k}" aria-selected="${k===metric}">${l}</button>`).join('')}</div>${flowChart(ws, metric)}</section>
  ${g||prs.length?`<section class="section card wf-growth">${g?`<div class="wf-sub"><b>종목 성장</b><small>${esc(g.name)} · 날마다 가장 무거운 세트</small></div>${growthChart(g)}`:''}${prs.length?`<div class="wf-sub"><b>새 기록</b><small>최근 4주</small></div><ul class="wf-prs">${prs.map(r => `<li><span>${esc(r.name)}</span><span>${r.from} → <b>${r.to}kg</b> <small>${md(r.date)}</small></span></li>`).join('')}</ul>`:''}</section>`:''}`;
 }
+// 2026-11-27 운동 페이지 2안: 종목 성장·새 기록만(이번 주 칸·흐름 차트는 workout-day.js로)
+export function workoutGrowthHTML(db, {end}){
+ if(!real(db).length) return '';
+ const g = liftGrowth(db, end), prs = newRecords(db, end);
+ return `${g||prs.length?`<section class="section card wf-growth">${g?`<div class="wf-sub"><b>종목 성장</b><small>${esc(g.name)} · 날마다 가장 무거운 세트</small></div>${growthChart(g)}`:''}${prs.length?`<div class="wf-sub"><b>새 기록</b><small>최근 4주</small></div><ul class="wf-prs">${prs.map(r => `<li><span>${esc(r.name)}</span><span>${r.from} → <b>${r.to}kg</b> <small>${md(r.date)}</small></span></li>`).join('')}</ul>`:''}</section>`:''}`;
+}
+

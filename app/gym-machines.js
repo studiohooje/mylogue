@@ -10,7 +10,7 @@ import {GENERIC_MACHINES, BUILTIN_BRANDS, gymMachineId, LOAD_LABEL, UNIT_LABEL, 
 import {EXERCISE_CATALOG} from './catalog.js';
 
 const h = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const PARTS = ['가슴','등','하체','어깨','팔','복근','전신','유산소'];
+const PARTS = ['가슴','등','하체','어깨','이두','삼두','복근','전신','유산소'];
 const partOf = g => EXERCISE_CATALOG.find(x => x.name===g.exercise)?.part || '기타';
 
 export function gymKeyOf(settings = {}, name = ''){

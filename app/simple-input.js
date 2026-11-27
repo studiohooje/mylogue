@@ -64,7 +64,7 @@ export function simpleMealRecords({date, time = '12:00', slot = '식사', items 
 }
 
 // 운동: 지난번처럼(제목·부위가 다른 최근 세션 3개), 부위·시간·강도
-export const PARTS = ['하체', '등', '가슴', '어깨', '팔', '전신', '유산소', '필라테스', '요가'];
+export const PARTS = ['하체', '등', '가슴', '어깨', '이두', '삼두', '전신', '유산소', '필라테스', '요가'];
 export const MINUTES = [20, 30, 45, 60, 90];
 export const INTENSITY = [['easy', '가볍게'], ['usual', '보통'], ['hard', '힘들게']];
 export function recentSessions(workouts = [], date, limit = 3) {

@@ -1,5 +1,6 @@
 // 4.16.0 운동 화면 개선(대표님 2026-11-23): 점수 없이 '운동했다'를 칭찬하고, 내 기록을 눈으로 구경하게 한다.
 // 원칙: 무게·세트로 점수를 매기지 않는다. 링은 '이번 주 운동한 날 / 주간 횟수' 하나. 재촉·비교 없음. 과하게 하면 쉬라고 말한다.
+import {partOf} from './body-part.js';
 import {workoutTotals, setWeightKg, estimate1RM} from './domain.js';
 import {exArtHTML} from './exercise-art-ui.js';
 import {shareButtonsHTML} from './share-cards.js';
@@ -34,11 +35,11 @@ export function weekHeroHTML(db, date, goal = 3) {
 }
 
 // ③ 근육 회복 상태: 부위별 마지막 운동 경과일
-const PART_ORDER = ['가슴', '등', '하체', '어깨', '팔', '복근', '전신'];
+const PART_ORDER = ['가슴', '등', '하체', '어깨', '이두', '삼두', '복근', '전신'];
 export function recovery(db, date) {
   const last = {}, sets = {};
   for (const w of db.workouts || []) if (moved(w) && w.date <= date) for (const e of w.exercises || []) {
-    if (e.kind === 'cardio') continue; const p = e.part || '기타';
+    if (e.kind === 'cardio') continue; const p = partOf(e) || '기타';
     if (!last[p] || w.date > last[p]) last[p] = w.date;
     if (w.date > addDays(date, -7)) sets[p] = (sets[p] || 0) + (e.sets || []).filter(s => s.completed !== false).length;
   }
@@ -114,7 +115,7 @@ export function newRecords(db, workout) {
 }
 export function resultCardHTML(db, workout, {burn = null} = {}) {
   const t = workoutTotals(workout), prs = newRecords(db, workout), names = (workout.exercises || []).map(e => e);
-  const parts = [...new Set((workout.exercises || []).map(e => e.kind === 'cardio' ? '유산소' : e.part).filter(Boolean))];
+  const parts = [...new Set((workout.exercises || []).map(e => e.kind === 'cardio' ? '유산소' : partOf(e)).filter(Boolean))];
   return `<div class="result-card"><p class="rc-eyebrow">${esc(workout.date)} · 운동 기록 완료</p><h2>오늘도 했어요. 잘했어요.</h2><div class="rc-art">${names.slice(0, 4).map(e => exArtHTML(e, 'ex-art-md', {fallback: true})).join('')}</div><ul class="rc-stats">${t.sets ? `<li><b>${t.sets}</b>세트</li>` : ''}${t.cardioMinutes ? `<li><b>${fmt(t.cardioMinutes, 0)}</b>분 유산소</li>` : ''}${burn?.kcal != null ? `<li>약 <b>${fmt(burn.kcal, 0)}</b>kcal</li>` : ''}${parts.length ? `<li>${parts.map(esc).join(' · ')}</li>` : ''}</ul>${prs.length ? `<div class="rc-pr"><p>새 기록!</p>${prs.map(p => `<p><b>${esc(p.name)}</b> ${fmt(p.before)} → <em>${fmt(p.best)}kg</em></p>`).join('')}</div>` : ''}<button type="button" class="button wide" id="close">확인</button></div>`;
 }
 

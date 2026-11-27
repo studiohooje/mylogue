@@ -39,7 +39,10 @@ const saveLast = ids => { try { globalThis.localStorage?.setItem(LAST_KEY(), JSO
 
 // 5.0.1 초대 링크(#mate-코드)는 앱이 주소를 바꾸기 전에 잡아 둔다(앱이 켜지며 #home으로 바꿔 코드가 사라지던 문제)
 try { const m = /^#mate-([A-Z2-9]{8})$/i.exec(String(globalThis.location?.hash || '')); if(m) rememberInvite(m[1].toUpperCase()); } catch {}
-const st = () => ($s.mate ||= {view: 'rooms', rooms: null, roomId: '', posts: {}, props: {}, loading: '', err: '', sheet: null, create: null, invite: null, join: null, mate: null, shares: null, detail: null, cap: null, mode: 'food'});
+const st = () => ($s.mate ||= {view: 'rooms', rooms: null, roomId: '', posts: {}, props: {}, loading: '', err: '', sheet: null, create: null, invite: null, join: null, mate: null, shares: null, detail: null, cap: null, mode: lastMode()});
+const MODES = [['food', '음식'], ['scale', '체중계'], ['etc', '운동·기타']];
+function lastMode(){ try{ const m = globalThis.localStorage?.getItem('mylogue.mate.mode'); return MODES.some(([k]) => k === m) ? m : 'food'; }catch{ return 'food'; } }
+function setMode(m){ st().mode = m; try{ globalThis.localStorage?.setItem('mylogue.mate.mode', m); }catch{} }
 const ready = () => !!cloudState.user && cloudState.approval === 'approved';
 const me = () => cloudState.user?.uid || '';
 const roomById = id => (st().rooms || []).find(r => r.id === id) || null;
@@ -161,7 +164,7 @@ function roomView(){
   <form class="mate-compose" data-mate-form="say"><button type="button" class="mate-shoot" data-mate-go="cam" aria-label="사진 찍기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button><input id="mate-say" maxlength="500" placeholder="메시지 보내기" aria-label="메시지" autocomplete="off" enterkeyhint="send"><button type="submit" class="mate-send" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>`;
 }
 function camView(){
-  const s = st(), modes = [['food', '음식'], ['scale', '체중계'], ['etc', '운동·기타']];
+  const s = st(), modes = MODES;
   return `<div class="mate-cam" role="dialog" aria-label="사진 찍기"><div class="mate-cam-top"><button type="button" class="mate-ib" data-mate-camclose aria-label="닫기">✕</button><span>앱 안에서 찍은 사진만 올라가요</span><span style="width:44px"></span></div>
   <div class="mate-vf"><video id="mate-video" playsinline muted></video>${stampHTML()}${s.camErr ? `<p class="mate-cam-err">${esc(s.camErr)}</p>` : ''}</div>
   <div class="mate-modes">${modes.map(([k, l]) => `<button type="button" class="${s.mode === k ? 'on' : ''}" data-mate-mode="${k}">${l}</button>`).join('')}</div>
@@ -175,6 +178,7 @@ function postSheet(){
   return `<div class="mate-ov" data-mate-ovclose><div class="mate-sheet" role="dialog" aria-label="어디에 올릴까요"><div class="mate-sh"><b>찍은 사진 확인</b><button type="button" class="mate-ib" data-mate-capcancel aria-label="올리지 않고 닫기">✕</button></div>
   <img class="mate-prev mate-prev-big" src="${esc(c.url)}" alt="찍은 사진">
   <p class="hint">${c.quick ? '맨 위 방이 골라져 있어요. 다른 방도 고를 수 있어요.' : '지난번에 고른 방이 미리 골라져 있어요. 바꾸면 다음에도 그대로 기억해요.'}</p>
+  <div class="mate-modes mate-capmodes" role="group" aria-label="사진 종류">${MODES.map(([k, l]) => `<button type="button" class="${c.mode === k ? 'on' : ''}" data-mate-capmode="${k}" aria-pressed="${c.mode === k}">${l}</button>`).join('')}</div>
   ${picks || '<p class="hint">먼저 방을 만들어 주세요.</p>'}
   ${rec ? `<div class="mate-card">${rec}</div>` : ''}
   <div class="mate-capacts"><button type="button" class="button secondary" data-mate-retake ${s.busy ? 'disabled' : ''}>다시 찍기</button><button type="button" class="button" data-mate-upload ${c.to.length && !s.busy ? '' : 'disabled'}>${s.busy ? '올리는 중…' : c.to.length ? `${c.to.length}개 방에 올리기` : '방을 골라 주세요'}</button></div>
@@ -381,7 +385,8 @@ export async function mateClick(t){
   if(d.mateOpen){ s.roomId = d.mateOpen; s.view = 'room'; s.mate = null; $f.render(); loadRoom(d.mateOpen); return true; }
   if(d.mateCamclose !== undefined && s.quick){ stopCam(); s.quick = false; s.camErr = ''; s.view = 'room'; $s.page = 'home'; $f.render(); return true; }
   if(d.mateCamclose !== undefined){ stopCam(); s.view = 'room'; s.camErr = ''; $f.render(); fillPhotos(); return true; }
-  if(d.mateMode){ s.mode = d.mateMode; const el = document.querySelectorAll('[data-mate-mode]'); el.forEach(b => b.classList.toggle('on', b.dataset.mateMode === s.mode)); return true; }
+  if(d.mateCapmode && s.cap){ s.cap.mode = d.mateCapmode; setMode(d.mateCapmode); $f.render(); return true; }
+  if(d.mateMode){ setMode(d.mateMode); const el = document.querySelectorAll('[data-mate-mode]'); el.forEach(b => b.classList.toggle('on', b.dataset.mateMode === s.mode)); return true; }
   if(d.mateSnap !== undefined){
     const v = document.getElementById('mate-video');
     try{

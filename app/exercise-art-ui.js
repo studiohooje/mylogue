@@ -23,7 +23,7 @@ export function artFile(x){
 export const hasExerciseArt = x => !!artFile(x);
 const SIZE = {'ex-art-lg':96, 'ex-art-md':48, 'ex-art-sm':28};
 // 그림이 없는 종목은 부위 글자 아이콘으로 자리를 채운다(fallback: true일 때)
-const PART_GLYPH = {'가슴':'가슴','등':'등','하체':'하체','어깨':'어깨','팔':'팔','복근':'코어','전신':'전신','유산소':'유산소','필라테스':'필라','요가':'요가'};
+const PART_GLYPH = {'가슴':'가슴','등':'등','하체':'하체','어깨':'어깨','팔':'팔','이두':'이두','삼두':'삼두','복근':'코어','전신':'전신','유산소':'유산소','필라테스':'필라','요가':'요가'};
 export function exArtHTML(x, cls = 'ex-art-sm', {fallback = false} = {}){
  const f = artFile(x), s = SIZE[cls] || 28;
  if(f) return `<img class="ex-art ${cls}" src="art/ex/${h(f)}.webp" alt="" loading="lazy" decoding="async" width="${s}" height="${s}">`;

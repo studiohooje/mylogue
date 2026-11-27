@@ -5,7 +5,7 @@
 // - 웜업 세트는 세지 않는다.
 import {EXERCISE_CATALOG,resolveExercise} from './catalog.js';
 const MUSCLE_TO={chest:'가슴',triceps:'삼두',biceps:'이두',forearms:'이두',back:'등',traps:'등',erectors:'등',shoulders:'어깨',quads:'하체',glutes:'하체',hamstrings:'하체',calves:'하체',adductors:'하체',abs:'복근',obliques:'복근'};
-const PART_TO={'가슴':'가슴','등':'등','어깨':'어깨','하체':'하체','복근':'복근','팔':'삼두'};
+const PART_TO={'가슴':'가슴','등':'등','어깨':'어깨','하체':'하체','복근':'복근','이두':'이두','삼두':'삼두','팔':'삼두'};
 export const isWarm=set=>set?.type==='웜업';
 // 종목 하나의 대표 부위(주 근육 첫 번째 → 도감 부위)
 export function partOfExercise(e={}){const x=(e.exerciseId&&EXERCISE_CATALOG.find(c=>c.id===e.exerciseId))||resolveExercise(e.name)||{};const prim=(e.primaryMuscleIds?.length?e.primaryMuscleIds:x.primaryMuscleIds)||[];for(const m of prim)if(MUSCLE_TO[m])return MUSCLE_TO[m];return PART_TO[x.part||e.part]||''}

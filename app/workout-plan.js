@@ -8,7 +8,7 @@ export const WEIGHT_TARGETS = ['가슴', '등', '어깨', '이두', '삼두', '�
 export const PILATES_TARGETS = ['매트', '리포머', '캐딜락', '체어', '바렐'];
 export const SUB_TARGETS = {'웨이트': WEIGHT_TARGETS, '필라테스': PILATES_TARGETS};
 const MUSCLE_TO = {chest: '가슴', triceps: '삼두', biceps: '이두', forearms: '이두', back: '등', traps: '등', erectors: '등', shoulders: '어깨', quads: '하체', glutes: '하체', hamstrings: '하체', calves: '하체', adductors: '하체', abs: '복근', obliques: '복근'};
-const PART_TO = {'가슴': '가슴', '등': '등', '어깨': '어깨', '하체': '하체', '복근': '복근', '전신': '전신'};
+const PART_TO = {'가슴': '가슴', '등': '등', '어깨': '어깨', '하체': '하체', '복근': '복근', '전신': '전신', '이두': '이두', '삼두': '삼두'};
 const DAY = 86400000;
 const toT = s => new Date(String(s).slice(0, 10) + 'T12:00:00').getTime();
 

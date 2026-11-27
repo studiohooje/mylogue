@@ -72,7 +72,7 @@ export function daySummary(workouts=[]){
  return cats.map(c=>c==='웨이트'?`웨이트${parts.length?`(${parts.join('·')})`:''}`:CAT_LABEL[c]||c).join(' + ');
 }
 // 3.11.0 홈 운동 칸: 오늘 많이 쓴 부위를 작은 앞·뒤 그림에 색으로.
-const PART_MUSCLES={'가슴':['chest'],'등':['back','traps'],'하체':['quads','glutes','hamstrings'],'어깨':['shoulders'],'팔':['biceps','triceps'],'복근':['abs','obliques'],'전신':['quads','glutes','back','shoulders']};
+const PART_MUSCLES={'가슴':['chest'],'등':['back','traps'],'하체':['quads','glutes','hamstrings'],'어깨':['shoulders'],'팔':['biceps','triceps'],'이두':['biceps'],'삼두':['triceps'],'복근':['abs','obliques'],'전신':['quads','glutes','back','shoulders']};
 export function todayMuscleLoads(workouts=[]){
  const m=new Map(),add=(id,v)=>m.set(id,(m.get(id)||0)+v);
  for(const w of workouts)for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const n=(e.sets||[]).filter(s=>s.completed!==false).length;if(!n)continue;const p=e.primaryMuscleIds?.length?e.primaryMuscleIds:(PART_MUSCLES[e.part]||[]);for(const id of p)add(id,n);for(const id of e.secondaryMuscleIds||[])if(!p.includes(id))add(id,n*0.5)}

@@ -1,12 +1,8 @@
 // 앱 설치 안내: 기기마다 다른 설치 경로를 한 버튼으로 안내한다.
-// - Android 브라우저: 실제 APK 내려받기(크롬의 자동 '웹앱 설치' 배너는 막고 APK로 유도)
-// - iPhone·iPad: Safari '홈 화면에 추가' 방법을 팝업으로 안내(PWA)
-// - PC: 이 PC에 웹앱 설치(가능할 때) + 휴대폰별 방법
+// - 2026-11-27부터: 모든 기기에서 브라우저별 '홈 화면에 추가'(웹앱) 방법. APK 내려받기 안내는 뺐다(파일은 계속 올림)
+// - 크롬이 바로 설치를 허락하면(beforeinstallprompt) 맨 위에 '지금 바로 앱으로 설치' 버튼
 // - 이미 앱(APK) 안이거나 홈 화면 앱으로 실행 중이면 버튼을 숨긴다.
-export const APP_VERSION = '5.7.1';
-const APK_SIZE_MB = 44;
-const apkFile = `downloads/Mylogue-Beta-${APP_VERSION}-debug.apk`;
-const zipFile = `downloads/Mylogue-Beta-${APP_VERSION}-debug.zip`;
+export const APP_VERSION = '5.7.2';
 
 let deferredPrompt = null;
 let rerender = () => {};
@@ -26,7 +22,7 @@ function isInstalledApp() {
 export function initInstall(onChange) {
   rerender = onChange || rerender;
   globalThis.addEventListener?.('beforeinstallprompt', event => {
-    // Android에서는 크롬 자동 배너 대신 APK 설치로 안내한다. PC는 버튼 안에서 직접 띄운다.
+    // 크롬 자동 배너 대신 설치 창 안의 '지금 바로 앱으로 설치' 버튼으로 띄운다
     event.preventDefault();
     deferredPrompt = event;
     rerender();
@@ -45,38 +41,57 @@ export function installChip() {
 
 const steps = items => `<ol class="install-steps">${items.map(t => `<li>${t}</li>`).join('')}</ol>`;
 
-function androidBlock() {
-  return `<section class="install-block">
-<h3>Android 휴대폰</h3>
-<a class="button install-primary" href="${apkFile}" download>APK 내려받기 <small>약 ${APK_SIZE_MB}MB</small></a>
-${steps(['위 버튼으로 파일을 내려받아요.', '다 받으면 알림이나 \'내 파일 → 다운로드\'에서 파일을 눌러요.', '\'출처를 알 수 없는 앱\' 허용을 물으면 이번 한 번 허용해요.', '\'설치\'를 누르면 끝이에요.'])}
-<p class="install-note">이미 설치했다면 같은 방법으로 받아 설치하면 기록을 그대로 둔 채 업데이트돼요. <a href="${zipFile}" download>파일이 안 받아지면 ZIP으로 받기</a></p>
-</section>`;
+// 2026-11-27 대표님: APK 내려받기는 빼고, 쓰는 브라우저를 누르면 '홈 화면에 추가'로 앱처럼 쓰는 방법만. 크롬·사파리를 맨 앞, 나머지는 뒤로
+const menu = t => `<b>${t}</b>`;
+export const BROWSERS = [
+  ['chrome', '크롬', {
+    android: [`오른쪽 위 ${menu('⋮')} 메뉴를 눌러요.`, `${menu('홈 화면에 추가')}(또는 ${menu('앱 설치')})를 눌러요.`, `${menu('설치')}를 누르면 홈 화면에 마이로그가 생겨요.`],
+    ios: [`주소창 오른쪽 ${shareIcon} ${menu('공유')} 버튼을 눌러요.`, `${plusIcon} ${menu('홈 화면에 추가')}를 눌러요.`, `${menu('추가')}를 누르면 끝이에요.`],
+    desktop: ['주소창 오른쪽 끝의 설치 아이콘(모니터 모양)을 눌러요.', `없으면 ${menu('⋮')} 메뉴 → ${menu('전송, 저장, 공유')} → ${menu('페이지를 앱으로 설치')}.`, `${menu('설치')}를 누르면 바탕화면·시작 메뉴에 생겨요.`]}],
+  ['safari', '사파리', {
+    ios: [`화면 아래(iPad는 위) ${shareIcon} ${menu('공유')} 버튼을 눌러요.`, `목록을 올려 ${plusIcon} ${menu('홈 화면에 추가')}를 눌러요.`, `오른쪽 위 ${menu('추가')}를 누르면 홈 화면에 마이로그가 생겨요.`],
+    desktop: [`Mac 사파리: 메뉴 막대 ${menu('파일')} → ${menu('Dock에 추가')}.`, `${menu('추가')}를 누르면 Dock에 마이로그가 생겨요.`]}],
+  ['samsung', '삼성 인터넷', {
+    android: [`아래 ${menu('≡')} 메뉴를 눌러요.`, `${menu('현재 페이지 추가')}를 눌러요.`, `${menu('홈 화면')}을 고르면 홈 화면에 마이로그가 생겨요.`]}],
+  ['whale', '네이버 웨일', {
+    android: [`아래 ${menu('≡')} 메뉴를 눌러요.`, `${menu('홈 화면에 추가')}를 눌러요.`, `${menu('추가')}를 누르면 끝이에요.`]}],
+  ['edge', '엣지', {
+    android: [`아래 ${menu('···')} 메뉴를 눌러요.`, `${menu('휴대폰에 추가')}(또는 ${menu('홈 화면에 추가')})를 눌러요.`, `${menu('설치')}를 누르면 끝이에요.`],
+    desktop: [`오른쪽 위 ${menu('···')} 메뉴 → ${menu('앱')} → ${menu('이 사이트를 앱으로 설치')}.`, `${menu('설치')}를 누르면 끝이에요.`]}],
+  ['firefox', '파이어폭스', {
+    android: [`오른쪽 위(또는 아래) ${menu('⋮')} 메뉴를 눌러요.`, `${menu('설치')} 또는 ${menu('홈 화면에 추가')}를 눌러요.`, `${menu('추가')}를 누르면 끝이에요.`]}],
+  ['inapp', '카카오톡·네이버 앱 안', {
+    any: [`앱 안에서 연 화면은 홈 화면에 추가가 안 돼요.`, `오른쪽 위(또는 아래) 메뉴에서 ${menu('다른 브라우저로 열기')}를 눌러요.`, '열린 브라우저에서 위 방법대로 하면 돼요.']}],
+];
+const ua0 = () => globalThis.navigator?.userAgent || '';
+// 지금 쓰는 브라우저를 미리 골라 둔다(못 알아보면 크롬)
+export function guessBrowser(ua = ua0(), device = detectDevice()) {
+  if (/KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\//i.test(ua)) return 'inapp';
+  if (/SamsungBrowser/i.test(ua)) return 'samsung';
+  if (/Whale/i.test(ua)) return 'whale';
+  if (/EdgA?|EdgiOS|Edg\//.test(ua)) return 'edge';
+  if (/Firefox|FxiOS/i.test(ua)) return 'firefox';
+  if (/CriOS|Chrome/i.test(ua)) return 'chrome';
+  if (device === 'ios' || /Safari/i.test(ua)) return 'safari';
+  return 'chrome';
 }
+let picked = null;
+const stepsFor = (id, device) => { const b = BROWSERS.find(x => x[0] === id)?.[2] || {}; return b.any || b[device] || b.android || b.ios || b.desktop || []; };
 
-function iosBlock() {
-  return `<section class="install-block">
-<h3>iPhone·iPad</h3>
-${steps([`Safari에서 이 페이지를 열어요.`, `화면 아래(iPad는 위) ${shareIcon} <b>공유</b> 버튼을 눌러요.`, `목록을 올려 ${plusIcon} <b>홈 화면에 추가</b>를 눌러요.`, `오른쪽 위 <b>추가</b>를 누르면 홈 화면에 마이로그가 생겨요.`])}
-<p class="install-note">홈 화면 아이콘으로 열면 주소창 없이 앱처럼 쓸 수 있어요. 로그인하면 기록이 다른 기기와 동기화돼요.</p>
-</section>`;
-}
-
-function desktopBlock() {
-  if (!deferredPrompt) return '';
-  return `<section class="install-block">
-<h3>이 컴퓨터</h3>
-<button type="button" class="button install-primary" id="install-pwa">이 컴퓨터에 앱으로 설치</button>
-</section>`;
-}
-
-export function installModalBody(device = detectDevice()) {
-  if (device === 'android') return `<div class="install-sheet">${androidBlock()}</div>`;
-  if (device === 'ios') return `<div class="install-sheet">${iosBlock()}</div>`;
-  return `<div class="install-sheet">${desktopBlock()}${androidBlock()}${iosBlock()}</div>`;
+export function installModalBody(device = detectDevice(), ua = ua0()) {
+  const cur = picked || guessBrowser(ua, device);
+  const chips = BROWSERS.filter(([, , m]) => m.any || m[device] || device === 'desktop').map(([id, label]) => `<button type="button" class="install-browser${id === cur ? ' on' : ''}" data-install-browser="${id}" aria-pressed="${id === cur}">${label}</button>`).join('');
+  const pwa = deferredPrompt ? `<button type="button" class="button install-primary" id="install-pwa">지금 바로 앱으로 설치</button>` : '';
+  return `<div class="install-sheet">${pwa}<section class="install-block">
+<h3>쓰는 브라우저를 골라 주세요</h3>
+<div class="install-browsers" role="group" aria-label="브라우저">${chips}</div>
+${steps(stepsFor(cur, device))}
+<p class="install-note">홈 화면 아이콘으로 열면 주소창 없이 앱처럼 쓸 수 있어요. 로그인하면 기록이 다른 기기와 이어져요.</p>
+</section></div>`;
 }
 
 export async function installClick(target) {
+  if (target.dataset?.installBrowser) { picked = target.dataset.installBrowser; rerender(); return true; }
   if (target.id !== 'install-pwa') return false;
   if (!deferredPrompt) return true;
   const prompt = deferredPrompt;
