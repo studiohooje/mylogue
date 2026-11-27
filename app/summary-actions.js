@@ -8,7 +8,7 @@ import {openSnapCamera} from './snap-camera.js';
 import {aiRequest} from './ai-client.js';
 import {clearLive,liveActive} from './live-session.js';
 import {checkWorkout,applyFix} from './workout-check.js';
-import {nameSuggestion} from './workout-name.js';
+import {nameSuggestion,titleOptions} from './workout-name.js';
 import {aiReviewPrompt,parseAiReview,sessionTimes} from './session-summary.js';
 import {quickWorkoutRecord,lastSession,findMachine,countRow,mealToRow} from './quick-entry.js';
 import {prefillFor,withUnitMemory} from './set-prefill.js';
@@ -19,7 +19,7 @@ import {importClick} from './import-actions.js';
 const cur=()=>($s.db.workouts||[]).find(w=>w.id===$s.quickWorkout?.workoutId);
 const put=w=>{$s.db=$f.save({...$s.db,workouts:$s.db.workouts.map(x=>x.id===w.id?w:x)})};
 function openSummary(){const s=$s.quickWorkout;if(!cur()){$f.toast('아직 저장된 세트가 없어요. 세트를 하나 이상 저장하면 끝낼 수 있어요.');return}s.ask=null;$s.sumSt={};$s.modal='workout-summary';$f.render();document.querySelector?.('.sheet')?.scrollTo?.({top:0})}
-function finish(){const s=$s.quickWorkout,w=cur();if(!w){$s.modal=null;$f.render();return}try{const cr=s?.coachRoutine;if(cr?.id&&!String(cr.id).startsWith('class-')){const names=new Set((w.exercises||[]).map(e=>e.name));$s.coach?.reportRoutine?.(cr.id,{date:w.date,done:(cr.names||[]).filter(n=>names.has(n)).length,total:(cr.names||[]).length})}}catch{}const st=$s.sumSt||{},sug=nameSuggestion(w.exercises,s?.targets||w.targets||[]),title=st.title??(sug.options[0]?.title||sug.title);put({...w,title,finishedAt:new Date().toISOString(),updatedAt:new Date().toISOString()});try{if(s?.rest)cancelRestNotice()}catch{}clearLive();$s.quickWorkout=null;$s.sumSt=null;$s.airSt=null;$s.modal=null;$s.selectedDate=w.date;$f.render();$f.toast('오늘 운동을 기록했어요. 잘했어요!')}
+function finish(){const s=$s.quickWorkout,w=cur();if(!w){$s.modal=null;$f.render();return}try{const cr=s?.coachRoutine;if(cr?.id&&!String(cr.id).startsWith('class-')){const names=new Set((w.exercises||[]).map(e=>e.name));$s.coach?.reportRoutine?.(cr.id,{date:w.date,done:(cr.names||[]).filter(n=>names.has(n)).length,total:(cr.names||[]).length})}}catch{}const st=$s.sumSt||{},typed=String(document.getElementById('ss-name-input')?.value??'').trim().slice(0,40),title=typed||st.title||titleOptions($s.db,w).first;put({...w,title,finishedAt:new Date().toISOString(),updatedAt:new Date().toISOString()});try{if(s?.rest)cancelRestNotice()}catch{}clearLive();$s.quickWorkout=null;$s.sumSt=null;$s.airSt=null;$s.modal=null;$s.selectedDate=w.date;$f.render();$f.toast('오늘 운동을 기록했어요. 잘했어요!')}
 const pendingOf=s=>{const w=document.getElementById('q-set-weight'),r=document.getElementById('q-set-reps');return {n:(s.sets||[]).filter(x=>x.exerciseId===s.exerciseId&&x.machineId===s.machineId).length+1,weight:w?.value??s.weight,reps:r?.value??s.reps,unit:s.unit}};
 const hasPending=s=>!!(s?.editing&&s.editIndex<0&&s.touched);
 export function liveClick(t){if(coachLiveClick(t))return true;
@@ -66,10 +66,8 @@ function summaryClick(t){
  const st=$s.sumSt||($s.sumSt={}),w=cur();
  if(!w){$s.modal=null;$f.render();return true}
  if(t.id==='ss-cont'){$s.modal='quick-workout';$f.render();return true}
- if(t.dataset?.ssName!==undefined){st.title=t.dataset.ssName;st.nameEdit=false;$f.render();return true}
- if(t.dataset?.ssNameEdit!==undefined){st.nameEdit=true;$f.render();setTimeout(()=>document.getElementById('ss-name-input')?.focus(),30);return true}
- if(t.id==='ss-name-ok'){const v=String(document.getElementById('ss-name-input')?.value||'').trim().slice(0,40);if(v)st.title=v;st.nameEdit=false;$f.render();return true}
- if(t.id==='ss-time'){st.timeEdit=!st.timeEdit;$f.render();return true}
+ if(t.dataset?.ssName!==undefined){st.title=t.dataset.ssName;$f.render();return true}
+   if(t.id==='ss-time'){st.timeEdit=!st.timeEdit;$f.render();return true}
  if(t.id==='ss-time-ok'){const a=document.getElementById('ss-start')?.value,b=document.getElementById('ss-end')?.value,{start}=sessionTimes(w);if(!/^\d\d:\d\d$/.test(a||'')||!/^\d\d:\d\d$/.test(b||'')||b<a)throw Error('시작·끝 시간을 확인해 주세요.');const delta=start?new Date(`${w.date}T${a}`)-new Date(start.length>16?start:start+':00'):0;const shift=v=>{if(!v||!delta)return v;const d=new Date(new Date(v.length>16?v:v+':00').getTime()+delta);return d.toLocaleString('sv-SE').replace(' ','T').slice(0,16)};const w2={...w,startedAt:`${w.date}T${a}`,endedAt:`${w.date}T${b}`,exercises:w.exercises.map(e=>({...e,...(e.completedAt?{completedAt:shift(e.completedAt)}:{}),sets:(e.sets||[]).map(x=>({...x,completedAt:shift(x.completedAt)}))}))};put(w2);const s=$s.quickWorkout;if(s)for(const x of s.sets||[])x.completedAt=shift(x.completedAt);st.timeEdit=false;$f.render();$f.toast('운동 시간을 고쳤어요.');return true}
  if(t.id==='ss-done'||t.id==='ss-done2'){if(!st.checked){const is=checkWorkout(w,$s.db);if(is.length){st.issues=is;$f.render();return true}}finish();return true}
  if(t.dataset?.ssFix!==undefined){const x=st.issues?.[Number(t.dataset.ssFix)];if(x?.fix){put(applyFix(w,x));const s=$s.quickWorkout;const row=s?.sets?.filter(r=>r.exerciseId===(w.exercises[x.ei]?.exerciseId))?.[x.si];if(row){if(x.fix.weight!=null)row.weight=Number(x.fix.weight);if(x.fix.unit)row.unit=x.fix.unit}st.issues=checkWorkout(cur(),$s.db);if(!st.issues.length){st.issues=null;$f.toast('고쳤어요. 이제 기록 완료를 눌러 주세요.')}$f.render()}return true}

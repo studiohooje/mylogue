@@ -273,3 +273,14 @@ test('기구 찾기: 사진으로 기구를 알려 주고, 못 알아보면 횟�
   assert.equal(u.machine.name, ''); assert.equal(u.refunded, true);
   assert.equal((await route(await post('machine', {text: '사진 없음'}, tok), s.deps)).status, 400);
 });
+
+// 2026-11-27 인바디 결과지 읽기: 9개 숫자만, 범위 밖 값은 버리고, 하나도 못 읽으면 422 + 횟수 미차감
+test('인바디 결과지 읽기: 숫자만 골라 주고 못 읽으면 차감 안 함', async () => {
+  resetKeyCache(); const s = setup({plan: 'plus', answer: () => '{"date":"2026-07-13","weight":87.5,"bodyFatMass":17.6,"skeletalMuscle":39.4,"bmi":26.1,"bodyFatPct":20.1,"score":82,"visceralFatLevel":7,"bmr":1879,"note":""}'}); const tok = await token();
+  const r = await route(await post('inbody', {images: [img('inbody')]}, tok), s.deps); const b = await r.json();
+  assert.equal(r.status, 200); assert.equal(b.inbody.weight, 87.5); assert.equal(b.inbody.skeletalMuscle, 39.4); assert.equal(b.inbody.bmr, 1879); assert.equal(b.inbody.date, '2026-07-13');
+  s.deps.callClaude = async (m, o) => ({text: '{"date":"13일","weight":9999,"bmi":null,"note":"결과지 전체가 나오게 찍어 주세요"}', stopReason: 'end_turn', model: o.model});
+  const u = await route(await post('inbody', {images: [img('blur3')]}, tok), s.deps);
+  assert.equal(u.status, 422);
+  assert.equal((await route(await post('inbody', {text: '사진 없음'}, tok), s.deps)).status, 400);
+});

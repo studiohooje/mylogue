@@ -35,3 +35,18 @@ function freeTitle(by,max=4){const ps=by.filter(([,n],i)=>i===0||n>=2).map(([p])
 function uniq(o){const seen=new Set();return o.filter(x=>x.title&&!seen.has(x.title)&&seen.add(x.title))}
 // 진행 중 자동 이름(기록 완료 전에도 홈·운동 페이지에 이상한 이름이 보이지 않게)
 export const sessionTitle=(exercises,targets)=>nameSuggestion(exercises,targets).title;
+
+// 2026-11-27 대표님: 이름은 운동을 다 끝낸 마지막에 정한다. 직접 쓰기가 메인, 아래에 추천.
+// - 보기 2 '많이 한 부위': 3세트 이상이거나 그날의 20% 이상인 부위, 많은 순 최대 3개(가슴·어깨·삼두).
+// - 보기 1 '자주 쓴 이름': 내가 붙인 이름(Push Day·하체데이…) 중, 그 이름을 썼던 날 많이 한 부위와 오늘 많이 한 부위가 맞는 것만(하체만 한 날엔 Push Day 안 나옴).
+// - 내가 이름을 붙여 온 사람이면 보기 1을, 아니면 보기 2를 먼저 고른 상태로.
+const PARTS=new Set(['가슴','등','어깨','하체','복근','이두','삼두','팔','전신','유산소','상체']);
+const isPartTitle=t=>{const w=String(t||'').split(/[·\s,/+&]+/).filter(Boolean);return !w.length||w.every(x=>PARTS.has(x))};
+export function topParts(exercises=[],max=3){const by=setsByPart(exercises),total=by.reduce((a,[,n])=>a+n,0);return by.filter(([,n],i)=>i===0||n>=3||n>=total*0.2).slice(0,max).map(([p])=>p)}
+export function titleOptions(db={},w={}){
+ const today=topParts(w.exercises),parts=today.length?join(today):nameSuggestion(w.exercises,[]).title,hist=new Map();
+ for(const x of db.workouts||[]){if(x.id===w.id||x.rest||x.status==='planned')continue;const t=String(x.title||'').trim();if(!t||t==='오늘의 운동'||isPartTitle(t))continue;const tp=topParts(x.exercises);if(!tp.length)continue;const h=hist.get(t)||{n:0,parts:new Map()};h.n++;tp.forEach((p,i)=>h.parts.set(p,(h.parts.get(p)||0)+(3-i)));hist.set(t,h)}
+ const namer=hist.size>0,fits=h=>{const hp=[...h.parts.entries()].sort((a,b)=>b[1]-a[1]).map(([p])=>p);return today.length&&hp.includes(today[0])&&today.includes(hp[0])};
+ const mine=[...hist.entries()].filter(([,h])=>fits(h)).sort((a,b)=>b[1].n-a[1].n).slice(0,3).map(([t])=>t);
+ return {first:namer&&mine.length?mine[0]:parts,mine,parts,namer};
+}

@@ -181,7 +181,7 @@ export function quickClick(t){
 function alignRest(){const go=()=>{if(typeof document==='undefined')return;const top=document.querySelector('.rt-top'),b=document.querySelector('.rt-bottom');if(!top||!b)return;let p=b.parentElement;while(p&&!(p.scrollHeight>p.clientHeight&&/(auto|scroll)/.test(getComputedStyle(p).overflowY)))p=p.parentElement;if(!p)return;const gap=b.getBoundingClientRect().top-top.getBoundingClientRect().bottom-8;if(gap<0)p.scrollTop+=gap};try{setTimeout(go,60)/* 다시 그린 뒤 원래 스크롤을 되돌리는 것보다 나중에 */}catch{}}
 export async function enhancedClick(t){
  if(t.dataset.atlasMode){$s.analysisAtlasMode=t.dataset.atlasMode;$f.render();return true}
- if(t.dataset.bodyEdit){$s.bodyEditId=t.dataset.bodyEdit;$s.modal='body';$f.render();return true}
+ if(t.dataset.bodyEdit){$s.bodyEditId=t.dataset.bodyEdit;$s.bodyDate=null;$s.modal='body';$f.render();return true}
  if(t.id==='resume-session'){$f.resumeSession();return true}
  if(t.id==='discard-session'){if(confirm('작성 중인 운동을 삭제할까요?')){clearSession();$s.draftWarning='';$s.savedDraft=null;$s.workDraft=[];$s.workMeta={};$f.render()}return true}
  if(t.id==='draft-archive-export'){$f.download('mylogue-draft-before-restore.json',localStorage.getItem(scopedKey('mylogue.draft.before-restore'))||'{}');return true}

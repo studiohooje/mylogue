@@ -90,12 +90,12 @@ test('식사 시작 선택: 방금·전에·미리, 시각 칩과 옮기기', ()
  assert.ok(hourChips('past', D, now).every(h => h <= '16:06')); assert.ok(hourChips('plan', D, now).every(h => h > '16:06'));
  assert.equal(hourChips('past', daysAgo(1), now).length, 18, '어제는 전부');
  assert.deepEqual(shiftWhen(D, '00:20', -30), {date: daysAgo(1), time: '23:50'});
- assert.match(mealWhenChooserHTML(), /앞으로 먹을 것 미리/);
+ assert.match(mealWhenChooserHTML(), /먹을 것 미리/);
  assert.match(mealWhenBarHTML({...s, when: 'now'}, now), /정각 16:00/);
  assert.match(mealWhenBarHTML({date: D, time: '18:00', when: 'plan'}, now), /예정 포함/);
  const fresh = emptyQuickMeal(new Date().toLocaleString('sv-SE').slice(0, 10), '12:00');
  assert.equal(fresh.when, null);
- assert.match(quickMealHTML({meals: [], foods: [], settings: {}}, fresh), /언제 먹은 건지/);
+ assert.match(quickMealHTML({meals: [], foods: [], settings: {}}, fresh), /먹을 것 미리/);
  assert.equal(emptyQuickMeal(daysAgo(3), '12:00').when, 'past');
 });
 

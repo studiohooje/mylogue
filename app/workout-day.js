@@ -96,7 +96,7 @@ ${parts.length ? `<div class="wd-rows">${parts.map(([p, n]) => `<span class="lb"
 ${tip ? `<p class="wd-tip" role="note"><b>${esc(tipB)}</b>${tipR.length ? `<small>${esc(tipR.join('. '))}</small>` : ''}</p>` : ''}</section>
 ${extra}
 ${workoutFlowRowsHTML(db, date)}
-<div class="wd-title"><h3>한 운동<i class="i-tip" tabindex="0" title="막대·기둥이 진할수록 같은 종목·기구·방식의 내 지난 최고에 가까운 세트예요. 빛나면 새 최고. 오른쪽 숫자는 그날 가장 무거운 무게.">i</i></h3></div>
+<div class="wd-title"><h3>종목<i class="i-tip" tabindex="0" title="막대·기둥이 진할수록 같은 종목·기구·방식의 내 지난 최고에 가까운 세트예요. 보라색이면 새 최고. 오른쪽 숫자는 그날 가장 무거운 무게.">i</i></h3></div>
 <div class="wd-list">${exs.map(({w, e, i}) => exerciseRowHTML(db, date, w, e, i, {open: open === `${w.id}#${i}`, machine: open === `${w.id}#${i}` && e.machineId ? findMachine(e.machineId) : null})).join('')}</div>`;
 }
 

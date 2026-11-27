@@ -45,7 +45,7 @@ export function liveInsightHTML({db = {}, today = '', busy = false, msg = '', le
  ${it.weight?.length ? `<article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul>${li(it.weight)}</ul></article>` : ''}
  <p class="hint coach-when">${esc(whenText(saved.at))} 분석 · 버튼을 누를 때만 새로 만들어요${left != null ? ` · 오늘 ${left}번 더` : ''}</p>`
  : `<p class="coach-line">식단·운동·수치 기록을 읽고 <b>오늘 남은 식단</b>, <b>다음 운동</b>, <b>이번 주 코칭</b>, <b>체중 흐름</b>을 내 몸에 맞춰 알려 드려요.</p><p class="hint">버튼을 눌렀을 때만 만들어요(하루 3번).</p>`;
- return `<section class="section coach coach-live" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div>${basis}${body}${msg ? `<p class="hint warn" role="alert">${esc(msg)}</p>` : ''}<div class="actions">${btn}</div><p class="hint">AI 답은 참고용이에요. 진단이나 처방이 아니에요.</p></section>`;
+ return `<section class="section coach coach-live" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge plus-cap">✦ 플러스</span></div>${basis}${body}${msg ? `<p class="hint warn" role="alert">${esc(msg)}</p>` : ''}<div class="actions">${btn}</div><p class="hint">AI 답은 참고용이에요. 진단이나 처방이 아니에요.</p></section>`;
 }
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const n0 = v => Math.round(Number(v)||0).toLocaleString('ko-KR');
@@ -81,7 +81,7 @@ export function coachFacts(db={}, today){
 
 export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, today = '', name = '나'} = {}){
  const open = enabled && premium;
- if(open) return `<section class="section coach" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div><div class="actions"><button type="button" class="button" data-coach="meal">오늘 남은 식단 제안</button><button type="button" class="button secondary" data-coach="workout">다음 운동 제안</button></div><div id="coach-result" aria-live="polite"></div></section>`;
+ if(open) return `<section class="section coach" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge plus-cap">✦ 플러스</span></div><div class="actions"><button type="button" class="button" data-coach="meal">오늘 남은 식단 제안</button><button type="button" class="button secondary" data-coach="workout">다음 운동 제안</button></div><div id="coach-result" aria-live="polite"></div></section>`;
  const date = today || new Date().toISOString().slice(0, 10), f = coachFacts(db, date);
  const who = name && name!=='내 계정' && name!=='나' ? `${name}님` : '내', whoSub = who==='내' ? '내' : who;
  const dLabel = `${Number(date.slice(5,7))}월 ${Number(date.slice(8,10))}일 ${WD[new Date(`${date}T12:00:00`).getDay()]}요일`;
@@ -100,7 +100,7 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
  const trendTxt = f.trend!=null ? `7일 평균 ${f.trend>0?'+':''}${n1(f.trend)}kg` : '7일 평균 −0.4kg';
  const eta = f.target && f.nowW && f.trend && f.trend<0 ? (() => { const weeks = (f.nowW-f.target)/(-f.trend); if(!(weeks>0 && weeks<104)) return ''; const d = shift(date, Math.round(weeks*7)); return `지금 속도면 <b>${Number(d.slice(5,7))}월 ${Number(d.slice(8,10))}일</b>쯤 목표 ${n1(f.target)}kg에 닿아요`; })() : '지금 속도면 <b>12월 말</b>쯤 목표 체중에 닿아요';
  const bar = ([l, v, g, u]) => { const pct = g ? Math.round(v/g*100) : 0; return `<div class="cbar"><span>${l}</span><i><b style="width:${Math.min(100, pct)}%"></b></i><em>${pct}%</em></div>`; };
- return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge">플러스</span></div>
+ return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge plus-cap">✦ 플러스</span></div>
 <div class="coach-paper" aria-hidden="true">
 <div class="coach-report-head"><div><small>${esc(dLabel)} · 오늘의 맞춤 코칭</small><b>${esc(who)} 몸에 맞춘 리포트</b></div><span class="coach-example">예시 화면</span></div>
 <div class="coach-basis"><span>분석 근거</span><i>식사 ${f.meals14}끼</i><i>운동 ${f.works14}회</i><i>체중 ${f.weigh14}회</i><i>인바디 ${f.inbody}회</i><small>최근 14일</small></div>

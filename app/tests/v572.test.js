@@ -32,7 +32,7 @@ test('운동 페이지 2안: 그날 운동 요약·한 운동 줄·칭찬(늘었
  assert.deepEqual(exerciseNote(db, '2026-11-27', w2.exercises[0]), {k: 'up', t: '최고 무게 55 → 62.5kg'});
  assert.equal(exerciseNote(db, '2026-11-27', w2.exercises[1]).k, 'new');
  const html = workoutDayHTML(db, '2026-11-27', {today: '2026-11-27', open: 'b#0'});
- assert.match(html, /오늘 운동<span class="wd-parts">/); assert.match(html, /한 운동/); assert.match(html, /운동 흐름/);
+ assert.match(html, /오늘 운동<span class="wd-parts">/); assert.match(html, /<h3>종목/); assert.match(html, /운동 흐름/);
  assert.match(html, />이두</, '팔 기록이 이두로 보임'); assert.doesNotMatch(html, />팔</);
  assert.match(html, /62\.5<small>kg<\/small>/, '펼친 세트: 무게에 단위를 붙여 한 줄');
  assert.match(html, /×12/);

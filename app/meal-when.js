@@ -48,10 +48,10 @@ const hm12 = t => { const [h, m] = t.split(':').map(Number); return `${h < 12 ? 
 
 // 운동 기록의 '어떻게 기록할까요?'(실시간 입력 / 한 번에 입력 / 의도적 휴식)와 같은 틀
 export function mealWhenChooserHTML(){
- return `<div class="quick-flow q-live-start q-meal-start"><h3>어떻게 기록할까요?</h3><p class="hint">언제 먹은 건지 골라 주세요.</p>
-<button type="button" class="q-live-card live" data-q-when="now"><span class="q-live-ico" aria-hidden="true">⏱</span><span><b>방금 먹은 것</b><small>지금 시각으로 바로 적어요</small></span></button>
-<button type="button" class="q-live-card" data-q-when="past"><span class="q-live-ico" aria-hidden="true">✎</span><span><b>전에 먹은 것</b><small>지난 끼니 · 어제 것도 시각을 골라 적어요</small></span></button>
-<button type="button" class="q-live-card alt" data-q-when="plan"><span class="q-live-ico" aria-hidden="true">▦</span><span><b>앞으로 먹을 것 미리</b><small>예정으로 넣어 오늘 칼로리를 미리 봐요</small></span></button></div>`;
+ return `<div class="quick-flow q-live-start q-meal-start">
+<button type="button" class="q-live-card live" data-q-when="now"><span class="q-live-ico" aria-hidden="true">⏱</span><span><b>방금 먹은 것</b></span></button>
+<button type="button" class="q-live-card" data-q-when="past"><span class="q-live-ico" aria-hidden="true">✎</span><span><b>전에 먹은 것</b></span></button>
+<button type="button" class="q-live-card alt" data-q-when="plan"><span class="q-live-ico" aria-hidden="true">▦</span><span><b>먹을 것 미리</b></span></button></div>`;
 }
 
 export function mealWhenBarHTML(s, now = new Date()){
@@ -70,7 +70,7 @@ export function mealWhenBarHTML(s, now = new Date()){
   const minuteOk = t => !isToday || (s.when === 'plan' ? toMin(t) > cur : toMin(t) <= cur);
   rows = `<div class="chip-row">${days.map(([d, l]) => chip('data-q-when-date', d, l, s.date === d)).join('')}</div>${hourMinuteChipsHTML({hours, time: s.time, openHour: s.hourOpen ?? null, minuteOk, emptyHint: '고를 수 있는 시각이 없어요. 날짜를 바꾸거나 오른쪽 칸에 직접 적어 주세요.'})}${s.when === 'plan' ? '<p class="hint q-plan-note">예정으로 저장돼요. 하루 칼로리·탄단지에 \'예정 포함\'으로 미리 더해 볼 수 있고, 먹은 뒤 \'먹었어요\'를 누르면 확정돼요.</p>' : ''}`;
  }
- return `<section class="q-plan q-when-bar"><div class="q-live-line"><span class="q-live-badge ${s.when === 'now' ? 'live' : ''}">${s.when === 'now' ? '● ' : ''}${esc(title)}</span>${s.when === 'fixed' ? '' : '<button type="button" class="text-button" data-q-when-reset>입력 방식 바꾸기</button>'}</div><p class="q-when-at">${esc(dateLabel)} ${esc(hm12(s.time || '12:00'))}</p>${rows}</section>`;
+ return `<section class="q-plan q-when-bar"><div class="q-live-line"><span class="q-live-badge ${s.when === 'now' ? 'live' : ''}">${s.when === 'now' ? '● ' : ''}${esc(title)}</span>${s.when === 'fixed' ? '' : '<button type="button" class="text-button" data-q-when-reset>입력 방식 바꾸기</button>'}</div>${s.when === 'now' ? '' : `<p class="q-when-at">${esc(dateLabel)} ${esc(hm12(s.time || '12:00'))}</p>`}${rows}</section>`;
 }
 
 // 시 칩·직접 입력 처리(화면 쪽 공용): 같은 시를 다시 누르면 접기, 다른 시면 그 시 정각으로 열기

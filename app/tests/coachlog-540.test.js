@@ -33,8 +33,8 @@ test('도움받기: 못 쓰는 갈래는 숨기지 않고 회색 + 이유', () =
 test('식사 창 세 갈래: 지난 식사 · 도움받기 · 직접, 코치 제안은 도움받기 안에서', () => {
   const s = {date: '2026-11-26', time: '12:00', src: 'help'};
   const none = mealSourceHTML({meals: []}, s, [], {limit: 3, left: 0}).html;
-  assert.match(none, /지난 식사에서[\s\S]*도움받기[\s\S]*직접 입력하기/);
-  assert.match(none, /코치에게 제안받은 식단[\s\S]*연동된 코치님이 식단을 제안하면 열려요/);
+  assert.match(none, /지난 식사에서[\s\S]*도움받기[\s\S]*직접 입력/);
+  assert.match(none, /코치 제안 식단[\s\S]*연동된 코치님이 식단을 제안하면 열려요/);
   assert.match(none, /오늘 3번을 다 썼어요/);
   const plans = [{id: 'p1', title: '점심 제안', trainerName: '이준호', items: [{name: '현미밥', servingQty: 1, servingUnit: '공기', calories: 300}]}];
   const coach = mealSourceHTML({meals: []}, {...s, src: 'coach'}, plans).html;
@@ -42,7 +42,7 @@ test('식사 창 세 갈래: 지난 식사 · 도움받기 · 직접, 코치 제
 });
 test('운동 창 세 갈래: 지난 운동 · 도움받기(코치 루틴 · AI 사진) · 직접 고르기', () => {
   const h = workSourceHTML({src: 'help', routines: []});
-  assert.match(h, /코치에게 제안받은 루틴[\s\S]*연동된 코치님이 루틴을 보내거나 수업을 확정하면 열려요/);
+  assert.match(h, /코치 제안 루틴[\s\S]*연동된 코치님이 루틴을 보내거나 수업을 확정하면 열려요/);
   const c = workSourceHTML({src: 'coach', routines: [{id: 'r1', title: '하체 숙제', trainerName: '이준호', items: [{name: '스쿼트'}]}]});
   assert.match(c, /data-q-wroutine="r1"/);
   assert.match(workSourceHTML({src: 'past', recent: [{id: 'w1', title: '하체', date: '2026-11-25', exCount: 4}]}), /data-q-wpast="w1"[\s\S]*11\/25 · 4종목/);

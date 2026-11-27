@@ -4,7 +4,7 @@ import {ADMIN_UIDS, ADMIN_EMAILS} from '../../app/admin.js';
 import {HttpError, verifyIdToken, googleKeys, useQuota, readInput, buildMessages, corsHeaders, SYSTEM, LIMITS} from './handler.js';
 import {mateRoute} from './mate.js';
 import {kakaoRoute} from './kakao.js';
-import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, INSIGHT_SYSTEM, fakeAnswer, MACHINE_SYSTEM} from './prompts.js';
+import {REVIEW_SYSTEM, CHAT_SYSTEM, RECIPE_SYSTEM, CONVERSE_SYSTEM, INSIGHT_SYSTEM, fakeAnswer, MACHINE_SYSTEM, INBODY_SYSTEM} from './prompts.js';
 import {assertEnabled, assertBodySize, readJsonLimited, rateLimit, rejectDuplicate, useGlobalBudget, settleCost, safeNum, guardValue, GLOBAL_UID, MAX_OUTPUT_TOKENS} from './guards.js';
 // Fable H-1: 숫자 설정은 모두 safeNum으로(글자가 섞여도 꺼지지 않게)
 export const dailyLimit = env => safeNum(env.DAILY_LIMIT, 30);
@@ -106,7 +106,7 @@ export async function route(request, deps) {
       return reply(502, {error: '사진을 처리하지 못했어요. 잠시 뒤 다시 해 주세요.'});
     }
   }
-  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight', 'machine'].includes(path)) return reply(404, {error: '없는 주소예요.'});
+  if (request.method !== 'POST' || !['parse', 'review', 'chat', 'recipe', 'converse', 'me', 'insight', 'machine', 'inbody'].includes(path)) return reply(404, {error: '없는 주소예요.'});
   try {
     if (origin && !allowed.includes(origin)) throw new HttpError(403, '허용되지 않은 곳에서 온 요청이에요.');
     // 4.29.x 불필요한 호출 막기 ①② — 로그인 확인·JSON 읽기 전에 값싼 것부터
@@ -127,7 +127,7 @@ export async function route(request, deps) {
     await rateLimit(env.DB, user.uid, now, env, {admin: acct.admin});
     if (path !== 'me') { const {now: _n, today: _t, ...same} = body || {}; await rejectDuplicate(env.DB, user.uid, await sha256(`${path}|${JSON.stringify(same)}`), now, env); }
     const callModel = deps.callModel || deps.callClaude;
-    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.system === MACHINE_SYSTEM ? 'machine' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : callModel(messages, {...opts, maxTokens: opts.maxTokens || MAX_OUTPUT_TOKENS[opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature] || 1500});
+    const callAI = (messages, opts) => env.FAKE_AI === '1' ? Promise.resolve({text: fakeAnswer(opts.system === CONVERSE_SYSTEM ? 'converse' : opts.system === MACHINE_SYSTEM ? 'machine' : opts.system === INBODY_SYSTEM ? 'inbody' : opts.feature, opts.input) , stopReason: 'end_turn', model: 'fake'}) : callModel(messages, {...opts, maxTokens: opts.maxTokens || MAX_OUTPUT_TOKENS[opts.system === CONVERSE_SYSTEM ? 'converse' : opts.feature] || 1500});
     // 운영자 계정은 시험이 많아 시도·월 상한에서 뺀다(하루 한도는 그대로).
     // Fable M-1: 운영자도 시도 상한(하루 한도의 3배)은 지킨다 — 돌려받기를 끝없이 받아 무한히 부르지 않게. 월 상한만 운영자 예외.
     const guard = async (feature, limit) => { await useAttempt(env.DB, user.uid, day, feature, limit); if (acct.admin) return; await useMonthlyBudget(env.DB, user.uid, month, costOf(env, feature), monthlyCapWon(env)); };
@@ -183,6 +183,20 @@ export async function route(request, deps) {
       if (out.stopReason === 'max_tokens') throw new HttpError(422, '내용이 너무 길어요. 나눠서 보내 주세요.');
       if (feature === 'photo' && !repeat && recordsIn(out.text) === 0) { await refundFeature(env.DB, user.uid, day, 'photo'); return reply(200, {text: out.text, model: out.model, left: (quota.left ?? 0) + 1, refunded: true}); }
       return reply(200, {text: out.text, model: out.model, left: quota.left});
+    }
+    // 2026-11-27 인바디 결과지 읽기: 사진 한 장 → 9개 숫자(기록은 앱에서 사람이 확인 후 저장). 사진 한도를 같이 쓰고, 못 읽으면 차감 안 함.
+    if (path === 'inbody') {
+      const input = readInput({...body, text: ''});
+      if (!input.images.length) throw new HttpError(400, '결과지 사진을 찍어 주세요.');
+      const quota = await useFeature(env.DB, user.uid, day, 'photo', limitOf(env, 'photo', acct.plus));
+      const content = [{type: 'image', source: {type: 'base64', media_type: input.images[0].media_type, data: input.images[0].data}}, {type: 'text', text: '이 인바디 결과지의 숫자를 읽어 줘.'}];
+      const out = await call([{role: 'user', content}], {model, system: INBODY_SYSTEM, feature: 'photo', input: {...input, feature: 'inbody'}, effort: 'low', limit: limitOf(env, 'photo', acct.plus)});
+      let p = null; try { p = JSON.parse(String(out.text).match(/\{[\s\S]*\}/)?.[0] || ''); } catch {}
+      const num = (v, lo, hi) => { const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
+      const r = p && typeof p === 'object' ? {date: /^20\d\d-\d\d-\d\d$/.test(String(p.date || '')) ? p.date : null, weight: num(p.weight, 20, 400), bodyFatMass: num(p.bodyFatMass, 0, 300), skeletalMuscle: num(p.skeletalMuscle, 5, 150), bmi: num(p.bmi, 8, 80), bodyFatPct: num(p.bodyFatPct, 1, 80), score: num(p.score, 0, 150), visceralFatLevel: num(p.visceralFatLevel, 0, 30), bmr: num(p.bmr, 500, 5000), note: String(p.note || '').slice(0, 120)} : null;
+      const got = r ? ['weight', 'bodyFatMass', 'skeletalMuscle', 'bmi', 'bodyFatPct', 'score', 'visceralFatLevel', 'bmr'].filter(k => r[k] != null).length : 0;
+      if (!got) { await refundFeature(env.DB, user.uid, day, 'photo'); throw new HttpError(422, r?.note || '결과지 숫자를 읽지 못했어요. 결과지 전체가 정면으로 나오게 다시 찍어 주세요.'); }
+      return reply(200, {inbody: r, model: out.model, left: quota.left});
     }
     // 5.4.5 기구 찾기: 사진 한 장 → 무슨 기구인지(기록은 만들지 않음). 사진 한도를 같이 쓴다.
     if (path === 'machine') {

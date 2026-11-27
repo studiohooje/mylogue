@@ -65,7 +65,7 @@ function dialHTML(s, mode){
     <svg viewBox="0 0 260 260" aria-hidden="true"><defs><linearGradient id="rt-aurora" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ce4e0"/><stop offset=".55" stop-color="#b8aaf2"/><stop offset="1" stop-color="#f2b49b"/></linearGradient></defs>
     <g class="rt-ticks">${ticks}</g><circle class="rt-track" cx="130" cy="130" r="${R}"/><circle class="rt-prog" id="rt-prog" cx="130" cy="130" r="${R}" transform="rotate(-90 130 130)" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${C.toFixed(1)}"/>
     <g class="rt-hand" id="rt-hand"><line x1="130" y1="44" x2="130" y2="8"/><circle cx="130" cy="26" r="5"/></g></svg>
-    <div class="rt-center" role="timer"><span class="rt-lbl">쉬는 중</span><span class="rt-digits" id="rt-digits">0:00</span><span class="rt-goal" id="rt-goal">${mode === 'alarm' ? `목표 ${clock(target)}` : '시간만 재는 중'}</span></div>
+    ${mode === 'alarm' ? restSoundButton() : ''}<div class="rt-center" role="timer"><span class="rt-lbl">쉬는 중</span><span class="rt-digits" id="rt-digits">0:00</span><span class="rt-goal" id="rt-goal">${mode === 'alarm' ? `목표 ${clock(target)}` : '시간만 재는 중'}</span></div>
   </div>`;
 }
 
@@ -147,14 +147,25 @@ export function restTick(onAlarm){
   if (g && target) g.textContent = over ? `목표보다 +${clock(s - target)}` : `목표 ${clock(target)} · ${clock(target - s)} 남음`;
   if (over && !el.dataset.alerted) { el.dataset.alerted = '1'; onAlarm?.(); }
 }
-// 알림: 진동(되는 기기) + 짧은 소리 세 번
+// 2026-11-27 대표님: 휴식이 끝나면 트레이너가 박수 쳐 주듯 '짝짝짝' 세 번(남은 초 알림 없음). 소리는 타이머 오른쪽 위 버튼으로 켜고 끔(이 기기에 기억), 진동은 그대로.
+const SND_KEY = 'mylogue.restSound';
+export const restSoundOn = () => { try { return globalThis.localStorage?.getItem(SND_KEY) !== 'off'; } catch { return true; } };
+export const setRestSound = on => { try { globalThis.localStorage?.setItem(SND_KEY, on ? 'on' : 'off'); } catch {} };
+export const restSoundButton = () => { const on = restSoundOn(); return `<button type="button" class="rt-snd${on ? '' : ' off'}" data-rest-sound aria-pressed="${on}" aria-label="휴식 끝 소리 ${on ? '끄기' : '켜기'}" title="휴식 끝 박수 소리">${on ? '🔊' : '🔇'}</button>`; };
+export function clapSound(){
+  const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (!A) return;
+  const ctx = new A(), len = Math.floor(ctx.sampleRate * 0.2), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const clap = t0 => { [0, 0.011, 0.022].forEach((o, k) => { const src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter(), g = ctx.createGain(), t = t0 + o, tail = k === 2 ? 0.14 : 0.01;
+    src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 1300; bp.Q.value = 0.9; hp.type = 'highpass'; hp.frequency.value = 500;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.9, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.008 + tail);
+    src.connect(bp).connect(hp).connect(g).connect(ctx.destination); src.start(t); src.stop(t + 0.2); }); };
+  const now = ctx.currentTime + 0.03; [0, 0.3, 0.6].forEach(x => clap(now + x));
+  setTimeout(() => ctx.close?.(), 1500);
+}
 export function restAlarm(){
   try { navigator.vibrate?.([220, 120, 220, 120, 320]); } catch {}
-  try {
-    const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (!A) return;
-    const ctx = new A(); [0, 0.28, 0.56].forEach((t, i) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = i === 2 ? 1046 : 880; g.gain.setValueAtTime(0.0001, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.22); o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.24); });
-    setTimeout(() => ctx.close?.(), 1200);
-  } catch {}
+  try { if (restSoundOn()) clapSound(); } catch {}
 }
 
 // 4.23.0 화면이 꺼지거나 다른 앱에 있어도 휴식 끝을 알린다.

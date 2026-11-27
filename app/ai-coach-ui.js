@@ -65,9 +65,9 @@ export const recipeFoodPreset = m => ({name: m.name, servingQty: 1, servingUnit:
 const note = () => fakeAI() ? '<p class="hint">가짜 AI 모드예요. 정해진 답이 나와요.</p>' : '';
 export function aiCoachCardHTML(st, esc) {
   if (!isPlus()) return `<section class="section card ai-coach"><h3>AI 코치</h3>${lockHTML('ai-review', esc)}${lockHTML('ai-chat', esc)}</section>`;
-  if (!aiUsable()) return `<section class="section card ai-coach"><h3>AI 코치 <span class="status-badge info">플러스</span></h3><p class="hint">AI가 아직 연결되지 않았어요. 연결되면 이번 주 리뷰와 묻기를 바로 쓸 수 있어요.</p></section>`;
+  if (!aiUsable()) return `<section class="section card ai-coach"><h3>AI 코치 <span class="status-badge info plus-cap">✦ 플러스</span></h3><p class="hint">AI가 아직 연결되지 않았어요. 연결되면 이번 주 리뷰와 묻기를 바로 쓸 수 있어요.</p></section>`;
   const busy = st.busy, saved = lastReview(), review = st.review || saved?.text || '';
-  return `<section class="section card ai-coach"><h3>AI 코치 <span class="status-badge info">플러스</span></h3>${note()}
+  return `<section class="section card ai-coach"><h3>AI 코치 <span class="status-badge info plus-cap">✦ 플러스</span></h3>${note()}
   <div class="actions"><button type="button" class="button" id="ai-review-run" ${busy ? 'disabled' : ''}>${busy === 'review' ? '분석하는 중…' : review ? '다시 분석받기' : '이번 주 분석받기'}</button><button type="button" class="button secondary" id="ai-recipe-open">레시피 글로 음식 만들기</button></div>
   ${review ? `<div class="ai-answer" role="status">${saved?.at ? `<small class="hint">${esc(when(saved.at))} 분석 · 누를 때만 새로 만들어요</small><br>` : ''}${esc(review).replace(/\n/g, '<br>')}</div>` : '<p class="hint">분석은 버튼을 누를 때만 만들어요. 저절로 바뀌지 않아요.</p>'}
   <form id="ai-chat-form" class="ai-chat"><label for="ai-chat-q">AI에게 묻기</label><textarea id="ai-chat-q" rows="2" maxlength="500" placeholder="예: 오늘 저녁 뭐 먹으면 좋을까요?">${esc(st.q || '')}</textarea><button type="submit" class="button secondary" ${busy ? 'disabled' : ''}>${busy === 'chat' ? '답 기다리는 중…' : '묻기'}</button></form>

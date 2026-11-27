@@ -2812,7 +2812,7 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 /* 운동 */
 .wd-title h3 .wd-parts{color:#8ce4e0!important;font-weight:700!important;margin-left:6px!important}
 .wd-sb i.lv1,.wd-sc i.lv1{opacity:.35!important}.wd-sb i.lv2,.wd-sc i.lv2{opacity:.58!important}.wd-sb i.lv3,.wd-sc i.lv3{opacity:.8!important}.wd-sb i.lv4,.wd-sc i.lv4{opacity:1!important}
-.wd-sb i.pr,.wd-sc i.pr{opacity:1!important;box-shadow:0 0 0 1px #ffffffaa,0 0 8px #8ce4e0cc!important}
+.wd-sb i.pr,.wd-sc i.pr{opacity:1!important;background:#b8aaf2!important;box-shadow:none!important}/* 2026-11-27 대표님: 새 최고는 빛 말고 색(마이로그 보라)으로 */
 /* 수치 */
 .gc-grid{position:relative!important;padding-left:38px!important}.gc-grid .gc-ylab{left:0!important}.gc-grid .gc-ylab span{left:0!important;background:none!important;padding:0!important;opacity:.85!important;transform:translateY(-50%)!important}
 .bf-tgrow{display:flex!important;justify-content:flex-end!important;margin:-6px 0 4px!important}
@@ -2823,3 +2823,27 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .mr-fold{display:flex!important;align-items:center!important;gap:14px!important;padding:16px 18px!important;cursor:pointer!important;width:100%!important;text-align:left!important;font:inherit!important;color:inherit!important;background:radial-gradient(120% 140% at 0% 0%,#2b2a5a 0%,#1a2846 60%)!important;border:1px solid #4b4790!important;border-radius:18px!important}
 .mr-fold .sk{width:44px!important;height:44px!important;flex:none!important;display:block!important}.mr-fold .sk svg{width:44px!important;height:44px!important}.mr-fold b{font-size:17px!important;font-weight:800!important;flex:1!important}.mr-fold em{font-style:normal!important;color:#b8aaf2!important;font-size:16px!important}
 .pa-one{margin:6px 0 0!important;font-size:13px!important;color:#9fb6c9!important}.pa-sub{margin:0 0 8px!important;font-size:12px!important;color:#9fb6c9!important}
+/* 2026-11-27 대표님: 넓은 화면 3칸 타임라인 — 칸 높이가 제각각이라 구분선·점선·'먹었어요'가 들쭉날쭉. 같은 줄은 같은 높이, 구분선은 줄 위에 한 줄로, 점선은 칸 안에서만, '먹었어요'는 칸 맨 아래 오른쪽 */
+@media(min-width:1000px){
+ .timeline-list{align-items:stretch!important;column-gap:28px!important}
+ .tl3-step{border-bottom:0!important;border-top:1px solid #26334f!important}
+ .tl3-step:nth-child(-n+3){border-top:0!important}
+ .tl3-axis::after{bottom:12px!important}
+ .tl3-step:last-child .tl3-axis::after{display:block!important}
+ .tl3-body:has(.tl-ate){display:flex!important;flex-direction:column!important}
+ .tl3-body>.timeline-card:has(.tl-ate){flex:1!important;display:flex!important;flex-direction:column!important}
+ .tl3-body .tl-ate{margin-top:auto!important;padding-top:8px!important}
+}
+/* 2026-11-27 입력창 정리(대표님 3차 목업) */
+.sheet-head .sh-kind{margin-left:auto!important;margin-right:10px!important;font-size:13px!important;padding:6px 4px!important}
+.b-datebar{margin:-6px 0 -2px!important;display:flex!important;justify-content:center!important}.b-datebar .db-wrap{margin:0 auto!important}.b-datebar .db-mid{cursor:default!important}.b-datebar .db-arrow:disabled{opacity:.3!important;cursor:default!important}
+.nowrap{white-space:nowrap!important}
+.q-live-start{gap:10px!important}.q-live-card{min-height:56px!important;padding-top:10px!important;padding-bottom:10px!important}
+/* 2026-11-27 대표님: 플러스는 어디서나 마이로그 그라데이션 캡슐(특별함), 무료는 회색 테두리만 */
+.plus-cap{background:linear-gradient(90deg,#8ce4e0 0%,#9fd2ee 22%,#b8aaf2 50%,#d4a6dc 74%,#f2a98a 100%)!important;color:#14203a!important;border:0!important;font-weight:800!important;border-radius:999px!important;padding:3px 10px!important;box-shadow:none!important;-webkit-text-fill-color:#14203a!important}
+.aim-tag:not(.plus-cap){color:#a9b8c9!important;border-color:#45546d!important;background:none!important;font-weight:600!important}
+.ss-name .ss-q{display:block!important;font-size:16px!important;font-weight:800!important;color:#f2f7ff!important;margin:0 0 10px!important}
+.ss-name #ss-name-input{width:100%!important;box-sizing:border-box!important;min-height:46px!important;font-size:16px!important;font-weight:700!important}
+.ss-name .ss-choice{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;margin-top:10px!important}
+.ss-name .ss-choice>span{width:100%!important;font-size:12px!important;color:#9fb6c9!important}
+.rt-dial{position:relative!important}.rt-snd{position:absolute!important;top:2px!important;right:2px!important;z-index:2!important;width:36px!important;height:36px!important;min-height:0!important;padding:0!important;border-radius:50%!important;border:1px solid #ffffff22!important;background:#ffffff10!important;font-size:16px!important;line-height:1!important;cursor:pointer!important}.rt-snd.off{opacity:.55!important}
