@@ -60,3 +60,17 @@ test('헬스장 거리 확인', async () => {
   assert.ok(kmBetween(ansan, {lat: 37.3200, lng: 126.8320}) < FAR_KM);
   assert.match(locWarnHTML({gym: '헬스플러스 안산1호점', km: 37.8, where: '경기 고양시 일산동구'}), /약 <b>38km<\/b>/);
 });
+
+// 2026-11-27 대표님: 원판 양쪽·레버 하나(핵 스쿼트)는 한쪽 입력·총 무게, 한 발이어도 양쪽 합을 든다 / 무게판 둘인 케이블은 크로스오버만 한쪽 기준
+test('레버 하나·원판 양쪽, 두 무게판 케이블', async () => {
+  const {perSideFor, pairLever} = await import('../machines-catalog.js');
+  const hack = genericMachine('bm:newtech-wellness:m-torture:hack-squat'), mp = genericMachine('bm:newtech-wellness:cable-motion:multi-pulley');
+  assert.equal(pairLever(hack), true); assert.equal(isoMachine(hack), true); assert.equal(armsIso(hack), false);
+  const ex = {machineId: 'h', weightBasis: 'per-hand', handCount: 2, oneLever: true};
+  assert.equal(setVolume(ex, {weight: 40, unit: 'kg', reps: 10}), 800); // 양발: 40씩 = 80 × 10
+  assert.equal(setVolume(ex, {weight: 40, unit: 'kg', reps: 10, side: 'single'}), 1600); // 한 발씩 80을 양쪽 다
+  assert.equal(setLoadText(ex, {weight: 40, unit: 'kg', side: 'single'}), '40kg씩 (총 80kg)');
+  assert.equal(cleanWorkout({date: '2026-11-24', exercises: [{name: '핵 스쿼트', weightBasis: 'per-hand', handCount: 2, oneLever: true, sets: [{weight: 40, reps: 10}]}]}).exercises[0].oneLever, true);
+  assert.equal(perSideFor(mp, {id: 'exercise:케이블 크로스오버'}), true);
+  assert.equal(perSideFor(mp, {id: 'exercise:페이스 풀'}), false);
+});

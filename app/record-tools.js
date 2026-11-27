@@ -32,7 +32,10 @@ export function applyMachineAssign(db = {}, changes = [], {perHand = []} = {}){
   if(![...by.keys()].some(k => k.startsWith(w.id + '#'))) return w;
   return {...w, updatedAt: now, exercises: (w.exercises || []).map((e, i) => {
    const c = by.get(`${w.id}#${i}`); if(!c) return e;
-   return {...e, machineId: c.to, ...(ph.has(c.to) ? {weightBasis: 'per-hand', handCount: 2} : {})};
+   /* c.set: 세트 값 고치기(예: {unit:'kg'} 단위만, {unit:'level', weight:4, levelKg:9.07} 핀 번호로) */
+   /* c.ex: 종목 바로잡기 {name, exerciseId} · c.weightScale: 합계로 적은 원판 무게를 한쪽 값으로(0.5) */
+   const sc = Number(c.weightScale) > 0 ? Number(c.weightScale) : 1, fix = x => sc === 1 ? x : {...x, weight: Math.round(Number(x.weight) * sc * 100) / 100, originalWeight: Math.round(Number(x.weight) * sc * 100) / 100};
+   return {...e, ...(c.ex || {}), machineId: c.to, ...(ph.has(c.to) || c.perHand ? {weightBasis: 'per-hand', handCount: 2, ...(c.oneLever ? {oneLever: true} : {})} : c.perHand === false ? {weightBasis: 'total', handCount: 0} : {}), ...(c.set || sc !== 1 ? {sets: (e.sets || []).map(x => fix({...x, ...(c.set || {}), ...(c.set?.unit ? {originalUnit: c.set.unit} : {}), ...(c.set?.weight != null ? {originalWeight: c.set.weight} : {})}))} : {})};
   })};
  });
  return {...db, workouts};

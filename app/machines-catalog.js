@@ -114,7 +114,7 @@ const ALSO = {
  '케이블 트라이셉스 익스텐션':CABLE, '케이블 우드찹':CABLE, '팔로프 프레스':CABLE, '페이스 풀':CABLE, '케이블 레터럴 레이즈':['cable-crossover'],
  '스미스 벤치프레스':['smith'], '스미스 인클라인 프레스':['smith'], '스미스 런지':['smith'], '스미스 숄더 프레스':['smith'],
  // 5.0.5 세분화 종목
- '로우 로우 머신':['low-row'], '와이드 그립 머신 로우':['row-iso','row-machine'], '내로우 그립 머신 로우':['row-iso','row-machine'], '풀오버 머신':['pullover'], '펜듈럼 스쿼트':['v-squat'], '리버스 핵 스쿼트':['hack-squat'], '아이소래터럴 인클라인 체스트 프레스':['incline-press-iso'], '아이소래터럴 디클라인 체스트 프레스':['decline-press'], '머신 바이셉스 컬':['biceps-curl','preacher-curl'],
+ '로우 로우 머신':['low-row'], /* 2026-11-27 겸용 기구: 어시스트 딥스·풀업 한 대, 힙 어덕션·어브덕션 콤보 */'어시스트 풀업':['pullup-assist','dip-assist'], '힙 어덕션':['hip-adduction','hip-abduction'], '와이드 그립 머신 로우':['row-iso','row-machine'], '내로우 그립 머신 로우':['row-iso','row-machine'], '풀오버 머신':['pullover'], '펜듈럼 스쿼트':['v-squat'], '리버스 핵 스쿼트':['hack-squat'], '아이소래터럴 인클라인 체스트 프레스':['incline-press-iso'], '아이소래터럴 디클라인 체스트 프레스':['decline-press'], '머신 바이셉스 컬':['biceps-curl','preacher-curl'],
  '인클라인 케이블 플라이':['cable-crossover'], '싱글 암 케이블 플라이':CABLE, '와이드 그립 시티드 로우':['seated-row','cable-station'], '비하인드 넥 풀다운':['lat-pulldown'], '케이블 슈러그':CABLE, '케이블 풀스루':CABLE, '케이블 힙 어덕션':CABLE, '케이블 업라이트 로우':CABLE, '케이블 Y 레이즈':['cable-crossover'],
  '로프 해머 컬':CABLE, '베이지안 컬':CABLE, '하이 케이블 컬':['cable-crossover'], '리버스 그립 푸시다운':['cable-pushdown','cable-station'], '케이블 트라이셉스 킥백':CABLE,
  '스미스 디클라인 프레스':['smith'], '스미스 로우':['smith'], '스미스 힙 쓰러스트':['smith'], '스미스 카프 레이즈':['smith'], '스미스 불가리안 스플릿 스쿼트':['smith'],
@@ -125,7 +125,17 @@ export const needsMachine = ex => !!ex && MACHINE_ONLY.has(ex.equipment);
 // 일반 머신·앱 기본 제조사 모델을 ID로 찾는다.
 export const genericMachine = id => byId.get(id) || brandById.get(id) || null;
 // 2026-11-27 대표님: 양팔이 따로 움직이는 머신(원판 한쪽 기준 무게)인지 — 세트 칸 안내와 저장(총 무게 ×2)이 같은 판단을 쓰게. 내 머신·헬스장 머신은 고른 움직임, 없으면 바탕 머신 종류
-export const isoMachine = m => !!m && (m.sided || genericMachine(m.baseId)?.sided || genericMachine(m.id)?.sided) === 'iso';
+export const pairLever = m => !!m && m.gymSpec?.sided !== 'iso' && (m.spec?.sided || genericMachine(m.id)?.spec?.sided) === 'pair';
+// 2026-11-27 대표님: 무게판이 둘인 케이블(뉴텍 멀티 풀리)은 양쪽 손잡이를 같이 쓰는 종목만 '한쪽 무게판 값'(크로스오버·플라이 등). 페이스 풀·푸시다운·컬처럼 한 줄이면 적은 값 그대로
+export const CABLE_TWO = new Set(['exercise:케이블 크로스오버','exercise:케이블 플라이','exercise:로우 투 하이 케이블 플라이','exercise:인클라인 케이블 플라이','exercise:케이블 체스트 프레스','exercise:케이블 리어 델트 플라이','exercise:케이블 Y 레이즈']);
+const loadOf = m => m?.load || genericMachine(m?.baseId)?.load || genericMachine(m?.id)?.load || '';
+// 한쪽 무게로 적고 총 무게를 ×2로 보는가(머신 + 종목)
+export function perSideFor(m, ex){
+ if(!m) return false;
+ if(loadOf(m) === 'cable') return (m.spec?.sided || genericMachine(m.id)?.spec?.sided) === 'iso' && CABLE_TWO.has(ex?.id || ex?.exerciseId || '');
+ return isoMachine(m);
+}
+export const isoMachine = m => !!m && (pairLever(m) || (m.sided || genericMachine(m.baseId)?.sided || genericMachine(m.id)?.sided) === 'iso');
 // 팔(다리)이 정말 따로 움직이는지 — '번갈아'를 보여 줄지. 헬스장에서 고른 움직임 > 모델 사양 > 바탕 종류 (가온핏 리니어 로우는 레버 하나라 번갈아 없음)
 export const armsIso = m => !!m && (m.gymSpec?.sided || m.spec?.sided || m.sided || genericMachine(m.baseId)?.sided || genericMachine(m.id)?.sided) === 'iso';
 const exId = name => EXERCISE_CATALOG.find(x => x.name===name)?.id || '';

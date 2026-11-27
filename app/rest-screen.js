@@ -4,7 +4,7 @@
 // 어떤 방식이든 '🔥 휴식 끝, 다음 세트 시작'을 눌러야 다음 세트 입력으로 넘어간다.
 import {unitText, setLoadText, setSideTag} from './domain.js';
 import {specOptions} from './gym-machines.js';
-import {GENERIC_MACHINES, armsIso, isoMachine} from './machines-catalog.js';
+import {GENERIC_MACHINES, armsIso, perSideFor, pairLever} from './machines-catalog.js';
 import {planFor} from './workout-plan.js';
 import {prefillFor} from './set-prefill.js';
 import {matchScore} from './suggest.js';
@@ -82,7 +82,7 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
   const doneHere = s.sets.filter(x => x.exerciseId === s.exerciseId).length;
   const last = s.sets.filter(x => x.exerciseId === s.exerciseId).at(-1);
   const sides = sideOptions(machine);
-  /* 2026-11-27 원판 양쪽 머신은 '40kg씩 (총 80kg)'처럼 — 기록 화면과 같은 글자 */const exL = {...(selected || {}), machineId: s.machineId, ...(isoMachine(machine) ? {weightBasis: 'per-hand', handCount: 2} : {})}, lt = x => esc(setLoadText(exL, x, fmt));
+  /* 2026-11-27 원판 양쪽 머신은 '40kg씩 (총 80kg)'처럼 — 기록 화면과 같은 글자 */const exL = {...(selected || {}), machineId: s.machineId, ...(perSideFor(machine, selected) ? {weightBasis: 'per-hand', handCount: 2, ...(pairLever(machine) ? {oneLever: true} : {})} : {})}, lt = x => esc(setLoadText(exL, x, fmt));
   const head = `<div class="rt-head"><div><b>${esc(selected?.name || '')}</b><small>${doneHere}세트 끝${last ? ` · ${lt(last)} × ${last.reps}회${setSideTag(last)}` : ''}</small></div><div class="rt-mode" role="group" aria-label="휴식 타이머">${REST_MODES.map(([k, l]) => `<button type="button" class="${mode === k ? 'on' : ''}" data-rest-mode="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div></div>`;
   const top = mode === 'off' ? '' : `<section class="rt-top">${dialHTML(s, mode)}${mode === 'alarm' ? `<div class="rt-presets" role="group" aria-label="휴식 시간">${REST_PRESETS.map(p => `<button type="button" class="chip small ${s.rest.target === p ? 'active' : ''}" data-rest-set="${p}">${p % 60 ? `${Math.floor(p / 60)}분 ${p % 60}초` : `${p / 60}분`}</button>`).join('')}</div><div class="rt-add" role="group" aria-label="휴식 늘리기">${[15, 30, 60].map(a => `<button type="button" class="chip small" data-rest-add="${a}">+${a < 60 ? `${a}초` : '1분'}</button>`).join('')}</div>` : ''}</section>`;
   const tag = `<span class="rt-tag${n.changed ? ' changed' : ''}">${n.changed ? '바꿈' : '그대로'}</span>`;

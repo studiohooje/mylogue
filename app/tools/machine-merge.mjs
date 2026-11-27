@@ -11,7 +11,7 @@ const NOTES = path.resolve(APP, '..', 'research_notes', 'gym_machines');
 const dataFile = path.join(APP, 'machine-models-data.js');
 const {MACHINE_SPECS} = await import(pathToFileURL(dataFile).href + '?t=' + Date.now());
 const {GENERIC_MACHINES} = await import(pathToFileURL(path.join(APP, 'machines-catalog.js')).href);
-const BASES = new Set(GENERIC_MACHINES.map(g => g.id)), LOADS = new Set(MACHINE_SPECS.map(r => r[5])), SIDES = new Set(['both', 'iso', 'single']);
+const BASES = new Set(GENERIC_MACHINES.map(g => g.id)), LOADS = new Set(MACHINE_SPECS.map(r => r[5])), SIDES = new Set(['both', 'iso', 'single', 'pair']);
 const names = JSON.parse(fs.readFileSync(path.join(NOTES, 'names_ko.json'), 'utf8'));
 const files = process.argv.slice(2).length ? process.argv.slice(2) : fs.readdirSync(NOTES).filter(f => /^night1127b_.*\.jsonl$/.test(f)).map(f => path.join(NOTES, f));
 

@@ -3,7 +3,7 @@
 // - iPhone·iPad: Safari '홈 화면에 추가' 방법을 팝업으로 안내(PWA)
 // - PC: 이 PC에 웹앱 설치(가능할 때) + 휴대폰별 방법
 // - 이미 앱(APK) 안이거나 홈 화면 앱으로 실행 중이면 버튼을 숨긴다.
-export const APP_VERSION = '5.7.0';
+export const APP_VERSION = '5.7.1';
 const APK_SIZE_MB = 44;
 const apkFile = `downloads/Mylogue-Beta-${APP_VERSION}-debug.apk`;
 const zipFile = `downloads/Mylogue-Beta-${APP_VERSION}-debug.zip`;

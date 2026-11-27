@@ -18,3 +18,18 @@ test('지난 기록 머신 붙이기: 미리 보기 → 적용', () => {
   assert.equal(next.workouts[1], db.workouts[1]);
   assert.equal(planMachineAssign(next, rules).length, 0); // 다시 돌려도 같음
 });
+
+test('지난 기록 세트 값 고치기(단위·핀 번호)·크로스오버 한쪽 기준', () => {
+  const db = {workouts: [{id: 'w', date: '2026-11-27', gymName: 'G', exercises: [{name: '케이블 컬', sets: [{weight: 60, unit: 'lb', reps: 10}]}]}]};
+  const next = applyMachineAssign(db, [{workoutId: 'w', index: 0, to: 'bm:cybex:ft-360:ft-360', set: {unit: 'level', weight: 4, levelKg: 9.07}, perHand: false}]);
+  const s = next.workouts[0].exercises[0].sets[0];
+  assert.deepEqual([s.weight, s.unit, s.levelKg, s.originalUnit, s.reps], [4, 'level', 9.07, 'level', 10]);
+  const n2 = applyMachineAssign(db, [{workoutId: 'w', index: 0, to: 'x', perHand: true}]);
+  assert.equal(n2.workouts[0].exercises[0].handCount, 2);
+});
+
+test('합계로 적은 원판 무게를 한쪽 값으로·종목 바로잡기', () => {
+  const db = {workouts: [{id: 'w', date: '2026-11-22', gymName: 'G', exercises: [{name: '와이드 체스트프레스', exerciseId: 'exercise:아이소래터럴 체스트 프레스', sets: [{weight: 80, unit: 'kg', reps: 10}]}]}]};
+  const e = applyMachineAssign(db, [{workoutId: 'w', index: 0, to: 'bm:m', perHand: true, weightScale: 0.5, ex: {name: '와이드 체스트 프레스', exerciseId: 'exercise:와이드 체스트 프레스'}}]).workouts[0].exercises[0];
+  assert.deepEqual([e.name, e.exerciseId, e.sets[0].weight, e.weightBasis, e.handCount], ['와이드 체스트 프레스', 'exercise:와이드 체스트 프레스', 40, 'per-hand', 2]);
+});
