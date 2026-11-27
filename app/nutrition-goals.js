@@ -71,7 +71,7 @@ export function barInner(a, g, p=0, m=1.25){
 export const rowAxis = (total, g) => sharedScale([[total, g]]);
 const axisOf = (day, settings, extra) => sharedScale(MACRO_ROWS.map(([, , key, gk]) => [(Number(day[key])||0)+extra(key), Number(settings[gk])||0]));
 const axisNote = m => m>1.25 ? `<span class="axis-note" title="많이 넘친 항목이 있어 모든 막대의 끝을 목표의 ${m}배로 늘렸어요">막대 끝 = 목표×${m}</span>` : '';
-export function macroGoalsHTML(day={},settings={},{meals=0,planned=null,plannedCount=0,showPlanned=false}={}){
+export function macroGoalsHTML(day={},settings={},{meals=0,planned=null,plannedCount=0,showPlanned=false,fold=null}={}){/* 2026-11-27 fold:{open, chart(key)} — 식단 페이지: 줄을 누르면 아래로 그래프 */
  const hasGoal=MACRO_ROWS.some(([, , ,gk])=>Number(settings[gk])>0);
  const extra=k=>showPlanned&&planned?Number(planned[k])||0:0;
  const kcal=macroStatus((Number(day.calories)||0)+extra('calories'),settings.calorieGoal);
@@ -79,7 +79,7 @@ export function macroGoalsHTML(day={},settings={},{meals=0,planned=null,plannedC
  const rows=MACRO_ROWS.map(([cls,label,key,gk,unit])=>{
   const a=Number(day[key])||0,e=extra(key),g=Number(settings[gk])||0,s=macroStatus(a+e,g),d=unit==='g'?1:0;
   const note=s.state==='none'?'<em class="macro-note">목표 없음</em>':s.state==='over'?`<em class="macro-note over">+${num(s.diff,d)}${unit} 초과</em>`:s.state==='under'?`<em class="macro-note under">${num(-s.diff,d)}${unit} 부족</em>`:'<em class="macro-note met">달성</em>';
-  return `<div class="macro-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}"><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit}${e?` · 예정 포함 ${num(a+e,d)}${unit}`:''} / 목표 ${g?num(g,d)+unit:'없음'}">${barInner(a,g,e,rowAxis(a+e,g))}</span>${key==='calories'?'':`<span class="macro-val">${num(a+e,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}`}</div>`;/* 5.3.0 전수 검사: 칼로리 숫자·남음은 머리줄에 이미 있어 줄에서는 막대만 */
+  return `<div class="macro-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}"${fold?` data-macro-open="${key}" role="button" tabindex="0" aria-expanded="${fold.open===key}"`:''}><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit}${e?` · 예정 포함 ${num(a+e,d)}${unit}`:''} / 목표 ${g?num(g,d)+unit:'없음'}">${barInner(a,g,e,rowAxis(a+e,g))}</span>${key==='calories'?(fold?'<span></span>':''):`<span class="macro-val">${num(a+e,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}`}${fold?`<span class="macro-chev" aria-hidden="true">${fold.open===key?'⌃':'⌄'}</span>`:''}</div>${fold&&fold.open===key?`<div class="macro-open">${fold.chart(key)}</div>`:''}`;/* 5.3.0 전수 검사: 칼로리 숫자·남음은 머리줄에 이미 있어 줄에서는 막대만 */
  }).join('');
  const tip=carbTipHTML((Number(day.carbs)||0)+extra('carbs'),Number(settings.carbsGoal)||0,{plannedCarbs:extra('carbs')});
  return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num((Number(day.calories)||0)+extra('calories'))}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${plannedCount?`<div class="home-diet-side">${head}${plannedToggle(plannedCount,showPlanned)}</div>`:head}</div><div class="macro-rows">${rows}</div>${tip}${day.missingMacros?`<p class="hint macro-missing">탄수화물·지방 값을 업체가 주지 않은 음식 ${day.missingMacros}개는 열량에만 더했어요(탄단지 막대에는 빠져 있어요).</p>`:''}<p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
@@ -96,7 +96,7 @@ export function carbTipHTML(carbs, goal, {plannedCarbs=0}={}){
 // '예정 포함' 토글: 먹을 예정으로 넣은 식사가 있을 때만 보인다. 기본은 실제로 먹은 것만.
 export function plannedToggle(count, on){
  if(!count) return '';
- return `<button type="button" class="plan-toggle ${on?'on':''}" data-plan-toggle aria-pressed="${on}"><span class="plan-switch" aria-hidden="true"></span>예정 <small>${count}끼</small><span class="sr-only"> 포함해서 보기</span></button>`;
+ return `<button type="button" class="plan-toggle ${on?'on':''}" data-plan-toggle aria-pressed="${on}"><span class="plan-switch" aria-hidden="true"></span>예정 포함<span class="sr-only"> (예정 식사 ${count}끼)</span></button>`;
 }
 
 // 3.11.0 홈 3칸용 작은 식단 카드 → 3.18.0 '먹은 양 / 목표'를 숫자로, 막대는 2배 축.

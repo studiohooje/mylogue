@@ -50,18 +50,28 @@ function weekBlock(db, date, goal){
  return `<div class="wd-week"><span>이번 주 ${w.count}일 · 목표 ${g}일</span><span class="wd-dots" role="img" aria-label="이번 주 운동한 날 ${w.count}일, 목표 ${g}일">${dots}</span><button type="button" class="text-button wd-goal" data-week-goal>목표 바꾸기</button></div>`;
 }
 
+// 2026-11-27 대표님(내 기록 기준 세트 색): 같은 종목·기구·방식(한쪽씩 여부)의 그날 이전 최고 추정무게(무게×(1+횟수/30)) 대비
+// <75% · <90% · <100% · 이상 4단계, 넘으면 '새 최고'(pr). 지난 기록이 없으면 그날 세트끼리. 지난 날은 그날 기준으로 고정(그날 이전 기록만 봄)
+const e1 = s => (+s.weight || 0) * (1 + (+s.reps || 0) / 30);
+export function setLevels(db, date, e){
+ const ss = doneSets(e), one = ss[0]?.side === 'single', key = x => `${x.exerciseId || x.name}|${x.machineId || ''}`;
+ let base = 0;
+ for(const w of db.workouts || []) if(real(w) && w.date < date) for(const x of w.exercises || []) if(key(x) === key(e)) for(const s of doneSets(x)) if((s.side === 'single') === one) base = Math.max(base, e1(s));
+ const ref = base || Math.max(1, ...ss.map(e1));
+ return ss.map(s => { const v = e1(s), r = v / ref; return base && v > base ? 'pr' : r < .75 ? 'lv1' : r < .9 ? 'lv2' : r < 1 ? 'lv3' : 'lv4'; });
+}
 // 세트 기둥(B-1): 위에 무게(단위 붙여), 막대 높이 = 무게, 아래 ×횟수. 앞 세트보다 오르면 민트
-function setCols(e){
+function setCols(e, lv = []){
  const ss = doneSets(e), mx = Math.max(1, ...ss.map(s => +s.weight || 0));
- return `<div class="wd-cols">${ss.map((s, i) => { const w = +s.weight || 0, up = i > 0 && w > (+ss[i - 1].weight || 0), u = unitOf(s); return `<div class="wd-sc${up ? ' up' : ''}${w === 0 ? ' z' : ''}"><b>${n0(w)}<small>${u}</small></b><i style="height:${Math.max(6, Math.round(w / mx * 30))}px"></i><span>×${s.reps ?? '-'}${s.side === 'single' ? '<em>한쪽</em>' : ''}</span></div>`; }).join('')}</div>`;
+ return `<div class="wd-cols">${ss.map((s, i) => { const w = +s.weight || 0, up = i > 0 && w > (+ss[i - 1].weight || 0), u = unitOf(s); return `<div class="wd-sc${up ? ' up' : ''}${w === 0 ? ' z' : ''}"><b>${n0(w)}<small>${u}</small></b><i class="${lv[i] || ''}" style="height:${Math.max(6, Math.round(w / mx * 30))}px"></i><span>×${s.reps ?? '-'}${s.side === 'single' ? '<em>한쪽</em>' : ''}</span></div>`; }).join('')}</div>`;
 }
 
 export function exerciseRowHTML(db, date, w, e, i, {open = false, machine = null} = {}){
  const id = `${w.id}#${i}`, ss = doneSets(e), part = partOf(e) || '기타', col = PART_COLORS[part] || PART_COLORS['기타'];
- const top = topSet(e), u = top ? unitOf(top) : 'kg', mx = Math.max(1, ...ss.map(s => +s.weight || 0)), one = ss.some(s => s.side === 'single');
+ const top = topSet(e), u = top ? unitOf(top) : 'kg', one = ss.some(s => s.side === 'single'), lv = e.kind === 'cardio' ? [] : setLevels(db, date, e);
  const topText = e.kind === 'cardio' ? `${n0(e.durationMin || 0)}<small>분</small>` : top && +top.weight ? `${n0(top.weight)}<small>${u}${perHand(e) ? '씩' : ''}</small>` : `${ss.length}<small>세트</small>`;
  const note = open ? exerciseNote(db, date, e) : null;
- return `<article class="wd-ex${open ? ' open' : ''}"><button type="button" class="wd-line" data-wp-open="${esc(id)}" aria-expanded="${open}"><span class="wd-tm"><b>${esc(hm(ss[0]) || '')}</b><small>${esc(part)}</small></span><span class="wd-nm"><b>${esc(e.name)}${one ? '<span class="side">한쪽씩</span>' : ''}</b><span class="wd-sb" aria-hidden="true">${ss.map(s => `<i style="background:${col};opacity:${(0.3 + 0.7 * (+s.weight || 0) / mx).toFixed(2)}"></i>`).join('')}</span></span><span class="wd-top">${topText}</span><span class="wd-chev" aria-hidden="true">${open ? '⌃' : '›'}</span></button>${open ? `<div class="wd-body"><div class="wd-bh"><span class="wd-tag">${machine ? machineTagHTML(machine) : ''}${perHand(e) ? '<small>한쪽 무게 · 양쪽 합은 ×2</small>' : ''}</span><button type="button" class="button secondary small" data-qw="${esc(w.id)}">종목 수정</button></div>${e.kind === 'cardio' ? '' : setCols(e)}${note ? `<span class="wd-nt ${note.k}">${note.k === 'up' ? '▲' : note.k === 'new' ? '✦' : '✓'} ${esc(note.t)}</span>` : ''}</div>` : ''}</article>`;
+ return `<article class="wd-ex${open ? ' open' : ''}"><button type="button" class="wd-line" data-wp-open="${esc(id)}" aria-expanded="${open}"><span class="wd-tm"><b>${esc(hm(ss[0]) || '')}</b><small>${esc(part)}</small></span><span class="wd-nm"><b>${esc(e.name)}${one ? '<span class="side">한쪽씩</span>' : ''}</b><span class="wd-sb" aria-hidden="true">${ss.map((s, j) => `<i class="${lv[j] || 'lv3'}" style="background:${col}"></i>`).join('')}</span></span><span class="wd-top">${topText}</span><span class="wd-chev" aria-hidden="true">${open ? '⌃' : '›'}</span></button>${open ? `<div class="wd-body"><div class="wd-bh"><span class="wd-tag">${machine ? machineTagHTML(machine) : ''}${perHand(e) ? '<small>한쪽 무게 · 양쪽 합은 ×2</small>' : ''}</span><button type="button" class="button secondary small" data-qw="${esc(w.id)}">종목 수정</button></div>${e.kind === 'cardio' ? '' : setCols(e, lv)}${note ? `<span class="wd-nt ${note.k}">${note.k === 'up' ? '▲' : note.k === 'new' ? '✦' : '✓'} ${esc(note.t)}</span>` : ''}</div>` : ''}</article>`;
 }
 
 // 고른 날짜의 운동(요약 + 한 운동). 예정·휴식·기억만 적은 날도 같은 자리에.
@@ -80,13 +90,13 @@ export function workoutDayHTML(db, date, {today = date, goal = 3, open = '', wei
  const line = [`${exs.length}종목`, tot.volume ? `볼륨 ${n0(tot.volume / 1000)}t` : '', times.length ? `${times[0]}–${times.at(-1)}${mins ? `(${mins}분)` : ''}` : '', kcal != null ? `약 ${Math.round(kcal)}kcal` : ''].filter(Boolean).join(' · ');
  const tip = date === today ? overreachNote(db, date) : '', [tipB, ...tipR] = tip.split('. ');
  const title = [...new Set(ws.map(workoutTitle))].join(' + '), gym = [...new Set(ws.map(w => w.gymName).filter(Boolean))].join(' · ');
- return `<div class="wd-title"><h3>${head} · ${esc(title)}</h3><span class="wd-tr">${gym ? `<small>${esc(gym)}</small>` : ''}${ws.map(w => workoutMenuHTML(w, db)).join('')}</span></div>
+ return `<div class="wd-title"><h3>${head}<span class="wd-parts">${esc(title)}</span></h3><span class="wd-tr">${gym ? `<small>${esc(gym)}</small>` : ''}${ws.map(w => workoutMenuHTML(w, db)).join('')}</span></div>
 <section class="wd-card wd-sum"><div class="wd-sum-top"><div><div class="wd-big">${tot.sets}<span>세트</span></div><small>${esc(line)}</small></div>${weekBlock(db, date, goal)}</div>
 ${parts.length ? `<div class="wd-rows">${parts.map(([p, n]) => `<span class="lb"><i style="background:${PART_COLORS[p] || PART_COLORS['기타']}"></i>${esc(p)}</span><span class="bar"><b style="width:${Math.round(n / Math.max(1, tot.sets) * 100)}%;background:${PART_COLORS[p] || PART_COLORS['기타']}"></b></span><span class="val">${n}<small>세트</small></span>`).join('')}</div>` : ''}
 ${tip ? `<p class="wd-tip" role="note"><b>${esc(tipB)}</b>${tipR.length ? `<small>${esc(tipR.join('. '))}</small>` : ''}</p>` : ''}</section>
 ${extra}
 ${workoutFlowRowsHTML(db, date)}
-<div class="wd-title"><h3>한 운동</h3><small>오른쪽은 그날 최고 무게</small></div>
+<div class="wd-title"><h3>한 운동<i class="i-tip" tabindex="0" title="막대·기둥이 진할수록 같은 종목·기구·방식의 내 지난 최고에 가까운 세트예요. 빛나면 새 최고. 오른쪽 숫자는 그날 가장 무거운 무게.">i</i></h3></div>
 <div class="wd-list">${exs.map(({w, e, i}) => exerciseRowHTML(db, date, w, e, i, {open: open === `${w.id}#${i}`, machine: open === `${w.id}#${i}` && e.machineId ? findMachine(e.machineId) : null})).join('')}</div>`;
 }
 

@@ -82,15 +82,22 @@ function tile(series, k, s, big){
   ? (v==null ? `<div class="df-tv"><b>—</b><small>${Number(s.calorieGoal) ? '이 날 기록이 없어요' : '목표 칼로리를 정하면 점수가 나와요'}</small></div>` : `<div class="df-tv"><b>${v}</b><small>점</small><span class="df-word">${last.date===ymd(new Date())&&new Date().getHours()<21?'오늘은 진행 중':scoreWord(v)}</span></div>`)
   : (()=>{/* 5.3.0 전수 검사: 오늘 숫자는 위 '하루 누적'에 있으니 여기선 기간 평균 */const base=(done&&done.length?done:rec).filter(x=>x!=null),av=base.length?base.reduce((a,b)=>a+b,0)/base.length:null;return `<div class="df-tv"><b>${av==null?'—':n0(av)}</b><small>${unit} · 평균${av!=null&&goal?` · 목표의 ${Math.round(av/goal*100)}%`:''}</small></div>`})();
  const parts = k==='score' && last.parts?.protein!=null ? `<div class="df-parts" aria-label="이 날 점수 구성">${PARTS.map(([pk]) => `<i style="width:${last.parts[pk]}%;background:${color(pk)}"></i>`).join('')}</div><div class="df-pl">${PARTS.map(([pk, pl, mx]) => `<span style="--pc:${color(pk)}">${pl} ${last.parts[pk]}/${mx}</span>`).join('')}</div>` : '';
- const hitRow = hit!=null && done.length ? `<div class="df-hit"><span>${k==='score'?'80점 이상':'범위 안'} ${hit}/${done.length}일${live?' (오늘 빼고)':''}</span><span class="df-hbar"><i style="width:${Math.round(hit/done.length*100)}%"></i></span></div>` : '';
+ const hitRow = hit!=null && done.length ? `<div class="df-hit"><span>${k==='score'?'80점 이상':'범위 안'} ${hit}/${done.length}일${live?'':''}</span><span class="df-hbar"><i style="width:${Math.round(hit/done.length*100)}%"></i></span></div>` : '';
  return `<div class="df-tile${big?' big':''}" style="--c:${c}">${head}${value}${parts}${chart}${hitRow}</div>`;
 }
 
+// 2026-11-27 대표님: 칼로리·탄단지 그래프 4개 대신 평균 작은 칸(값·목표 대비 %). 그래프는 위 '하루 누적'의 줄을 눌러서
+const AVG = [['calories','칼로리','kcal','calorieGoal','#5fd0e8'],['carbs','탄수','g','carbsGoal','#f0d466'],['protein','단백질','g','proteinGoal','#6fd6a3'],['fat','지방','g','fatGoal','#ff7b93']];
+function avgChips(series, s){
+ const today = ymd(new Date()), days = series.filter(x => x.calories != null && x.date !== today);
+ if(!days.length) return '';
+ return `<div class="df-avg">${AVG.map(([k, l, u, gk, c]) => { const v = days.reduce((a, x) => a + (Number(x[k]) || 0), 0) / days.length, g = Number(s[gk]) || 0; return `<div><span><i style="background:${c}"></i>${l}</span><b>${Math.round(v).toLocaleString('ko-KR')}<small>${u}</small></b>${g ? `<em>${Math.round(v / g * 100)}%</em>` : ''}</div>`; }).join('')}</div>`;
+}
 export function dietFlowHTML(db, {period = 30, end} = {}){
  const s = db.settings||{}, series = dietSeries(db, {days:period, end});
  return `<section class="section card diet-flow"><div class="df-head"><h3>식단 흐름</h3><div class="df-tools"><div class="df-period" role="group" aria-label="기간">${[[7,'1주'],[30,'1달'],[90,'3달']].map(([d, l]) => `<button type="button" class="${d===period?'on':''}" data-df-period="${d}" aria-pressed="${d===period}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
  <div class="gc-legend"><span><i class="lb"></i>목표 범위</span><span><i class="ld"></i>범위 안</span><span><i class="lr"></i>범위 밖</span><span>큰 점 = ${end && end!==ymd(new Date()) ? '보는 날' : '오늘'}</span></div>
- <div class="df-grid">${tile(series, 'score', s, true)}${tile(series, 'calories', s, true)}<div class="df-macros">${['carbs','protein','fat'].map(k => tile(series, k, s, false)).join('')}</div></div>
- <details class="df-how"><summary>점수는 이렇게 매겨요</summary><p>목표 칼로리에 가까울수록 최대 40점(±10% 안이면 만점), 단백질은 목표의 95%를 채우면 25점 만점(135%까지는 넘쳐도 괜찮아요), 탄수 20점·지방 15점은 목표 ±15% 안이면 만점이에요. 조금 넘치거나 모자란 날은 조금만 깎아요. 탄단지 목표가 없으면 칼로리만으로 매겨요. 예정 식사는 넣지 않아요. 띠는 점수 80~100점, 나머지는 목표 ±10%예요.</p></details>
+ <div class="df-grid">${tile(series, 'score', s, true)}</div>${avgChips(series, s)}
+ <details class="df-how" hidden><summary>점수는 이렇게 매겨요</summary><p>목표 칼로리에 가까울수록 최대 40점(±10% 안이면 만점), 단백질은 목표의 95%를 채우면 25점 만점(135%까지는 넘쳐도 괜찮아요), 탄수 20점·지방 15점은 목표 ±15% 안이면 만점이에요. 조금 넘치거나 모자란 날은 조금만 깎아요. 탄단지 목표가 없으면 칼로리만으로 매겨요. 예정 식사는 넣지 않아요. 띠는 점수 80~100점, 나머지는 목표 ±10%예요.</p></details>
  </section>`;
 }

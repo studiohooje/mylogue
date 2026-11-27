@@ -32,7 +32,7 @@ test('운동 페이지 2안: 그날 운동 요약·한 운동 줄·칭찬(늘었
  assert.deepEqual(exerciseNote(db, '2026-11-27', w2.exercises[0]), {k: 'up', t: '최고 무게 55 → 62.5kg'});
  assert.equal(exerciseNote(db, '2026-11-27', w2.exercises[1]).k, 'new');
  const html = workoutDayHTML(db, '2026-11-27', {today: '2026-11-27', open: 'b#0'});
- assert.match(html, /오늘 운동 · /); assert.match(html, /한 운동/); assert.match(html, /운동 흐름/);
+ assert.match(html, /오늘 운동<span class="wd-parts">/); assert.match(html, /한 운동/); assert.match(html, /운동 흐름/);
  assert.match(html, />이두</, '팔 기록이 이두로 보임'); assert.doesNotMatch(html, />팔</);
  assert.match(html, /62\.5<small>kg<\/small>/, '펼친 세트: 무게에 단위를 붙여 한 줄');
  assert.match(html, /×12/);
@@ -86,4 +86,15 @@ test('리캡 식단 점: 목표를 조금 넘겨도 잘 맞춰 먹었으면 파�
  const s = {calorieGoal: 2300, carbsGoal: 260, proteinGoal: 170, fatGoal: 65};
  assert.ok(dietScore({calories: 2480, carbs: 270, protein: 175, fat: 70}, s).total >= 75, '칼로리 +8%여도 75점 이상');
  assert.ok(dietScore({calories: 3400, carbs: 420, protein: 90, fat: 120}, s).total < 75, '크게 넘치면 75점 미만');
+});
+
+test('세트 색: 내 기록 기준 4단계·새 최고, 지난 기록 없으면 그날 세트끼리', async () => {
+ const {setLevels} = await import('../workout-day.js');
+ const st = (w, r) => ({weight: w, unit: 'kg', reps: r, completed: true});
+ const a = cleanWorkout({id: 'a', date: '2026-11-20', exercises: [{name: '레그 프레스', part: '하체', sets: [st(100, 10)]}]});
+ const b = cleanWorkout({id: 'b', date: '2026-11-27', exercises: [{name: '레그 프레스', part: '하체', sets: [st(60, 10), st(90, 10), st(100, 10), st(110, 10)]}, {name: '처음 종목', part: '등', sets: [st(20, 10), st(40, 10)]}]});
+ const db = {workouts: [a, b]};
+ assert.deepEqual(setLevels(db, '2026-11-27', b.exercises[0]), ['lv1', 'lv3', 'lv4', 'pr']);
+ assert.deepEqual(setLevels(db, '2026-11-27', b.exercises[1]), ['lv1', 'lv4'], '지난 기록 없으면 그날 최고 기준');
+ assert.deepEqual(setLevels(db, '2026-11-20', a.exercises[0]), ['lv4'], '지난 날은 그날 이전 기록만 봄');
 });

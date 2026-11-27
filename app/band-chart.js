@@ -17,7 +17,7 @@ const wrap = (svg, {xs, ys, tips, kind, color, h, dateL, dateR, label}) =>
 
 // 선 그래프(+목표 띠). vals에 null이 있으면 끊어 그린다. line을 주면 선은 line(예: 7일 평균), 점은 vals.
 // 5.0.4 대표님(수치 그래프 시안 A): grid=옅은 격자 칸(가로 kg·세로 주), goal=목표선(점선), band=7일 평균 둘레의 흐름 띠, grad=평균선 마이로그 그라데이션
-export function lineChart({vals, line, lo = null, hi = null, color, h = 120, tips = [], dateL, dateR, label = '그래프', dots = true, grid = false, goal = null, band = 0, grad = false}){
+export function lineChart({vals, line, lo = null, hi = null, color, h = 120, tips = [], dateL, dateR, label = '그래프', dots = true, grid = false, goal = null, band = 0, grad = false, solid = false}){
  const n = vals.length;
  const all = [...vals, ...(line||[]), lo, hi, goal].filter(v => v!=null && Number.isFinite(v));
  if(!all.length) return '';
@@ -39,7 +39,7 @@ export function lineChart({vals, line, lo = null, hi = null, color, h = 120, tip
  L.forEach((v, i) => { if(v==null){ open = false; return; } d += `${open?'L':'M'}${f(x(i))} ${f(y(v))} `; open = true; });
  const gid = `lg${Math.random().toString(36).slice(2, 8)}`;
  if(d && grad) g += `<defs><linearGradient id="${gid}" x1="0" x2="1"><stop offset="0" stop-color="#8ce4e0"/><stop offset=".55" stop-color="#b8aaf2"/><stop offset="1" stop-color="#f2a98a"/></linearGradient></defs>`;
- if(d) g += `<path d="${d}" fill="none" stroke="${grad ? `url(#${gid})` : color}" stroke-width="${line?(grad?3:2.2):1.6}" stroke-opacity="${line?.95:.55}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+ if(d) g += `<path d="${d}" fill="none" stroke="${grad ? `url(#${gid})` : color}" stroke-width="${line?(grad?3:2.2):solid?2.2:1.6}" stroke-opacity="${line||solid?.95:.55}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
  const last = vals.reduce((k, v, i) => v!=null ? i : k, -1);
  const r = n>45 ? 3.4 : n>14 ? 4.8 : 6.4;
  if(dots) vals.forEach((v, i) => {
