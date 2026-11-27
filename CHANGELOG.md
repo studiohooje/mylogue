@@ -4,6 +4,10 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.7.5 — 2026-11-27 (배포됨, 웹만)
+
+- 유지칼로리 물음표 터치 영역(::after)이 카드 전체를 덮던 것 고침, 타임라인 식사 아이콘 포크 살 셋·간격.
+
 ## Mylogue Beta 5.7.4 — 2026-11-27 (배포됨, 웹만)
 
 - 예전 '팔' 표시 남은 곳 partOf로(timeline daySummary·domain workoutTotals.parts·reports·coach·mate-share·autoWorkoutTitle·simple-input·model-features·my-book), 운동 흐름 'N주 전', ⋯ 메뉴 빈 곳·Esc로 닫기, 유지칼로리 설명 상자 pointer-events none, 30일 변화 빼기 기호, 리캡 식단 점 = 식단 점수 75 이상(GOOD_SCORE, 점수 못 내면 목표 +10%), 타임라인 식사 아이콘 포크·나이프·하늘색.

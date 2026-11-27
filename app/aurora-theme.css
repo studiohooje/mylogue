@@ -2765,3 +2765,5 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 /* 2026-11-27 대표님: 물음표에 올렸을 때만 설명 — 설명 상자 위를 지나가도 계속 떠 있지 않게 */
 .mt-tip{pointer-events:none}
 .mt-help:not(:hover) .mt-tip{transition:none}
+/* 2026-11-27 대표님(PC): 카드 안 물음표는 position:static이라 넓힌 터치 영역(::after inset:-10px)이 카드 전체를 덮어 카드 어디에 올려도 설명이 떴다 → 그 경우엔 넓힌 영역을 물음표 자체에만 */
+.mt-card .mt-help::after,.mt-use .mt-help::after{display:none}
