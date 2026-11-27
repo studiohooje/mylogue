@@ -61,7 +61,7 @@ export function weightSpark(db, today, days=30, {w=160, h=56, trend=false}={}){
 // series: [{name, cls, unit, pts:[{date, v}], dashed}]
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt1 = v => Number(v).toLocaleString('ko-KR', {maximumFractionDigits:1});
-export function bodyChartHTML(series, {days=30, today='', empty='아직 그래프로 표시할 기록이 없어요.', compact=false}={}){
+export function bodyChartHTML(series, {days=30, today='', empty='아직 그래프로 표시할 기록이 없어요.', compact=false, gapDays=0, months=false}={}){
  const H = compact ? 112 : 172;
  const from = days>=3650 || !today ? '' : shift(today, -(days-1));
  const list = series.map(s => ({...s, pts:s.pts.filter(p => p.v!=null && Number.isFinite(Number(p.v)) && (!from || p.date>=from)).map(p => ({...p, v:Number(p.v)})).sort((a, b) => a.date.localeCompare(b.date))})).filter(s => s.pts.length);
@@ -75,9 +75,14 @@ export function bodyChartHTML(series, {days=30, today='', empty='아직 그래�
  const Y = v => B - (B-T) * (v - y0) / (y1 - y0);
  const ticks = [y0+pad, (y0+y1)/2, y1-pad];
  const tip = dates.map(d => ({x:+X(d).toFixed(1), d, r:list.map(s => { const p = s.pts.find(q => q.date===d); return p ? [s.name, fmt1(p.v), s.unit||''] : null; }).filter(Boolean)}));
- const paths = list.map(s => `<g class="bc-series ${esc(s.cls||'')}">${s.pts.length>1?`<path d="${s.pts.map((p, i) => `${i?'L':'M'}${X(p.date).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" class="bc-line${s.dashed?' dashed':''}"/>`:''}${s.dashed?'':s.pts.map(p => `<circle cx="${X(p.date).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.2"/>`).join('')}</g>`).join('');
+ // 2026-11-27 대표님: gapDays를 넘게 빈 구간은 흐린 선으로
+ const dd = (a, b) => (new Date(`${b}T12:00:00`) - new Date(`${a}T12:00:00`)) / 86400000, far = (s, i) => gapDays && i && dd(s.pts[i-1].date, s.pts[i].date) > gapDays;
+ const seg = s => s.pts.map((p, i) => `${i && !far(s, i)?'L':'M'}${X(p.date).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' '), faint = s => s.pts.map((p, i) => far(s, i) ? `M${X(s.pts[i-1].date).toFixed(1)},${Y(s.pts[i-1].v).toFixed(1)} L${X(p.date).toFixed(1)},${Y(p.v).toFixed(1)}` : '').join(' ').trim();
+ const mticks = months ? (() => { const out = []; const step = Math.max(1, Math.ceil(span / 30 / 6)); let y = +d0.slice(0,4), m = +d0.slice(5,7) + 1; if(m>12){ m = 1; y++; } for(let k = 0; ; k++){ const d = `${y}-${String(m).padStart(2,'0')}-01`; if(d > d1) break; if(k % step === 0) out.push(d); m++; if(m>12){ m = 1; y++; } } return out; })() : [];
+ const mgrid = mticks.map(d => `<line class="gridline" x1="${X(d).toFixed(1)}" x2="${X(d).toFixed(1)}" y1="${T}" y2="${B}"/><text class="bc-xlab" x="${X(d).toFixed(1)}" y="${H-6}" text-anchor="middle">${d.slice(5,7)==='01' ? `${d.slice(2,4)}년 ` : ''}${+d.slice(5,7)}월</text>`).join('');
+ const paths = list.map(s => `<g class="bc-series ${esc(s.cls||'')}">${s.pts.length>1?`<path d="${seg(s)}" class="bc-line${s.dashed?' dashed':''}"/>${faint(s) ? `<path d="${faint(s)}" class="bc-line" style="opacity:.55"/>` : ''}`:''}${s.dashed?'':s.pts.map(p => `<circle cx="${X(p.date).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.2"/>`).join('')}</g>`).join('');
  const legend = list.length>1 ? `<div class="bc-legend">${list.map(s => `<span class="${esc(s.cls||'')}${s.dashed?' dashed':''}"><i></i>${esc(s.name)}</span>`).join('')}</div>` : '';
- return `<div class="bc-wrap">${legend}<svg class="bchart${compact?' compact':''}" viewBox="0 0 360 ${H}" role="img" aria-label="${esc(list.map(s => s.name).join('·'))} 그래프, ${esc(d0)}~${esc(d1)}" data-pts='${esc(JSON.stringify(tip))}'>${ticks.map(t => `<line class="gridline" x1="${L}" x2="${R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}"/><text class="bc-ylab" x="${L-6}" y="${(Y(t)+4).toFixed(1)}" text-anchor="end">${fmt1(t)}</text>`).join('')}${paths}<line class="bc-guide" x1="0" x2="0" y1="${T}" y2="${B}" visibility="hidden"/><text class="bc-xlab" x="${L}" y="${H-6}">${esc(d0.slice(5).replace('-','/'))}</text><text class="bc-xlab" x="${R}" y="${H-6}" text-anchor="end">${esc(d1.slice(5).replace('-','/'))}</text></svg></div>`;
+ return `<div class="bc-wrap">${legend}<svg class="bchart${compact?' compact':''}" viewBox="0 0 360 ${H}" role="img" aria-label="${esc(list.map(s => s.name).join('·'))} 그래프, ${esc(d0)}~${esc(d1)}" data-pts='${esc(JSON.stringify(tip))}'>${ticks.map(t => `<line class="gridline" x1="${L}" x2="${R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}"/><text class="bc-ylab" x="${L-6}" y="${(Y(t)+4).toFixed(1)}" text-anchor="end">${fmt1(t)}</text>`).join('')}${paths}<line class="bc-guide" x1="0" x2="0" y1="${T}" y2="${B}" visibility="hidden"/>${months ? mgrid : `<text class="bc-xlab" x="${L}" y="${H-6}">${esc(d0.slice(5).replace('-','/'))}</text><text class="bc-xlab" x="${R}" y="${H-6}" text-anchor="end">${esc(d1.slice(5).replace('-','/'))}</text>`}</svg></div>`;
 }
 // 최근 7일 실제 측정 평균(평활 추세) — 체중계 체중만
 export function smoothWeights(records){

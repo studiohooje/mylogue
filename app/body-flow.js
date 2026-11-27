@@ -3,7 +3,7 @@
 // → 체성분 변화(인바디) → 식단과 함께(주별 평균 섭취·체중) → 요일 패턴.
 // 4.4.0 목표 띠형으로 통일: 최고·최저·현재 색 배지와 축 숫자를 없애고, 목표 체중 ±1kg 띠 + 마우스오버.
 import {mealTotals} from './domain.js';
-import {scaleRecords, inbodyRecords, weightTrend, paceText} from './body-series.js';
+import {scaleRecords, inbodyRecords, weightTrend, paceText, bodyChartHTML} from './body-series.js';
 import {myMaintenance} from './maintenance.js';
 import {estimate as energyEstimate} from './nutrition-plan.js';
 import {lineChart, barChart, hoverButton} from './band-chart.js';
@@ -58,8 +58,11 @@ function mainChart(rows, view, goal, dayAvg, trend = true){
  const tips = rows.map((r, i) => `<span class="d">${esc(view==='day'?md(r.key):view==='week'?`${r.label} 주`:r.label)}</span><b>${f1(r.w)}kg</b>${view==='day'&&dayAvg[i]!=null?`<span class="d">7일 평균 ${f1(dayAvg[i])}kg</span>`:''}${view!=='day'?`<span class="d">${r.n}번 잰 평균</span>`:''}${goal?`<span class="s">${Math.abs(r.w-goal)<=1?'목표 범위 안':`목표까지 ${f1(Math.abs(r.w-goal))}kg`}</span>`:''}`);
  // 5.0.4 대표님: 시안 A — 점은 옅게, 7일 평균 흐름을 굵은 그라데이션 선 + 띠로, 목표 체중은 점선, 옅은 격자 칸
  // 2026-11-27 대표님: 흐린 띠(±0.35kg)는 뜻이 안 보이고 복잡해 뺌. '추세선'을 끄면 잰 점만 이은 마이로그 민트 한 줄
- if(view==='day' && !trend) return lineChart({vals, goal, grid:true, solid:true, color:'#8ce4e0', h:190, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중(잰 값)'});
- return lineChart({vals, line:view==='day' ? dayAvg : null, goal, grad:true, grid:true, color:BODY, h:190, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중 흐름'});
+ // 2026-11-27 대표님: 일간은 실제 날짜 비율로(띄엄띄엄 잰 기간이 한 칸으로 붙지 않게), 2주 넘게 빈 기간은 흐린 선
+ const dno = k => Math.round(new Date(`${k}T12:00:00`) / 86400000), D0 = view==='day' ? dno(rows[0].key) : 0, SP = view==='day' ? Math.max(1, dno(rows.at(-1).key) - D0) : 1;
+ const at = view==='day' && rows.length>1 ? rows.map(r => (dno(r.key) - D0) / SP) : null, gaps = at ? rows.map((r, i) => i>0 && dno(r.key) - dno(rows[i-1].key) > 14) : null;
+ if(view==='day' && !trend) return lineChart({vals, goal, grid:true, solid:true, color:'#8ce4e0', h:190, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중(잰 값)', at, gaps});
+ return lineChart({at, gaps, vals, line:view==='day' ? dayAvg : null, goal, grad:true, grid:true, color:BODY, h:190, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중 흐름'});
 }
 function changeBars(ch, goalDir){
  ch = ch.slice(-8);/* 2026-11-27 대표님: 16주가 한 줄에 몰려 숫자·날짜가 겹침 → 최근 8주만 */
@@ -83,9 +86,11 @@ export function compositionCard(db){
   const vals = ib.map(x => x[k]==null || x[k]==='' ? null : Number(x[k])), have = vals.filter(x => x!=null);
   if(!have.length) return `<div><small>${label}</small><b>—</b></div>`;
   const last = have.at(-1), d = r1(last-have[0]), good = upGood ? d>=0 : d<=0;
-  return `<div><small>${label}</small><b>${f1(last)}<i>${unit}</i></b>${have.length>1?`<em class="${d===0?'':good?'g':'b'}">${d>0?'+':d<0?'−':''}${f1(Math.abs(d))}${unit}</em>`:''}${sparkSVG(vals, color)}</div>`;
+  // 2026-11-27 대표님: 흐름선의 점에 올리거나(PC) 누르면(폰) 변화량 자리에 그날 날짜·값
+  const n = vals.length, hits = n>1 ? `<span class="ib-hits">${ib.map((x, i) => `<i class="ib-hit"${vals[i]==null ? '' : ` tabindex="0"><b>${md(x.date)} · ${f1(vals[i])}</b`}></i>`).join('')}</span>` : '';
+  return `<div><small>${label}</small><b>${f1(last)}<i>${unit}</i></b>${have.length>1?`<em class="${d===0?'':good?'g':'b'}">${d>0?'+':d<0?'−':''}${f1(Math.abs(d))}${unit}</em>`:''}${sparkSVG(vals, color)}${hits}</div>`;
  };
- return `<section class="section card bf-card bf-ib"><div class="bf-sub"><b>인바디</b><small>최근 ${ib.length}회</small></div><div class="ibk">${tile('골격근량','skeletalMuscle','kg',true,'#8ce4e0')}${tile('체지방량','bodyFatMass','kg',false,'#f28a9b')}${tile('체지방률','bodyFatPct','%',false,'#b8aaf2')}</div>${ib.length>1?`<div class="ibd"><span>${md(ib[0].date)}</span><span>${md(ib.at(-1).date)}</span></div>`:''}</section>`;
+ return `<section class="section card bf-card bf-ib"><div class="bf-sub"><b>인바디</b>${inbodyRecords(db).length>1?'<button type="button" class="text-button ib-all" data-ib-all>전체 기록 ›</button>':`<small>최근 ${ib.length}회</small>`}</div><div class="ibk">${tile('골격근량','skeletalMuscle','kg',true,'#8ce4e0')}${tile('체지방량','bodyFatMass','kg',false,'#f28a9b')}${tile('체지방률','bodyFatPct','%',false,'#b8aaf2')}</div>${ib.length>1?`<div class="ibd"><span>${md(ib[0].date)}</span><span>${md(ib.at(-1).date)}</span></div>`:''}</section>`;
 }
 function dietWithWeight(db, points, today){
  const weeks = []; let m = monday(today);
@@ -127,7 +132,7 @@ export function bodyOverviewHTML(db, {view = 'day', today}){
  const points = weightPoints(db), goal = phGoal || Number(db.settings?.goalWeight)||null, s = summary(points, goal, today);
  const range = view==='day' ? points.slice(-90) : points;
  const rows = bucket(range, view).slice(view==='week' ? -26 : view==='month' ? -24 : -90);
- const dayAvg = view==='day' ? rows.map((r, i) => r1(avg(rows.slice(Math.max(0, i-6), i+1).map(x => x.w)))) : [];
+ const dayAvg = view==='day' ? rows.map(r => { const t = new Date(`${r.key}T12:00:00`); return r1(avg(rows.filter(x => { const g = (t - new Date(`${x.key}T12:00:00`)) / 86400000; return g >= 0 && g < 7; }).map(x => x.w))); }) : [];/* 2026-11-27 대표님: 7번이 아니라 실제 7일 안에 잰 값의 평균 */
  const goalDir = goal && s ? Math.sign(goal - s.now) || -1 : -1;
  const stat = (k, v, cls = '') => `<div><small>${k}</small><b class="${cls}">${v}</b></div>`;
  return `<section class="section card bf-top">${s ? `<div class="bf-stats">${(tr => { const last = scaleRecords(db).filter(x => x.date <= today && Number(x.weight) > 0).at(-1); /* 2026-11-27 대표님: 직접 잰 값을 그대로(추세 체중 칸 없앰) — 가장 최근에 잰 체중과 그 날짜 */ return `${stat(`${!last || last.date===today ? '오늘' : md(last.date)} 체중`, `${f1(last ? Number(last.weight) : s.now)}kg`)}${tr && !tr.stale && tr.pace != null ? stat('주 페이스', paceText(tr.pace)) : stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}`; })(weightTrend(db, today))}${s.restart?stat(s.change30!=null?'다시 시작 후':'다시 시작한 날', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30).replace('-','−')}kg`:md(s.restart)):stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30).replace('-','−')}kg`:'—')}${goal?stat(s.left===0?`${phGoal?'페이즈 목표':'목표'} ${goal}kg`:`${goal}kg까지`, s.left===0?'도착!':`${Math.abs(s.left)}kg`)/* 2026-11-27 좁은 폰에서도 한 칸에(목표까지 남은 양) */:`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}${s ? maintBoxHTML(db, today, goal) : ''}
@@ -138,4 +143,16 @@ export function bodyOverviewHTML(db, {view = 'day', today}){
  ${changeBars(weeklyChanges(points), goalDir)}
  ${goal?'<p class="hint"><button type="button" class="text-button" data-goal-weight-open>목표 체중 바꾸기</button></p>':''}
  </section>${compositionCard(db)}${dietWithWeight(db, points, today)}${weekdayCard(points, today)}`;
+}
+
+// 2026-11-27 대표님: 인바디 전체 기록 — 1년·전체, 실제 날짜 비율 그래프(2주 넘게 빈 기간은 흐린 선), 월별 접기
+export const IB_KEYS = [['skeletalMuscle','골격근량','kg'],['bodyFatMass','체지방량','kg'],['bodyFatPct','체지방률','%']];
+export function inbodyAllHTML(db, {range = 'all', k = 'skeletalMuscle', today}){
+ const all = inbodyRecords(db), [, name, unit] = IB_KEYS.find(x => x[0]===k) || IB_KEYS[0];
+ const chip = (attr, v, l, on) => `<button type="button" class="chip${on?' active':''}" ${attr}="${v}" aria-pressed="${on}">${l}</button>`;
+ const chart = bodyChartHTML([{name, unit, cls:'ib', pts:all.map(x => ({date:x.date, v:x[k]===''?null:x[k]}))}], {days:range==='year'?365:3650, today, gapDays:14, months:true, empty:'이 기간에 잰 기록이 없어요.'});
+ const byM = new Map(); for(const x of [...all].reverse()){ const m = String(x.date).slice(0,7); if(!byM.has(m)) byM.set(m, []); byM.get(m).push(x); }
+ const yr = String(today||'').slice(0,4), v = (x, key, u) => x[key]==null || x[key]==='' ? '—' : `${f1(x[key])}${u}`;
+ const list = [...byM].map(([m, xs], i) => `<details class="rec-mon"${i===0?' open':''}><summary><span>${m.slice(0,4)!==yr?`${m.slice(0,4)}년 `:''}${+m.slice(5,7)}월</span><span class="pg-chev" aria-hidden="true">⌄</span></summary><div class="rec-list">${xs.map(x => `<div class="ib-row"><span>${md(x.date)}</span><span>골격근 <b>${v(x,'skeletalMuscle','')}</b></span><span>체지방 <b>${v(x,'bodyFatMass','')}</b></span><span>체지방률 <b>${v(x,'bodyFatPct','%')}</b></span></div>`).join('')}</div></details>`).join('');
+ return `<div class="ib-all-sheet"><div class="chip-row">${chip('data-ib-range','year','1년',range==='year')}${chip('data-ib-range','all','전체',range!=='year')}</div><div class="chip-row">${IB_KEYS.map(([kk, l]) => chip('data-ib-k', kk, l, kk===k)).join('')}</div>${chart}${list}</div>`;
 }

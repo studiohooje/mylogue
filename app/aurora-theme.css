@@ -2937,3 +2937,16 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .pl-card{margin:0 0 12px;padding:14px;border-radius:16px;border:1px solid #f7c27066;background:linear-gradient(120deg,#3a3320,#2a2a3e)}.pl-card p{margin:0 0 4px;font-size:12px;color:#f7c270;font-weight:700}.pl-card b{display:block;font-size:17px;color:#fff;margin-bottom:10px}
 .pl-card .a{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}.pl-card .a button{min-height:44px;border-radius:12px;font-weight:800;cursor:pointer}.pl-card .go{border:0;background:linear-gradient(90deg,#8ce4e0,#b8aaf2);color:#14203a}.pl-card .no{border:1px solid #ffffff22;background:none;color:#cfdbe7}
 .pl-on{display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;padding:6px 12px;border-radius:999px;background:#f7c27022;color:#f7c270;font-weight:700;font-size:13px}
+/* 2026-11-27 대표님: 인바디 칸 — 흐름선 점에 올리거나 누르면 변화량 자리에 날짜·값 / 전체 기록 */
+.bf-ib .ibk>div{position:relative}
+.bf-ib .ib-hits{position:absolute;left:10px;right:10px;bottom:8px;height:30px;display:flex}
+.bf-ib .ib-hit{flex:1;outline:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bf-ib .ib-hit:first-child,.bf-ib .ib-hit:last-child{flex:.5}
+.bf-ib .ib-hit b{display:none;font-style:normal;position:absolute;left:0;bottom:calc(100% + 6px);font-size:12px!important;font-weight:700;color:#e9f0ff!important;background:#0b1424;border:1px solid #2c3d5e;border-radius:7px;padding:1px 5px;margin:0 0 0 -4px;white-space:nowrap;letter-spacing:-.01em}
+.bf-ib .ib-hit:hover b,.bf-ib .ib-hit:focus b{display:block}
+.bf-ib .ibk>div:has(.ib-hit:hover) em,.bf-ib .ibk>div:has(.ib-hit:focus) em{visibility:hidden}
+.bf-ib .ib-all{font-size:13px;font-weight:700;color:#8ce4e0;padding:0}
+.ib-all-sheet .chip-row{margin-bottom:8px}.ib-all-sheet .bc-wrap{margin:6px 0 12px}
+.ib-all-sheet .ib-row{display:grid;grid-template-columns:44px repeat(3,minmax(0,1fr));gap:4px;padding:8px 0;font-size:13px;color:#9fb6c9;border-top:1px solid #ffffff0d;font-variant-numeric:tabular-nums}
+.ib-all-sheet .ib-row:first-child{border-top:0}.ib-all-sheet .ib-row b{color:#f2f7ff;font-weight:700}
+.ib-all-sheet .bc-series.ib path{stroke:#8ce4e0}.ib-all-sheet .bc-series.ib circle{fill:#8ce4e0}

@@ -29,6 +29,6 @@ test('수치 인바디 카드: 최근 7회만, 근육 늘면·지방 줄면 민�
   const {compositionCard} = await import('../body-flow.js');
   const body = Array.from({length: 10}, (_, i) => ({id: 'b' + i, date: `2026-11-${String(i + 10).padStart(2, '0')}`, measure: 'inbody', weight: 80 - i * 0.2, skeletalMuscle: 35 + i * 0.1, bodyFatMass: 18 - i * 0.2, bodyFatPct: 22 - i * 0.2}));
   const html = compositionCard({body});
-  assert.match(html, /최근 7회/); assert.match(html, /11\/13[\s\S]*11\/19/);
+  assert.match(html, /data-ib-all/, "7회보다 많으면 전체 기록 버튼"); assert.doesNotMatch(html, /11\/12 ·/, "카드는 최근 7회만"); assert.match(html, /11\/13[\s\S]*11\/19/);
   assert.match(html, /골격근량[\s\S]*class="g">\+0\.6kg/); assert.match(html, /체지방량[\s\S]*class="g">−1\.2kg/);
 });
