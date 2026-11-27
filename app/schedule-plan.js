@@ -37,6 +37,9 @@ export function schedOf(db) {
 }
 export function withSched(db, patch) { return {...db, settings: {...db.settings, schedule: {...(db.settings?.schedule || {}), ...patch}}}; }
 
+// 좁은 달력 칸: 띄어쓰기 없는 4~6글자 낱말은 가운데서 줄바꿈(필라테/스 → 필라/테스)
+export const calLabel = t => String(t).split(' ').map(w => { const a = [...w]; return a.length < 4 || a.length > 6 || w.includes('·') ? esc(w) : `${esc(a.slice(0, a.length >> 1).join(''))}<wbr>${esc(a.slice(a.length >> 1).join(''))}`; }).join(' ');
+
 export function cleanEvent(raw = {}) {
   const kind = kindOf(raw.kind).k, date = /^\d{4}-\d{2}-\d{2}$/.test(String(raw.date || '')) ? raw.date : null;
   if (!date) throw Error('날짜를 확인해 주세요.');
@@ -126,7 +129,7 @@ export function monthCalendarHTML(db, selected, today, month) {
   let cells = [...WD].map(x => `<i>${x}</i>`).join('') + '<span></span>'.repeat(first);
   for (let n = 1; n <= count; n++) {
     const date = `${y}-${pad(m + 1)}-${pad(n)}`, d = dots(db, date), ls = cellLines(db, date, today);
-    cells += `<button type="button" class="c${d.full ? ' full' : ''}${date === today ? ' today' : ''}${date === selected ? ' sel' : ''}${date > today ? ' fut' : ''}" data-calendar="${date}" aria-label="${date}"><b>${n}</b>${ls.slice(0, 2).map(([k, t, c, allDay]) => `<span class="e ${k}${k === 'e' && allDay ? ' bar' : ''}"${k === 'e' ? ` style="--c:${c}"` : ''}>${esc(t)}</span>`).join('')}${ls.length > 2 ? `<span class="more">+${ls.length - 2}</span>` : ''}<span class="dots" aria-hidden="true"><s class="${d.b ? 'b' : ''}"></s><s class="${d.m ? 'm' : ''}"></s><s class="${d.w ? 'w' : ''}"></s></span></button>`;
+    cells += `<button type="button" class="c${d.full ? ' full' : ''}${date === today ? ' today' : ''}${date === selected ? ' sel' : ''}${date > today ? ' fut' : ''}" data-calendar="${date}" aria-label="${date}"><b>${n}</b>${ls.slice(0, 2).map(([k, t, c, allDay]) => `<span class="e ${k}${k === 'e' && allDay ? ' bar' : ''}"${k === 'e' ? ` style="--c:${c}"` : ''}>${calLabel(t)}</span>`).join('')}${ls.length > 2 ? `<span class="more">+${ls.length - 2}</span>` : ''}<span class="dots" aria-hidden="true"><s class="${d.b ? 'b' : ''}"></s><s class="${d.m ? 'm' : ''}"></s><s class="${d.w ? 'w' : ''}"></s></span></button>`;
   }
   return `<section class="section card mc"><div class="mc-head"><span class="mc-arw"><button type="button" data-month="-1" aria-label="이전 달">‹</button><b>${y}년 ${m + 1}월</b><button type="button" data-month="1" aria-label="다음 달">›</button></span>${month && month.slice(0, 7) !== today.slice(0, 7) ? '<button type="button" class="text-button" data-sched-today>오늘</button>' : ''}</div><div class="mc-cal">${cells}</div></section>`;
 }

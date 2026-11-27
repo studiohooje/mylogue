@@ -100,5 +100,5 @@ export function personaRecords(id, todayStr, now = new Date()) {
 }
 export function personaCardsHTML({current = '', compact = false} = {}) {
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-  return `<div class="persona-grid${compact ? ' compact' : ''}">${PERSONAS.map(p => `<button type="button" class="persona-card${current === p.id ? ' on' : ''}" data-persona="${p.id}" aria-pressed="${current === p.id}"><b>${esc(p.name)} <small>${p.sex === 'male' ? '남' : '여'} · ${p.age}세 · ${p.h}cm</small></b><span>${esc(p.line)}</span><span class="pc-num"><span class="nb">체중 ${p.w[0]}kg에서 ${p.w[1]}kg</span> <span class="nb">· 체지방 ${p.f[0]}%에서 ${p.f[1]}%</span></span></button>`).join('')}</div>`;
+  return `<div class="persona-grid${compact ? ' compact' : ''}">${PERSONAS.map(p => `<button type="button" class="persona-card${current === p.id ? ' on' : ''}" data-persona="${p.id}" aria-pressed="${current === p.id}"><b>${esc(p.name)} <small>${p.sex === 'male' ? '남' : '여'} · ${p.age}세 · ${p.h}cm</small></b><span>${esc(p.line)}</span><span class="pc-num"><span class="nb">체중 ${p.w[0]}kg에서 ${p.w[1]}kg</span><br><span class="nb">체지방 ${p.f[0]}%에서 ${p.f[1]}%</span></span></button>`).join('')}</div>`;
 }

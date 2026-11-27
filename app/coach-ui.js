@@ -28,7 +28,7 @@ export function coachFactsText(db = {}, today){
   `최근 3일 많이 쓴 부위(회복 중): ${f.tired.join(', ') || '없음'}`,
   `최근 4주 가장 자주 한 근력 종목: ${f.top ? `${f.top.name}(최근 최고 ${n(f.top.best)}${f.top.unit})` : '없음'}`,
   `이번 주(7일) 운동: ${f.days7.map(d => `${d.wd}${d.done ? '○' : d.rest ? '휴식' : '-'}`).join(' ')}`,
-  `체중: 지금 ${n(f.nowW)}kg, 7일 평균 변화 ${f.trend == null ? '모름' : (f.trend > 0 ? '+' : '') + n(f.trend) + 'kg'}, 목표 ${n(f.target)}kg`,
+  `체중: 지금 ${n(f.nowW)}kg, 7일 평균 변화 ${f.trend == null ? '모름' : (f.trend > 0 ? '+' : f.trend < 0 ? '−' : '') + n(Math.abs(f.trend)) + 'kg'}, 목표 ${n(f.target)}kg`,
   `골격근: 지금 ${n(f.muscleNow)}kg, 3주 전 ${n(f.muscleOld)}kg`,
  ].join('\n');
 }
@@ -97,7 +97,7 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
  const focus = f.tired.some(t => ['앞 허벅지','뒤 허벅지','둔근'].includes(t)) ? '등·이두' : f.tired.some(t => ['등'].includes(t)) ? '가슴·삼두' : '하체';
  const plan = focus==='등·이두' ? [['랫풀다운','4 × 10'],['시티드 케이블 로우','3 × 12'],['원암 덤벨 로우','3 × 10'],['바벨 컬','3 × 10']] : focus==='가슴·삼두' ? [['벤치프레스','4 × 8'],['인클라인 덤벨 프레스','3 × 10'],['펙덱 플라이','3 × 12'],['케이블 푸시다운','3 × 12']] : [['스쿼트','4 × 8'],['레그 프레스','3 × 12'],['루마니안 데드리프트','3 × 10'],['레그 컬','3 × 12']];
  const top = f.top ? `<li class="coach-pr"><b>${esc(f.top.name)}</b> 최근 ${n1(f.top.best)}${esc(f.top.unit)} · 반복을 다 채웠어요 → <em>다음엔 ${n1(f.top.best+2.5)}${esc(f.top.unit)} 도전</em></li>` : '';
- const trendTxt = f.trend!=null ? `7일 평균 ${f.trend>0?'+':''}${n1(f.trend)}kg` : '7일 평균 −0.4kg';
+ const trendTxt = f.trend!=null ? `7일 평균 ${f.trend<0?'−':f.trend>0?'+':''}${n1(Math.abs(f.trend))}kg` : '7일 평균 −0.4kg';
  const eta = f.target && f.nowW && f.trend && f.trend<0 ? (() => { const weeks = (f.nowW-f.target)/(-f.trend); if(!(weeks>0 && weeks<104)) return ''; const d = shift(date, Math.round(weeks*7)); return `지금 속도면 <b>${Number(d.slice(5,7))}월 ${Number(d.slice(8,10))}일</b>쯤 목표 ${n1(f.target)}kg에 닿아요`; })() : '지금 속도면 <b>12월 말</b>쯤 목표 체중에 닿아요';
  const bar = ([l, v, g, u]) => { const pct = g ? Math.round(v/g*100) : 0; return `<div class="cbar"><span>${l}</span><i><b style="width:${Math.min(100, pct)}%"></b></i><em>${pct}%</em></div>`; };
  return `<section class="section coach coach-teaser" aria-labelledby="coach-title"><div class="coach-head"><h3 id="coach-title"><span class="coach-spark" aria-hidden="true">✦</span>AI 인사이트</h3><span class="coach-badge plus-cap">✦ 플러스</span></div>
@@ -108,7 +108,7 @@ export function coachHTML({enabled = COACH_ENABLED, premium = false, db = {}, to
 <article class="coach-block"><h4><span class="coach-num">1</span>오늘 남은 식단 · 저녁${pick.length>3?' + 간식':''}</h4><p class="coach-left">남은 목표 &nbsp;칼로리 ${n0(f.left.kcal)} · 단백질 ${n0(f.left.protein)}g · 탄수 ${n0(f.left.carbs)}g · 지방 ${n0(f.left.fat)}g</p><div class="coach-pick"><b>추천 구성</b><ul>${pick.map(x => `<li>${esc(x.name)}</li>`).join('')}</ul><small>약 ${n0(sum.kcal)} kcal · 단백질 ${n0(sum.p)}g</small></div><p class="coach-sub">추천대로 먹으면 오늘 하루</p><div class="cbars">${after.map(bar).join('')}</div><p class="coach-tip">대안: 연어 포케 볼(단백질 38g) · 편의점이면 닭가슴살 2팩 + 삶은 달걀</p></article>
 <article class="coach-block"><h4><span class="coach-num">2</span>다음 운동 · 오늘 ${esc(focus)}</h4><p><b>${esc(tiredTxt)}</b> 부위는 아직 회복 중이라, 오늘은 <b>${esc(focus)}</b> 운동을 추천해요.</p><table class="coach-plan"><tbody>${plan.map(([x, y]) => `<tr><td>${esc(x)}</td><td>${esc(y)}</td></tr>`).join('')}</tbody></table><ul class="coach-notes">${top}<li>세트 사이 휴식 90초 · 마지막 세트는 2회 여유를 남기기</li></ul></article>
 <article class="coach-block"><h4><span class="coach-num">3</span>이번 주 코칭</h4><div class="coach-week">${f.days7.map(d => `<span class="${d.done?'done':d.rest?'rest':''}${d.today?' today':''}"><b>${d.wd}</b><i></i></span>`).join('')}</div><ul><li>이번 주 ${f.days7.filter(d => d.done).length}회 운동 · 목표 주 4회까지 ${Math.max(0, 4-f.days7.filter(d => d.done).length)}회 남았어요</li><li>가슴 세트가 지난주보다 줄었어요. 금요일에 가슴·삼두를 넣어 볼까요?</li><li>잠이 짧았던 날은 무게를 10% 낮추는 걸 권해요</li></ul></article>
-<article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul><li>${trendTxt} · 목표 속도(주 −0.5kg) 안에 있어요</li><li>${eta}</li><li>${f.muscleNow!=null&&f.muscleOld!=null?`인바디 골격근량 ${f.muscleNow-f.muscleOld>=0?'+':''}${n1(f.muscleNow-f.muscleOld)}kg(3주 전 대비)`:'탄수화물이 많은 다음 날 체중이 오르는 패턴(수분)이 보여요'}</li></ul></article>
+<article class="coach-block"><h4><span class="coach-num">4</span>체중 흐름 해석</h4><ul><li>${trendTxt} · 목표 속도(주 −0.5kg) 안에 있어요</li><li>${eta}</li><li>${f.muscleNow!=null&&f.muscleOld!=null?`인바디 골격근량 ${f.muscleNow-f.muscleOld<0?'−':'+'}${n1(Math.abs(f.muscleNow-f.muscleOld))}kg(3주 전 대비)`:'탄수화물이 많은 다음 날 체중이 오르는 패턴(수분)이 보여요'}</li></ul></article>
 </div>
 <div class="coach-veil"><span class="coach-spark big" aria-hidden="true">✦</span><b>마이로그 플러스</b><p>${esc(who==='내'?'내':who+'의')} 식단·운동·수치 기록을 매일 읽고, 오늘 남은 식단과 다음 운동을 ${esc(whoSub)} 몸에 맞춰 코칭해 드려요.</p><ul class="coach-perks"><li>남은 끼니 메뉴 · 탄단지 맞춤</li><li>회복 부위를 피한 운동 플랜</li><li>내 기록 기반 무게 진행</li><li>체중 목표 도달 예측</li></ul><span class="coach-soon">플러스에서 쓸 수 있어요</span></div>
 </section>`;

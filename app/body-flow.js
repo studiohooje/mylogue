@@ -13,6 +13,7 @@ const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const r1 = v => Math.round(v*10)/10;
 const f1 = v => (Math.round(v*10)/10).toFixed(1);
+const sg = v => `${v>0?'+':v<0?'−':''}${f1(Math.abs(v))}`; // 변화량: 빼기는 '−'로 통일
 const md = s => `${Number(s.slice(5,7))}/${Number(s.slice(8,10))}`;
 const CW = () => Math.max(320, Math.min(760, ((globalThis.innerWidth||700) > 760 ? 760 : (globalThis.innerWidth||700) - 56)));
 const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
@@ -68,8 +69,8 @@ function changeBars(ch, goalDir){
  ch = ch.slice(-8);/* 2026-11-27 대표님: 16주가 한 줄에 몰려 숫자·날짜가 겹침 → 최근 8주만 */
  if(ch.length<2) return '';
  const good = d => goalDir ? Math.sign(d)===goalDir || d===0 : d<=0;
- const tips = ch.map(c => `<span class="d">${esc(c.label)} 주</span><b>${c.d>0?'+':''}${f1(c.d)}kg</b><span class="d">지난주 평균보다 ${c.d>0?'늘었어요':c.d<0?'줄었어요':'그대로예요'}</span>`);
- return `<div class="bf-sub"><b>주간 변화<i class="i-tip" tabindex="0" title="지난주 평균보다 늘었는지 줄었는지. 목표 쪽이면 초록, 반대면 분홍">i</i></b></div>${(mx => `<div class="bf-wk" role="img" aria-label="주간 체중 변화">${ch.map((c, i) => `<div class="bf-wc"><b class="${good(c.d)?'good':'bad'}">${c.d>0?'+':''}${f1(c.d)}</b><span class="bf-wz"><i class="${c.d>0?'up':'dn'} ${good(c.d)?'good':'bad'}" style="height:${Math.max(3, Math.round(Math.abs(c.d)/mx*26))}px"></i></span><small>${i===ch.length-1?'이번 주':esc(c.label)}</small></div>`).join('')}</div>`)(Math.max(0.3, ...ch.map(c => Math.abs(c.d))))/* 2026-11-27 대표님: 칸이 이상 — 주마다 한 칸, 값·날짜를 막대 위아래에(0에 가까운 주도 보이게) */}<p class="bf-last">이번 주 <b class="${good(ch.at(-1).d)?'good':'bad'}">${ch.at(-1).d>0?'+':''}${f1(ch.at(-1).d)}kg</b> · 지난 ${ch.length}주 중 ${ch.filter(c => good(c.d)).length}주가 목표 쪽</p>`;
+ const tips = ch.map(c => `<span class="d">${esc(c.label)} 주</span><b>${sg(c.d)}kg</b><span class="d">지난주 평균보다 ${c.d>0?'늘었어요':c.d<0?'줄었어요':'그대로예요'}</span>`);
+ return `<div class="bf-sub"><b>주간 변화<i class="i-tip" tabindex="0" title="지난주 평균보다 늘었는지 줄었는지. 목표 쪽이면 초록, 반대면 분홍">i</i></b></div>${(mx => `<div class="bf-wk" role="img" aria-label="주간 체중 변화">${ch.map((c, i) => `<div class="bf-wc"><b class="${good(c.d)?'good':'bad'}">${sg(c.d)}</b><span class="bf-wz"><i class="${c.d>0?'up':'dn'} ${good(c.d)?'good':'bad'}" style="height:${Math.max(3, Math.round(Math.abs(c.d)/mx*26))}px"></i></span><small>${i===ch.length-1?'이번 주':esc(c.label)}</small></div>`).join('')}</div>`)(Math.max(0.3, ...ch.map(c => Math.abs(c.d))))/* 2026-11-27 대표님: 칸이 이상 — 주마다 한 칸, 값·날짜를 막대 위아래에(0에 가까운 주도 보이게) */}<p class="bf-last">이번 주 <b class="${good(ch.at(-1).d)?'good':'bad'}">${sg(ch.at(-1).d)}kg</b> · 지난 ${ch.length}주 중 ${ch.filter(c => good(c.d)).length}주가 목표 쪽</p>`;
 }
 // 2026-11-27 대표님(목업 승인): 체성분 막대 → '인바디' 카드 — 골격근량·체지방량·체지방률 세 칸, 최근 7회만.
 // 칸마다 지금 값 · 7회 전보다 바뀐 양(근육은 늘면, 지방은 줄면 민트) · 작은 흐름선.
@@ -113,7 +114,7 @@ export function weekdayPattern(points, today){
 function weekdayCard(points, today){
  const d = weekdayPattern(points, today); if(!d) return '';
  const top = d.reduce((a, v, i) => v!=null && (a<0 || v>d[a]) ? i : a, -1), W7 = '월화수목금토일';
- const tips = d.map((v, i) => v==null ? '' : `<span class="d">${W7[i]}요일</span><b>${v>0?'+':''}${f1(v)}kg</b><span class="d">그 주 평균과의 차이</span>`);
+ const tips = d.map((v, i) => v==null ? '' : `<span class="d">${W7[i]}요일</span><b>${sg(v)}kg</b><span class="d">그 주 평균과의 차이</span>`);
  return `<section class="section card bf-card"><div class="bf-sub"><b>요일 패턴</b><small>최근 8주 · 그 주 평균과의 차이</small></div>${barChart({bars:d.map(v => ({v:v||0, color:v>0?BODY:DOWN})), signed:true, h:80, tips, label:'요일별 체중 차이'})}<div class="bf-days" aria-hidden="true">${[...W7].map(x => `<span>${x}</span>`).join('')}</div>${top>=0&&d[top]>0.1?`<p class="bf-last">${W7[top]}요일에 평균보다 <b class="bad">${f1(d[top])}kg</b> 무거워요</p>`:''}</section>`;
 }
 

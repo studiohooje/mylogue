@@ -132,7 +132,7 @@ export function landingHTML({installHTML='', returning=false}={}){
   <h2>숫자 하나가,<br>당신을 증명해요</h2>
   <div class="ld-quotes">
    <p><span class="nb"><b>“오늘 뭐 먹었더라?”</b>를</span> <span class="nb">아는 사람은</span> <span class="nb">이미 조절을 시작한 사람이에요.</span></p>
-   <p><span class="nb"><b>지난주보다 1kg 더</b> 든 걸</span> <span class="nb">아는 사람은,</span> <span class="nb">다음 주도 들어요.</span></p>
+   <p><span class="nb"><b>지난주보다 1kg 더</b></span> <span class="nb">든 걸 아는 사람은,</span> <span class="nb">다음 주도 들어요.</span></p>
    <p><span class="nb"><b>빠진 날이 보이는 것</b>만으로,</span> <span class="nb">다시 시작할 이유가 생겨요.</span></p>
   </div>
   <p class="ld-note">${lines('마이로그는 재촉하지 않아요.', '먹으라고, 운동하라고|조르는 알림은 없어요.', '쓰고 싶을 때 쓰면,|쌓인 기록이 대신 말해 줘요.')}</p>
@@ -166,10 +166,6 @@ export function landingHTML({installHTML='', returning=false}={}){
   <h2>log가 아니라, logue</h2>
   <p class="ld-split"><span>My</span><span class="m">log</span><span class="v">ue</span></p>
   <p>${lines('숫자 하나는 기록(log)이지만,', '그 기록이 하루, 한 주, 한 해로 이어지면|이야기(logue)가 돼요.', '그리고 logue 안에는|log가 그대로 숨어 있어요.')}</p>
-  <div class="ld-duo">
-   <div><b class="m">마이</b><span>${lines('새벽의 작은 빛.', '오늘을 다짐하고,|기록에 “맞아” 하고|도장을 찍어요.')}</span></div>
-   <div><b class="v">로그</b><span>${lines('밤을 적는 부엉이.', '하루를 받아 적지만,|혼자 확정하지는 않아요.')}</span></div>
-  </div>
   <a class="ld-btn" href="story.html">이야기 전체 보기 →</a>
  </section>
 

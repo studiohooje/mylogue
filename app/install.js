@@ -2,7 +2,7 @@
 // - 2026-11-27부터: 모든 기기에서 브라우저별 '홈 화면에 추가'(웹앱) 방법. APK 내려받기 안내는 뺐다(파일은 계속 올림)
 // - 크롬이 바로 설치를 허락하면(beforeinstallprompt) 맨 위에 '지금 바로 앱으로 설치' 버튼
 // - 이미 앱(APK) 안이거나 홈 화면 앱으로 실행 중이면 버튼을 숨긴다.
-export const APP_VERSION = '5.8.1';
+export const APP_VERSION = '5.9.0';
 
 let deferredPrompt = null;
 let rerender = () => {};

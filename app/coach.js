@@ -81,6 +81,7 @@ export function applyAcks(data, acks=[]){
   const targets = (s.targets||[]).map(t => {
    const client = clients.find(c => c.id===t.clientId);
    const ack = acks.find(a => a.sessionId===s.id && client?.memberUid && a.memberUid===client.memberUid);
+   if(s.v2) return t; // v2 수업은 끝내기 때 차감했고, 회신은 coach2-data applyAcks2가 확인·이의로만 표시한다
    if(!ack || t.status===ack.result) return t;
    changed = true;
    const nt = {...t, status:ack.result, edits:ack.edits||'', feedback:ack.feedback||null, ackAt:ack.createdAt||''};
@@ -320,6 +321,14 @@ export function sharedSummary(db, scope={}, today){
  if(scope.workouts) out.workouts7 = new Set((db.workouts||[]).filter(x => !x.planned && !x.rest && x.date>=w0 && x.date<=today && !String(x.sourceDraftId||'').startsWith('ai-t-')).map(x => x.date)).size;
  if(scope.body) out.weights = (db.body||[]).filter(b => Number(b.weight)>0).sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(-8).map(b => Math.round(b.weight*10)/10);
  if(scope.diet) out.dietDays7 = new Set((db.meals||[]).filter(m => !m.planned && m.date>=w0 && m.date<=today).map(m => m.date)).size;
+ /* 코치로그 v2: 날짜별 하루 요약(최대 28일, 동의한 범위만). 끼니 내용·사진은 올리지 않는다. */
+ const d28 = new Date(d0); d28.setDate(d0.getDate()-27); const f0 = ymd(d28), days = {};
+ const day = k => days[k] || (days[k] = {date:k});
+ if(scope.body) for(const b of (db.body||[])) if(Number(b.weight)>0 && b.date>=f0 && b.date<=today) day(b.date).weight = Math.round(b.weight*10)/10;
+ if(scope.diet) for(const m of (db.meals||[])) if(!m.planned && m.date>=f0 && m.date<=today){ const x = day(m.date); (x._g || (x._g = new Set())).add(m.mealGroupId || m.id); x.meals = x._g.size; const kc = Number(m.calories) || 0, pr = Number(m.protein) || 0; x.kcal = Math.round((x.kcal||0)+kc); x.protein = Math.round((x.protein||0)+pr); }
+ if(scope.workouts) for(const w of (db.workouts||[])) if(!w.planned && !w.rest && w.date>=f0 && w.date<=today && !String(w.sourceDraftId||'').startsWith('ai-t-')) day(w.date).workout = `혼자 운동${w.title?` · ${String(w.title).slice(0,20)}`:''}`;
+ for(const x of Object.values(days)) delete x._g;
+ out.days = Object.values(days).sort((a, b) => String(b.date).localeCompare(String(a.date)));
  return out;
 }
 
@@ -334,12 +343,15 @@ export function memberHomeCardHTML(links=[], {pending=0, now=new Date(), openPla
  const mine = links.filter(l => l.memberMine && l.status==='active'); if(!mine.length) return '';
  const nowKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${now.toTimeString().slice(0,5)}`;
  const ans = {yes:'갈게요 ✓', change:'변경 요청함', no:'못 가요'};
- return mine.map(l => { const left = l.pt?.total ? Math.max(0, (l.pt.total||0)-(l.pt.used||0)) : null;
+ return mine.map(l => { const v2 = l.pt?.v2, show = !v2 || l.pt.showLeft !== false; const left = show && l.pt?.total ? Math.max(0, (l.pt.total||0)-(l.pt.used||0)) : null;
+  /* 코치로그 v2: 수강권별 남은 회차와 내 장부(사유·날짜). 센터 장부 장소는 코치가 숨기면 안 보임 */
+  const ledger = v2 && show && (l.pt.passes||[]).length ? `<details class="mh-ledger"><summary>내 장부${(l.pt.passes||[]).length>1?` · ${(l.pt.passes||[]).map(p => `${esc(p.name)} ${p.left}회`).join(' · ')}`:''}${l.pt.ledger==='center'?' · 코치 기록 기준':''}<i class="i-tip c2-tip" tabindex="0" title="차감이 이상하면 수업 기록에서 '이의'를 눌러 코치님께 알려요" style="margin-left:6px">i</i></summary>${(l.pt.passes||[]).flatMap(p => (p.log||[]).map(e => ({...e, pn:(l.pt.passes||[]).length>1?p.name:''}))).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 20).map(e => `<div class="c2-lrow"><span>${e.at?md(String(e.at).slice(0,10)):''}</span><span>${esc(e.reason)}${e.pn?` · ${esc(e.pn)}`:''}${e.note?` · ${esc(e.note)}`:''}</span><b>${e.delta>0?`+${e.delta}`:e.delta<0?`−${-e.delta}`:'0'}</b></div>`).join('')}</details>` : '';
   const next = (l.schedule||[]).filter(x => x.status!=='canceled' && String(x.startAt) >= nowKey).sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)))[0];
   const a = next ? l.attend?.[next.id] : '';
-  return `<section class="section card cl-card mh-coach"><h3><span>🏋 ${esc(l.trainerName||'코치')} 코치${left!==null?` <span class="cl-pill">PT ${left}회 남음</span>`:''}</span><button type="button" class="cl-ghost" data-coach-room="${esc(l.id)}">💬 코치방</button></h3>
+  return `<section class="section card cl-card mh-coach"><h3><span>🏋 ${esc(l.trainerName||'코치')} 코치${left!==null?` <span class="cl-pill">${esc(v2 && l.pt.name ? l.pt.name.replace(/\s*\d+회권$/, '') : 'PT')} ${left}회 남음</span>`:''}</span><button type="button" class="cl-ghost" data-coach-room="${esc(l.id)}">💬 코치방</button></h3>
   ${next?`<div class="cl-row"><span class="cl-time">${esc(String(next.startAt).slice(11,16))}</span><div class="cl-who"><b>${md(String(next.startAt).slice(0,10))} ${esc(next.title||'수업')}</b><small>${planVisible(next)?`코치님이 짠 ${next.plan.items.length}종목 · `:''}${a?esc(ans[a]||''):'갈 수 있는지 알려 주세요'}</small></div>${planVisible(next)?`<button type="button" class="cl-go" data-mc-plan="${esc(l.id)}:${esc(next.id)}">계획 보기</button>`:''}</div>${openPlan===`${l.id}:${next.id}`&&planVisible(next)?`<div class="mc-plan-open">${memberPlanHTML(next, {trainerName:l.trainerName})}</div>`:''}${a?'':`<div class="cl-att3 mh-att" role="group" aria-label="출석 응답"><button type="button" class="cl-go" data-mc-attend="${esc(l.id)}:${esc(next.id)}:yes">갈게요</button><button type="button" class="cl-ghost" data-mc-attend="${esc(l.id)}:${esc(next.id)}:change">변경 요청</button><button type="button" class="cl-ghost" data-mc-attend="${esc(l.id)}:${esc(next.id)}:no">못 가요</button></div>`}`:''}
   ${lastClass?`<div class="cl-row"><span class="cl-pill">지난 수업</span><div class="cl-who"><small>${md(lastClass.date)} ${esc(lastClass.title||'수업')} · ${(lastClass.exercises||[]).length}종목</small></div><button type="button" class="cl-ghost" data-mc-solo="${esc(lastClass.id)}">혼자 해 보기</button></div>`:''}
   ${pending?`<div class="cl-row"><span class="cl-pill warn">확정 전 ${pending}</span><div class="cl-who"><small>코치님이 보낸 수업 기록이 와 있어요</small></div><button type="button" class="cl-go" data-page="ai-inbox">보기</button></div>`:''}
+  ${ledger}
   ${(l.mealPlans||[]).length||(l.routines||[]).length?`<p class="hint" style="margin:0">식단 제안 ${(l.mealPlans||[]).length}개 · 루틴 ${(l.routines||[]).length}개 — 식사·운동 창의 '도움받기'에서 써요.</p>`:''}</section>`; }).join('');
 }
