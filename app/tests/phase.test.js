@@ -30,7 +30,7 @@ test('저장·식단 칼로리 차이·진행 상황', () => {
   const s = phaseStatus(db, '2026-11-05');
   assert.equal(s.week, 6); assert.ok(s.weightChange < -2 && s.weightChange > -2.6, String(s.weightChange)); assert.ok(s.goalPct > 0.3);
   assert.match(progressLine(s), /-2\.\dkg \/ 목표 -6kg/);
-  assert.match(phaseBadgeHTML(s), /다이어트 페이즈.*12주 중 6주째.*달성 \d+%/);
+  assert.match(phaseBadgeHTML(s), /title="다이어트 · 12주 중 6주째"[\s\S]*6\/12주/);
   assert.match(phaseBadgeHTML(null), /페이즈 정하기/);
 });
 test('제안: 너무 빠르면 더 먹기, 느리면 조금 줄이기, 린매스업 체지방 상한, 인바디 오래됨', () => {

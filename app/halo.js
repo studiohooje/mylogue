@@ -105,7 +105,7 @@ const f1 = v => v.toFixed(1);
 export function haloSVG({zone, recs, rh, now, tracks=KINDS}){
  const want = KINDS.filter(k=>tracks.includes(k));
  recs = recs.filter(r=>want.includes(r.kind));
- const R = Math.min(zone.R, 74);
+ const R = Math.min(zone.R, zone.cap || 74);
  const cx = zone.x + zone.w - R - 8, baseY = zone.y + zone.h - 0.62*R - 6;
  const span = Math.max(1, rh.end-rh.start);
  const u = t => Math.min(1, Math.max(0, (t-rh.start)/span));
@@ -174,6 +174,34 @@ export function lockHeroHeight(hero, date, now = new Date()){
  if(date === ymdOf(now)){ hero.style.minHeight = ''; hero.style.height = ''; const h = hero.offsetHeight; if(w && h) heroH.set(w, h); return; }
  const h = heroH.get(w); hero.style.minHeight = ''; hero.style.height = h ? `${h}px` : '';
 }
+// 2026-11-27 대표님(목업 승인): 글 묶음(칩·큰 글씨·동기부여) 오른쪽에 헤일로. 헤일로 중심을 글 묶음 중심 높이에, 오른쪽 끝 여백 = 왼쪽 여백.
+function mountV2(hero, svg, recs, rh, nh, pf){
+ const hb = hero.getBoundingClientRect(), s = hb.width/(hero.clientWidth||hb.width||1), W = hero.clientWidth, H = hero.clientHeight;
+ const rel = r => ({l:(r.left-hb.left)/s, t:(r.top-hb.top)/s, r:(r.right-hb.left)/s, b:(r.bottom-hb.top)/s});
+ const copy = hero.querySelector('.hero-copy'); if(!copy) return null;
+ const G = rel(copy.getBoundingClientRect()), pad = parseFloat(getComputedStyle(hero).paddingLeft) || 20, rects = [];
+ copy.querySelectorAll('h2,p,.phase-badge,.hv-act').forEach(el => { const rg = document.createRange(); rg.selectNodeContents(el); for(const r of rg.getClientRects()) if(r.width>0) rects.push(rel(r)); });
+ const tr = Math.max(G.l, ...rects.map(r => r.r)), x = tr + 32, zone = {x, y:8, w:W - pad - x + 8, h:H - 16};
+ zone.R = fitRadius(zone.w, zone.h);
+ if(zone.R < 24){ hero.dataset.halo = 'hidden'; return {hidden:true, overlap:0}; }
+ svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+ /* 시각 글자가 원호 밖으로 나오므로, 그려서 재 보고 글과 32px 이상 떨어질 때까지 줄인다 */
+ let out, draw, A;
+ for(let cap = W >= 700 ? 112 : 48; cap >= 24; cap -= 6){
+  zone.cap = cap; out = haloSVG({zone, recs, rh, now:nh, tracks:pf.tracks}); svg.innerHTML = out.svg;
+  draw = svg.querySelector('.halo-draw'); if(!draw) return null;
+  A = rel(draw.getBoundingClientRect());
+  if((W - pad) - (A.r - A.l) - tr >= 32) break;
+ }
+ const dx = (W - pad) - A.r, dy = (G.t + G.b)/2 - (A.t + A.b)/2;
+ draw.setAttribute('transform', `translate(${f1(dx)} ${f1(dy)})`);
+ svg.querySelector('ellipse[fill="url(#halo-veil)"]')?.setAttribute('transform', `translate(${f1(dx)} ${f1(dy)})`);
+ A = rel(draw.getBoundingClientRect());
+ const overlap = rects.reduce((sum,r)=>sum+Math.max(0,Math.min(A.r,r.r)-Math.max(A.l,r.l))*Math.max(0,Math.min(A.b,r.b)-Math.max(A.t,r.t)),0);
+ if(overlap>0 || A.t < 0 || A.b > H){ svg.innerHTML=''; hero.dataset.halo='hidden'; return {hidden:true, overlap}; }
+ hero.dataset.halo = out.done ? 'complete' : 'shown';
+ return {hidden:false, overlap:0, R:out.R};
+}
 export function mountHalo(hero, db, date, now=new Date()){
  if(!hero || typeof document==='undefined') return null;
  const svg = hero.querySelector('.halo-art');
@@ -192,6 +220,7 @@ export function mountHalo(hero, db, date, now=new Date()){
  hero.style.paddingBottom = '';
  svg.innerHTML = '';
  if(!pf.halo){ hero.dataset.halo='off'; return {hidden:true, overlap:0}; }
+ if(hero.classList?.contains('hero-v2')) return mountV2(hero, svg, recs, rh, nh, pf);
  const measure = () => {
   const hb = hero.getBoundingClientRect(), s = hb.width/(hero.clientWidth||hb.width||1);
   const rects = [];

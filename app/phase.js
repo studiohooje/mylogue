@@ -158,7 +158,7 @@ export function badgeProg(s) {
 }
 export function phaseBadgeHTML(s) {
   if (!s) return `<button type="button" class="phase-badge empty" data-modal="phase">지금 목표 페이즈 정하기</button>`;
-  return `<button type="button" class="phase-badge ph-${s.type.id}" data-modal="phase" title="${esc(s.type.name)} · ${s.over ? '기간 끝' : `${s.weeks}주 중 ${s.week}주째`}" aria-label="${esc(s.type.name)} 페이즈 자세히"><b>${esc(s.type.name)}</b><span class="ph-week">${s.over ? '기간 끝' : `${s.weeks}주 중 ${s.week}주째`}</span><span class="ph-bar" aria-hidden="true"><i style="width:${Math.round((s.goalPct ?? s.timePct) * 100)}%"></i></span><span class="ph-prog">${esc(badgeProg(s))}</span></button>`;
+  return `<button type="button" class="phase-badge ph-${s.type.id}" data-modal="phase" title="${esc(s.type.name)} · ${s.over ? '기간 끝' : `${s.weeks}주 중 ${s.week}주째`}" aria-label="${esc(s.type.name)} 페이즈 자세히"><b>${esc((String(s.type.name).match(/\(([^)]+)\)/) || [])[1] || s.type.name)}</b><span class="ph-week">${s.over ? '기간 끝' : `${s.week}/${s.weeks}주`}</span></button>`;/* 2026-11-27 대표님(헤일로 카드 목업 승인): 칩은 작게 '리컴프 1/16주' — 이름 전체·주차는 title(올리기·누르기) */
 }
 
 // 매일·인바디 변화에 맞춘 제안(최대 2개, 재촉 없이). 2주 전엔 판단하지 않는다.

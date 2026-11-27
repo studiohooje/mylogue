@@ -24,3 +24,11 @@ test('인바디 AI 결과 → 입력 칸: 숫자만, 미래 날짜는 버림', (
   assert.deepEqual(p, {source: 'inbody', weight: 87.5, skeletalMuscle: 39.4, bmr: 1879, date: '2026-07-13'});
   assert.equal(inbodyPrefill({date: '2027-01-01', weight: 80}, '2026-11-27').date, undefined);
 });
+
+test('수치 인바디 카드: 최근 7회만, 근육 늘면·지방 줄면 민트', async () => {
+  const {compositionCard} = await import('../body-flow.js');
+  const body = Array.from({length: 10}, (_, i) => ({id: 'b' + i, date: `2026-11-${String(i + 10).padStart(2, '0')}`, measure: 'inbody', weight: 80 - i * 0.2, skeletalMuscle: 35 + i * 0.1, bodyFatMass: 18 - i * 0.2, bodyFatPct: 22 - i * 0.2}));
+  const html = compositionCard({body});
+  assert.match(html, /최근 7회/); assert.match(html, /11\/13[\s\S]*11\/19/);
+  assert.match(html, /골격근량[\s\S]*class="g">\+0\.6kg/); assert.match(html, /체지방량[\s\S]*class="g">−1\.2kg/);
+});

@@ -62,18 +62,30 @@ function mainChart(rows, view, goal, dayAvg, trend = true){
  return lineChart({vals, line:view==='day' ? dayAvg : null, goal, grad:true, grid:true, color:BODY, h:190, tips, dateL:rows[0].label, dateR:rows.at(-1).label, label:'체중 흐름'});
 }
 function changeBars(ch, goalDir){
+ ch = ch.slice(-8);/* 2026-11-27 대표님: 16주가 한 줄에 몰려 숫자·날짜가 겹침 → 최근 8주만 */
  if(ch.length<2) return '';
  const good = d => goalDir ? Math.sign(d)===goalDir || d===0 : d<=0;
  const tips = ch.map(c => `<span class="d">${esc(c.label)} 주</span><b>${c.d>0?'+':''}${f1(c.d)}kg</b><span class="d">지난주 평균보다 ${c.d>0?'늘었어요':c.d<0?'줄었어요':'그대로예요'}</span>`);
  return `<div class="bf-sub"><b>주간 변화<i class="i-tip" tabindex="0" title="지난주 평균보다 늘었는지 줄었는지. 목표 쪽이면 초록, 반대면 분홍">i</i></b></div>${(mx => `<div class="bf-wk" role="img" aria-label="주간 체중 변화">${ch.map((c, i) => `<div class="bf-wc"><b class="${good(c.d)?'good':'bad'}">${c.d>0?'+':''}${f1(c.d)}</b><span class="bf-wz"><i class="${c.d>0?'up':'dn'} ${good(c.d)?'good':'bad'}" style="height:${Math.max(3, Math.round(Math.abs(c.d)/mx*26))}px"></i></span><small>${i===ch.length-1?'이번 주':esc(c.label)}</small></div>`).join('')}</div>`)(Math.max(0.3, ...ch.map(c => Math.abs(c.d))))/* 2026-11-27 대표님: 칸이 이상 — 주마다 한 칸, 값·날짜를 막대 위아래에(0에 가까운 주도 보이게) */}<p class="bf-last">이번 주 <b class="${good(ch.at(-1).d)?'good':'bad'}">${ch.at(-1).d>0?'+':''}${f1(ch.at(-1).d)}kg</b> · 지난 ${ch.length}주 중 ${ch.filter(c => good(c.d)).length}주가 목표 쪽</p>`;
 }
-function compositionCard(db){
- const ib = inbodyRecords(db).filter(x => Number(x.weight)>0 && (x.skeletalMuscle!=null || x.bodyFatMass!=null)).slice(-6);
+// 2026-11-27 대표님(목업 승인): 체성분 막대 → '인바디' 카드 — 골격근량·체지방량·체지방률 세 칸, 최근 7회만.
+// 칸마다 지금 값 · 7회 전보다 바뀐 양(근육은 늘면, 지방은 줄면 민트) · 작은 흐름선.
+function sparkSVG(vals, color){
+ const v = vals.filter(x => x!=null); if(v.length<2) return '';
+ const mn = Math.min(...v), mx = Math.max(...v), r = mx-mn || 1;
+ const pts = vals.map((x, i) => x==null ? null : [r1(i*(100/(vals.length-1))), r1(28-((x-mn)/r)*24)]).filter(Boolean);
+ return `<svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>${pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i===pts.length-1?3.2:1.8}" fill="${color}" vector-effect="non-scaling-stroke"/>`).join('')}</svg>`;
+}
+export function compositionCard(db){
+ const ib = inbodyRecords(db).filter(x => x.skeletalMuscle!=null || x.bodyFatMass!=null || x.bodyFatPct!=null).slice(-7);
  if(!ib.length) return '';
- const bars = ib.map(x => { const m = Number(x.skeletalMuscle)||0, f = Number(x.bodyFatMass)||0; return {stack:[{v:m, color:DOWN}, {v:f, color:UP}, {v:Math.max(0, Number(x.weight)-m-f), color:'#3a4a66'}]}; });
- const tips = ib.map(x => `<span class="d">${md(x.date)} 인바디</span><b>${f1(Number(x.weight))}kg</b><span class="d">골격근 ${x.skeletalMuscle!=null?f1(x.skeletalMuscle)+'kg':'—'} · 체지방 ${x.bodyFatMass!=null?f1(x.bodyFatMass)+'kg':'—'}</span>`);
- const a = ib[0], b = ib.at(-1), dm = r1((b.skeletalMuscle||0)-(a.skeletalMuscle||0)), df = r1((b.bodyFatMass||0)-(a.bodyFatMass||0));
- return `<section class="section card bf-card"><div class="bf-sub"><b>체성분 변화</b><small>인바디 ${ib.length}회</small></div>${barChart({bars, h:120, tips, dateL:md(a.date), dateR:md(b.date), label:'인바디별 골격근·체지방'})}<div class="bf-legend"><span><i style="background:${DOWN}"></i>골격근</span><span><i style="background:${UP}"></i>체지방</span><span><i style="background:#3a4a66"></i>그 외</span></div>${ib.length>1?`<p class="bf-last">첫 측정보다 골격근 <b class="${dm>=0?'good':'bad'}">${dm>0?'+':''}${f1(dm)}kg</b> · 체지방 <b class="${df<=0?'good':'bad'}">${df>0?'+':''}${f1(df)}kg</b></p>`:''}</section>`;
+ const tile = (label, k, unit, upGood, color) => {
+  const vals = ib.map(x => x[k]==null || x[k]==='' ? null : Number(x[k])), have = vals.filter(x => x!=null);
+  if(!have.length) return `<div><small>${label}</small><b>—</b></div>`;
+  const last = have.at(-1), d = r1(last-have[0]), good = upGood ? d>=0 : d<=0;
+  return `<div><small>${label}</small><b>${f1(last)}<i>${unit}</i></b>${have.length>1?`<em class="${d===0?'':good?'g':'b'}">${d>0?'+':d<0?'−':''}${f1(Math.abs(d))}${unit}</em>`:''}${sparkSVG(vals, color)}</div>`;
+ };
+ return `<section class="section card bf-card bf-ib"><div class="bf-sub"><b>인바디</b><small>최근 ${ib.length}회</small></div><div class="ibk">${tile('골격근량','skeletalMuscle','kg',true,'#8ce4e0')}${tile('체지방량','bodyFatMass','kg',false,'#f28a9b')}${tile('체지방률','bodyFatPct','%',false,'#b8aaf2')}</div>${ib.length>1?`<div class="ibd"><span>${md(ib[0].date)}</span><span>${md(ib.at(-1).date)}</span></div>`:''}</section>`;
 }
 function dietWithWeight(db, points, today){
  const weeks = []; let m = monday(today);

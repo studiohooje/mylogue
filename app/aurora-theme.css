@@ -2847,3 +2847,32 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .ss-name .ss-choice{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;margin-top:10px!important}
 .ss-name .ss-choice>span{width:100%!important;font-size:12px!important;color:#9fb6c9!important}
 .rt-dial{position:relative!important}.rt-snd{position:absolute!important;top:2px!important;right:2px!important;z-index:2!important;width:36px!important;height:36px!important;min-height:0!important;padding:0!important;border-radius:50%!important;border:1px solid #ffffff22!important;background:#ffffff10!important;font-size:16px!important;line-height:1!important;cursor:pointer!important}.rt-snd.off{opacity:.55!important}
+/* 2026-11-27 수치 페이지: 인바디 카드(최근 7회) */
+.bf-ib .ibk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.bf-ib .ibk>div{background:#ffffff08;border:1px solid #ffffff12;border-radius:14px;padding:10px 10px 8px;min-width:0}
+.bf-ib .ibk small{display:block;font-size:12px;color:#9fb6c9}
+.bf-ib .ibk b{display:block;font-size:19px;font-weight:800;color:#f2f7ff;margin-top:2px;letter-spacing:-.02em;white-space:nowrap}.bf-ib .ibk b i{font-style:normal;font-size:12px;font-weight:600;color:#9fb6c9;margin-left:1px}
+.bf-ib .ibk em{display:block;font-style:normal;font-size:12px;font-weight:700;margin-top:1px;color:#9fb6c9}.bf-ib .ibk em.g{color:#8ce4e0}.bf-ib .ibk em.b{color:#f28a9b}
+.bf-ib .ibk svg{display:block;width:100%;height:30px;margin-top:6px;overflow:visible}
+.bf-ib .ibd{display:flex;justify-content:space-between;font-size:11px;color:#7f93ab;margin-top:6px}
+.rec-tools{display:flex!important;justify-content:flex-end!important;margin:-4px 0 6px!important}.rec-tools .text-button{font-size:13px!important}
+.rec-list{padding:4px 14px!important}.rec-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #ffffff12}.rec-row:last-child{border-bottom:0}
+.rec-d{width:48px;flex:0 0 auto;font-size:13px;color:#9fb6c9;font-variant-numeric:tabular-nums}.rec-v{flex:1;min-width:0}.rec-v b{font-size:15px;color:#f2f7ff}.rec-v small{display:block;font-size:12px;color:#9fb6c9;margin-top:1px}
+.rec-t{font-size:11px;font-weight:700;color:#c9b8ff;border:1px solid #4a4f86;border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.rec-more{background:none!important;border:0!important;color:#8ce4e0!important;font-size:18px!important;width:40px!important;height:36px!important;min-height:0!important;cursor:pointer}
+.rec-acts{display:flex;gap:6px}.rec-acts button{min-height:34px!important;padding:0 12px!important;font-size:13px!important}
+/* 2026-11-27 홈 헤일로 카드(목업 2차 승인): 슬로건이 메인, 동기부여는 작게, 글 묶음·헤일로 위아래 가운데 */
+.timeline-hero.hero-v2{padding:0 20px!important;height:196px!important;min-height:0!important;box-sizing:border-box!important;display:flex!important;align-items:center!important}
+.timeline-hero.hero-v2 .hero-copy{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:0!important;margin:0!important;padding:0!important;width:62%!important;max-width:none!important}
+.timeline-hero.hero-v2 .phase-badge{display:inline-flex!important;align-items:center!important;gap:6px!important;padding:4px 10px!important;margin:0 0 14px!important;border-radius:999px!important;min-height:0!important;height:auto!important;width:auto!important;line-height:1.2!important;background:#0b142acc!important;border:1px solid #ffffff22!important}
+.timeline-hero.hero-v2 .phase-badge b,.timeline-hero.hero-v2 .phase-badge .ph-week{font-size:12px!important}.timeline-hero.hero-v2 .phase-badge .ph-week{color:#9fb6c9!important}
+.timeline-hero.hero-v2 .hero-slogan{font-size:23px!important;line-height:1.3!important;font-weight:800!important;letter-spacing:-.03em!important;color:#f4f8ff!important;margin:0!important;word-break:keep-all!important}
+.timeline-hero.hero-v2 .hero-slogan em{font-style:normal!important;background:linear-gradient(90deg,#8ce4e0,#b8aaf2 60%,#f2a98a);-webkit-background-clip:text;background-clip:text;color:transparent!important;text-shadow:none!important}
+.timeline-hero.hero-v2 .hv-title{font-size:13px!important;line-height:1.4!important;font-weight:500!important;color:#b9c8d9!important;margin:8px 0 0!important;letter-spacing:0!important}
+.timeline-hero.hero-v2 .hv-act{margin-top:10px!important;min-height:36px!important}
+@media(min-width:700px){.timeline-hero.hero-v2{padding:0 40px!important;height:220px!important}.timeline-hero.hero-v2 .phase-badge{padding:5px 12px!important;margin-bottom:16px!important}.timeline-hero.hero-v2 .phase-badge b,.timeline-hero.hero-v2 .phase-badge .ph-week{font-size:13px!important}.timeline-hero.hero-v2 .hero-slogan{font-size:34px!important;line-height:1.25!important}.timeline-hero.hero-v2 .hv-title{font-size:15px!important;margin-top:10px!important}.timeline-hero.hero-v2 .hero-copy{width:auto!important;max-width:62%!important}}
+/* 2026-11-27 측정 기록: 체중/인바디 버튼 → 달마다 접기 */
+.rec-kinds{grid-template-columns:1fr 1fr!important;margin-bottom:10px!important}.rec-kind{display:flex!important;align-items:center!important;gap:10px!important}.rec-kind .set-txt{flex:1!important}.rec-kind.on{border-color:#8ce4e0!important;background:#8ce4e014!important}
+.rec-mon{border:1px solid #ffffff14;border-radius:14px;background:#ffffff06;margin:0 0 8px}.rec-mon>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:14px;font-weight:700;color:#e8f1f8;cursor:pointer}.rec-mon>summary::-webkit-details-marker{display:none}
+.rec-mon[open]>summary .pg-chev{transform:rotate(180deg)}.rec-mon .rec-list{padding:0 14px 4px!important;border-top:1px solid #ffffff10}
+.rec-kind{min-height:0!important;padding:10px 12px!important}.rec-kind .set-ic{width:34px!important;height:34px!important}
