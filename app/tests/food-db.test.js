@@ -51,12 +51,12 @@ test('음식 DB 검색: 초성·한영 자판·정확도, 프리셋 계약', () 
  assert.equal(searchFoodDB('ㅂㅂㅂ')[0].name, '비빔밥');
  assert.equal(searchFoodDB('qlqla')[0].name, '비빔밥');
  const chicken = searchFoodDB('오빠닭')[0];
- assert.equal(chicken.name, '닭가슴살 스테이크 · 오빠닭(허닭)');
+ assert.equal(chicken.name, '오빠닭(허닭) 닭가슴살 스테이크'); // 2026-11-27 제조사를 앞에(가운뎃점은 음식끼리 나눌 때만)
  assert.equal(chicken.servingUnit, '팩'); assert.equal(chicken.servingQty, 1); assert.equal(chicken.unitGrams, 100);
  const rice = rowToFood(['멥쌀', '', 'g', 0, 441, 36.8, 20.3, 26.1, 'r', '']);
  assert.equal(rice.servingQty, 100); assert.equal(rice.servingUnit, 'g');
  assert.equal(findFoodDB(chicken.id).calories, 130);
- assert.equal(searchFoodDB('오빠닭 스테이크')[0].name, '닭가슴살 스테이크 · 오빠닭(허닭)'); // 낱말 순서 상관없이
+ assert.equal(searchFoodDB('오빠닭 스테이크')[0].name, '오빠닭(허닭) 닭가슴살 스테이크'); // 낱말 순서 상관없이
 });
 
 test('앱 번들 food-db.json이 있으면 형식 확인', {skip:!existsSync(new URL('../food-db.json', import.meta.url))}, () => {

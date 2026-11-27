@@ -15,7 +15,35 @@ export function daysAgo(date, today){
 const shift = (date, n) => { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
 // 최근 n일 체중계 체중의 작은 선 그래프(같은 날 여러 번이면 마지막 값). 글자와 겹치지 않게 자기 칸만 쓴다.
-export function weightSpark(db, today, days=30, {w=160, h=56}={}){
+// 2026-11-27 대표님 A+B안: 하루하루 출렁임 대신 '추세 체중'(마지막으로 잰 날까지 7일 평균)과 '주당 페이스'(최근 28일 기울기, 7일 넘게 3번 이상 잰 경우만)
+const dayNo = d => Math.round(new Date(`${d}T12:00:00`) / 86400000);
+const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+export function trendPoints(db){
+ const sc = scaleRecords(db).filter(x => Number(x.weight) > 0), src = sc.length ? sc : (db.body || []).filter(x => Number(x.weight) > 0), m = new Map();
+ for(const x of [...src].sort((a, b) => String(a.date).localeCompare(String(b.date)))) m.set(x.date, Number(x.weight));
+ return [...m].map(([date, w]) => ({date, w}));
+}
+export function weightTrend(db, today){
+ const pts = trendPoints(db).filter(p => p.date <= today); if(!pts.length) return null;
+ const last = pts.at(-1), L = dayNo(last.date), win = n => pts.filter(p => dayNo(p.date) > L - n);
+ const trend = Math.round(mean(win(7).map(p => p.w)) * 10) / 10, w28 = win(28);
+ let pace = null;
+ if(w28.length >= 3){ const xs = w28.map(p => dayNo(p.date)); if(xs.at(-1) - xs[0] >= 7){ const mx = mean(xs), my = mean(w28.map(p => p.w)); let num = 0, den = 0; w28.forEach((p, i) => { num += (xs[i] - mx) * (p.w - my); den += (xs[i] - mx) ** 2; }); if(den) pace = Math.round(num / den * 7 * 10) / 10; } }
+ return {trend, pace, now: last.w, nowDate: last.date, stale: dayNo(today) - L > 14};
+}
+export const paceText = p => p == null ? '—' : `${p > 0 ? '+' : p < 0 ? '−' : '±'}${Math.abs(p).toFixed(1)}kg`;
+export function weightSpark(db, today, days=30, {w=160, h=56, trend=false}={}){
+ if(trend){ // 7일 평균선(진하게) + 잰 값 점(흐리게)
+  const from = shift(today, -(days-1)), all = trendPoints(db).filter(p => p.date <= today), pts = all.filter(p => p.date >= from);
+  if(!pts.length) return '';
+  const avgs = pts.map(p => { const d = dayNo(p.date); return {date: p.date, v: mean(all.filter(q => { const e = dayNo(q.date); return e > d - 7 && e <= d; }).map(q => q.w))}; });
+  const vals = [...pts.map(p => p.w), ...avgs.map(a => a.v)], lo = Math.min(...vals), hi = Math.max(...vals), pad = Math.max(0.3, (hi-lo)*0.15);
+  const x = date => 4 + (w-8) * (dayNo(date) - dayNo(from)) / Math.max(1, days-1), y = v => 4 + (h-8) * (1 - (v - (lo-pad)) / ((hi+pad) - (lo-pad)));
+  const line = avgs.map(a => `${x(a.date).toFixed(1)},${y(a.v).toFixed(1)}`).join(' '), la = avgs.at(-1);
+  const area = avgs.length > 1 ? `<polygon points="${x(avgs[0].date).toFixed(1)},${h} ${line} ${x(la.date).toFixed(1)},${h}" class="spark-area"/>` : '';
+  const dots = pts.map(p => `<line x1="${x(p.date).toFixed(1)}" y1="${y(p.w).toFixed(1)}" x2="${x(p.date).toFixed(1)}" y2="${y(p.w).toFixed(1)}" class="spark-raw" vector-effect="non-scaling-stroke"/>`).join('');
+  return `<svg class="weight-spark trend" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="최근 ${days}일 체중 7일 평균선, ${pts.length}번 측정">${area}${dots}${avgs.length>1?`<polyline points="${line}" class="spark-line" vector-effect="non-scaling-stroke"/>`:''}<line x1="${x(la.date).toFixed(1)}" y1="${y(la.v).toFixed(1)}" x2="${x(la.date).toFixed(1)}" y2="${y(la.v).toFixed(1)}" class="spark-dot" vector-effect="non-scaling-stroke"/></svg>`;
+ }
  const from = shift(today, -(days-1)), map = new Map();
  for(const b of scaleRecords(db)) if(b.date>=from && b.date<=today) map.set(b.date, Number(b.weight));
  const pts = [...map].sort((a, b) => a[0].localeCompare(b[0]));

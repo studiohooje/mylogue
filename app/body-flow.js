@@ -3,7 +3,9 @@
 // → 체성분 변화(인바디) → 식단과 함께(주별 평균 섭취·체중) → 요일 패턴.
 // 4.4.0 목표 띠형으로 통일: 최고·최저·현재 색 배지와 축 숫자를 없애고, 목표 체중 ±1kg 띠 + 마우스오버.
 import {mealTotals} from './domain.js';
-import {scaleRecords, inbodyRecords} from './body-series.js';
+import {scaleRecords, inbodyRecords, weightTrend, paceText} from './body-series.js';
+import {myMaintenance} from './maintenance.js';
+import {estimate as energyEstimate} from './nutrition-plan.js';
 import {lineChart, barChart, hoverButton} from './band-chart.js';
 
 const esc = v => String(v??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -96,6 +98,14 @@ function weekdayCard(points, today){
  return `<section class="section card bf-card"><div class="bf-sub"><b>요일 패턴</b><small>최근 8주 · 그 주 평균과의 차이</small></div>${barChart({bars:d.map(v => ({v:v||0, color:v>0?BODY:DOWN})), signed:true, h:80, tips, label:'요일별 체중 차이'})}<div class="bf-days" aria-hidden="true">${[...W7].map(x => `<span>${x}</span>`).join('')}</div>${top>=0&&d[top]>0.1?`<p class="bf-last">${W7[top]}요일에 평균보다 <b class="bad">${f1(d[top])}kg</b> 무거워요</p>`:''}</section>`;
 }
 
+// 2026-11-27 대표님 C안: 기록이 쌓인 사람(나만의 유지칼로리 계산이 된 사람)에게만, 몸 화면에 내 유지 칼로리 추정 — 무료. AI 아님, 실제 먹은 양과 체중 흐름으로 계산
+export function maintBoxHTML(db, today, goal){
+ const m = myMaintenance(db, today, energyEstimate(db.settings?.nutritionProfile || {})?.tdee);
+ if(m.status !== 'ready') return '';
+ const n0 = v => Math.round(v).toLocaleString('ko-KR'), G = Number(db.settings?.calorieGoal) || 0;
+ /* 위 칸의 주당 페이스·목표 도달 주수와 겹치거나 엇갈리는 숫자는 넣지 않는다 */
+ return `<div class="bf-maint"><small>내 유지 칼로리 추정 · 최근 8주 실제 기록으로 계산</small><b>약 ${n0(m.kcal)}kcal</b><p>최근 8주 동안 실제로 먹은 양(평균 ${n0(m.meanIntake)}kcal)과 체중 흐름으로 계산했어요.${G > 0 ? ` 지금 식단 목표는 ${n0(G)}kcal예요.` : ''}</p><button type="button" class="text-button" data-gw-mine>이 값으로 식단 목표 맞추기 ›</button></div>`;
+}
 export function bodyOverviewHTML(db, {view = 'day', today}){
  // 4.17.0 페이즈가 진행 중이고 목표 체중이 있으면 그 목표를 쓴다(홈 페이즈 카드와 같은 숫자)
  const ph = db.settings?.phase, tg = ph?.target || {}, sw = Number(ph?.startWeight)||0;
@@ -106,7 +116,7 @@ export function bodyOverviewHTML(db, {view = 'day', today}){
  const dayAvg = view==='day' ? rows.map((r, i) => r1(avg(rows.slice(Math.max(0, i-6), i+1).map(x => x.w)))) : [];
  const goalDir = goal && s ? Math.sign(goal - s.now) || -1 : -1;
  const stat = (k, v, cls = '') => `<div><small>${k}</small><b class="${cls}">${v}</b></div>`;
- return `<section class="section card bf-top">${s ? `<div class="bf-stats">${stat('지금', `${f1(s.now)}kg`)}${stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}${s.restart?stat(s.change30!=null?'다시 시작 후':'다시 시작한 날', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:md(s.restart)):stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:'—')}${goal?stat(`${phGoal?'페이즈 목표':'목표'} ${goal}kg`, s.left===0?'도착!':`${Math.abs(s.left)}kg ${s.left<0?'남음':'더'}${s.eta?` · 약 ${s.eta}주`:''}`):`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}
+ return `<section class="section card bf-top">${s ? `<div class="bf-stats">${(tr => tr && !tr.stale ? `${stat(`추세 체중 · ${tr.nowDate===today?'오늘':md(tr.nowDate)} 잰 값 ${f1(tr.now)}`, `${f1(tr.trend)}kg`)}${stat('주당 페이스', paceText(tr.pace))}` : `${stat('지금', `${f1(s.now)}kg`)}${stat('7일 평균', s.avg7!=null?`${f1(s.avg7)}kg`:'—')}`)(weightTrend(db, today))/* 2026-11-27 A안: 같은 숫자 두 번 대신 추세 체중 + 주당 페이스 */}${s.restart?stat(s.change30!=null?'다시 시작 후':'다시 시작한 날', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:md(s.restart)):stat('30일 변화', s.change30!=null?`${s.change30>0?'+':''}${f1(s.change30)}kg`:'—')}${goal?stat(`${phGoal?'페이즈 목표':'목표'} ${goal}kg`, s.left===0?'도착!':`${Math.abs(s.left)}kg ${s.left<0?'남음':'더'}${s.eta?` · 약 ${s.eta}주`:''}`):`<div><small>목표 체중</small><button type="button" class="text-button" data-goal-weight-open>정하기</button></div>`}</div>` : ''}${s ? maintBoxHTML(db, today, goal) : ''}
  <form id="goal-weight-form" class="bf-goal-form" hidden><label class="field">목표 체중(kg)<input name="goalWeight" type="number" inputmode="decimal" step="0.1" min="20" max="300" value="${esc(goal||'')}"></label><button class="button small">저장</button></form>
  <div class="bf-head"><b class="bf-title">체중</b><div class="df-tools"><div class="df-period" role="group" aria-label="보기 단위">${[['day','일간'],['week','주간'],['month','월간']].map(([k, l]) => `<button type="button" class="${k===view?'on':''}" data-bf-view="${k}" aria-pressed="${k===view}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
  ${mainChart(rows, view, goal, dayAvg)}

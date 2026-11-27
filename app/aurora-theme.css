@@ -2660,3 +2660,27 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .mb-tag{font-size:11px;font-weight:800;padding:3px 7px;border-radius:999px;white-space:nowrap}.mb-tag.dup{background:#1f4a45;color:#8ce4e0}.mb-tag.own{background:#3a3550;color:#c9b8ff}.mb-tag.wait{background:#24405a;color:#aec4d9}
 .mb-del{min-height:36px;border:1px solid #5a3a46;color:#ff9b8e;background:transparent;border-radius:10px;font-size:12px;font-weight:700;padding:0 10px;white-space:nowrap}
 .mb-all{margin-top:10px;width:100%;min-height:44px;border-radius:12px;border:1px solid #5a3a46;background:#ff6b5a1a;color:#ffb3a8;font-weight:800}
+
+/* 2026-11-27 대표님: '예정 포함'을 작고 깔끔하게 — 머리줄 오른쪽, 초과·남음 표시 아래 */
+.home-diet-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.home-diet-side .plan-toggle{min-height:30px;padding:0 10px 0 7px;gap:6px;border:1px solid transparent;background:rgba(255,255,255,.05);color:#a9bbce;font-size:12px;font-weight:600;white-space:nowrap}
+.home-diet-side .plan-toggle small{color:inherit;opacity:.75;font-weight:500}
+.home-diet-side .plan-toggle .plan-switch{width:22px;height:12px}
+.home-diet-side .plan-toggle .plan-switch::after{width:8px;height:8px}
+.home-diet-side .plan-toggle.on{background:rgba(140,228,224,.1);border-color:rgba(140,228,224,.35);color:#d9f6f4}
+.home-diet-side .plan-toggle.on .plan-switch::after{left:12px}
+
+/* 2026-11-27 B안: 홈 체중 그래프 — 7일 평균선 진하게, 잰 값 점은 흐리게 */
+.weight-spark .spark-raw{stroke:#8ce4e0;stroke-width:3;stroke-linecap:round;opacity:.35}
+
+/* 2026-11-27 C안: 몸 화면 내 유지 칼로리 추정(기록이 쌓인 사람만) */
+.bf-maint{margin:12px 0 0;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.04);display:grid;gap:4px}
+.bf-maint small{color:#a9bbce;font-size:12px}
+.bf-maint b{font-size:18px;font-variant-numeric:tabular-nums}
+.bf-maint p{margin:0;color:#c9d6e6;font-size:13px;line-height:1.5;word-break:keep-all}
+.bf-maint .text-button{justify-self:start;font-size:13px;min-height:32px;padding:0}
+
+/* 2026-11-27 머신 이름 각각 괄호: 제조사(한글(영문)) / 모델(한글(영문)) / 라인 */
+.m-maker,.m-model{display:block;word-break:keep-all}
+.m-maker{font-size:13px;font-weight:600;color:#a9bbce}
+.gm-row .m-maker,.gm-row .m-model{font-weight:600}

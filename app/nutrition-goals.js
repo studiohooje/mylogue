@@ -82,7 +82,7 @@ export function macroGoalsHTML(day={},settings={},{meals=0,planned=null,plannedC
   return `<div class="macro-row ${cls} ${s.state}${g&&a+e>g*1.25?' far':''}"><span class="macro-label"><i aria-hidden="true"></i>${label}</span><span class="macro-bar" role="img" aria-label="${label} ${num(a,d)}${unit}${e?` · 예정 포함 ${num(a+e,d)}${unit}`:''} / 목표 ${g?num(g,d)+unit:'없음'}">${barInner(a,g,e,rowAxis(a+e,g))}</span>${key==='calories'?'':`<span class="macro-val">${num(a+e,d)}<small>/${g?num(g,d):'—'}${unit}</small></span>${note}`}</div>`;/* 5.3.0 전수 검사: 칼로리 숫자·남음은 머리줄에 이미 있어 줄에서는 막대만 */
  }).join('');
  const tip=carbTipHTML((Number(day.carbs)||0)+extra('carbs'),Number(settings.carbsGoal)||0,{plannedCarbs:extra('carbs')});
- return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num((Number(day.calories)||0)+extra('calories'))}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${head}</div>${plannedToggle(plannedCount,showPlanned)}<div class="macro-rows">${rows}</div>${tip}${day.missingMacros?`<p class="hint macro-missing">탄수화물·지방 값을 업체가 주지 않은 음식 ${day.missingMacros}개는 열량에만 더했어요(탄단지 막대에는 빠져 있어요).</p>`:''}<p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
+ return `<div class="home-stat home-diet"><div class="home-diet-head"><div><small>식단</small><strong>${num((Number(day.calories)||0)+extra('calories'))}<span>/ ${settings.calorieGoal?num(settings.calorieGoal):'—'} kcal</span></strong></div>${plannedCount?`<div class="home-diet-side">${head}${plannedToggle(plannedCount,showPlanned)}</div>`:head}</div><div class="macro-rows">${rows}</div>${tip}${day.missingMacros?`<p class="hint macro-missing">탄수화물·지방 값을 업체가 주지 않은 음식 ${day.missingMacros}개는 열량에만 더했어요(탄단지 막대에는 빠져 있어요).</p>`:''}<p>${meals}번의 식사${hasGoal?'':' · <button type="button" class="text-button" id="gw-open">목표를 정하면 부족·초과를 보여 줘요 ›</button>'}</p></div>`;
 }
 // 4.25.0 B안: 탄수화물이 넘치면 막대 아래 한 줄로 얼마나 넘었는지, 밥으로 치면 어느 정도인지 알려 준다.
 // 탄수화물만 조절하면 된다는 대표님 방침을 따른다. 밥 1공기는 음식 DB의 쌀밥 210g(탄수화물 78.4g) 기준. 경고 말투는 쓰지 않는다.
@@ -96,7 +96,7 @@ export function carbTipHTML(carbs, goal, {plannedCarbs=0}={}){
 // '예정 포함' 토글: 먹을 예정으로 넣은 식사가 있을 때만 보인다. 기본은 실제로 먹은 것만.
 export function plannedToggle(count, on){
  if(!count) return '';
- return `<button type="button" class="plan-toggle ${on?'on':''}" data-plan-toggle aria-pressed="${on}"><span class="plan-switch" aria-hidden="true"></span>예정 포함 <small>${count}끼</small></button>`;
+ return `<button type="button" class="plan-toggle ${on?'on':''}" data-plan-toggle aria-pressed="${on}"><span class="plan-switch" aria-hidden="true"></span>예정 <small>${count}끼</small><span class="sr-only"> 포함해서 보기</span></button>`;
 }
 
 // 3.11.0 홈 3칸용 작은 식단 카드 → 3.18.0 '먹은 양 / 목표'를 숫자로, 막대는 2배 축.

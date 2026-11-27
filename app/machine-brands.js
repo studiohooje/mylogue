@@ -1,4 +1,12 @@
 import {MACHINE_SPECS} from './machine-models-data.js';
+import {MAKER_NAMES, LINE_NAMES, MODEL_NAMES} from './machine-names-ko.js';
+// 2026-11-27 대표님: 머신 이름은 각각 '한글명(영문명)', 원판식·핀 스택식 같은 방식은 한글로. 기록·헬스장 등록은 id와 영문 원래 이름을 그대로 쓴다(보이는 글자만 바뀜)
+const METHOD_ONLY = /^(원판식|핀 스택식|케이블식?|프리웨이트|싱글 스택|랙·케이블)$/;
+const koEn = v => v ? (v[1] ? `${v[0]}${/\)$/.test(v[0]) ? ' ' : ''}(${v[1]})` : v[0]) : '';
+export const makerLabel = maker => koEn(MAKER_NAMES[maker]) || String(maker || '');
+const part1 = (ko, en) => { if(METHOD_ONLY.test(ko) || ko.includes('(') || !en) return ko; const k = ko.match(/^(.+) (원판식|핀 스택식)$/), e = en.match(/^(.+) (Plate[- ]Loaded|Selectorized|Pin[- ]Loaded)$/i); return k && e ? `${koEn([k[1], e[1]])} ${k[2]}` : koEn([ko, en]); }; // '디스커버리(Discovery) 원판식'
+export const lineLabel = line => { const v = LINE_NAMES[line]; if(!v) return String(line || ''); const k = v[0].split(' / '), e = (v[1] || '').split(' / '); return k.length > 1 && k.length === e.length ? k.map((x, i) => part1(x, e[i])).join(' / ') : part1(v[0], v[1]); };
+export const modelLabel = (id, model) => koEn(MODEL_NAMES[id]) || String(model || '');
 // 3.15.0 제조사 머신 도감(앱 기본 제공). 각 모델은 일반 머신 종류(base)에 연결되고, 부하 방식·좌우·근육 부하를 그 종류에서 물려받는다.
 // 모델 이름은 각 제조사 공식 카탈로그(2026-11-21 확인)를 따랐다. 지역·연식에 따라 이름이나 구성이 다를 수 있다.
 // 근거: research_notes/gym_machines/brands.md
@@ -71,5 +79,5 @@ const BASE_MODELS = BRAND_LINES.flatMap(l => l.models.map(([model, base]) => ({i
 // 4.12 모델 대장에서 앱 목록에 없던 모델을 더하고, 모든 모델에 사양(spec)을 붙인다
 export const MACHINE_SPEC_BY_ID = new Map(MACHINE_SPECS.map(([id, maker, line, model, base, load, sided, unit, stepKg, totalKg, firstKg, url, code, conf]) => [id, {id, maker, line, model, base, load, sided, unit, stepKg, totalKg, firstKg, url, code, conf}]));
 const baseIds = new Set(BASE_MODELS.map(b => b.id));
-export const BRAND_MODELS = Object.freeze([...BASE_MODELS, ...MACHINE_SPECS.filter(r => !baseIds.has(r[0])).map(([id, maker, line, model, base, , , unit]) => ({id, builtin:true, manufacturer:maker, line, model, baseId:base, unit:unit==='lb'?'lb':'kg', fromSpec:true}))].map(b => MACHINE_SPEC_BY_ID.has(b.id) ? {...b, spec:MACHINE_SPEC_BY_ID.get(b.id)} : b));
+export const BRAND_MODELS = Object.freeze([...BASE_MODELS, ...MACHINE_SPECS.filter(r => !baseIds.has(r[0])).map(([id, maker, line, model, base, , , unit]) => ({id, builtin:true, manufacturer:maker, line, model, baseId:base, unit:unit==='lb'?'lb':'kg', fromSpec:true}))].map(b => ({...(MACHINE_SPEC_BY_ID.has(b.id) ? {...b, spec:MACHINE_SPEC_BY_ID.get(b.id)} : b), makerLabel:makerLabel(b.manufacturer), modelLabel:modelLabel(b.id, b.model), lineLabel:lineLabel(b.line)})));
 export const BRAND_MAKERS = Object.freeze([...new Set(BRAND_MODELS.map(b => b.manufacturer))]);

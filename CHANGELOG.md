@@ -4,6 +4,14 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.6.0 — 2026-11-27 (배포됨)
+
+- 운동: 숫자 유지(쉬는 시간·세트 칸·방금 세트 고치기, typedKey·fixDraft·hidden 저장), 근처 무게 칩(nearWeights), 방식 줄 양쪽 함께·한쪽씩·번갈아(sideModes, side:'alt', canSingle 전수 점검), 원판 한쪽 기준 총 무게(isoMachine·armsIso, setLoadText '40kg씩 (총 80kg)', repairIsoWeights), 쉬는 시간 중복 링크·방식 바꾸기 삭제, 타이머 가림(alignRest).
+- 기구 도감 1,962모델·20개 제조사, 보이는 이름 한글(영문)(machine-names-ko.js, tools/machine-merge.mjs).
+- 몸: 추세 체중·주당 페이스(weightTrend), 홈 7일 평균선, 몸 화면 유지 칼로리 추정(maintBoxHTML, ready일 때만).
+- 식사: 제조사 앞에(brandedName·fixBrandName), 예정 포함 preferences.showPlanned·작은 알약, 영양성분표 앱 안 카메라.
+- 사진: 앱 안 카메라(snap-camera) 왼쪽 아래 앨범. 메이트로그 카메라는 그대로.
+
 ## Mylogue Beta 5.5.0 — 2026-11-27 (배포됨)
 
 - 종목 묶음 46개(exercise-family.js, 기존 종목끼리) + 머신 로우 묶음(기본·와이드 그립·내로우 그립, 새 종목 2개).

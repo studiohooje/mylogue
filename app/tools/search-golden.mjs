@@ -34,10 +34,11 @@ export function makeQueries(rows, {n = 3000, seed = 21} = {}) {
  }
  return out.slice(0, n);
 }
+const bare = f => f.brand && f.name.startsWith(f.brand + ' ') ? f.name.slice(f.brand.length + 1) : f.name;
 export function evaluate(queries) {
  const by = {}, fails = [];
  for (const t of queries) {
-  const res = searchFoodDB(t.q, {limit: t.top}), re = new RegExp(t.want), ok = res.some(f => re.test(f.name));
+  const res = searchFoodDB(t.q, {limit: t.top}), re = new RegExp(t.want), ok = res.some(f => re.test(f.name) || re.test(bare(f))); // 2026-11-27 이름 앞에 제조사가 붙어도 음식 이름으로 맞춘다
   by[t.kind] ??= {n: 0, ok: 0}; by[t.kind].n++; if (ok) by[t.kind].ok++; else if (fails.length < 200) fails.push({...t, got: res.slice(0, 3).map(f => f.name)});
  }
  for (const k of Object.keys(by)) by[k].rate = Math.round(by[k].ok / by[k].n * 1000) / 10;

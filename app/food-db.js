@@ -21,12 +21,14 @@ let rows = null, index = null, loading = null;
 
 // 행 → 음식 프리셋(앱의 db.foods 항목과 같은 모양, catalog·db 표시)
 const UNIT_FIX = {'G':'잔','1인용':'인분','인용':'인분','인':'인분','중간접시':'접시','-count':'인분','총':'봉','약':'개','g당':'회','일':'회','세트':'판','파티':'판','패밀리':'판','베이스':'인분','테이블스푼':'큰술','cm':'개','oz':'잔','매':'장','½스쿱':'스쿱','갑':'개','회분':'회','영양정보':'봉','닭가슴살':'개'};
+// 2026-11-27 대표님: 식사 줄에서 음식끼리 '·'로 나누는데 '쏙 빠진 무뼈족발 · 엉파'처럼 제조사도 '·'라 헷갈림 → 제조사를 앞에('엉파 쏙 빠진 무뼈족발'), 이름 안의 '·'(피자 도우·크기 등)도 띄어쓰기로
+export const brandedName = (name, brand) => { const n = String(name || '').replace(/ · /g, ' ').trim(); return brand && !n.startsWith(brand) ? `${brand} ${n}` : n; };
 export function rowToFood(r){
  const [name, brand, unit0, grams, kcal, carbs, protein, fat, tag, aliases, doubt, mic] = r;
  /* 5.1.0 음식 단위 검수: 원본에 섞인 이상한 단위 표기를 사람이 읽는 단위로('1인용'·'총'·'G'·'-count' 등 110개) */const unit = UNIT_FIX[unit0] || unit0;
  const micro = Array.isArray(mic) ? Object.fromEntries(['sugar','fiber','satFat','sodium'].map((k, i) => [k, mic[i]]).filter(([, v]) => v != null)) : {};
  const mass = !unit || MASS.has(unit);
- return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brand&&!String(name).startsWith(brand)?`${name} · ${brand}`:name, brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, ...micro, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt===2?{dbMaybeGone:true}:doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
+ return {id:`fooddb:${tag}:${brand}|${name}|${unit}`, name:brandedName(name, brand), brand:brand||'', servingQty:mass?100:1, servingUnit:mass?(unit||'g'):unit, ...(grams&&!mass?{unitGrams:grams}:{}), calories:kcal, carbs, protein, fat, ...micro, aliases:String(aliases||'').split(' ').filter(Boolean), source:'food-db', dbTag:tag, dbLabel:TAG[tag]?.label||'', ...(doubt===2?{dbMaybeGone:true}:doubt?{dbDoubt:true}:{}), aiEvidence:{source:TAG[tag]?.source||'', note:(mass?`100${unit||'g'}당`:`1${unit}${grams?` ${grams}${unit==='잔'||unit==='병'||unit==='캔'?'ml':'g'}`:''}당`)+(doubt?' · 수집 값 확인 필요(포장 라벨과 비교)':'')}, db:true};
 }
 
 // 5.0.5 '(집밥)' 같은 꼬리표가 붙은 이름도 꼬리표 없는 이름으로 똑같이 찾히게(돼지불고기 → 돼지불고기(집밥))
@@ -101,7 +103,7 @@ function typoSearch(q, limit){
   // 틀린 글자를 빼고 앞·뒤 조각을 각각 포함하는 이름(낱말 여러 개 검색과 같은 방식)
   const part = [q.slice(0, k), q.slice(k + 1)].filter(Boolean).join(' ');
   if(part.replace(/\s/g, '').length < 2) continue;
-  for(const f of searchOne(part, 20)){ const n = String(f.name).replace(/\s/g, ''); if(Math.abs(n.length - q.length) > 6) continue; const d = editDistance(q, n.slice(0, q.length)); if(d <= 1) cand.set(f.id, {f, d}); }
+  for(const f of searchOne(part, 20)){ const n = String(f.brand && f.name.startsWith(f.brand + ' ') ? f.name.slice(f.brand.length + 1) : f.name).replace(/\s/g, ''); /* 2026-11-27 앞에 붙은 제조사는 빼고 오타 비교 */ if(Math.abs(n.length - q.length) > 6) continue; const d = editDistance(q, n.slice(0, q.length)); if(d <= 1) cand.set(f.id, {f, d}); }
  }
  return [...cand.values()].sort((a, b) => a.d - b.d).map(x => x.f).slice(0, limit);
 }

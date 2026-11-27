@@ -98,7 +98,7 @@ for(const m of GENERIC_MACHINES){ const t = T[m.id.slice(3)]; if(t){ m.primaryMu
 GENERIC_MACHINES.forEach(Object.freeze); Object.freeze(GENERIC_MACHINES);
 const byId = new Map(GENERIC_MACHINES.map(m => [m.id, m]));
 // 제조사 모델은 연결된 머신 종류의 방식·좌우·근육을 물려받는다.
-export const BUILTIN_BRANDS = Object.freeze(BRAND_MODELS.filter(b => byId.has(b.baseId)).map(b => { const g = byId.get(b.baseId); return Object.freeze({...b, name:`${b.manufacturer} ${b.model}`, exercise:g.exercise, load:g.load, sided:g.sided, note:g.note, primaryMuscleIds:g.primaryMuscleIds, secondaryMuscleIds:g.secondaryMuscleIds}); }));
+export const BUILTIN_BRANDS = Object.freeze(BRAND_MODELS.filter(b => byId.has(b.baseId)).map(b => { const g = byId.get(b.baseId); return Object.freeze({...b, name:`${b.makerLabel||b.manufacturer} ${b.modelLabel||b.model}`, exercise:g.exercise, load:g.load, sided:g.sided, note:g.note, primaryMuscleIds:g.primaryMuscleIds, secondaryMuscleIds:g.secondaryMuscleIds}); }));
 const brandById = new Map(BUILTIN_BRANDS.map(b => [b.id, b]));
 export const brandsOf = genericId => BUILTIN_BRANDS.filter(b => b.baseId===genericId);
 // 같은 머신으로 하는 다른 종목들(3.14.1 전수 점검). 케이블 운동은 듀얼 케이블·단일 스테이션 둘 다 가능.
@@ -124,6 +124,10 @@ const MACHINE_ONLY = new Set(['머신','케이블','스미스']);
 export const needsMachine = ex => !!ex && MACHINE_ONLY.has(ex.equipment);
 // 일반 머신·앱 기본 제조사 모델을 ID로 찾는다.
 export const genericMachine = id => byId.get(id) || brandById.get(id) || null;
+// 2026-11-27 대표님: 양팔이 따로 움직이는 머신(원판 한쪽 기준 무게)인지 — 세트 칸 안내와 저장(총 무게 ×2)이 같은 판단을 쓰게. 내 머신·헬스장 머신은 고른 움직임, 없으면 바탕 머신 종류
+export const isoMachine = m => !!m && (m.sided || genericMachine(m.baseId)?.sided || genericMachine(m.id)?.sided) === 'iso';
+// 팔(다리)이 정말 따로 움직이는지 — '번갈아'를 보여 줄지. 헬스장에서 고른 움직임 > 모델 사양 > 바탕 종류 (가온핏 리니어 로우는 레버 하나라 번갈아 없음)
+export const armsIso = m => !!m && (m.gymSpec?.sided || m.spec?.sided || m.sided || genericMachine(m.baseId)?.sided || genericMachine(m.id)?.sided) === 'iso';
 const exId = name => EXERCISE_CATALOG.find(x => x.name===name)?.id || '';
 // 종목에 맞는 일반 머신(종목 이름·같은 부위 머신 계열)
 export function genericMachinesFor(exerciseId){

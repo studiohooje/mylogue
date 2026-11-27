@@ -65,8 +65,8 @@ test('제조사 모델은 머신 종류 아래에 접혀 있다가 펼쳐진다'
  assert.match(closed, /data-sg-brand="gm:leg-press-45"/);
  assert.doesNotMatch(closed, /Linear Leg Press/);
  const open = exerciseSuggestHTML({...st, sgBrand:'gm:leg-press-45'}, EXERCISE_CATALOG, {db:{workouts:[]}});
- assert.match(open, /Hammer Strength Linear Leg Press/);
- assert.match(open, /gym80 45° Linear Leg Press/);
+ assert.match(open, /해머 스트렝스\(Hammer Strength\)<\/span><span class="m-model">리니어 레그 프레스\(Linear Leg Press\)/); // 2026-11-27 각각 한글(영문)
+ assert.match(open, /짐80\(gym80\)<\/span><span class="m-model">45° 리니어 레그 프레스\(45° Linear Leg Press\)/);
 });
 
 test('내 머신의 머신 종류는 일반 머신 ID만 저장한다', () => {

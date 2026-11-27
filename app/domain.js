@@ -10,9 +10,10 @@ const cleanAIEvidence=raw=>{if(!raw||typeof raw!=='object')return null;const sou
 // 4.23.0 체중이 흔들릴 만한 일(선택): 나만의 유지칼로리 계산에서 그날 체중을 덜 믿거나, 몸 상태가 바뀐 날부터 다시 센다
 /* 5.1.0 대표님: '체중 관련 특이사항', 회식 대신 짠 음식·과식·음주를 따로 */export const BODY_FLAGS=[['salty','짠 음식'],['overeat','과식'],['alcohol','음주'],['period','생리 중'],['sick','아픔'],['med','약 용량 바뀜'],['creatine','크레아틴 시작']];
 export function cleanBody(raw){const date=String(raw.date??'').trim();if(!validDate(date))throw Error('측정일을 확인해 주세요.');const out={id:raw.id||uid(),date,weight:number(raw.weight),bodyFatPct:number(raw.bodyFatPct),skeletalMuscle:number(raw.skeletalMuscle),waistCm:number(raw.waistCm),bodyFatMass:number(raw.bodyFatMass),bmi:number(raw.bmi),score:number(raw.score),visceralFatLevel:number(raw.visceralFatLevel),bmr:number(raw.bmr),note:String(raw.note??'').trim(),source:String(raw.source??'manual').slice(0,40),...(['scale','inbody'].includes(raw.measure)?{measure:raw.measure}:{}),...(f=>f.length?{flags:f}:{})(BODY_FLAGS.map(x=>x[0]).filter(k=>(Array.isArray(raw.flags)&&raw.flags.includes(k))||raw['wf_'+k]==='on'||raw['wf_'+k]===true)),createdAt:raw.createdAt||raw.updatedAt||new Date().toISOString(),updatedAt:raw.updatedAt||new Date().toISOString()};for(const k of ['weight','bodyFatPct','skeletalMuscle','waistCm','bodyFatMass','bmi','score','visceralFatLevel','bmr'])if(out[k]!==null&&out[k]<0)throw Error(`${k} 값은 음수가 될 수 없습니다.`);/* 4.27.0 전수검사 C-11: 체중 0·7·700kg 같은 오타가 목표·소모 칼로리·페이즈 계산으로 번졌다 */if(out.weight!==null&&(out.weight<20||out.weight>400))throw Error('체중은 20~400kg 사이로 적어 주세요.');if(out.bodyFatPct!==null&&out.bodyFatPct>100)throw Error('체지방률은 100% 이하여야 합니다.');if(out.weight===null&&out.bodyFatPct===null&&out.skeletalMuscle===null&&out.waistCm===null)throw Error('체중, 체지방률, 골격근량, 허리둘레 중 하나를 입력해 주세요.');return out}
+export const fixBrandName=(name,source)=>{const s=String(name??'').trim();if(source!=='food-db'||!s.includes(' · '))return s;const i=s.lastIndexOf(' · '),b=s.slice(i+3).trim(),n=s.slice(0,i).replace(/ · /g,' ').trim();return b&&n?(n.startsWith(b)?n:`${b} ${n}`):s};
 export function cleanMeal(raw){
  const date=String(raw.date??'');if(!validDate(date))throw Error('식사 날짜를 확인해 주세요.');
- const name=String(raw.name??'').trim();if(!name)throw Error('음식 이름을 입력해 주세요.');
+ const name=fixBrandName(raw.name,raw.source);if(!name)throw Error('음식 이름을 입력해 주세요.');
  const nu=normalizeUnit(number(raw.servingQty)??1,safeUnit(raw.servingUnit||'회')),servingQty=nu.qty,servingUnit=safeUnit(nu.unit);
  if(servingQty<=0||!servingUnit)throw Error('섭취량과 단위를 확인해 주세요.');
  const estimate=raw.aiEstimate&&typeof raw.aiEstimate==='object'?raw.aiEstimate:{};
@@ -26,7 +27,7 @@ export function cleanMeal(raw){
 // 4.17.0 미량영양소: 0 이상 숫자만, 없으면 칸 자체를 두지 않음(빈 값은 0이 아님)
 export const microOf=raw=>{const o={};for(const k of ['sugar','fiber','satFat','sodium']){const n=number(raw?.[k]);if(n!==null&&n>=0&&n<100000)o[k]=Math.round(n*10)/10}return o};
 export function cleanFoodPreset(raw){
- const name=String(raw.name??'').trim(),servingUnit=safeUnit(raw.servingUnit||'회');
+ const name=fixBrandName(raw.name,raw.source),servingUnit=safeUnit(raw.servingUnit||'회');
  if(!name||!servingUnit)throw Error('음식 이름과 단위를 입력해 주세요.');
  const servingQty=number(raw.servingQty)??1;if(servingQty<=0)throw Error('음식 기준량을 확인해 주세요.');
  const out={id:raw.id||uid(),name,servingQty,servingUnit,...(number(raw.unitGrams)>0&&!MASS.has(servingUnit)?{unitGrams:number(raw.unitGrams)}:{}),source:String(raw.source||'manual').slice(0,40),calories:number(raw.calories),carbs:number(raw.carbs),protein:number(raw.protein),fat:number(raw.fat),...microOf(raw)};
@@ -41,7 +42,7 @@ export function cleanExercise(raw){
  const kind=raw.kind==='cardio'?'cardio':'strength',durationMin=number(raw.durationMin),distanceKm=number(raw.distanceKm);
  if(durationMin!==null&&durationMin<0||distanceKm!==null&&distanceKm<0)throw Error('유산소 시간과 거리를 확인해 주세요.');
  const w2=v=>v==null?null:Math.round(v*100)/100;// 4.3.1 중량은 소수점 둘째 자리까지(대표님: 18.1436948 같은 값 금지)
- const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:w2(number(s.weight)),unit:s.unit||'kg',originalWeight:w2(number(s.originalWeight??s.weight)),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:w2(number(s.targetWeight)),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),...(number(s.barKg)!==null&&number(s.barKg)>=0?{barKg:number(s.barKg)}:{}),...(number(s.levelKg)!==null&&number(s.levelKg)>=0?{levelKg:number(s.levelKg),...(s.levelEst===true?{levelEst:true}:{})}:{}),/* 4.21.0 방식(한쪽씩)·이 세트 전에 쉰 초 */...(s.side==='single'||s.side==='both'?{side:s.side}:{}),...(number(s.restSec)!==null&&number(s.restSec)>0&&number(s.restSec)<36000?{restSec:Math.round(number(s.restSec))}:{}),completedAt:String(s.completedAt||'')}));
+ const sets=(raw.sets??[]).map(s=>({id:s.id||uid(),weight:w2(number(s.weight)),unit:s.unit||'kg',originalWeight:w2(number(s.originalWeight??s.weight)),originalUnit:s.originalUnit||s.unit||'kg',targetWeight:w2(number(s.targetWeight)),targetReps:number(s.targetReps),targetUnit:s.targetUnit||s.unit||'kg',reps:number(s.reps),type:String(s.type||'본세트'),rpe:number(s.rpe),completed:s.completed!==false,...(s.done===true?{done:true}:{}),...(number(s.barKg)!==null&&number(s.barKg)>=0?{barKg:number(s.barKg)}:{}),...(number(s.levelKg)!==null&&number(s.levelKg)>=0?{levelKg:number(s.levelKg),...(s.levelEst===true?{levelEst:true}:{})}:{}),/* 4.21.0 방식(한쪽씩)·이 세트 전에 쉰 초 */...(s.side==='single'||s.side==='both'||s.side==='alt'?{side:s.side}:{}),...(number(s.restSec)!==null&&number(s.restSec)>0&&number(s.restSec)<36000?{restSec:Math.round(number(s.restSec))}:{}),completedAt:String(s.completedAt||'')}));
  if(kind==='strength'&&!sets.length)throw Error('세트를 하나 이상 입력해 주세요.');
  for(const s of sets){if(s.originalWeight===null||s.originalWeight<0||!UNITS.includes(s.originalUnit))throw Error('원래 중량과 단위를 확인해 주세요.');if(!UNITS.includes(s.targetUnit)||s.targetWeight!==null&&s.targetWeight<0||s.targetReps!==null&&(s.targetReps<0||!Number.isInteger(s.targetReps)))throw Error('목표 중량·반복·단위를 확인해 주세요.');if(!UNITS.includes(s.unit))throw Error('중량 단위는 kg·lb·숫자 단계 중 하나여야 합니다.');if(s.weight===null||s.reps===null||s.weight<0||s.reps<0||!Number.isInteger(s.reps))throw Error('중량과 반복 횟수를 확인해 주세요.');if(s.rpe!==null&&(s.rpe<0||s.rpe>10))throw Error('RPE는 0~10 사이여야 합니다.')}
  const moves=kind==='cardio'?cleanMoves(raw.moves):[];
@@ -72,9 +73,13 @@ export function mealTotals(meals){const t={calories:0,carbs:0,protein:0,fat:0};l
 export const estimate1RM=(weight,reps)=>reps>0?round(weight*(1+Math.min(reps,30)/30)):0;
 // 4.24.0 볼륨 규칙 하나(모든 화면이 같은 숫자): 한 손 기준·양손이면 ×2, 한쪽 횟수 기준이면 ×2,
 // '한쪽씩'(side:single) 세트는 양쪽을 다 했다고 보고 ×2 — 종목이 이미 한쪽 기준이면 두 번 곱하지 않는다.
-export function volumeFactor(ex={},s={}){const base=(ex.weightBasis==='per-hand'&&ex.handCount===2?2:1)*(ex.repBasis==='per-side'?2:1);return base===1&&s.side==='single'?2:base}
+export function volumeFactor(ex={},s={}){const base=(ex.weightBasis==='per-hand'&&ex.handCount===2?2:1)*(ex.repBasis==='per-side'?2:1);return base===1&&(s.side==='single'||s.side==='alt')?2:base}
 /* 5.1.0 웜업 세트는 볼륨·최고 기록·성장에서 뺀다 */export const setVolume=(ex,s)=>s?.type==='웜업'?0:setWeightKg(s)*(s.reps||0)*volumeFactor(ex,s);
-export const setReps=(ex={},s={})=>(s.reps||0)*(ex.repBasis==='per-side'||((ex.weightBasis!=='per-hand'||ex.handCount!==2)&&ex.repBasis!=='per-side'&&s.side==='single')?2:1);
+// 2026-11-27 대표님: 원판을 양쪽에 40kg씩 끼우면 그 세트 무게는 총 80kg. 양팔이 따로 움직이는 머신은 '40kg씩 (총 80kg)', 한쪽씩·번갈아는 꼬리표
+export const SIDE_TEXT={single:'한쪽씩',alt:'번갈아'};
+export function setLoadText(ex={},s={},fmt=v=>String(v)){const w=Number(s.weight)||0,u=s.unit==='level'?'단계':unitText(s.unit||'kg')||'kg',two=ex.weightBasis==='per-hand'&&ex.handCount===2;if(two&&ex.machineId&&s.unit!=='level'&&s.side!=='single')return `${fmt(w)}${u}씩 (총 ${fmt(w*2)}${u})`;return `${fmt(w)}${u}${ex.weightBasis==='per-hand'?'씩':''}`}
+export const setSideTag=s=>SIDE_TEXT[s?.side]?' · '+SIDE_TEXT[s.side]:'';
+export const setReps=(ex={},s={})=>(s.reps||0)*(ex.repBasis==='per-side'||((ex.weightBasis!=='per-hand'||ex.handCount!==2)&&ex.repBasis!=='per-side'&&(s.side==='single'||s.side==='alt'))?2:1);
 export function workoutTotals(w){let volume=0,reps=0,sets=0,best1RM=0,cardioMinutes=0,distanceKm=0;const parts={};for(const ex of w.exercises||[]){if(ex.kind==='cardio'){cardioMinutes+=ex.durationMin||0;distanceKm+=ex.distanceKm||0;continue}for(const s of ex.sets||[]){if(s.completed===false)continue;const v=setVolume(ex,s);volume+=v;reps+=setReps(ex,s);sets++;if(s.type!=='웜업')best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0));parts[ex.part]=(parts[ex.part]||0)+v}}return {volume:round(volume),reps,sets,exercises:w.exercises?.length||0,best1RM,parts,cardioMinutes:round(cardioMinutes),distanceKm:round(distanceKm,2)}}
 export const emptyDB=()=>({schemaVersion:VERSION,body:[],meals:[],foods:[],workouts:[],routines:[],machines:[],customExercises:[],favorites:[],recipes:[],dayStates:{},checkins:{},settings:{calorieGoal:2200,carbsGoal:250,proteinGoal:150,fatGoal:70,barbellWeightKg:20,workoutTitles:[],gyms:[]}});
 export const LB_TO_KG=0.45359237;
@@ -132,13 +137,17 @@ export function setDietState(db,date,state){
 // 백업 가져오기처럼 사람이 고른 파일을 검사할 때는 지금처럼 엄격하게(lenient 아님) 이유를 알려 준다.
 export const QUARANTINE_MAX=500;
 const quarantineSig=q=>{if(q.id!=null&&q.id!=='')return `${q.kind}|id|${q.id}`;try{return `${q.kind}||${JSON.stringify(q.raw)}`}catch{return `${q.kind}||${Math.random()}`}};
+// 2026-11-27 대표님: 내가 등록한 머신(바탕이 양팔 따로·원판 양쪽 종류)으로 남긴 지난 세트는 '한쪽 기준' 안내를 보고 한쪽 무게를 적었는데
+// 저장 때 ×2가 빠져 총 무게가 반으로 잡혔다. 읽을 때마다 같은 규칙으로 맞춘다(여러 번 돌아도 같음). 목록은 machines-catalog의 sided:'iso' 종류와 같아야 함(시험으로 확인).
+export const ISO_BASES=['gm:leg-press-iso','gm:chest-press-iso','gm:chest-press-wide','gm:incline-press-iso','gm:decline-press','gm:lat-pulldown-iso','gm:row-iso','gm:low-row','gm:high-row','gm:shoulder-press-iso'];
+export function repairIsoWeights(db){const iso=new Set((db.machines||[]).filter(m=>ISO_BASES.includes(m.baseId)).map(m=>m.id));if(!iso.size)return 0;let n=0;for(const w of db.workouts||[])for(const e of w.exercises||[])if(e.kind!=='cardio'&&iso.has(e.machineId)&&!(e.weightBasis==='per-hand'&&e.handCount===2)){e.weightBasis='per-hand';e.handCount=2;n++}return n}
 export function normalizeDB(raw,{lenient=false}={}){
  if(!raw||typeof raw!=='object'||raw.schemaVersion!==VERSION)throw Error('지원하지 않는 백업 형식입니다.');
  const db=emptyDB(),bad=[],list=k=>{if(raw[k]!=null&&!Array.isArray(raw[k])){if(lenient){bad.push({kind:k,raw:raw[k],reason:'목록 형식 아님'});return []}throw Error(k+' 백업 목록을 확인해 주세요.')}return raw[k]||[]};
  const each=(k,fn)=>list(k).flatMap(x=>{if(!lenient)return [fn(x)];try{return [fn(x)]}catch(e){bad.push({kind:k,raw:x,reason:String(e?.message||e).slice(0,120)});return []}});
  db.body=each('body',cleanBody);db.meals=each('meals',cleanMeal);db.foods=each('foods',cleanFoodPreset);db.workouts=each('workouts',cleanWorkout);
  db.routines=each('routines',r=>({...r,exercises:(r.exercises||[]).map(cleanExercise)}));
- db.machines=each('machines',cleanMachine);db.customExercises=each('customExercises',cleanCustomExercise);db.favorites=cleanIds(list('favorites'));
+ db.machines=each('machines',cleanMachine);repairIsoWeights(db);db.customExercises=each('customExercises',cleanCustomExercise);db.favorites=cleanIds(list('favorites'));
  db.recipes=each('recipes',r=>{if(!String(r.name||'').trim()||!Array.isArray(r.items)||!r.items.length)throw Error('레시피 형식을 확인해 주세요.');return {id:r.id||uid(),name:String(r.name).trim(),items:r.items.map(x=>cleanMeal({...x,date:x.date||'2000-01-01'}))}});
  for(const k of ['dayStates','checkins'])if(raw[k]!=null&&(typeof raw[k]!=='object'||Array.isArray(raw[k]))){if(!lenient)throw Error(k+' 형식을 확인해 주세요.');bad.push({kind:k,raw:raw[k],reason:'형식 아님'});raw={...raw,[k]:{}}}
  for(const [date,state] of Object.entries(raw.dayStates||{})){if(!validDate(date)||!['partial','complete','fasting','unrecorded'].includes(state)){if(!lenient)throw Error('식단 상태 형식을 확인해 주세요.');bad.push({kind:'dayStates',id:date,raw:state,reason:'식단 상태 형식 아님'});continue}db.dayStates[date]=state;}

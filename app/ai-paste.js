@@ -55,12 +55,13 @@ const MACHINES = [...GENERIC_MACHINES, ...BUILTIN_BRANDS];
 // 사용자가 말한 머신 이름을 앱의 머신 종류·제조사 모델에 맞춘다(모르면 비워 두고 검토함에서 고른다).
 export function matchMachine(name, exercise){
  const q = norm(name); if(!q) return null;
- const names = m => [m.name, ...(m.aliases||[]), m.model||''].map(norm).filter(Boolean);
+ const names = m => [m.name, ...(m.aliases||[]), m.model||'', m.manufacturer&&m.model?`${m.manufacturer} ${m.model}`:''].map(norm).filter(Boolean); /* 2026-11-27 보이는 이름이 한글(영문)이 되어도 영문 원래 이름으로 찾는다 */
  const exact = MACHINES.find(m => names(m).includes(q));
  if(exact) return exact;
  const hits = MACHINES.filter(m => names(m).some(n => n.includes(q) || q.includes(n)));
  const same = exercise ? hits.filter(m => findExercise(m.exercise)?.id===exercise.id) : hits;
- return (same.length===1 ? same[0] : hits.length===1 ? hits[0] : null);
+ /* 2026-11-27 한글 모델 이름이 생겨 '레그프레스'처럼 짧은 말이 여러 제조사에 걸리면 일반 머신 하나를 고른다 */const gen = (same.length ? same : hits).filter(m => m.generic);
+ return (same.length===1 ? same[0] : hits.length===1 ? hits[0] : gen.length===1 ? gen[0] : null);
 }
 
 function mealDraft(r, said){

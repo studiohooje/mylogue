@@ -205,7 +205,11 @@
 .q-warm.on s{background:#f5c84b55}
 .q-warm.on s::after{left:14px;background:#f5c84b}
 .rt-bottom>.q-warm{margin:0 0 6px;justify-self:start;align-self:flex-start;width:auto}
+.rt-toggles{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}.rt-toggles>.q-warm{margin:0;width:auto} /* 2026-11-27 웜업·한쪽씩 스위치 한 줄 */
 .quick-overlay-head{gap:8px}
+/* 2026-11-27 웜업 옆 한쪽씩 스위치: 제목은 한 줄, 두 스위치는 붙여서. 360급에서는 스위치 막대를 빼고 글자 칩만(켜짐은 노란 테두리) */
+.quick-overlay-head h3{white-space:nowrap}.quick-overlay-head .q-warm+.q-warm{margin-left:0}
+@media (max-width:380px){.quick-overlay-head .q-warm s{display:none}}
 .qs-unitseg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-left:6px;vertical-align:middle}
 .qs-unitseg button{min-height:40px;min-width:46px;padding:0 12px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:700}
 .qs-unitseg button.on{background:#8ce4e0;color:#101625}
@@ -557,3 +561,10 @@ body:has(.live-sheet) .toast,body:has(.ss-sheet) .toast{top:calc(env(safe-area-i
 .live-end-bar{width:calc(100% - 40px);margin-left:20px;margin-right:20px}
 .quick-palette .sheet>.q-switch,.quick-palette .sheet>.quick-picked,.quick-palette .sheet>.quick-next,.quick-palette .sheet>.live-idle{margin-left:20px;margin-right:20px}
 }
+
+/* 2026-11-27 방식 줄(양쪽 함께·한쪽씩·번갈아) */
+.qs-side{display:flex;align-items:center;gap:8px;margin:10px 0 2px;flex-wrap:wrap}.qs-side .qs-label{margin:0}
+
+/* 2026-11-27 앱 안 카메라 왼쪽 아래 앨범 */
+.snap-album{justify-self:center;display:grid;place-items:center;gap:2px;width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;font-size:22px;line-height:1}
+.snap-album small{font-size:12px;opacity:.85}

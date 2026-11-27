@@ -8,7 +8,7 @@ import {emptyLine,emptyAction} from './motivation.js';
 import {dayRecords,rhythmFor,haloMessage} from './halo.js';
 import {prefsOf} from './prefs.js';
 import {macroMiniHTML,plannedToggle} from './nutrition-goals.js';
-import {scaleRecords,inbodyRecords,weightSpark,daysAgo,isInbody} from './body-series.js';
+import {scaleRecords,inbodyRecords,weightSpark,daysAgo,isInbody,weightTrend,paceText} from './body-series.js';
 import {anatomySvg,MUSCLE_LABELS} from './exercise-ui.js';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -58,8 +58,9 @@ export function renderHomeTimeline(db,date,opts={}){
 // 3.18.0 홈 체중 칸: 체중계 체중(인바디 제외) + 최근 30일 작은 그래프, 'N일 전'
 function weightStatHTML(db,date){
  const rec=scaleRecords(db).filter(b=>b.date<=date).at(-1)||inbodyRecords(db).filter(b=>b.date<=date&&b.weight).at(-1);
- const spark=weightSpark(db,date,30);
- return `<button type="button" class="home-stat home-stat-weight" data-page="body" aria-label="체중 ${rec?fmt(rec.weight,1)+'kg':'기록 없음'}, 자세히 보기"><span class="stat-head"><small>체중</small>${rec?`<em>${esc(daysAgo(rec.date,date))}${isInbody(rec)?' · 인바디':''}</em>`:''}</span><strong>${rec?`${fmt(rec.weight,1)}<span>kg</span>`:'—'}</strong><div class="stat-vis">${spark||'<span class="stat-empty" aria-hidden="true"></span>'}</div></button>`;
+ /* 2026-11-27 B안: 체중계 기록이 있고 최근 2주 안에 쟀으면 추세 체중(7일 평균)과 주당 변화, 그래프는 7일 평균선 */const tr=rec&&!isInbody(rec)?weightTrend(db,date):null,useT=tr&&!tr.stale;
+ const spark=weightSpark(db,date,30,{trend:!!useT});
+ return `<button type="button" class="home-stat home-stat-weight" data-page="body" aria-label="체중 ${useT?`추세 ${fmt(tr.trend,1)}kg, 주당 ${paceText(tr.pace)}`:rec?fmt(rec.weight,1)+'kg':'기록 없음'}, 자세히 보기"><span class="stat-head"><small>체중</small>${useT&&tr.pace!=null?`<em>주 ${esc(paceText(tr.pace).replace('kg',''))}</em>`:rec?`<em>${esc(daysAgo(rec.date,date))}${isInbody(rec)?' · 인바디':''}</em>`:''}</span><strong>${useT?`${fmt(tr.trend,1)}<span>kg</span>`:rec?`${fmt(rec.weight,1)}<span>kg</span>`:'—'}</strong><div class="stat-vis">${spark||'<span class="stat-empty" aria-hidden="true"></span>'}</div></button>`;
 }
 // 3.18.3 그날 운동 요약: 웨이트는 부위를 괄호로, 나머지는 대분류 이름. 예) 웨이트(하체·가슴) + 필라테스
 const CAT_LABEL={'러닝·유산소':'러닝·유산소','필라테스':'필라테스','요가':'요가','기타':'기타'};
