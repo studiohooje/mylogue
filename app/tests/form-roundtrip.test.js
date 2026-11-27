@@ -24,8 +24,6 @@ test('식사 양식: 영양값 출처가 목록 밖이어도 그대로 선택(20
 });
 test('머신 양식: 단위가 그대로 선택', () => {
  for (const unit of ['kg', 'lb', 'level']) {
-  const s = selects(machineFormHTML({name: 'x', unit}));
-  const u = s.find(x => x.name === 'unit');
-  assert.equal(u?.selected, unit, unit);
+  /* 2026-11-27 단위는 고르기 버튼(radio) */assert.match(machineFormHTML({name: 'x', unit}), new RegExp(`name="unit" value="${unit}" checked`), unit);
  }
 });

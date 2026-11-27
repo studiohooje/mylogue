@@ -107,6 +107,7 @@ const halo = `<svg class="ld-halo" viewBox="0 0 320 210" aria-hidden="true"><def
 const lines = (...ls) => ls.map(l => `<span class="ln">${l.split('|').map(p => `<span class="nb">${p.trim()}</span>`).join(' ')}</span>`).join('');
 const feature = (k, t, d) => `<article class="ld-feat"><span class="ld-feat-k">${k}</span><h3>${t}</h3><p>${d}</p></article>`;
 
+// 2026-11-27 대표님(목업 승인): 둘러보기 입구 정리, 베타 안내 한 줄, 기능은 이름만(설명은 CSS로 접음), 예시 사람은 옆으로 넘기기, 끝의 반복 버튼·설명 뺌
 export function landingHTML({installHTML='', returning=false}={}){
  return `<div class="landing">
  <header class="ld-top"><span class="ld-brand"><img src="icon.svg" alt="">마이로그</span><button type="button" class="ld-login" id="landing-login">로그인</button></header>
@@ -122,7 +123,7 @@ export function landingHTML({installHTML='', returning=false}={}){
    <button type="button" class="ld-btn primary" id="landing-signup">무료로 시작하기</button>
    <button type="button" class="ld-btn" id="landing-demo">로그인 전에 둘러보기</button>
   </div>
-  <p class="ld-beta">${lines('지금은 베타예요.', '카카오·Google·이메일로|가입하면 바로 쓸 수 있고,|여러 기기에서 기록이 이어져요.', '가입 없이|둘러보기나 이 기기에서만 쓰기도|할 수 있어요.')}</p>
+  <p class="ld-beta1">지금은 베타예요${returning ? '' : ' · <button type="button" class="ld-inline" id="landing-guest">가입 없이 이 기기에서만 써 보기</button>'}</p>
   ${returning ? '<button type="button" class="ld-link" id="landing-back">내 기록으로 돌아가기</button>' : '<button type="button" class="ld-link" id="landing-more">예시 화면과 이야기 먼저 보기 ↓</button>'}
  </section>
 
@@ -155,7 +156,7 @@ export function landingHTML({installHTML='', returning=false}={}){
    <button type="button" class="ld-btn primary" id="landing-demo2">예시 기록으로 둘러보기 →</button>
   </div>
   <div class="ld-personas">
-   <p><b>나와 비슷한 사람의 기록으로 보기</b><br>${lines('성별·나이·체중·목표가 다른|여덟 명의 120일 예시예요.', '누르면 그 사람의 기록으로|앱 전체를 둘러봐요.', '분석과 플러스 기능도|모두 열려 있어요.')}</p>
+   <p><b>나와 비슷한 사람의 기록으로 보기</b></p>
    ${personaCardsHTML()}
   </div>
  </section>
@@ -174,14 +175,10 @@ export function landingHTML({installHTML='', returning=false}={}){
 
  <section class="ld-sec ld-end" id="ld-end">
   <h2>오늘의 한 줄부터.</h2>
-  <p>${lines('손 기록·그래프·검색은|계속 무료예요.', '더 깊은 분석과 AI(플러스)는|베타 동안 시험 계정에서|먼저 다듬고 있어요.', '정식 출시 뒤에는|필요할 때 골라도 충분해요.')}</p>
   <div class="ld-cta">
    <button type="button" class="ld-btn primary" id="landing-signup2">무료로 시작하기</button>
-   <button type="button" class="ld-btn" id="landing-demo3">먼저 둘러보기</button>
   </div>
   ${installHTML}
-  <p class="ld-fine">${lines('가입하면 바로 쓸 수 있고|기록이 여러 기기에 이어져요.', '가입 없이 쓰면|이 기기에만 저장돼요.')}</p>
-  <button type="button" class="ld-link" id="landing-guest">${returning ? '내 기록으로 돌아가기' : '가입 없이 이 기기에서만 써 볼게요'}</button>
   <p class="legal-foot"><a href="privacy.html">개인정보처리방침</a> · <a href="terms.html">이용약관</a> · <a href="story.html">마이로그 이야기</a> · <a href="mailto:studiohooje@gmail.com">문의</a><br>© 2026 Studio Hooje. All rights reserved.</p>
  </section>
  </div>`;

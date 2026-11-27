@@ -65,7 +65,7 @@ function dialHTML(s, mode){
     <svg viewBox="0 0 260 260" aria-hidden="true"><defs><linearGradient id="rt-aurora" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ce4e0"/><stop offset=".55" stop-color="#b8aaf2"/><stop offset="1" stop-color="#f2b49b"/></linearGradient></defs>
     <g class="rt-ticks">${ticks}</g><circle class="rt-track" cx="130" cy="130" r="${R}"/><circle class="rt-prog" id="rt-prog" cx="130" cy="130" r="${R}" transform="rotate(-90 130 130)" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${C.toFixed(1)}"/>
     <g class="rt-hand" id="rt-hand"><line x1="130" y1="44" x2="130" y2="8"/><circle cx="130" cy="26" r="5"/></g></svg>
-    ${mode === 'alarm' ? restSoundButton() : ''}<div class="rt-center" role="timer"><span class="rt-lbl">쉬는 중</span><span class="rt-digits" id="rt-digits">0:00</span><span class="rt-goal" id="rt-goal">${mode === 'alarm' ? `목표 ${clock(target)}` : '시간만 재는 중'}</span></div>
+    ${mode === 'alarm' ? restSoundButton() : ''}<div class="rt-center" role="timer"><span class="rt-lbl">쉬는 중</span><span class="rt-digits" id="rt-digits">0:00</span><span class="rt-goal" id="rt-goal">${mode === 'alarm' ? `${clock(target)} 남음` : '시간만 재는 중'}</span></div>
   </div>`;
 }
 
@@ -83,14 +83,15 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
   const last = s.sets.filter(x => x.exerciseId === s.exerciseId).at(-1);
   const sides = sideOptions(machine);
   /* 2026-11-27 원판 양쪽 머신은 '40kg씩 (총 80kg)'처럼 — 기록 화면과 같은 글자 */const exL = {...(selected || {}), machineId: s.machineId, ...(perSideFor(machine, selected) ? {weightBasis: 'per-hand', handCount: 2, ...(pairLever(machine) ? {oneLever: true} : {})} : {})}, lt = x => esc(setLoadText(exL, x, fmt));
-  const head = `<div class="rt-head"><div><b>${esc(selected?.name || '')}</b><small>${doneHere}세트 끝${last ? ` · ${lt(last)} × ${last.reps}회${setSideTag(last)}` : ''}</small></div><div class="rt-mode" role="group" aria-label="휴식 타이머">${REST_MODES.map(([k, l]) => `<button type="button" class="${mode === k ? 'on' : ''}" data-rest-mode="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div></div>`;
+  const head = `<div class="rt-head"><div><b>${esc(selected?.name || '')}</b></div><div class="rt-mode" role="group" aria-label="휴식 타이머">${REST_MODES.map(([k, l]) => `<button type="button" class="${mode === k ? 'on' : ''}" data-rest-mode="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div></div>`;
   const top = mode === 'off' ? '' : `<section class="rt-top">${dialHTML(s, mode)}${mode === 'alarm' ? `<div class="rt-presets" role="group" aria-label="휴식 시간">${REST_PRESETS.map(p => `<button type="button" class="chip small ${s.rest.target === p ? 'active' : ''}" data-rest-set="${p}">${p % 60 ? `${Math.floor(p / 60)}분 ${p % 60}초` : `${p / 60}분`}</button>`).join('')}</div><div class="rt-add" role="group" aria-label="휴식 늘리기">${[15, 30, 60].map(a => `<button type="button" class="chip small" data-rest-add="${a}">+${a < 60 ? `${a}초` : '1분'}</button>`).join('')}</div>` : ''}</section>`;
   const tag = `<span class="rt-tag${n.changed ? ' changed' : ''}">${n.changed ? '바꿈' : '그대로'}</span>`;
   const kindTag = n.kind === 'warm' ? '<em class="q-wm-tag warm">웜업</em>' : '';
   const nextNo = same ? doneHere + 1 : 1;
   /* 5.1.0 방금 한 세트(고치기) — 다음 세트 준비와 완전히 따로 */const lastCard = last ? `<div class="rt-last"><span><small>방금 한 세트</small><b>${doneHere}세트 · ${lt(last)} × ${last.reps}회${setSideTag(last)}${last.type === '웜업' ? ' <em class="q-wm-tag warm">웜업</em>' : ''}</b></span><button type="button" class="button small secondary" data-rest-panel="fix">고치기</button></div>` : '';
   const summary = `<div class="rt-summary"><div><b>${same ? `${esc(nextEx?.name || '')} · ${doneHere + 1}세트` : `다음 운동 · ${esc(nextEx?.name || '')}`} ${kindTag}</b><small>${same ? lt(n) : `${fmt(n.weight)}${unitText(n.unit)}`} × ${n.reps}회${setSideTag(n)}</small></div>${tag}</div>`;
-  const fire = `<button type="button" class="rt-fire" id="rest-go"><span class="rt-fire-ico" aria-hidden="true">🔥</span><span><b>휴식 끝, 다음 세트 시작</b><small>이걸 눌러야 다음 세트 기록으로 넘어가요</small></span></button>`;
+  /* 2026-11-27 대표님(목업 승인): 휴식 화면 설명 줄·같은 말 반복 뺌 */
+  const fire = `<button type="button" class="rt-fire" id="rest-go"><span class="rt-fire-ico" aria-hidden="true">🔥</span><span><b>휴식 끝, 다음 세트 시작</b></span></button>`;
   let body = '';
   if (panel === 'weight') {
     const warm = n.kind === 'warm', reps = warm ? [10, 15, 20, 30] : [1, 5, 8, 10, 12, 15];
@@ -127,9 +128,9 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
     body = `<button type="button" class="q-back" data-rest-panel="main"><span aria-hidden="true">‹</span> 다음 세트 준비로</button><h3 class="rt-h">${mode === 'off' ? '다음 운동 고르기' : '다른 운동으로'}</h3><p class="hint">${parts.length ? `오늘 고른 <b>${esc(parts.join('·'))}</b> 운동부터 보여요. ` : ''}고르면 그 운동의 무게·횟수를 정해요.</p>
     ${panel === 'search' ? `<input id="rest-ex-search" type="search" aria-label="다른 운동 찾기" placeholder="운동 검색" value="${esc(q)}" autocomplete="off"><div class="rt-exlist">${found.map((x, i) => `<button type="button" class="rt-exopt" data-rest-ex="${esc(x.id || x.name)}"><span class="rt-num">${i + 1}</span><b>${esc(x.name)}</b><span aria-hidden="true">›</span></button>`).join('') || (q ? '<p class="hint">찾는 운동이 없어요.</p>' : '')}</div>` : `<div class="rt-exlist">${list.slice(0, 10).map((x, i) => `<button type="button" class="rt-exopt" data-rest-ex="${esc(x.key)}"><span class="rt-num">${i + 1}</span><b>${esc(x.name)}</b><span aria-hidden="true">›</span></button>`).join('') || '<p class="hint">최근에 한 운동이 없어요. 아래에서 찾아 주세요.</p>'}<button type="button" class="rt-exopt rt-find" data-rest-panel="search"><span class="rt-num">＋</span><b>다른 운동 찾기</b><span aria-hidden="true">›</span></button></div>`}`;
   } else {
-    body = `${lastCard}<h3 class="rt-h">다음 세트 미리 준비</h3><p class="hint rt-sub">${mode === 'off' ? '바로 이어서 할 세트예요. 바꿀 게 없으면 아래 버튼만 누르세요.' : '휴식 끝을 누르면 이대로 바로 시작해요. 방금 한 세트는 바뀌지 않아요.'}</p>${summary}
-    <div class="rt-opts"><button type="button" class="rt-opt" data-rest-panel="weight"><span class="rt-oico" aria-hidden="true">⚖️</span><span><b>다음 세트 무게·횟수 바꾸기</b><small>${same ? `${nextNo}세트에만 적용돼요` : '다음 운동 첫 세트에 적용돼요'}</small></span><span aria-hidden="true">›</span></button>
-    <button type="button" class="rt-opt" data-rest-panel="ex"><span class="rt-oico" aria-hidden="true">➜</span><span><b>${mode === 'off' ? '다음 운동 고르기' : '다른 운동으로'}</b><small>${mode === 'off' ? '바로 다음에 할 운동을 골라요' : '다음에 할 운동을 미리 골라 둬요'}</small></span><span aria-hidden="true">›</span></button></div>`; /* 2026-11-27 대표님: '이 종목 그만하고 종목 다시 고르기'는 '다른 운동으로'와 중복이라 뺌 */
+    body = `${lastCard}<h3 class="rt-h">다음 세트 미리 준비</h3>${summary}
+    <div class="rt-opts"><button type="button" class="rt-opt" data-rest-panel="weight"><span class="rt-oico" aria-hidden="true">⚖️</span><span><b>다음 세트 무게·횟수 바꾸기</b></span><span aria-hidden="true">›</span></button>
+    <button type="button" class="rt-opt" data-rest-panel="ex"><span class="rt-oico" aria-hidden="true">➜</span><span><b>${mode === 'off' ? '다음 운동 고르기' : '다른 운동으로'}</b></span><span aria-hidden="true">›</span></button></div>`; /* 2026-11-27 대표님: '이 종목 그만하고 종목 다시 고르기'는 '다른 운동으로'와 중복이라 뺌 */
   }
   return `<div class="rest-screen mode-${mode}">${head}${top}<section class="rt-bottom">${body}</section>${panel === 'main' ? fire : ''}</div>`;
 }
@@ -144,7 +145,7 @@ export function restTick(onAlarm){
   const prog = document.getElementById('rt-prog'); if (prog) prog.style.strokeDashoffset = (C * (1 - frac)).toFixed(1);
   const g = document.getElementById('rt-goal'), over = target > 0 && sec >= target;
   el.classList.toggle('over', over);
-  if (g && target) g.textContent = over ? `목표보다 +${clock(s - target)}` : `목표 ${clock(target)} · ${clock(target - s)} 남음`;
+  if (g && target) g.textContent = over ? `목표보다 +${clock(s - target)}` : `${clock(target - s)} 남음`;/* 2026-11-27: 목표는 아래 칩에 이미 켜져 있음 */
   if (over && !el.dataset.alerted) { el.dataset.alerted = '1'; onAlarm?.(); }
 }
 // 2026-11-27 대표님: 휴식이 끝나면 트레이너가 박수 쳐 주듯 '짝짝짝' 세 번(남은 초 알림 없음). 소리는 타이머 오른쪽 위 버튼으로 켜고 끔(이 기기에 기억), 진동은 그대로.

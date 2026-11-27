@@ -60,7 +60,7 @@ export const QUESTIONS = [
  {key:'level', q:'운동은 얼마나 해 봤어요?', s:'운동 설명을 얼마나 보여 줄지 정해요.', o:[
   ['new','1','이제 시작해요','운동마다 쓰는 근육을 함께 보여 줘요'], ['mid','2','1년 안 됐어요','필요할 때 설명을 펼쳐 봐요'], ['pro','3','꾸준히 해 왔어요','설명은 접고 기록에 집중해요']]},
  {key:'workoutMode', q:'운동할 때 기록은 어떻게 할래요?', s:'언제든 바꿀 수 있어요.', o:[
-  ['set','A','세트마다 바로 기록','한 세트 끝날 때마다 무게·횟수를 남겨요'], ['after','B','다 끝나고 한 번에','“45kg × 10회 × 3세트”처럼 몰아서 입력'], ['guide','C','미리 계획하고 안내 따라가기','세트·휴식을 정해 두면 소리로 알려 줘요. 폰은 거의 안 봐도 돼요']]},
+  ['set','A','실시간 입력','한 세트 끝날 때마다 무게·횟수를 남겨요'], ['after','B','운동 후 입력','“45kg × 10회 × 3세트”처럼 몰아서 입력'], ['guide','C','미리 계획하고 안내 따라가기','세트·휴식을 정해 두면 소리로 알려 줘요. 폰은 거의 안 봐도 돼요']]},
  {key:'mealMode', q:'식단은 어떻게 남길래요?', s:'', o:[
   ['exact','정','음식과 양까지 정확히','음식 검색 · g 단위 · 영양 성분'], ['simple','간','끼니만 간단히','“점심 · 약 700kcal”처럼 빠르게'], ['photo','사','사진 먼저, 정리는 나중에','곧 제공돼요 · 그전까지는 정확히로 기록해요'], ['off','×','식단은 안 할래요','식단 탭을 숨겨요']]},
  {key:'mealLabel', q:'끼니는 어떻게 부를까요?', s:'언제든 설정에서 바꿀 수 있어요.', o:[
@@ -74,7 +74,7 @@ export const QUESTIONS = [
 const LABELS = {
  tracks:{workout:'운동', meal:'식단', body:'몸'},
  level:{new:'이제 시작', mid:'1년 미만', pro:'꾸준히'},
- workoutMode:{set:'세트마다 바로 기록', after:'다 끝나고 한 번에', guide:'계획하고 안내 따라가기'},
+ workoutMode:{set:'실시간 입력', after:'운동 후 입력', guide:'계획하고 안내 따라가기'},
  mealMode:{exact:'음식과 양까지 정확히', simple:'끼니만 간단히', photo:'사진 먼저(곧 제공)', off:'식단 기록 안 함'},
  place:{gym:'헬스장', home:'집', multi:'여러 곳'},
  mealLabel:{number:'식사1·식사2 순서대로', slot:'아침·점심·저녁으로'}
@@ -136,24 +136,25 @@ export function changeGuideHTML(){
 }
 
 // 설정 화면: 나의 기록 방식
+/* 2026-11-27 대표님(목업 승인): 항목 설명은 ⓘ(올리기·누르기)로 */
 export function prefsSettingsHTML(db){
  const p = prefsOf(db);
  const seg = (key, opts) => `<div class="pref-seg" role="radiogroup">${opts.map(v=>`<button type="button" class="${(key==='tracks'?p.tracks.includes(v):p[key]===v)?'on':''}" data-pref="${key}" data-pref-value="${v}" aria-pressed="${key==='tracks'?p.tracks.includes(v):p[key]===v}">${h(key==='tracks'?LABELS.tracks[v]:shortLabel(key,v))}</button>`).join('')}</div>`;
- return `<section class="section card pref-card" id="my-record-style"><h3>나의 기록 방식</h3><p class="hint">바꾼 즉시 적용돼요. 지난 기록은 그대로예요.</p>
- <div class="pref-item"><div><b>기록할 것</b><small>고른 것만 하단 탭에 보이고, 헤일로도 이것만 채우면 완성돼요</small></div>${seg('tracks',['workout','meal','body'])}</div>
- <div class="pref-item pref-sports"><div><b>평소 하는 운동</b><small>지금은 웨이트·맨몸 운동을 세트로 기록해요. 고른 운동은 지도 근처 검색에 쓰고, 다음에 무엇부터 만들지 정하는 데 참고해요</small></div><div class="pref-chips">${SPORTS.map(([v,t])=>`<button type="button" class="${p.sports.includes(v)?'on':''}" data-pref="sports" data-pref-value="${v}" aria-pressed="${p.sports.includes(v)}">${h(t)}</button>`).join('')}</div></div>
- <div class="pref-item"><div><b>운동 기록 방식</b><small>세트마다 바로 / 다 끝나고 한 번에 / 미리 계획하고 소리 안내</small></div>${seg('workoutMode',['set','after','guide'])}</div>
- <div class="pref-item"><div><b>식단 입력 방식</b><small>${p.mealMode==='photo'?'‘사진 먼저’는 곧 제공돼요. 그전까지는 정확히로 기록해요':'정확히 = 음식 검색 · 간단히 = 끼니와 대략 열량'}</small></div>${seg('mealMode',['exact','simple','photo','off'])}</div>
- <div class="pref-item"><div><b>끼니 부르는 법</b><small>순서대로 = 식사1·식사2 · 이름으로 = 먹은 시각에 따라 아침·점심·간식·저녁·야식</small></div>${seg('mealLabel',['number','slot'])}</div>
- <div class="pref-item"><div><b>GLP-1 계열 약 사용</b><small>쓰는 중이면 단백질을 체중 기준으로 먼저 채우도록 보여 줘요(식단 목표 문답의 제안도 바뀌어요)</small></div><div class="pref-seg"><button type="button" class="${p.glp1?'on':''}" data-pref="glp1" data-pref-value="on" aria-pressed="${p.glp1}">쓰고 있어요</button><button type="button" class="${!p.glp1?'on':''}" data-pref="glp1" data-pref-value="off" aria-pressed="${!p.glp1}">안 써요</button></div></div>
- <div class="pref-item"><div><b>운동 설명</b><small>운동을 고를 때 쓰는 근육 그림을 바로 보여 줄지</small></div>${seg('level',['new','mid','pro'])}</div>
- <div class="pref-item"><div><b>기본 휴식 시간</b><small>세트를 마치면 이 시간으로 휴식 타이머가 시작돼요</small></div><div class="pref-seg">${[60,90,120,180].map(s=>`<button type="button" class="${p.restSec===s?'on':''}" data-pref="restSec" data-pref-value="${s}" aria-pressed="${p.restSec===s}">${s<120?s+'초':(s/60)+'분'}</button>`).join('')}</div></div>
- <div class="pref-item"><div><b>안내 방식</b><small>계획→안내 모드의 휴식·세트 알림. 진동은 Android만 돼요</small></div>${seg('cue',['voice','sound','vibrate','silent'])}</div>
- <div class="pref-item"><div><b>화면 켜 두기</b><small>계획→안내 중 화면이 꺼지지 않게 해요(배터리 사용 증가)</small></div><div class="pref-seg"><button type="button" class="${p.keepAwake?'on':''}" data-pref="keepAwake" data-pref-value="on" aria-pressed="${p.keepAwake}">켜 두기</button><button type="button" class="${!p.keepAwake?'on':''}" data-pref="keepAwake" data-pref-value="off" aria-pressed="${!p.keepAwake}">기기 설정대로</button></div></div>
- <div class="pref-item"><div><b>오늘의 헤일로</b><small>홈 맨 위 카드의 기록 고리</small></div><div class="pref-seg"><button type="button" class="${p.halo?'on':''}" data-pref="halo" data-pref-value="on" aria-pressed="${p.halo}">보이기</button><button type="button" class="${!p.halo?'on':''}" data-pref="halo" data-pref-value="off" aria-pressed="${!p.halo}">숨기기</button></div></div>
+ return `<section class="section card pref-card" id="my-record-style"><h3>나의 기록 방식</h3>
+ <div class="pref-item"><div><b>기록할 것<i class="i-tip" tabindex="0" title="고른 것만 하단 탭에 보이고, 헤일로도 이것만 채우면 완성돼요">i</i></b></div>${seg('tracks',['workout','meal','body'])}</div>
+ <div class="pref-item pref-sports"><div><b>평소 하는 운동<i class="i-tip" tabindex="0" title="지금은 웨이트·맨몸 운동을 세트로 기록해요. 고른 운동은 지도 근처 검색에 쓰고, 다음에 무엇부터 만들지 정하는 데 참고해요">i</i></b></div><div class="pref-chips">${SPORTS.map(([v,t])=>`<button type="button" class="${p.sports.includes(v)?'on':''}" data-pref="sports" data-pref-value="${v}" aria-pressed="${p.sports.includes(v)}">${h(t)}</button>`).join('')}</div></div>
+ <div class="pref-item"><div><b>운동 기록 방식<i class="i-tip" tabindex="0" title="세트마다 바로 / 다 끝나고 한 번에 / 미리 계획하고 소리 안내">i</i></b></div>${seg('workoutMode',['set','after','guide'])}</div>
+ <div class="pref-item"><div><b>식단 입력 방식<i class="i-tip" tabindex="0" title="${p.mealMode==='photo'?'‘사진 먼저’는 곧 제공돼요. 그전까지는 정확히로 기록해요':'정확히 = 음식 검색 · 간단히 = 끼니와 대략 열량'}">i</i></b></div>${seg('mealMode',['exact','simple','photo','off'])}</div>
+ <div class="pref-item"><div><b>끼니 부르는 법<i class="i-tip" tabindex="0" title="순서대로 = 식사1·식사2 · 이름으로 = 먹은 시각에 따라 아침·점심·간식·저녁·야식">i</i></b></div>${seg('mealLabel',['number','slot'])}</div>
+ <div class="pref-item"><div><b>GLP-1 계열 약 사용<i class="i-tip" tabindex="0" title="쓰는 중이면 단백질을 체중 기준으로 먼저 채우도록 보여 줘요(식단 목표 문답의 제안도 바뀌어요)">i</i></b></div><div class="pref-seg"><button type="button" class="${p.glp1?'on':''}" data-pref="glp1" data-pref-value="on" aria-pressed="${p.glp1}">쓰고 있어요</button><button type="button" class="${!p.glp1?'on':''}" data-pref="glp1" data-pref-value="off" aria-pressed="${!p.glp1}">안 써요</button></div></div>
+ <div class="pref-item"><div><b>운동 설명<i class="i-tip" tabindex="0" title="운동을 고를 때 쓰는 근육 그림을 바로 보여 줄지">i</i></b></div>${seg('level',['new','mid','pro'])}</div>
+ <div class="pref-item"><div><b>기본 휴식 시간<i class="i-tip" tabindex="0" title="세트를 마치면 이 시간으로 휴식 타이머가 시작돼요">i</i></b></div><div class="pref-seg">${[60,90,120,180].map(s=>`<button type="button" class="${p.restSec===s?'on':''}" data-pref="restSec" data-pref-value="${s}" aria-pressed="${p.restSec===s}">${s<120?s+'초':(s/60)+'분'}</button>`).join('')}</div></div>
+ <div class="pref-item"><div><b>안내 방식<i class="i-tip" tabindex="0" title="계획→안내 모드의 휴식·세트 알림. 진동은 Android만 돼요">i</i></b></div>${seg('cue',['voice','sound','vibrate','silent'])}</div>
+ <div class="pref-item"><div><b>화면 켜 두기<i class="i-tip" tabindex="0" title="계획→안내 중 화면이 꺼지지 않게 해요(배터리 사용 증가)">i</i></b></div><div class="pref-seg"><button type="button" class="${p.keepAwake?'on':''}" data-pref="keepAwake" data-pref-value="on" aria-pressed="${p.keepAwake}">켜 두기</button><button type="button" class="${!p.keepAwake?'on':''}" data-pref="keepAwake" data-pref-value="off" aria-pressed="${!p.keepAwake}">기기 설정대로</button></div></div>
+ <div class="pref-item"><div><b>오늘의 헤일로<i class="i-tip" tabindex="0" title="홈 맨 위 카드의 기록 고리">i</i></b></div><div class="pref-seg"><button type="button" class="${p.halo?'on':''}" data-pref="halo" data-pref-value="on" aria-pressed="${p.halo}">보이기</button><button type="button" class="${!p.halo?'on':''}" data-pref="halo" data-pref-value="off" aria-pressed="${!p.halo}">숨기기</button></div></div>
  <button type="button" class="button secondary" id="onb-restart">시작 문답 다시 하기</button></section>`;
 }
-const shortLabel = (key, v) => ({cue:{voice:'소리+음성',sound:'소리만',vibrate:'진동만',silent:'화면만'},workoutMode:{set:'세트마다',after:'끝나고 한 번에',guide:'계획→안내'}, mealMode:{exact:'정확히',simple:'간단히',photo:'사진 먼저(곧)',off:'안 함'}, mealLabel:{number:'순서대로',slot:'이름으로'}, level:{new:'근육 함께 보기',mid:'필요할 때',pro:'접어 두기'}}[key]||{})[v]||v;
+const shortLabel = (key, v) => ({cue:{voice:'소리+음성',sound:'소리만',vibrate:'진동만',silent:'화면만'},workoutMode:{set:'실시간 입력',after:'운동 후 입력',guide:'계획→안내'}, mealMode:{exact:'정확히',simple:'간단히',photo:'사진 먼저(곧)',off:'안 함'}, mealLabel:{number:'순서대로',slot:'이름으로'}, level:{new:'근육 함께 보기',mid:'필요할 때',pro:'접어 두기'}}[key]||{})[v]||v;
 
 export function applyPrefClick(db, target){
  const key = target.dataset.pref, v = target.dataset.prefValue;

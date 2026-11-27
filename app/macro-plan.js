@@ -18,6 +18,8 @@ export function planFromSettings(s={}){
 }
 
 // 빠른 선택(초보자도 고르기 쉽게)
+// 2026-11-27 대표님(목업 승인): 빠른 선택은 짧은 이름, 자세한 식은 올리기·누르기(title)
+const SHORT = {balance:'균형 40·30·30', balance2:'균형 50·20·30', balance3:'균형 45·25·30', protein:'고단백', muscle:'고단백·고탄수', lowcarb:'저탄수'};
 export const PRESETS = [
  {id:'balance', label:'균형1 40·30·30', rules:{carbs:{mode:'ratio', value:40}, protein:{mode:'ratio', value:30}, fat:{mode:'ratio', value:30}}},
  {id:'balance2', label:'균형2 50·20·30', rules:{carbs:{mode:'ratio', value:50}, protein:{mode:'ratio', value:20}, fat:{mode:'ratio', value:30}}},
@@ -88,7 +90,9 @@ export function planStatusHTML(st){
   if(Math.abs(left) < 0.5) lines.push(`${sumTxt} <span class="mp-ok">✓ 합계가 목표와 딱 맞아요</span>`);
   else lines.push(`${sumTxt}${sumTxt?' → ':''}<span class="mp-bad">${left>0 ? `<b>${Math.round(left)}%</b> 남아요` : `<b>${Math.round(-left)}%</b> 넘어요`}</span> · 아래 버튼으로 한 번에 맞출 수 있어요.`);
  }
- return `<div class="mp-status" aria-live="polite">${lines.map(l => `<p>${l}</p>`).join('')}${fixes.length?`<div class="mp-fixes">${fixes.map(f => `<button type="button" class="chip mp-fix" data-mp-fix="${f.kind}:${f.k||''}:${f.v??''}">${esc(f.label)}</button>`).join('')}</div>`:''}</div>`;
+ /* 2026-11-27: 맞을 땐 설명 없이(합계 줄의 ✓로), 넘치거나 모자랄 때만 이유 */
+ const bad = lines.some(l => l.includes('mp-bad')) ? lines : [];/* 문제가 있을 땐 이유와 함께 전부 */
+ return `<div class="mp-status" aria-live="polite">${bad.map(l => `<p>${l}</p>`).join('')}${fixes.length?`<div class="mp-fixes">${fixes.map(f => `<button type="button" class="chip mp-fix" data-mp-fix="${f.kind}:${f.k||''}:${f.v??''}">${esc(f.label)}</button>`).join('')}</div>`:''}</div>`;
 }
 // 체중×g·고정 g로 바꿨는데 '나머지'가 없으면, 비율로 남은 것 하나를 자동으로 '나머지'로(탄수 → 지방 → 단백질 순)
 export function autoRest(plan, changed){
@@ -135,10 +139,10 @@ export function macroPlanCardHTML(settings={}, weight){
 // 수정 창
 export function macroPlanFormHTML(plan, weight){
  const c = computeMacroPlan(plan, weight), st = planStatus(plan, weight), gp = k => Math.round(st.pctOf(k));
- const row = ([k, label]) => { const r = plan.rules?.[k]||{mode:'rest', value:1}; const unit = r.mode==='ratio' ? '%' : r.mode==='perKg' ? 'g/kg' : r.mode==='grams' ? 'g' : '몫'; return `<div class="mp-row m-${k}"><div class="mp-row-head"><span class="dot"></span><b>${label}</b><span class="mp-result">${n0(c.g[k])}g · ${gp(k)}%</span></div><div class="seg mp-modes" role="group" aria-label="${label} 정하는 방식">${MODES.map(([m, ml]) => `<button type="button" class="${r.mode===m?'active':''}" data-mp-mode="${k}:${m}" aria-pressed="${r.mode===m}">${ml}</button>`).join('')}</div>${r.mode==='rest'&&MACROS.filter(([x]) => (plan.rules?.[x]?.mode||'rest')==='rest').length<2?'':`<label class="mp-val"><input type="number" inputmode="decimal" step="0.1" min="0" data-mp-value="${k}" value="${esc(r.value)}" aria-label="${label} 값"><span>${unit}</span></label>`}${r.mode==='perKg'?`<small class="hint">${weight?`최근 체중 ${r1(weight)}kg × ${r1(r.value)} = ${n0(c.g[k])}g`:'체중 기록이 필요해요'}</small>`:r.mode==='rest'?`<small class="hint">자동: 남은 칼로리를 채워요 → 지금 ${gp(k)}%${MACROS.filter(([x]) => (plan.rules?.[x]?.mode||'rest')==='rest').length>1?' (나머지가 둘이면 이 숫자 비율로 나눠요)':''}</small>`:r.mode==='ratio'?`<small class="hint">목표 칼로리의 ${esc(r.value)}% = ${n0(c.g[k])}g</small>`:''}</div>`; };
- return `<form id="macro-plan-form" class="mp-form"><button type="button" class="ai-magic ai-suggest" id="gw-open"><span class="ai-magic-glow" aria-hidden="true"></span><span class="ai-magic-icon" aria-hidden="true">✦</span><span class="ai-magic-text"><b>AI에게 목표 제안받기</b><small>나이·키·체중·목표로 칼로리와 탄단지를 추천해요</small></span></button><label class="field">목표 칼로리(kcal)<input type="number" inputmode="numeric" min="800" max="6000" step="10" data-mp-kcal value="${esc(plan.calorieGoal)}"></label>
- <div class="mp-presets"><small>빠른 선택</small>${PRESETS.map(p => `<button type="button" class="chip" data-mp-preset="${p.id}">${esc(p.label)}</button>`).join('')}</div>
+ const row = ([k, label]) => { const r = plan.rules?.[k]||{mode:'rest', value:1}; const unit = r.mode==='ratio' ? '%' : r.mode==='perKg' ? 'g/kg' : r.mode==='grams' ? 'g' : '몫'; return `<div class="mp-row m-${k}"><div class="mp-row-head"><span class="dot"></span><b>${label}</b><span class="mp-result">${n0(c.g[k])}g · ${gp(k)}%</span></div><div class="seg mp-modes" role="group" aria-label="${label} 정하는 방식">${MODES.map(([m, ml]) => `<button type="button" class="${r.mode===m?'active':''}" data-mp-mode="${k}:${m}" aria-pressed="${r.mode===m}">${ml}</button>`).join('')}</div>${r.mode==='rest'&&MACROS.filter(([x]) => (plan.rules?.[x]?.mode||'rest')==='rest').length<2?'':`<label class="mp-val"><input type="number" inputmode="decimal" step="0.1" min="0" data-mp-value="${k}" value="${esc(r.value)}" aria-label="${label} 값"><span>${unit}</span></label>`}${r.mode==='perKg'&&!weight?'<small class="hint">체중 기록이 필요해요</small>':''}</div>`; };
+ return `<form id="macro-plan-form" class="mp-form"><button type="button" class="ai-magic ai-suggest" id="gw-open"><span class="ai-magic-glow" aria-hidden="true"></span><span class="ai-magic-icon" aria-hidden="true">✦</span><span class="ai-magic-text"><b>AI에게 목표 제안받기</b></span></button><label class="field">목표 칼로리(kcal)<input type="number" inputmode="numeric" min="800" max="6000" step="10" data-mp-kcal value="${esc(plan.calorieGoal)}"></label>
+ <div class="mp-presets"><small>빠른 선택</small>${PRESETS.map(p => `<button type="button" class="chip" data-mp-preset="${p.id}" title="${esc(p.label)}">${esc(SHORT[p.id]||p.label)}</button>`).join('')}</div>
  ${MACROS.map(row).join('')}
- <div class="mp-sum"><div class="mplan-bar" aria-hidden="true">${MACROS.map(([k]) => `<i class="m-${k}" style="width:${c.pct[k]}%"></i>`).join('')}</div><p>합계 <b>${n0(c.total)} kcal</b> · 목표 ${n0(c.goal)} kcal</p>${planStatusHTML(st)}${c.errors.filter(e => !/^탄단지 합계|^비율 합계|^정해 둔 영양소만으로/.test(e)).map(e => `<p class="mp-err">${esc(e)}</p>`).join('')}</div>
+ <div class="mp-sum"><div class="mplan-bar" aria-hidden="true">${MACROS.map(([k]) => `<i class="m-${k}" style="width:${c.pct[k]}%"></i>`).join('')}</div><p>합계 <b>${n0(c.total)} kcal</b> · 목표 ${n0(c.goal)} kcal${c.errors.length || Math.abs(c.total - c.goal) > 5 ? '' : ' <b class="mp-ok">✓</b>'}</p>${planStatusHTML(st)}${c.errors.filter(e => !/^탄단지 합계|^비율 합계|^정해 둔 영양소만으로/.test(e)).map(e => `<p class="mp-err">${esc(e)}</p>`).join('')}</div>
  <div class="actions"><button class="button" type="submit" ${c.errors.length?'disabled':''}>이 목표로 저장</button></div></form>`;
 }

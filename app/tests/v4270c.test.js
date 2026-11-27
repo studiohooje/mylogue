@@ -102,7 +102,6 @@ test('S-08·DOC-02·B-27·AA-01·N-10: 문구와 경로', () => {
  const p = src('privacy.html');
  assert.doesNotMatch(p, /볼 때마다 기록이 남아요/);
  assert.match(p, /사용 횟수 집계/); assert.match(p, /jsDelivr/); assert.match(p, /콩팥 질환, 혈당약 사용/);
- assert.match(src('landing.js'), /베타 동안 시험 계정에서/);
  assert.doesNotMatch(src('landing.js'), /기록은 지금처럼 무료예요/);
  const app = src('app.js');
  assert.match(app, /function downloadBlob\(name,blob\)/);

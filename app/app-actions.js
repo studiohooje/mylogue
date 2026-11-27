@@ -48,7 +48,8 @@ import {exerciseTargets,warmMain,nextFill,lastGym} from './workout-plan.js';
 import {defaultNext,restMode,scheduleRestNotice,cancelRestNotice,askRestNoticePermission,restNoticeBody} from './rest-screen.js';
 // 4.23.0 휴식 끝 알림 예약을 지금 상태에 맞춘다(지정해 두고 쉬기일 때만)
 function syncRestNotice(s){if(s?.rest&&s.next&&restMode($s.db)==='alarm'){const it=$f.allExercises().find(x=>(x.id||x.name)===s.next.exerciseId);scheduleRestNotice(s.rest.at+(s.rest.target||90)*1000,restNoticeBody(it?.name,s.next))}else cancelRestNotice()}
-import {isLive} from './quick-entry.js';
+import {isLive,planTargets} from './quick-entry.js';
+import {planFor} from './schedule-plan.js';
 // 4.19.0 지난번 웜업·메인으로 이번 세트 무게 채우기(사용자가 고른 방식: 웜업부터·메인만·채우지 않기)
 const fillMode=()=>$s.db.settings?.setFill||'warm';
 function applyFill(s){const wm=warmMain(lastSession($s.db,s)?.sets||[]),done=s.sets.filter(x=>x.exerciseId===s.exerciseId).length,f=nextFill(wm,done,fillMode());if(!f)return false;s.weight=f.weight;s.reps=f.reps;s.unit=f.unit||s.unit;s.fillKind=f.kind;return true}
@@ -141,6 +142,8 @@ export function quickClick(t){
   /* 5.4.5 하던 순서 살짝 바꾸기 */
   if(t.dataset.qPedit!==undefined&&s.planBase){const cur=s.planDraft?.sig===s.planBase.sig?s.planDraft:{sig:s.planBase.sig,items:s.planBase.items.map(x=>({...x})),same:true};s.planDraft={...cur,editing:true};$f.render();return true}
   if(t.dataset.qPdone!==undefined&&s.planDraft){s.planDraft={...s.planDraft,editing:false};$f.render();return true}
+  if(t.dataset.qPlanstart!==undefined){const p=planFor($s.db,s.date);s.targets=planTargets(p);s.planUsed=p?.title||'';s.planAsked=true;$f.render();return true}
+  if(t.dataset.qPlanno!==undefined){s.planAsked=true;$f.render();return true}
   if(t.dataset.qPreset!==undefined){s.planDraft=null;$f.render();return true}
   if(t.dataset.qOrdmv&&s.planDraft){const [i,d]=t.dataset.qOrdmv.split(':').map(Number),a=[...s.planDraft.items],k=i+d;if(k>=0&&k<a.length){[a[i],a[k]]=[a[k],a[i]];s.planDraft={...s.planDraft,items:a,same:false}}$f.render();return true}
   if(t.dataset.qOrddel&&s.planDraft){const a=s.planDraft.items.filter((_,i)=>i!==Number(t.dataset.qOrddel));s.planDraft={...s.planDraft,items:a,same:false};$f.render();return true}

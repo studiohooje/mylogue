@@ -216,6 +216,8 @@ export function endPhase(settings, recap, today) {
   return {...rest, phaseHistory: history};
 }
 
+// 2026-11-27: 날짜는 '11/25', 해가 다르면 '2027년 3/17'
+const phDay = (d, today) => { const y = String(d||'').slice(0,4); return `${y && y!==String(today||'').slice(0,4) ? `${y}년 ` : ''}${Number(String(d).slice(5,7))}/${Number(String(d).slice(8,10))}`; };
 // 4.29.0 페이즈 시작 정리 화면의 '앞으로 이렇게'(보수적인 일반 안내, 점수·단정 없이)
 const DONE_TIPS = {
   lose: ['체중은 하루하루 오르내려요. 주 평균으로 흐름을 볼게요.', '단백질을 끼니마다 챙기면 근육을 지키며 빼기 좋아요.', '2주쯤 지나면 속도를 보고 칼로리를 조금씩 맞춰 드려요.'],
@@ -235,11 +237,11 @@ export function phaseWizardHTML(st, db, today) {
   const err = st.error ? `<p class="hint warn" role="alert">${esc(st.error)}</p>` : '';
   if (st.step === 'view' && s) {
     const adv = phaseAdvice(db, today);
-    return `<div class="phase-view"><p class="onb-q">${esc(s.type.name)} 페이즈 · ${s.over ? '기간 끝' : `${s.week}/${s.weeks}주차`}</p><p class="onb-s">${esc(s.phase.start)} 시작 · ${esc(s.phase.end)} 끝 예정</p>
+    return `<div class="phase-view"><p class="onb-q">${esc(s.type.name)} <span class="ph-wk">${s.over ? '기간 끝' : `${s.week}/${s.weeks}주`}</span></p><p class="onb-s">${phDay(s.phase.start, today)} 시작 · ${phDay(s.phase.end, today)} 끝</p>
     <div class="ph-bars"><div class="ph-bar"><span>기간</span><i style="width:${Math.round(s.timePct * 100)}%"></i><b>${Math.round(s.timePct * 100)}%</b></div>${s.goalPct != null ? `<div class="ph-bar goal"><span>목표</span><i style="width:${Math.round(s.goalPct * 100)}%"></i><b>${Math.round(s.goalPct * 100)}%</b></div>` : ''}</div>
     <p class="ph-line">${esc(progressLine(s))}</p>${(s.fatChange || s.muscleChange) ? `<p class="hint">인바디: ${s.fatChange != null ? `체지방률 ${sign(s.fatChange)}%p` : ''}${s.fatChange != null && s.muscleChange != null ? ' · ' : ''}${s.muscleChange != null ? `골격근량 ${sign(s.muscleChange)}kg` : ''} (시작 대비)</p>` : ''}
-    ${adv.length ? `<ul class="ph-advice">${adv.map(a => `<li class="k-${a.kind}">${esc(a.text)}</li>`).join('')}</ul>` : '<p class="hint">2주쯤 지나면 흐름을 보고 제안해 드려요.</p>'}
-    <div class="onb-btns"><button type="button" class="button secondary" id="ph-new">다른 페이즈로 바꾸기</button><button type="button" class="button" id="ph-end">이 페이즈 마치기</button></div></div>`;
+    ${adv.length ? `<ul class="ph-advice">${adv.map(a => `<li class="k-${a.kind}">${esc(a.text)}</li>`).join('')}</ul>` : ''}
+    <div class="ph-acts"><button type="button" class="button" id="ph-new">다른 페이즈로 바꾸기</button><button type="button" class="text-button ph-endlink" id="ph-end">이 페이즈 마치기</button></div></div>`;/* 2026-11-27 대표님(목업 승인): 끝내기는 작은 글자 버튼(실수 방지) */
   }
   // 4.29.0 대표님: 페이즈를 정하면 '이렇게 정했어요' 정리와 응원 한마디를 보여 주고, 화면 아무 데나 누르면 닫는다(저장은 이미 끝남)
   if (st.step === 'done' && s) {

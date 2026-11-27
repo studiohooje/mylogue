@@ -25,6 +25,7 @@ export function weightWhy(db, today) {
     const ac = avg('carbs'); if (ac && s.carbs > ac * 1.3) reasons.push(`어제 탄수화물이 평소보다 많았어요(${Math.round(s.carbs)}g). 탄수화물은 물과 함께 저장돼요.`);
     if (s.workout) reasons.push('어제 근력 운동을 했어요. 근육이 회복하면서 물을 잠깐 머금어요.');
     if (s.sleep && s.sleep <= 2) reasons.push('어젯밤 잠을 설쳤어요. 잠이 부족하면 몸이 물을 더 붙잡기도 해요.');
+    /* 2026-11-27 대표님: 일정의 식사 약속에 '술 마셔요'면 다음 날 체중 해석에 씀 */if ((db.settings?.schedule?.events || []).some(e => e.kind === 'meal' && e.alcohol && e.date === y)) reasons.unshift('어제 약속에서 술을 마셨어요. 술과 안주는 물을 잠깐 붙잡아 다음 날 체중이 오르기 쉬워요.');
     const ak = avg('kcal'); if (!reasons.length && ak && s.kcal > ak + 500) reasons.push(`어제 평소보다 ${Math.round(s.kcal - ak)}kcal쯤 더 먹었어요. 하루치로는 대부분 음식·물 무게예요.`);
   } else {
     const ak = avg('kcal'); if (ak && s.n >= 2 && s.kcal < ak - 400) reasons.push('어제 평소보다 적게 먹었어요. 음식 무게가 줄어든 몫이 커요.');

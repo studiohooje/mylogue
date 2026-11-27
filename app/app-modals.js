@@ -8,6 +8,7 @@ import {simpleOn,simpleMealPanelHTML,simpleWorkoutPanelHTML} from './simple-inpu
 // 4.17.0 app.js에서 옮김(1개 함수). 화면 상태는 $s, 다른 app 함수는 $f로 부른다.
 import {$s,$f} from './app-state.js';
 import {dateLabel,relLabel,shiftDate} from './date-bar.js';
+import {addSheetHTML,weekSheetHTML,kindOf} from './schedule-plan.js';
 import {healthPreviewHTML} from './health-import.js';
 import {installModalBody} from './install.js';
 import {prefsOf,onboardingHTML,newOnboarding,prefsSettingsHTML,emptyAfterWorkout,afterWorkoutHTML,simpleMealHTML} from './prefs.js';
@@ -70,6 +71,8 @@ export function modalHTML(){if(!$s.modal)return '';const wrap=(title,content,kin
  const more=[['bodyFatPct','체지방률 %'],['skeletalMuscle','골격근량 kg'],['bodyFatMass','체지방량 kg'],['bmi','BMI'],['score','인바디 점수'],['visceralFatLevel','내장지방 레벨'],['bmr','기초대사량 kcal']];/* 2026-11-27 대표님: 허리둘레는 지금은 꺼 둠(예전 기록은 그대로) */
  const body=kind==='inbody'?`${dbar}<section class="wide b-inbody"><div class="b-more-grid">${fld('weight','체중 kg','number',true)}${more.map(([k,l])=>k==='waistCm'?fld(k,'<span class="nowrap">허리둘레 cm<i class="i-tip" tabindex="0" title="마지막 갈비뼈 아래와 골반뼈 위 중간에서, 숨을 편히 내쉰 뒤 재요">i</i></span>','number'):fld(k,l,'number')).join('')}</div></section>`:`${dbar}${pad}<div class="wide b-rows">${fld('weight','체중 kg','number',true)}</div>`;
  return wrap($s.bodyEditId?'수치 기록 수정':kind==='inbody'?'인바디 기록':'체중 기록',`<form id="body-form" class="form-grid">${head}${body}${$s.bodyEditId?`<p class="hint wide">출처: ${$s.esc(({manual:'직접 입력',inbody:'인바디 사진',import:'파일 가져오기',ai:'AI 초안',health:'헬스 연동',demo:'둘러보기 예시'})[b.source||'manual']||b.source)}${b.updatedAt?` · 최근 수정 ${$s.esc(b.updatedAt)}`:''}</p>`:''}<fieldset class="field wide wflags"><legend>특이사항<i class="i-tip" tabindex="0" title="선택 · 체중이 출렁인 이유를 남겨 두면 나만의 유지칼로리가 더 정확해져요">i</i></legend><div class="chip-row">${BODY_FLAGS.map(([k,l])=>`<label class="wflag"><input type="checkbox" name="wf_${k}" ${(b.flags||[]).includes(k)?'checked':''}><span>${l}</span></label>`).join('')}</div></fieldset><div class="wide b-note">${fld('note','메모','text')}</div><button class="button wide">기록 저장</button></form>`,'',{kindSwitch:!$s.bodyEditId})}
+ /* 2026-11-27 일정 1단계: 일정 넣기·고치기, 요일별 운동 계획 */if($s.modal==='sched-add'&&$s.schedAdd)return wrap($s.schedAdd.kind?($s.schedAdd.id?'일정 고치기':kindOf($s.schedAdd.kind).name):'일정 넣기',addSheetHTML($s.db,$s.schedAdd),'sched-sheet');
+ if($s.modal==='sched-week'&&$s.schedWeek)return wrap('요일별 운동 계획',weekSheetHTML($s.schedWeek),'sched-sheet');
  if($s.modal==='machine')return wrap('머신 프로필',machineFormHTML($s.machineEdit||{},$s.workDraft[$s.machineIndex]?.exerciseId||''));
  if($s.modal==='custom-exercise')return wrap('나만의 종목',exerciseFormHTML($s.customEdit||{}));
  if($s.modal==='catalog-request')return wrap('공용 도감 등록 요청',$f.catalogRequestHTML());
