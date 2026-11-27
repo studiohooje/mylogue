@@ -1,3 +1,4 @@
+import {partOf} from './body-part.js';
 import {EXERCISE_CATALOG,findExercise,inferTargets} from './catalog.js';
 import {cleanGymPlaces} from './places.js';
 import {cleanMoves} from './pilates.js';
@@ -80,7 +81,7 @@ export const SIDE_TEXT={single:'한쪽씩',alt:'번갈아'};
 export function setLoadText(ex={},s={},fmt=v=>String(v)){const w=Number(s.weight)||0,u=s.unit==='level'?'단계':unitText(s.unit||'kg')||'kg',two=ex.weightBasis==='per-hand'&&ex.handCount===2;if(two&&ex.machineId&&s.unit!=='level'&&(ex.oneLever||s.side!=='single'))return `${fmt(w)}${u}씩 (총 ${fmt(w*2)}${u})`;return `${fmt(w)}${u}${ex.weightBasis==='per-hand'?'씩':''}`}
 export const setSideTag=s=>SIDE_TEXT[s?.side]?' · '+SIDE_TEXT[s.side]:'';
 export const setReps=(ex={},s={})=>(s.reps||0)*(ex.repBasis==='per-side'||((ex.weightBasis!=='per-hand'||ex.handCount!==2)&&ex.repBasis!=='per-side'&&(s.side==='single'||s.side==='alt'))?2:1);
-export function workoutTotals(w){let volume=0,reps=0,sets=0,best1RM=0,cardioMinutes=0,distanceKm=0;const parts={};for(const ex of w.exercises||[]){if(ex.kind==='cardio'){cardioMinutes+=ex.durationMin||0;distanceKm+=ex.distanceKm||0;continue}for(const s of ex.sets||[]){if(s.completed===false)continue;const v=setVolume(ex,s);volume+=v;reps+=setReps(ex,s);sets++;if(s.type!=='웜업')best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0));parts[ex.part]=(parts[ex.part]||0)+v}}return {volume:round(volume),reps,sets,exercises:w.exercises?.length||0,best1RM,parts,cardioMinutes:round(cardioMinutes),distanceKm:round(distanceKm,2)}}
+export function workoutTotals(w){let volume=0,reps=0,sets=0,best1RM=0,cardioMinutes=0,distanceKm=0;const parts={};for(const ex of w.exercises||[]){if(ex.kind==='cardio'){cardioMinutes+=ex.durationMin||0;distanceKm+=ex.distanceKm||0;continue}for(const s of ex.sets||[]){if(s.completed===false)continue;const v=setVolume(ex,s);volume+=v;reps+=setReps(ex,s);sets++;if(s.type!=='웜업')best1RM=Math.max(best1RM,estimate1RM(setWeightKg(s),s.reps||0));{const p=partOf(ex);parts[p]=(parts[p]||0)+v}}}return {volume:round(volume),reps,sets,exercises:w.exercises?.length||0,best1RM,parts,cardioMinutes:round(cardioMinutes),distanceKm:round(distanceKm,2)}}
 export const emptyDB=()=>({schemaVersion:VERSION,body:[],meals:[],foods:[],workouts:[],routines:[],machines:[],customExercises:[],favorites:[],recipes:[],dayStates:{},checkins:{},settings:{calorieGoal:2200,carbsGoal:250,proteinGoal:150,fatGoal:70,barbellWeightKg:20,workoutTitles:[],gyms:[]}});
 export const LB_TO_KG=0.45359237;
 // 4.7.0 무게 표시: kg·lb, 그리고 'level' = 머신에 kg 없이 숫자(핀 번호·단계)만 적힌 경우. 단계는 kg로 바꿀 수 없어 볼륨·1RM에서 뺀다.

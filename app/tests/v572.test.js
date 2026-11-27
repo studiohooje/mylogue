@@ -79,3 +79,11 @@ test('음식 DB: 제조사명이 이름에 붙은 같은 제품 두 줄은 하�
  const out = dedupeBrandRows(rows).map(r => r[0]);
  assert.deepEqual(out, ['저당 닭가슴살 커리맛', '널담 고단백 저당 쿠키', '고단백 저당 쿠키']);
 });
+
+test('리캡 식단 점: 목표를 조금 넘겨도 잘 맞춰 먹었으면 파랑(75점 이상)', async () => {
+ const {monthRecap} = await import('../monthly-recap.js').catch(() => ({}));
+ const {dietScore} = await import('../diet-trends.js');
+ const s = {calorieGoal: 2300, carbsGoal: 260, proteinGoal: 170, fatGoal: 65};
+ assert.ok(dietScore({calories: 2480, carbs: 270, protein: 175, fat: 70}, s).total >= 75, '칼로리 +8%여도 75점 이상');
+ assert.ok(dietScore({calories: 3400, carbs: 420, protein: 90, fat: 120}, s).total < 75, '크게 넘치면 75점 미만');
+});

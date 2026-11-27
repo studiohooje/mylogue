@@ -2762,3 +2762,6 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .bf-wc small{font-size:12px;color:#8a9bb0;white-space:nowrap;font-variant-numeric:tabular-nums}
 .bf-wz{position:relative;display:block;width:100%;height:56px}.bf-wz:before{content:'';position:absolute;left:0;right:0;top:50%;border-top:1px solid #ffffff24}
 .bf-wz i{position:absolute;left:50%;width:min(36px,70%);transform:translateX(-50%);border-radius:4px}.bf-wz i.up{bottom:50%}.bf-wz i.dn{top:50%}.bf-wz i.good{background:#6fd6a3}.bf-wz i.bad{background:#ff7b93}
+/* 2026-11-27 대표님: 물음표에 올렸을 때만 설명 — 설명 상자 위를 지나가도 계속 떠 있지 않게 */
+.mt-tip{pointer-events:none}
+.mt-help:not(:hover) .mt-tip{transition:none}

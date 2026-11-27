@@ -1,3 +1,4 @@
+import {partOf} from './body-part.js';
 import {passOf, passLeft, passCardHTML, passFormHTML, holdFormHTML, ledgerHTML, reportOf, reportHTML} from './coach-pass.js';
 import {planSheetHTML, prefsOf, planVisible, memberPlanHTML, weekDone} from './coach-plan.js';
 import {dietSummary, dietKcal} from './coach-diet.js';
@@ -108,7 +109,7 @@ export function dashboardFacts(data, {today, links=[]}={}){
   const booked = data.schedules.filter(x => (x.clientIds||[]).includes(c.id) && String(x.startAt||'').slice(0,10)>=f0 && String(x.startAt||'').slice(0,10)<=today && x.status!=='canceled').length;
   const fb = mine.map(x => x.t.feedback).filter(Boolean), eff = fb.map(f => Number(f.effort)).filter(Boolean);
   const pains = fb.flatMap(f => f.pain||[]), painTop = Object.entries(pains.reduce((a, p) => (a[p]=(a[p]||0)+1, a), {})).sort((a, b) => b[1]-a[1]).slice(0,2).map(x => x[0]);
-  const parts = {}; for(const {s} of mine.filter(x => x.s.date>=f0)) for(const e of s.exercises||[]) if(e.kind!=='cardio') parts[e.part||'기타'] = (parts[e.part||'기타']||0) + (e.sets||[]).length;
+  const parts = {}; for(const {s} of mine.filter(x => x.s.date>=f0)) for(const e of s.exercises||[]) if(e.kind!=='cardio') { const p = partOf(e) || '기타'; parts[p] = (parts[p]||0) + (e.sets||[]).length; }
   const link = links.find(l => l.id===c.linkId);
   return {c, week:recent, month4, attend:booked ? Math.round(Math.min(1, month4/booked)*100) : null, effort:eff.length ? Math.round(eff.reduce((a, b) => a+b, 0)/eff.length*10)/10 : null, painTop, parts, shared:link?.status==='active' ? (link.shared||null) : null, scope:link?.scope||null};
  });

@@ -43,7 +43,7 @@ const doneSets = ex => (ex.sets || []).filter(x => x && x.completed !== false).l
 export function workSummary(db, today){
   const ws = (db.workouts || []).filter(real).filter(w => w.date <= today);
   const on = d => ws.filter(w => w.date === d);
-  const partsOf = list => [...new Set(list.flatMap(w => (w.exercises || []).filter(e => e.kind !== 'cardio' ? doneSets(e) > 0 : true).map(e => String(e.part || '').trim()).filter(Boolean)))];
+  const partsOf = list => [...new Set(list.flatMap(w => (w.exercises || []).filter(e => e.kind !== 'cardio' ? doneSets(e) > 0 : true).map(e => String(partOf(e) || '').trim()).filter(Boolean)))];
   const t = on(today);
   const days = Array.from({length: 7}, (_, i) => addDays(today, i - 6)).map(d => { const p = partsOf(on(d)); return {d: DAYS[new Date(`${d}T12:00:00`).getDay()], date: d, parts: p.slice(0, 3).join('·'), rest: !p.length}; });
   const sessions = ws.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6).map(w => ({date: w.date, title: String(w.title || '운동').slice(0, 30), items: (w.exercises || []).slice(0, 12).map(e => ({name: String(e.name || '').slice(0, 40), sets: e.kind === 'cardio' ? null : doneSets(e), min: e.kind === 'cardio' ? num(e.durationMin) : null}))}));
@@ -59,4 +59,5 @@ export function sharesFor(db, today, scope = {}){
   return out;
 }
 // 같은 내용이면 다시 올리지 않으려고 비교용 문자열
-export const shareKey = data => JSON.stringify(data);
+export const shareKey = data => JSON.stringify(data);import {partOf} from './body-part.js';
+

@@ -358,7 +358,7 @@ body:has(.live-sheet) .toast,body:has(.ss-sheet) .toast{top:calc(env(safe-area-i
 .tl3-step:last-child .tl3-axis::after{display:none}
 .tl3-ico{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);position:relative;z-index:1}
 .tl3-ico svg{width:17px;height:17px}
-.tl3-meal{--c:#f5c84b}.tl3-workout{--c:#8ce4e0}.tl3-rest{--c:#b8aaf2}
+.tl3-meal{--c:#8fc9f2}/* 2026-11-27 대표님: 노란색 대신 운동(민트)과 어울리는 하늘색 */.tl3-workout{--c:#8ce4e0}.tl3-rest{--c:#b8aaf2}
 .tl3-body>.timeline-card{border:0!important;background:none!important;box-shadow:none!important;padding:0!important;border-radius:0}
 .tl3-body .timeline-card-top{min-height:32px;align-items:center}
 .tl3-body .timeline-card-top strong,.tl3-body .timeline-card-top>span:first-child{font-size:15px;color:var(--text)}

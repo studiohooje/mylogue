@@ -1,3 +1,4 @@
+import {partOf} from './body-part.js';
 import {cleanMeal,cleanCheckin,uid,validDate,number,round,setWeightKg,estimate1RM,dietState} from './domain.js';
 import {EXERCISE_CATALOG} from './catalog.js';
 
@@ -52,6 +53,6 @@ export function recommendWorkout(db,date){
  if(low)return {...base,status:'light',reason:'오늘 수면·에너지·근육통 입력을 반영해 증량을 보류합니다. 휴식 또는 직접 낮춘 강도를 선택하세요.',suggestions:[]};
  const candidates=[...EXERCISE_CATALOG,...(db.customExercises||[])].filter(e=>e.kind!=='cardio'&&e.primaryMuscleIds?.length).map(e=>({...e,load:e.primaryMuscleIds.reduce((n,id)=>n+(loads.get(id)?.score||0),0)})).sort((a,b)=>a.load-b.load);
  const seen=new Set(),suggestions=[];
- for(const e of candidates){if(seen.has(e.part))continue;seen.add(e.part);const prior=history.filter(x=>(x.e.exerciseId||x.e.name)===(e.id||e.name)).sort((a,b)=>a.age-b.age)[0];suggestions.push({exerciseId:e.id,name:e.name,part:e.part,load:round(e.load),machineId:prior?.e.machineId||null,sets:prior?prior.complete.slice(0,3).map(s=>({...s,id:uid(),completed:false})):[],reason:prior?`${prior.w.date} 기록 ${prior.complete.length}세트를 참고한 동일 중량 초안입니다.`:'이 종목의 최근 기록이 없어 중량을 제안하지 않습니다.'});if(suggestions.length===3)break;}
+ for(const e of candidates){if(seen.has(partOf(e)))continue;seen.add(partOf(e));const prior=history.filter(x=>(x.e.exerciseId||x.e.name)===(e.id||e.name)).sort((a,b)=>a.age-b.age)[0];suggestions.push({exerciseId:e.id,name:e.name,part:e.part,load:round(e.load),machineId:prior?.e.machineId||null,sets:prior?prior.complete.slice(0,3).map(s=>({...s,id:uid(),completed:false})):[],reason:prior?`${prior.w.date} 기록 ${prior.complete.length}세트를 참고한 동일 중량 초안입니다.`:'이 종목의 최근 기록이 없어 중량을 제안하지 않습니다.'});if(suggestions.length===3)break;}
  return {...base,status:missing.length?'limited':'ready',reason:missing.length?'오늘 상태 또는 RPE가 부족해 증량 없이 참고 후보만 표시합니다.':'최근 부위별 기록과 오늘 상태를 반영한 후보입니다. 중량은 마지막 기록을 유지합니다.',suggestions};
 }

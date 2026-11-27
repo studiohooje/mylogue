@@ -5,6 +5,8 @@ import {TIERS, STARS, haloSky} from './recap-stars.js';
 import {dayRecords} from './halo.js';
 import {prefsOf} from './prefs.js';
 import {workoutTotals} from './domain.js';
+import {dietScore} from './diet-trends.js';
+export const GOOD_SCORE = 75;
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const p2 = n => String(n).padStart(2, '0');
@@ -64,10 +66,12 @@ export function buildRecap(db, today){
   const fat = inb.filter(b => Number(b.bodyFatPct) > 0), mus = inb.filter(b => Number(b.skeletalMuscle) > 0);
   // 식단
   const s = db.settings || {}, kGoal = Number(s.calorieGoal) || 0, pGoal = Number(s.proteinGoal) || 0, byDay = new Map(); let foods = 0; const groups = new Set();
-  for(const m of (db.meals || [])){ if(!inMonth(m) || m.planned) continue; foods++; groups.add(m.mealGroupId || `${m.date}|${m.slot}`); const d = byDay.get(m.date) || {k: 0, p: 0}; d.k += Number(m.calories) || 0; d.p += Number(m.protein) || 0; byDay.set(m.date, d); }
-  const mealDays = byDay.size, kcalOk = kGoal ? [...byDay.values()].filter(d => d.k > 0 && d.k <= kGoal).length : 0, pOk = pGoal ? [...byDay.values()].filter(d => d.p >= pGoal).length : 0;
+  for(const m of (db.meals || [])){ if(!inMonth(m) || m.planned) continue; foods++; groups.add(m.mealGroupId || `${m.date}|${m.slot}`); const d = byDay.get(m.date) || {k: 0, p: 0, c: 0, f: 0}; d.k += Number(m.calories) || 0; d.p += Number(m.protein) || 0; d.c += Number(m.carbs) || 0; d.f += Number(m.fat) || 0; byDay.set(m.date, d); }
+  // 2026-11-27 대표님: 파랑·주황은 칼로리 1kcal 초과가 아니라 식단 점수(칼로리·단백질·탄수·지방 100점)로 넉넉하게 — 75점('좋아요') 이상이면 파랑. 점수를 못 내면(목표 없음) 목표 칼로리 +10%까지 파랑
+  const goodDay = x => { const sc = dietScore({calories: x.k, protein: x.p, carbs: x.c, fat: x.f}, s)?.total; return sc != null ? sc >= GOOD_SCORE : !kGoal || x.k <= kGoal * 1.1; };
+  const mealDays = byDay.size, kcalOk = [...byDay.values()].filter(d => d.k > 0 && goodDay(d)).length, pOk = pGoal ? [...byDay.values()].filter(d => d.p >= pGoal).length : 0;
   const maxP = [...byDay.entries()].sort((a, b) => b[1].p - a[1].p)[0];
-  const dietDots = days.map(d => { const x = byDay.get(d); return !x ? 'none' : kGoal && x.k > kGoal ? 'over' : 'ok'; });
+  const dietDots = days.map(d => { const x = byDay.get(d); return !x ? 'none' : goodDay(x) ? 'ok' : 'over'; });
   // 마일스톤(날짜순, 그달 처음 해낸 것 · 가장 높이 간 것)
   const ms = [];
   const firstOf = (test, label, sub) => { const hadBefore = before.some(w => (w.exercises || []).some(test)); if(hadBefore) return; const w = ws.find(w => (w.exercises || []).some(test)); if(w) ms.push({date: w.date, title: label, sub}); };
@@ -98,7 +102,7 @@ export function recapHTML(r){
   const body = r.weight ? `<div class="mr-card"><h4>몸 <span>${r.fat || r.mus ? '체중 · 인바디' : '체중'}</span></h4><div class="mr-row"><div class="mr-kpi"><b>${sign(r.weight.to - r.weight.from)}<small>kg</small></b><small>${n1(r.weight.from)}<i class="mr-ar">→</i>${n1(r.weight.to)}kg</small></div>${spark(r.weight.series)}</div>${r.fat || r.mus ? `<p>${r.fat ? `체지방률 <b>${sign(r.fat.to - r.fat.from)}%p</b>` : ''}${r.fat && r.mus ? ', ' : ''}${r.mus ? `골격근 <b>${sign(r.mus.to - r.mus.from)}kg</b>` : ''}</p>` : ''}</div>` : '';
   const maxW = Math.max(1, ...r.weeks);
   const work = r.workoutDays ? `<div class="mr-card"><h4>운동 <span>${r.workoutDays}번 · ${r.sets}세트 · ${tons(r.volume)}</span></h4>${r.growth.length ? `<div class="mr-bars">${r.growth.map(g => `<div class="mr-g"><span class="mr-gn">${esc(g.name)}</span><span class="mr-gt"><i style="width:${Math.max(12, Math.round(g.pct / r.growth[0].pct * 100))}%"></i></span><span class="mr-gp">+${g.pct}%</span></div>`).join('')}</div>` : ''}${r.weeks.length > 1 ? `<div class="mr-wv">${r.weeks.map((v, i) => `<div><b>${tons(v)}</b><i style="height:${Math.max(6, Math.round(v / maxW * 86))}%"></i>${i + 1}주</div>`).join('')}</div>` : ''}<p>${[r.bestRun && r.firstRun && r.bestRun.sec < r.firstRun.sec ? `러닝 페이스 <b>${r.firstRun.text}<i class="mr-ar">→</i>${r.bestRun.text}/km</b>` : '', r.pilMin ? `필라테스 <b>${r.pilMin}분</b>` : '', r.restDays ? `쉬어 준 날 <b>${r.restDays}일</b>` : ''].filter(Boolean).join(', ') || '꾸준히 움직였어요.'}</p></div>` : '';
-  const diet = r.mealDays ? `<div class="mr-card"><h4>식단 <span>${r.foods}개 음식 · ${r.meals}끼</span></h4><div class="mr-dots">${r.dietDots.map(x => `<i class="${x}"></i>`).join('')}</div><p>${r.kGoal ? `${r.mealDays}일 중 <b>${r.kcalOk}일</b> 목표 칼로리 안.` : `${r.mealDays}일 식사를 남겼어요.`}${r.maxP ? ` 단백질은 ${md(r.maxP.date)}에 <b>${r.maxP.p}g</b>으로 이달 최고.` : ''}</p></div>` : '';
+  const diet = r.mealDays ? `<div class="mr-card"><h4>식단 <span>${r.foods}개 음식 · ${r.meals}끼</span></h4><div class="mr-dots">${r.dietDots.map(x => `<i class="${x}"></i>`).join('')}</div><p>${r.kGoal ? `${r.mealDays}일 중 <b>${r.kcalOk}일</b> 잘 맞춰 먹은 날.` : `${r.mealDays}일 식사를 남겼어요.`}${r.maxP ? ` 단백질은 ${md(r.maxP.date)}에 <b>${r.maxP.p}g</b>으로 이달 최고.` : ''}</p></div>` : '';
   const prs = r.prs.length ? `<section class="mr-ach"><h4>이달의 업적</h4><div class="mr-pr">${r.prs.map(x => `<div><i aria-hidden="true">🥇</i><span><b>${esc(x.name)} ${n1(x.max)}kg</b><small>${md(x.maxDate)}</small></span><strong>+${n1(x.gain)}kg<span>${x.prev ? '이전 최고보다' : '이달 처음보다'}</span></strong></div>`).join('')}${r.bestRun ? `<div><i aria-hidden="true">🏃</i><span><b>${n1(r.bestRun.km)}km · ${r.bestRun.min}분</b><small>${md(r.bestRun.date)} · 가장 빠른 러닝</small></span><strong>${r.bestRun.text}<span>/km</span></strong></div>` : ''}</div></section>` : '';
   const ms = r.milestones.length ? `<section class="mr-ach"><h4>이달의 마일스톤</h4><div class="mr-ms">${r.milestones.map(m => `<div><span class="d">${md(m.date)}</span><b>${esc(m.title)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}</div>`).join('')}</div></section>` : '';
   const end = r.done ? `<p class="mr-end"><b>${r.month}월의 나, 정말 잘했어요.</b></p>` : '';

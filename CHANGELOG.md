@@ -4,6 +4,10 @@
 
 버전 형식은 `메이저.기능.수정`이다. 배포마다 `docs/worklog/<버전>.md`(내부 작업로그)와 `docs/patch-notes/<버전>.md`(사용자용 패치노트)를 남긴다.
 
+## Mylogue Beta 5.7.4 — 2026-11-27 (배포됨, 웹만)
+
+- 예전 '팔' 표시 남은 곳 partOf로(timeline daySummary·domain workoutTotals.parts·reports·coach·mate-share·autoWorkoutTitle·simple-input·model-features·my-book), 운동 흐름 'N주 전', ⋯ 메뉴 빈 곳·Esc로 닫기, 유지칼로리 설명 상자 pointer-events none, 30일 변화 빼기 기호, 리캡 식단 점 = 식단 점수 75 이상(GOOD_SCORE, 점수 못 내면 목표 +10%), 타임라인 식사 아이콘 포크·나이프·하늘색.
+
 ## Mylogue Beta 5.7.3 — 2026-11-27 (배포됨, 웹만 + AI 서버)
 
 - 체중: 홈·수치 페이지 숫자를 가장 최근에 잰 값+날짜로(추세 체중 칸 없앰), 수치 윗줄 네 칸 한 줄 작게, 세로축 숫자 눈금선 가운데, 주간 변화 주별 칸(값·막대·날짜). 최고 기록·성장·칭찬은 양쪽/한쪽씩 따로(body-part oneSide). 머신 도감 지연 받기(machines-catalog loadBrands·사본 mylogue.brandCache.v1, SW 미리 받기에서 뺌). 음식 DB 같은 제품 두 줄 정리(food-dedupe.js, 빌드에서 67줄). 식단 날짜 줄 가운데. AI 서버: 메이트 사진 EXIF·XMP 지우기(strip-meta.js) 배포.

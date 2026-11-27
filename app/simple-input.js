@@ -3,6 +3,7 @@
 // - 식사: '평소대로'를 하나가 아니라 여러 개(이 시간대에 자주 먹은 조합들), 양은 적게·평소·많이. 이름만 적어도 음식 DB로 넓게 추정.
 // - 운동: 지난번처럼(여러 개) / 부위 + 시간 + 강도 / 의도적 휴식. 종목·세트 없이 '기억나는 만큼 적은 운동'(recalled)으로.
 // 지금은 숨김 스위치(localStorage 'mylogue.simpleDraft' = '1')로만 켜지는 초안이다. 이 파일은 app.js를 import하지 않는다.
+import {partOf} from './body-part.js';
 import {cleanMeal, cleanWorkout} from './domain.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
@@ -70,7 +71,7 @@ export const INTENSITY = [['easy', '가볍게'], ['usual', '보통'], ['hard', '
 export function recentSessions(workouts = [], date, limit = 3) {
   const out = [], seen = new Set();
   for (const w of [...workouts].filter(w => !w.planned && !w.rest && w.date <= date).sort((a, b) => String(b.date).localeCompare(String(a.date)))) {
-    const parts = [...new Set((w.targets?.length ? w.targets : (w.exercises || []).map(e => e.part)).filter(Boolean))];
+    const parts = [...new Set((w.targets?.length ? w.targets : (w.exercises || []).map(e => partOf(e))).filter(Boolean))];
     const sig = `${w.title}|${parts.join(',')}`; if (seen.has(sig)) continue; seen.add(sig);
     out.push({title: w.title || parts.join('·') || '운동', parts, minutes: Number(w.duration) || null, date: w.date});
     if (out.length >= limit) break;

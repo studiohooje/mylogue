@@ -1,3 +1,4 @@
+import {partOf} from './body-part.js';
 import {mealTotals,workoutTotals,estimate1RM,round,setWeightKg,dietState,setVolume} from './domain.js';
 
 const dayString=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -12,12 +13,12 @@ export function exerciseTrend(db,name,days=90,now=new Date(),options={},legacyOp
 }
 export function partSummary(db,days=30,now=new Date()){
  const dates=new Set(dayList(days,now)),parts=new Map();
- for(const w of db.workouts||[])if(dates.has(w.date))for(const e of w.exercises||[]){const key=e.part||'기타',x=parts.get(key)||{part:key,sets:0,reps:0,volume:0,lastDate:null,cardioMinutes:0};if(e.kind==='cardio')x.cardioMinutes+=e.durationMin||0;else for(const s of e.sets||[]){if(s.completed===false)continue;x.sets++;x.reps+=s.reps||0;x.volume+=setVolume(e,s)}if(!x.lastDate||w.date>x.lastDate)x.lastDate=w.date;parts.set(key,x)}
+ for(const w of db.workouts||[])if(dates.has(w.date))for(const e of w.exercises||[]){const key=partOf(e)||'기타',x=parts.get(key)||{part:key,sets:0,reps:0,volume:0,lastDate:null,cardioMinutes:0};if(e.kind==='cardio')x.cardioMinutes+=e.durationMin||0;else for(const s of e.sets||[]){if(s.completed===false)continue;x.sets++;x.reps+=s.reps||0;x.volume+=setVolume(e,s)}if(!x.lastDate||w.date>x.lastDate)x.lastDate=w.date;parts.set(key,x)}
  return [...parts.values()].map(x=>({...x,volume:round(x.volume),cardioMinutes:round(x.cardioMinutes)})).sort((a,b)=>b.volume-a.volume||b.sets-a.sets);
 }
 export function fatigueProxy(db,now=new Date()){
  const today=new Date(now);today.setHours(12,0,0,0);const map=new Map();
- for(const w of db.workouts||[]){const age=Math.round((today-new Date(`${w.date}T12:00:00`))/86400000);if(age<0||age>6)continue;for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const key=e.part||'기타',x=map.get(key)||{part:key,score:0,sets:0,lastDate:null};for(const s of e.sets||[]){if(s.completed===false||s.type==='워밍업')continue;const effort=s.rpe==null?1:Math.max(.5,Math.min(1.5,s.rpe/8));x.score+=effort*Math.exp(-age/2.5);x.sets++}if(!x.lastDate||w.date>x.lastDate)x.lastDate=w.date;map.set(key,x)}}
+ for(const w of db.workouts||[]){const age=Math.round((today-new Date(`${w.date}T12:00:00`))/86400000);if(age<0||age>6)continue;for(const e of w.exercises||[]){if(e.kind==='cardio')continue;const key=partOf(e)||'기타',x=map.get(key)||{part:key,score:0,sets:0,lastDate:null};for(const s of e.sets||[]){if(s.completed===false||s.type==='워밍업')continue;const effort=s.rpe==null?1:Math.max(.5,Math.min(1.5,s.rpe/8));x.score+=effort*Math.exp(-age/2.5);x.sets++}if(!x.lastDate||w.date>x.lastDate)x.lastDate=w.date;map.set(key,x)}}
  return [...map.values()].map(x=>({...x,score:round(x.score),label:'최근 세트 부하 지표. 실제 근육 피로도·회복 상태가 아님'})).sort((a,b)=>b.score-a.score);
 }
 export function periodReport(db,days=7,now=new Date()){

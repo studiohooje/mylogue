@@ -1,6 +1,7 @@
 // 5.4.9 대표님: 설정 › 음식·운동 도감 안에 '내 음식·내 종목' 목록과 지우기.
 // 기본 DB(앱 안 음식 DB)·기본 종목에 같은 게 있으면 표시하고 한 번에 지울 수 있다. 지워도 지난 식사·운동 기록의 숫자는 그대로(기록은 그때 값을 따로 저장).
 // 이 파일은 app.js를 import하지 않는다($s·$f로 앱과 이어진다).
+import {partOf} from './body-part.js';
 import {$s, $f} from './app-state.js';
 import {foodDBReady, loadFoodDB, isPublicFoodName, searchFoodDB} from './food-db.js';
 import {resolveExercise} from './catalog.js';
@@ -22,7 +23,7 @@ export function myBookHTML(){
  const tab = $s.myBookTab === 'ex' ? 'ex' : 'food';
  const rows = tab === 'food'
   ? foods.map(f => ({id: f.id, kind: 'food', name: f.name, sub: `${fmtQty(f)} · ${Math.round((Number(f.calories) || 0) * 10) / 10}kcal`, dup: foodInBase(f)}))
-  : exs.map(e => ({id: e.id, kind: 'ex', name: e.name, sub: [e.part, e.equipment].filter(Boolean).join(' · '), dup: exerciseInBase(e)}));
+  : exs.map(e => ({id: e.id, kind: 'ex', name: e.name, sub: [partOf(e), e.equipment].filter(Boolean).join(' · '), dup: exerciseInBase(e)}));
  const dupN = rows.filter(r => r.dup === true).length;
  const tag = r => r.dup === null ? '<span class="mb-tag wait">확인 중</span>' : r.dup ? `<span class="mb-tag dup">${tab === 'food' ? '기본 DB에 있음' : '기본 종목에 있음'}</span>` : '<span class="mb-tag own">나만 쓰는 값</span>';
  const list = rows.map(r => `<div class="mb-row"><span class="mb-name"><b>${esc(r.name)}</b><small>${esc(r.sub)}</small></span>${tag(r)}<button type="button" class="mb-del" data-mybook-del="${r.kind}:${esc(r.id)}" aria-label="${esc(r.name)} 지우기">지우기</button></div>`).join('');

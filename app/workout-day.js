@@ -94,7 +94,7 @@ ${workoutFlowRowsHTML(db, date)}
 export function workoutFlowRowsHTML(db, date){
  const ws = weeks(db, date, 8).filter(w => w.sets > 0).slice(-4).reverse();
  if(!ws.length) return '';
- const mx = Math.max(...ws.map(w => w.sets)), label = w => w.k === weeks(db, date, 1)[0].k ? '이번 주' : `${md(w.k)} 주`;
+ const mx = Math.max(...ws.map(w => w.sets)), thisK = weeks(db, date, 1)[0].k, label = w => { const n = Math.round((new Date(`${thisK}T12:00:00`) - new Date(`${w.k}T12:00:00`)) / 604800000); return n <= 0 ? '이번 주' : `${n}주 전`; }; /* 2026-11-27 대표님: '11/16 주' 대신 지난주·2주 전 */
  const used = new Set(ws.flatMap(w => Object.keys(w.parts)));
  const end = k => { const d = new Date(`${k}T12:00:00`); d.setDate(d.getDate() + 6); return `${d.getMonth() + 1}/${d.getDate()}`; };
  return `<div class="wd-title"><h3>운동 흐름</h3><small>주마다 부위별 세트</small></div>

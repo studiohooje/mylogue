@@ -155,7 +155,7 @@ export function lastSessionHTML(prev){
 }
 // 4.5.0 지난 운동처럼 하기: 최근 운동 2개의 종목을 순서대로 보여 주고, 누르면 그 종목이 바로 선택된다(무게는 '지난번' 값으로 채워짐).
 // 4.17.0 운동 이름 자동: 근력 종목의 부위(최대 2개) → '가슴·어깨', 없으면 첫 종목 이름
-export function autoWorkoutTitle(exercises=[]){const parts=[];for(const e of exercises)if(e.kind!=='cardio'&&e.part&&!parts.includes(e.part))parts.push(e.part);if(parts.length)return parts.slice(0,2).join('·')+(parts.length>2?' 외':'');return exercises[0]?.name||'오늘의 운동'}
+export function autoWorkoutTitle(exercises=[]){const parts=[];for(const e of exercises){const p=partOf(e);if(e.kind!=='cardio'&&p&&!parts.includes(p))parts.push(p)};if(parts.length)return parts.slice(0,2).join('·')+(parts.length>2?' 외':'');return exercises[0]?.name||'오늘의 운동'}
 export function againHTML(db, s){
  const list = (db.workouts||[]).filter(w => !w.planned && !w.rest && w.date<=s.date && (w.exercises||[]).some(e => e.kind!=='cardio')).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.loggedAt||'').localeCompare(String(a.loggedAt||''))).slice(0, 2);
  if(!list.length) return '';
