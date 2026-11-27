@@ -26,7 +26,8 @@ const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'mylogue-smoke-'));
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${debug}`, `--user-data-dir=${prof}`, '--no-first-run', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : []), 'about:blank'], {stdio: 'ignore'});
 let errors = [], code = 0; const flowErrors = [];
 try {
- for (let i = 0; i < 40; i++) { try { await fetch(`http://127.0.0.1:${debug}/json/version`); break; } catch { await wait(250); } }
+ /* 5.7.5 CI(GitHub Actions)에서 크롬이 10초 안에 안 떠 'fetch failed' → 30초까지 기다리고, 끝내 안 뜨면 그 사실을 알림 */let up = false; for (let i = 0; i < 120; i++) { try { await fetch(`http://127.0.0.1:${debug}/json/version`); up = true; break; } catch { await wait(250); } }
+ if (!up) throw Error(`크롬 디버그 포트(${debug})가 30초 안에 열리지 않았어요`);
  const c = await connect(debug);
  const ws = c; // 콘솔·예외 모으기
  await c.send('Runtime.enable'); await c.send('Log.enable'); await c.send('Page.enable');
