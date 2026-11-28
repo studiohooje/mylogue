@@ -3135,3 +3135,34 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .bf-maint{background:none!important;padding:12px 0 0!important;border-radius:0!important;border-top:1px solid #ffffff12}
 .bf-maint .text-button{color:#8ce4e0}
 .coach+.mr-fold,.ttl-sec+.mr-fold{margin-top:14px!important}
+/* ===== 2026-11-28 대표님 5.10.0 '열린 화면'(홈 디자인 1안, 전 화면) — 상자·테두리를 걷어내고 가는 선으로만 나눔(타임라인처럼).
+   홈·수치·식단·운동·분석·일정·메이트에만(main.open-ui). 코치로그·설정·창(모달)은 그대로. ===== */
+main.open-ui .timeline-hero{border:0!important;box-shadow:none!important;border-radius:0!important;margin-left:-16px!important;margin-right:-16px!important;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+main.open-ui .ai-magic,main.open-ui .mate-quick{background:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;padding-left:0!important;padding-right:0!important;display:flex!important;justify-content:center!important;gap:10px!important}
+main.open-ui .ai-magic .ai-magic-text,main.open-ui .mate-quick .ai-magic-text{flex:none!important;width:auto!important;text-align:left}
+main.open-ui .ai-magic-glow,main.open-ui .ai-magic::before,main.open-ui .ai-magic::after,main.open-ui .mate-quick::before,main.open-ui .mate-quick::after{display:none!important}
+main.open-ui .home-duo{border-top:1px solid #ffffff14;border-bottom:1px solid #ffffff14;gap:0!important}
+main.open-ui .home-duo>*+*{border-left:1px solid #ffffff14!important}
+main.open-ui .home-rec{background:none!important;border:0!important;box-shadow:none!important;color:#9fb8cb!important}
+main.open-ui .home-stat-grid{gap:0!important;border-top:1px solid #ffffff14;border-bottom:1px solid #ffffff14}
+main.open-ui .home-stat{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:12px!important;padding-right:12px!important}
+main.open-ui .home-stat+.home-stat{border-left:1px solid #ffffff14!important}
+main.open-ui .home-stat-grid>.home-stat:first-child{padding-left:0!important}
+main.open-ui .home-stat-grid>.home-stat:last-child{padding-right:0!important}
+main.open-ui .db-arrow{background:none!important}
+main.open-ui .card,main.open-ui .wd-card,main.open-ui .coach,main.open-ui .lift-tracks{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important;border-top:1px solid #ffffff14!important;border-bottom:1px solid #ffffff14!important}
+main.open-ui .card .card{border:0!important}
+main.open-ui .nutrition-meal-list,main.open-ui .wd-list{gap:0!important}
+main.open-ui .nutrition-meal,main.open-ui .wd-ex{border-top:0!important;border-left:0!important;border-right:0!important;border-bottom:1px solid #ffffff10!important;margin:0!important}
+main.open-ui .nutrition-meal:first-child,main.open-ui .wd-ex:first-child{border-top:1px solid #ffffff14!important}
+main.open-ui .wd-ex,main.open-ui .wd-line,main.open-ui .meal-line{background:none!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important}
+main.open-ui .wd-line{border:0!important}
+main.open-ui .pg-line{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important;border-bottom:1px solid #ffffff10!important}
+main.open-ui .set-grid.pg-tiles{gap:0!important;border-top:1px solid #ffffff14}
+main.open-ui .set-tile{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;border-bottom:1px solid #ffffff10!important}
+main.open-ui .df-avg{gap:0!important}
+main.open-ui .df-avg>div{background:none!important;border-radius:0!important;border-bottom:1px solid #ffffff10}
+main.open-ui .mr-fold{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;border-top:1px solid #ffffff14!important;border-bottom:1px solid #ffffff14!important}
+main.open-ui .mc-cal .c{background:none!important}
+main.open-ui .mc-cal .c.full{background:#ffffff06!important}
+main.open-ui .mate-room{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;border-top:1px solid #ffffff14!important;border-bottom:1px solid #ffffff14!important}
