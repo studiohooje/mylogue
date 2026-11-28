@@ -115,6 +115,6 @@ export function recapFoldHTML(r, open){
   const c = r.star ? STARS[r.star] : null;
   const moon = `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><radialGradient id="mr-mg" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#e9d79a"/></radialGradient><filter id="mr-gl"><feGaussianBlur stdDeviation="3"/></filter></defs><circle cx="32" cy="32" r="22" fill="#f3e3a3" opacity="${(.12 + .25 * r.todayDay / r.endDay).toFixed(2)}" filter="url(#mr-gl)"/><circle cx="32" cy="32" r="22" fill="#2a3158"/><path d="${moonPath(r.todayDay / r.endDay)}" fill="url(#mr-mg)"/></svg>`;
   const line1 = c ? `${esc(c.ko)}${r.done ? ' 완성' : '를 그리는 중'}` : '';
-  const line2 = `${r.done ? `${r.endDay}일 다 채움` : `${r.todayDay}일째`} · 헤일로 ${r.halos}개`;
+  const line2 = `헤일로 ${r.halos}개`;
   return `<button type="button" class="mr-fold" data-recap-open aria-expanded="${!!open}"><span class="mr-moon">${moon}</span><span class="mr-ft"><b>${r.month}월 리캡</b>${line1 ? `<small>${line1}</small>` : ''}<small class="mr-f2">${line2}</small></span><em>${open ? '접기 ⌃' : '열어 보기 ›'}</em></button>`;
 }
