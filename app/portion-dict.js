@@ -5,6 +5,7 @@
 
 // 음식 종류 → 단위별 g(ml). 위에서부터 처음 맞는 종류를 쓴다.
 export const PORTION_RULES = [
+  /* 2026-11-28 대표님: 닭가슴살·닭다리살·닭안심은 비닐 포장 100g이 한 '팩' — '장'보다 분명 */{kind: '닭팩', re: /^(?!.*(소시지|핫도그|샐러드|볶음|밥|만두|너겟|까스|커틀릿|도시락|죽|샌드위치|버거|피자|랩|김밥|볼|칩|육포|소스|탕|찜|조림|무침|덮밥|카레|파스타|면)).*(닭가슴살|닭다리살|닭\s*안심)/, units: {팩: 100, 덩이: 100, 조각: 30, 인분: 150, 손바닥: 100}, first: '팩'},
   {kind: '밥', re: /(^|\s)(쌀밥|흰밥|잡곡밥|현미밥|보리밥|흑미밥|오곡밥|콩밥|밥)$|공깃밥|햇반/, units: {공기: 210, 그릇: 210, 고봉: 300, 주걱: 100, 숟가락: 15, 인분: 210}},
   {kind: '죽', re: /죽$/, units: {그릇: 300, 인분: 300, 공기: 250}},
   {kind: '국', re: /국$|탕$|곰탕|설렁탕|미역국|무국/, units: {그릇: 250, 인분: 250, 국자: 80, 공기: 200}},
@@ -64,9 +65,9 @@ export function readQty(text) {
 }
 // 5.1.0 g·ml 음식을 '개수'로도 넣기: 이름에 맞는 개수 단위와 1개 무게(g). 비율 단위(1=제품 1개)는 g 음식에 못 쓰므로 뺀다.
 const COUNT_ORDER = ['개', '장', '알', '조각', '토막', '줄', '모', '꼬치', '자루', '쪽'];
-/* 통째로 먹는 재료(달걀·과일·고구마·옥수수)는 요리·가공품이면 개수로 보지 않는다(달걀찜 '1개 50g'처럼 틀리지 않게) */const WHOLE = new Set(['달걀', '과일', '작은귤', '고구마감자', '옥수수', '작은과일', '핫도그소시지', '어묵']);
+/* 통째로 먹는 재료(달걀·과일·고구마·옥수수)는 요리·가공품이면 개수로 보지 않는다(달걀찜 '1개 50g'처럼 틀리지 않게) */const WHOLE = new Set(['달걀', '과일', '작은귤', '고구마감자', '옥수수', '작은과일', '핫도그소시지', '어묵', '고기' /* 2026-11-28 닭가슴살 볶음밥 1장 같은 일 막기 */]);
 const DISH = /찜|말이|탕|국|볶음|조림|무침|전$|죽|밥|국수|덮밥|샐러드|샌드위치|파이|빵|케이크|주스|즙|잼|청$|칩|분말|가루|말린|건조|통조림|소스|드레싱|우유|라떼|음료|스무디|튀김|프라이|후라이|스크램블|오믈렛|토스트|쿠키|맛탕|스틱/;
-export function countUnitFor(name){const r = ruleFor(name);if(!r)return null;if(WHOLE.has(r.kind) && DISH.test(String(name).replace(/\(.*?\)/g, ' ')))return null;for(const u of COUNT_ORDER){const g = r.units?.[u];if(g > 1)return {unit: u, grams: g, count: !!r.count, kind: r.kind}}return null}
+export function countUnitFor(name){const r = ruleFor(name);if(!r)return null;if(WHOLE.has(r.kind) && DISH.test(String(name).replace(/\(.*?\)/g, ' ')))return null;for(const u of r.first ? [r.first, ...COUNT_ORDER] : COUNT_ORDER){const g = r.units?.[u];if(g > 1)return {unit: u, grams: g, count: !!r.count, kind: r.kind}}return null}
 export function ruleFor(name) { const n = String(name ?? '').trim(); return PORTION_RULES.find(r => r.re.test(n)) || null; }
 // 음식 이름 + 단위 → {grams, perWhole}: g이 아닌 비율 단위(피자 조각=0.125판, 라면 1봉)는 perWhole로 돌려준다
 export function portionOf(name, unit) {

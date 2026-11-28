@@ -5,7 +5,8 @@ import {nearWeights} from '../rest-screen.js';
 // 2026-11-27 대표님: 쉬는 시간 무게 칩은 지금 무게 근처만
 test('근처 무게 칩', () => {
   assert.deepEqual(nearWeights(20, 'kg', '머신'), [10, 15, 20, 25, 30, 35]);
-  assert.deepEqual(nearWeights(12, 'kg', '덤벨'), [8, 10, 12, 14, 16, 18]);
+  assert.deepEqual(nearWeights(12, 'kg', '덤벨'), [10, 11, 12, 13, 14, 15]); // 2026-11-28 덤벨 1kg 간격
+  assert.deepEqual(nearWeights(12, 'kg', '케틀벨'), [8, 10, 12, 14, 16, 18]);
   assert.deepEqual(nearWeights(5, 'kg', '머신'), [5, 10, 15, 20, 25, 30]); // 0 이하는 빼고 위로 채움
   assert.deepEqual(nearWeights(4, 'level'), [2, 3, 4, 5, 6, 7]);
   assert.deepEqual(nearWeights(45, 'lb', '바벨'), [25, 35, 45, 55, 65, 75]);

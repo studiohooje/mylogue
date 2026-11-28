@@ -82,3 +82,17 @@ test('2026-11-28 쉬는 화면: 다음 세트 머신(소분류)이 보이고 바
  const p = restScreenHTML(db, {...base, restPanel: 'mach', restMachBack: 'weight'}, opts);
  assert.match(p, /data-rest-mach="bm:b"/); assert.match(p, /class="rt-exopt on" data-rest-mach="bm:a"/); assert.match(p, /data-rest-mach=""/); assert.match(p, /data-rest-panel="weight"/);
 });
+
+test('2026-11-28 닭가슴살·닭다리살·닭안심 포장육은 개수 단위가 팩(100g), 요리·소시지는 아님', async () => {
+ const {countUnitFor} = await import('../portion-dict.js');
+ for (const n of ['킹닭 허브맛 닭다리살', '닭가슴살', '닭안심', '닭가슴살 스테이크']) assert.deepEqual([countUnitFor(n)?.unit, countUnitFor(n)?.grams], ['팩', 100], n);
+ assert.equal(countUnitFor('닭가슴살 소시지')?.unit, '개');
+ assert.notEqual(countUnitFor('닭가슴살 볶음밥')?.unit, '팩');
+ assert.equal(countUnitFor('닭가슴살 샐러드'), null);
+});
+
+test('2026-11-28 고기가 들어간 요리는 개수 단위(장)를 붙이지 않는다', async () => {
+ const {countUnitFor} = await import('../portion-dict.js');
+ for (const n of ['닭가슴살 볶음밥', '소고기 볶음', '돼지고기 김치찜']) assert.equal(countUnitFor(n), null, n);
+ assert.equal(countUnitFor('소고기')?.unit, '장');
+});

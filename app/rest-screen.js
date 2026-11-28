@@ -71,7 +71,7 @@ function dialHTML(s, mode){
 
 // 2026-11-27 대표님: 횟수 칩처럼 무게도 지금 무게 근처만(덤벨·케틀벨 2kg, 그 밖은 5kg, lb는 5·10, 단계는 1)
 export function nearWeights(w, unit = "kg", equipment = ""){
-  const db = /덤벨|케틀벨/.test(equipment), step = unit === "level" ? 1 : unit === "lb" ? (db ? 5 : 10) : (db ? 2 : 5), v = Number(w) || 0, out = [];
+  /* 2026-11-28 덤벨은 −/+와 같게 1kg 간격 */const dumb = /덤벨/.test(equipment), db = dumb || /케틀벨/.test(equipment), step = unit === "level" ? 1 : unit === "lb" ? (db ? 5 : 10) : dumb ? 1 : db ? 2 : 5, v = Number(w) || 0, out = [];
   for (let k = -2; out.length < 6 && k < 12; k++){ const x = Math.round((v + k * step) * 100) / 100; if (x > 0) out.push(x); }
   return out;
 }
@@ -102,7 +102,7 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
     ${last && same ? `<p class="hint rt-keep">방금 한 <b>${doneHere}세트(${lt(last)} × ${last.reps}회${setSideTag(last)})는 그대로</b>예요. 여기서 바꾼 값은 ${nextNo}세트에만 들어가요.</p>` : ''}
     <div class="rt-toggles"><button type="button" class="q-warm${warm ? ' on' : ''}" data-rest-warm aria-pressed="${warm}"><s aria-hidden="true"></s>웜업으로 하기</button></div>${sideSegHTML(sideModes(nextEx, same ? machine : null), n.side || "both", "data-rest-nside")}
     <p class="rt-lbl2">무게 <span class="qs-unitseg" role="group" aria-label="무게 단위">${['kg','lb'].map(u=>`<button type="button" class="${(n.unit||'kg')===u?'on':''}" data-rest-unit="${u}" aria-pressed="${(n.unit||'kg')===u}">${u}</button>`).join('')}${n.unit==='level'?'<button type="button" class="on" data-rest-unit="level" aria-pressed="true">단계</button>':''}</span></p><div class="rt-stepper"><button type="button" data-rest-w="-${step}" aria-label="${step} 줄이기">−</button><input id="rest-w" type="number" inputmode="decimal" min="0" step="any" value="${esc(n.weight)}" aria-label="다음 세트 무게"><button type="button" data-rest-w="${step}" aria-label="${step} 늘리기">+</button></div>
-    <div class="chip-row qs-reps" role="group" aria-label="근처 무게">${nearWeights(n.weight, n.unit, nextEx?.equipment).map(x => `<button type="button" class="chip small ${Number(n.weight) === x ? "active" : ""}" data-rest-wpick="${x}">${fmt(x)}${n.unit === "level" ? "단계" : unitText(n.unit) || "kg"}</button>`).join("")}</div>
+    <div class="chip-row qs-reps" role="group" aria-label="근처 무게">${nearWeights(n.weight, n.unit, `${nextEx?.equipment || ""} ${nextEx?.name || ""}`).map(x => `<button type="button" class="chip small ${Number(n.weight) === x ? "active" : ""}" data-rest-wpick="${x}">${fmt(x)}${n.unit === "level" ? "단계" : unitText(n.unit) || "kg"}</button>`).join("")}</div>
     <p class="rt-lbl2">횟수</p><div class="rt-stepper"><button type="button" data-rest-r="-1" aria-label="1회 줄이기">−</button><input id="rest-r" type="number" inputmode="numeric" min="1" step="1" value="${esc(n.reps)}" aria-label="다음 세트 횟수"><button type="button" data-rest-r="1" aria-label="1회 늘리기">+</button></div>
     <div class="chip-row qs-reps">${reps.map(x => `<button type="button" class="chip small ${Number(n.reps) === x ? 'active' : ''}" data-rest-reps="${x}">${x}회</button>`).join('')}</div>
     <button type="button" class="button rt-ok" id="rest-w-ok">${same ? `${nextNo}세트에 적용` : '이대로 정하기'}</button>`;
