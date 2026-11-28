@@ -108,3 +108,13 @@ export function recapHTML(r){
   const end = r.done ? `<p class="mr-end"><b>${r.month}월의 나, 정말 잘했어요.</b></p>` : '';
   return `<section class="section card mr" aria-label="${r.month}월 리캡"><div class="mr-head"><b>${r.month}월 리캡</b><span class="mr-due">${r.done ? '완성' : `${r.month}월 ${r.endDay}일(말일)에 완성돼요 · 지금까지 ${r.todayDay}일`}</span></div>${top}<div class="mr-cols"><div class="mr-col">${body}${diet}</div><div class="mr-col">${work}</div></div>${prs || ms ? `<div class="mr-cols"><div class="mr-col">${prs}</div><div class="mr-col">${ms}</div></div>` : ''}${end}</section>`;
 }
+
+// 2026-11-28 대표님: 분석의 접힌 리캡 버튼 — 별자리 대신 한 달 동안 차오르는 달(말일에 보름달), 제목은 'N월 리캡'이 주인공
+export const moonPath = f => { const x = Math.max(0, Math.min(1, f)), rx = Math.abs(22 * (2 * x - 1)).toFixed(1); return `M32 10A22 22 0 0 1 32 54A${rx} 22 0 0 ${x >= .5 ? 1 : 0} 32 10Z`; };
+export function recapFoldHTML(r, open){
+  const c = r.star ? STARS[r.star] : null;
+  const moon = `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><radialGradient id="mr-mg" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#e9d79a"/></radialGradient><filter id="mr-gl"><feGaussianBlur stdDeviation="3"/></filter></defs><circle cx="32" cy="32" r="22" fill="#f3e3a3" opacity="${(.12 + .25 * r.todayDay / r.endDay).toFixed(2)}" filter="url(#mr-gl)"/><circle cx="32" cy="32" r="22" fill="#2a3158"/><path d="${moonPath(r.todayDay / r.endDay)}" fill="url(#mr-mg)"/></svg>`;
+  const line1 = c ? `${esc(c.ko)}${r.done ? ' 완성' : '를 그리는 중'}` : '';
+  const line2 = `${r.done ? `${r.endDay}일 다 채움` : `${r.todayDay}일째`} · 헤일로 ${r.halos}개`;
+  return `<button type="button" class="mr-fold" data-recap-open aria-expanded="${!!open}"><span class="mr-moon">${moon}</span><span class="mr-ft"><b>${r.month}월 리캡</b>${line1 ? `<small>${line1}</small>` : ''}<small class="mr-f2">${line2}</small></span><em>${open ? '접기 ⌃' : '열어 보기 ›'}</em></button>`;
+}

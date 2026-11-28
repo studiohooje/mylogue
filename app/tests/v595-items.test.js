@@ -54,3 +54,11 @@ test('늘어난 무게: 무게가 오른 종목만, 한쪽씩은 따로, 최근 
   assert.deepEqual(t.map(x => x.name), ['핵 프레스 (한쪽씩)', '레그 익스텐션']);
   assert.match(workoutGrowthHTML(db, {end: '2026-11-28'}), /늘어난 무게[\s\S]*25 → <b>60kg<\/b>/);
 });
+
+test('리캡 버튼: 달은 한 달 동안 차오르고 제목은 N월 리캡', async () => {
+  const {moonPath, recapFoldHTML} = await import('../monthly-recap.js');
+  assert.match(moonPath(.2), / 0 0 0 32 10Z$/);
+  assert.match(moonPath(.9), / 0 0 1 32 10Z$/);
+  const h = recapFoldHTML({month: 11, todayDay: 28, endDay: 30, done: false, halos: 8, star: null}, false);
+  assert.match(h, /<b>11월 리캡<\/b>[\s\S]*28일째 · 헤일로 8개[\s\S]*열어 보기/);
+});
