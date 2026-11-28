@@ -306,7 +306,7 @@ function go(view){
   if(view === 'room-mate'){ s.view = 'room'; $f.render(); fillPhotos(); return; }
   if(view === 'cam'){
     if(!cameraSupported()){ $f.toast('이 기기·브라우저에서는 카메라를 열 수 없어요.'); return; }
-    s.view = 'cam'; $f.render(); startCam(); return;
+    s.view = 'cam'; s.mode = 'food'; /* 2026-11-28 대표님: 방 안 카메라도 늘 음식으로 시작 */ $f.render(); startCam(); return;
   }
   if(view === 'invite'){ s.view = 'invite'; s.invite = null; $f.render(); const r = roomById(s.roomId); createMateInvite(r).then(code => { s.invite = {code}; $f.render(); }).catch(e => { s.err = e.message || '초대 링크를 만들지 못했어요.'; s.view = 'settings'; $f.render(); }); return; }
   if(view === 'rooms'){ if(s.view === 'join') clearPendingInvite(); s.view = 'rooms'; s.join = null; s.confirmLeave = false; $f.render(); loadRooms(true); return; }

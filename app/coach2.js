@@ -102,6 +102,8 @@ export function createV2({data: rawData, put: rawPut, render, toast, setPage, ge
     st.f = null; st.sheet = null; toast(empty ? `끝냈어요 · 수강권이 끝난 회원 ${empty}명 — 새 수강권을 만들어 주세요` : '끝냈어요'); render();
   }
 
+  // 장소 설정에서 센터 장부를 고르면 '남은 회차 보이기'를 바로 회색으로(저장 전에도)
+  if (!globalThis.__c2LedgerWatch && globalThis.document?.addEventListener) { globalThis.__c2LedgerWatch = true; document.addEventListener('change', e => { const r = e.target; if (!r?.name?.startsWith?.('pl-ledger-')) return; const f = r.closest('fieldset'), box = f?.querySelector('[name=pl-showLeft]'); if (!box) return; const center = r.value === 'center'; box.disabled = center; if (center) box.checked = false; box.closest('label')?.classList.toggle('off', center); const why = f.querySelector('.c2-why'); if (why) why.hidden = !center; }); }
   // ---------- 클릭 ----------
   async function click(t) {
     const ds = t.dataset || {}, d = data();
@@ -209,7 +211,7 @@ export function createV2({data: rawData, put: rawPut, render, toast, setPage, ge
     const d = data(), fd = new FormData(form), v = k => fd.get(k), sheetC = st.sheet?.clientId;
     if (form.id === 'c2-settings') {
       const places = [...form.querySelectorAll('.c2-place')].map((el, i) => { const old = D.prefs2(d).places[i] || {}; const q = n => el.querySelector(`[name="${n}"]`);
-        return {...old, name: q('pl-name').value.trim() || old.name, ledger: el.querySelector(`input[name="pl-ledger-${i}"]:checked`)?.value || 'mine', showLeft: q('pl-showLeft').checked, directMsg: q('pl-directMsg').checked,
+        return {...old, name: q('pl-name').value.trim() || old.name, ledger: el.querySelector(`input[name="pl-ledger-${i}"]:checked`)?.value || 'mine', showLeft: q('pl-showLeft').checked && el.querySelector(`input[name="pl-ledger-${i}"]:checked`)?.value !== 'center', directMsg: q('pl-directMsg').checked,
           rule: {...D.DEFAULT_RULE, ...(old.rule || {}), cutoffH: Number(q('pl-cutoff').value) || 0, late: q('pl-late').checked, noshow: q('pl-noshow').checked, ...(q('pl-duet') ? {duetAbsent: q('pl-duet').value} : {})},
           ...(q('pl-brand') ? {apparatus: {brand: q('pl-brand').value}} : {})}; });
       put({prefs: {...(d.prefs || {}), role: v('role') || 'pt', coachName: String(v('coachName') || ''), places, watch: {left: Number(v('w-left')), expireDays: Number(v('w-exp')), idleDays: Number(v('w-idle'))}, askDayBefore: !!v('ask'), quickNotes: String(v('quick') || '').split(',').map(s => s.trim()).filter(Boolean)}});

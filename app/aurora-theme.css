@@ -586,7 +586,7 @@ button.home-stat:focus-visible{outline:2px solid #8ce4e0;outline-offset:2px}
 .stat-empty{display:block;width:70%;height:2px;border-radius:2px;background:repeating-linear-gradient(90deg,#3a4a6a 0 6px,transparent 6px 12px)}
 @media(max-width:650px){.home-stat .stat-vis{height:60px}.home-stat-work .mini-atlas,.home-stat-work .mini-atlas svg{height:60px}.home-stat .stat-head em{font-size:12px}}
 @keyframes recoverPulse{0%,100%{fill:#2f8f9d;opacity:.55}50%{fill:#58d6a8;opacity:1}}
-.mini-atlas.resting svg{opacity:.85}
+.mini-atlas.resting svg,.wv-mini.resting svg{opacity:.85}
 @media (prefers-reduced-motion:reduce){.anatomy-map .muscle.recover{animation:none;fill:#3fb6a8}}
 
 /* 목표 초과 막대: 끝 = 목표 2배, 목표선 가운데, 넘친 부분 붉은 줄무늬, ×배수, 예정분 반투명 */
@@ -3055,6 +3055,7 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .c2-place{display:grid;gap:8px;border:1px solid #ffffff14;border-radius:14px;padding:12px;margin:0 0 10px}
 .c2-place legend input{min-height:40px;font-size:16px;font-weight:700;border-radius:10px;border:1px solid #ffffff1f;background:#ffffff08;color:inherit;padding:0 10px}
 .c2-sw{display:flex;align-items:center;gap:8px;min-height:40px;font-size:14px}
+.c2-sw.off{opacity:.55;flex-wrap:wrap}.c2-sw .c2-why{flex-basis:100%;font-size:12px;color:var(--muted,#888)}
 .c2-rule{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:14px}.c2-rule input[type=number]{width:56px;min-height:38px;font-size:16px;margin:0 4px;border-radius:10px;border:1px solid #ffffff1f;background:#ffffff08;color:inherit;text-align:center}.c2-rule select{min-height:38px;font-size:16px;margin-left:6px}
 @media (max-width:380px){.c2-when{font-size:20px}.c2-lrow{grid-template-columns:40px 1fr 30px 52px;font-size:13px}.c2-gchips{grid-template-columns:repeat(2,1fr)}}
 .coach-nav .nav-inner{display:flex!important;justify-content:space-around}.coach-nav .nv6-b{flex:1 1 0;max-width:none}
@@ -3074,3 +3075,18 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .c2-filter{padding-right:24px;mask-image:linear-gradient(90deg,#000 85%,transparent)}
 .c2-tpl{display:flex;gap:8px;align-items:center}.c2-tpl select{flex:1}
 .mh-ledger{border-top:1px solid #ffffff10;padding-top:6px}.mh-ledger summary{cursor:pointer;font-size:14px;min-height:40px;display:flex;align-items:center;color:#cfdbe7}
+/* 2026-11-28 대표님(친구 아이폰 화면): 폰 운동 카드 — 근육 그림을 '세트' 오른쪽에, 요일 줄 높이 통일, 마지막 줄 아래 여백, 오늘 칸 글자색, 휴식 표시 중복 제거 */
+.home-stat-work .wv-mini{display:none}
+@media(max-width:520px){
+ .home-stat-work strong{position:relative;display:flex!important;align-items:center}
+ .home-stat-work strong .wv-mini{position:absolute;right:-5px;bottom:-.5px;display:flex;gap:1px;height:42px;pointer-events:none}
+ .home-stat-work strong .wv-mini svg{height:42px!important;width:auto!important}
+ .home-stat-work .stat-head em{display:none!important}
+ .home-stat-work .stat-vis.work-vis{height:auto!important}
+ .home-stat-work .week-list{display:grid!important;grid-auto-rows:13px;row-gap:1px!important}
+ .home-stat-work .wl-row{height:13px!important;min-height:13px!important}
+ .home-stat-work .wl-row em{justify-self:start;padding:0 3px!important;height:12px!important;line-height:12px!important}
+ .home-stat-work .wl-row.done em{border-radius:3px!important}
+ .home-stat-work .wl-row.today.done em .wl-txt{color:#0d1326!important}
+}
+@media(max-width:380px){.home-stat-work strong .wv-mini,.home-stat-work strong .wv-mini svg{height:34px!important}}

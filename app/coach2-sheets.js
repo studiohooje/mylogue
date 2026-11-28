@@ -159,7 +159,7 @@ export function memberPreview(data, c, now) {
   const coach = D.prefs2(data).coachName || '코치';
   const n = (data.schedules || []).filter(x => x.status === 'planned' && (x.clientIds || []).includes(c.id) && D.endOf(x) > now).sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)))[0];
   const last = D.sessionsOf(data, c.id)[0], t = last ? (last.targets || []).find(x => x.clientId === c.id) : null;
-  const showLeft = pl?.showLeft && ps && ps.kind !== 'period' && passesForShow(c, today);
+  const showLeft = pl && D.showLeftOf(pl) && ps && ps.kind !== 'period' && passesForShow(c, today);
   const passes = D.passesOf(c).filter(p => p.kind !== 'period' && (!p.expiresAt || p.expiresAt >= today));
   const log = passes.flatMap(p => (p.log || []).map(e => ({...e, pn: passes.length > 1 ? p.name : ''}))).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 8);
   return sheet(`회원 화면 · ${c.name}`, `<div class="c2-mcard"><b>${esc(coach)} 코치</b>${n ? `<p>다음 수업 ${D.md(String(n.startAt).slice(0, 10))} (${D.wd(String(n.startAt).slice(0, 10))}) ${String(n.startAt).slice(11, 16)}</p><div class="c2-qchips"><button type="button" class="chip${n.reply?.state === 'yes' ? ' on' : ''}" data-c2-mreply="${n.id}:yes">갈게요</button><button type="button" class="chip${n.reply?.state === 'change' ? ' on' : ''}" data-c2-mreply="${n.id}:change">시간 변경 요청</button></div>` : '<p>예정된 수업 없음</p>'}${showLeft ? passes.map(p => `<p>${esc(p.name)} 남은 <b>${D.passLeft(p)}</b>회${pl?.ledger === 'center' ? ' · 코치 기록 기준' : ''}</p>`).join('') : ''}</div>

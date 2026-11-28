@@ -27,9 +27,17 @@ export const brandedName = (name, brand) => { const n = String(name || '').repla
 export const rowId = r => `fooddb:${r[8]}:${r[1]}|${r[0]}|${UNIT_FIX[r[2]] || r[2]}`;
 // 2026-11-28 대표님: 서브웨이 샌드위치는 15cm·30cm 기준으로(원본은 15cm 값, 단위 'cm') → 두 줄로 나눠 30cm는 두 배
 const dbl = v => v == null ? v : Math.round(v * 20) / 10;
-const expandRows = list => list.flatMap(r => r[2] !== 'cm' ? [r] : [[`${r[0]} 15cm`, r[1], '개', ...r.slice(3)], [`${r[0]} 30cm`, r[1], '개', dbl(r[3]), dbl(r[4]), dbl(r[5]), dbl(r[6]), dbl(r[7]), ...r.slice(8, 11), Array.isArray(r[11]) ? r[11].map(dbl) : r[11], ...r.slice(12)]]);
+const splitCm = list => list.flatMap(r => r[2] !== 'cm' ? [r] : [[`${r[0]} 15cm`, r[1], '개', ...r.slice(3)], [`${r[0]} 30cm`, r[1], '개', dbl(r[3]), dbl(r[4]), dbl(r[5]), dbl(r[6]), dbl(r[7]), ...r.slice(8, 11), Array.isArray(r[11]) ? r[11].map(dbl) : r[11], ...r.slice(12)]]);
+// 2026-11-28 대표님: 크기만 다른 메뉴(서브웨이 15·30cm, 피자 R·L, 카페 톨·그란데·벤티)는 목록에 한 줄, 양 고를 때 크기를 고른다
+const SIZES = [['15cm','15cm'],['30cm','30cm'],['숏','숏|Short|SHORT'],['톨','톨|Tall|TALL'],['그란데','그란데|Grande|GRANDE'],['벤티','벤티|Venti|VENTI'],['S','스몰(?:\\s*\\(S\\))?|Small|\\(S\\)|S'],['R','레귤러(?:\\s*\\(R\\))?|Regular|\\(R\\)|R'],['M','미디엄(?:\\s*\\(M\\))?|Medium|\\(M\\)|M'],['L','라지(?:\\s*\\(L\\))?|Large|\\(L\\)|L'],['F','패밀리(?:\\s*\\(F\\))?|Family|\\(F\\)|F']];
+const SIZE_RE = SIZES.map(([k, a]) => [k, new RegExp(`(?:^|\\s)(?:${a})(?=\\s|$)|\\((?:${a})\\)`)]);
+const MAIN = ['15cm','톨','R','M','L','그란데','벤티','F','S','숏','30cm']; // 검색 목록에 대표로 보일 크기
+export const sizeOf = name => { const n = String(name || ''), hit = SIZE_RE.filter(([, re]) => re.test(n)); if(hit.length !== 1) return null; const [k, re] = hit[0]; return {label: k, base: n.replace(re, ' ').replace(/\s+/g, ' ').trim()}; };
+const groups = new Map(); // 가게|크기 뺀 이름|단위 → {크기: id}
+const groupKey = (r, base) => `${r[1]}|${base}|${UNIT_FIX[r[2]] || r[2]}`;
+const expandRows = list => { const out = splitCm(list); for(const r of out){ const z = r[1] && sizeOf(r[0]); if(z){ const k = groupKey(r, z.base), g = groups.get(k) || {}; g[z.label] ??= rowId(r); groups.set(k, g); } } return out; };
 // 2026-11-28 대표님: 목록엔 한 줄, 양 고를 때 '15cm 1개 · 30cm 1개'처럼 크기를 고른다 → 크기별 id를 음식에 붙임
-const sizeInfo = r => { const m = String(r[0]).match(/^(.*) (15|30)cm$/); if(!m || r[1] !== '서브웨이') return {}; const id = c => rowId([`${m[1]} ${c}`, ...r.slice(1)]); return {size:`${m[2]}cm`, sizeIds:{'15cm':id('15cm'), '30cm':id('30cm')}}; };
+const sizeInfo = r => { const z = r[1] && sizeOf(r[0]); const g = z && groups.get(groupKey(r, z.base)); if(!g || Object.keys(g).length < 2) return {}; const ids = Object.fromEntries(SIZES.map(([k]) => k).filter(k => g[k]).map(k => [k, g[k]])); return {size: z.label, sizeIds: ids, sizeMain: MAIN.find(k => ids[k])}; };
 export function rowToFood(r){
  const [name, brand, unit0, grams, kcal, carbs, protein, fat, tag, aliases, doubt, mic, est0] = r;
  /* 2026-11-28 업체가 안 준 탄·단·지는 비슷한 음식 비율로 채워 둠(tools/fill-macro-est.mjs) — '탄·지 추정'처럼 어느 값인지 */const est = est0 ? [...est0].map(k => ({c:'탄', p:'단', f:'지'})[k]).join('·') : '';
@@ -104,9 +112,12 @@ export function searchFoodDB(query, {limit=30}={}){
  let out = uniq([...(en ? searchOne(en, limit) : []), ...searchOne(q, limit), ...(syn ? searchOne(syn, limit) : [])]);
  // 4.28.0 밤샘 A-6: 결과가 거의 없고 한글 세 글자 이상이면 한 글자 오타(닭가슴쌀·김치찌게)를 너그럽게 — 한 글자를 빼고 찾은 뒤 비슷한 순으로
  if(out.length < 3 && /^[가-힣\s]{3,12}$/.test(q)) out = [...out, ...uniq(typoSearch(q.replace(/\s/g, ''), limit))];
- if(!/30/.test(q)) out = out.filter(f => f.size !== '30cm'); // 크기는 양 고르기에서
+ // 크기는 양 고르기에서: 검색어에 크기를 쓰지 않았으면 대표 크기 한 줄만
+ const asked = sizeOf(q)?.label || (/30/.test(q) ? '30cm' : '');
+ out = uniq2(out.map(f => !f.sizeIds || f.size === f.sizeMain || f.size === asked ? f : (findFoodDB(f.sizeIds[f.sizeMain]) || f)));
  return out.slice(0, limit);
 }
+const uniq2 = list => { const seen = new Set(); return list.filter(f => !seen.has(f.id) && seen.add(f.id)); };
 function typoSearch(q, limit){
  const cand = new Map();
  for(let k = 0; k < q.length; k++){

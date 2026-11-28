@@ -86,7 +86,15 @@ export function deductionFor(data, c, {status, format = '1:1', placeId = '', oth
 
 // ---------- 수업 끝내기 ----------
 // draft: {scheduleId, date, time, title, placeId, format, clientIds, statuses{id:status}, exercises?, moves?, exceptions?, condition?, note, nextFocus, nextBook?{date,time}}
-export function finishClass(data, draft, today = ymd()) {
+export function actualStart(draft, sch, now = new Date()) {
+  if (!draft.date || !draft.time) return {};
+  const planned = new Date(`${draft.date}T${draft.time}`);
+  if (!(planned > now)) return {};
+  const st = new Date(now.getTime() - (Number(sch?.durationMin) || 50) * 60000), day = ymd(now);
+  const s2 = ymd(st) === day ? st : new Date(`${day}T00:00`);
+  return {date: day, time: hm(s2)};
+}
+export function finishClass(data, draft, today = ymd(), now = new Date()) {
   const sid = draft.sessionId || cid('s');
   if ((data.sessions || []).some(s => s.id === sid && !s.undone)) return {data, sessionId: sid, skipped: true};
   const sch = (data.schedules || []).find(x => x.id === draft.scheduleId);
@@ -105,7 +113,9 @@ export function finishClass(data, draft, today = ymd()) {
     clients = clients.map(x => x.id === id ? next : x);
     targets.push({clientId: id, passId: d.passId, status, deducted: d.delta, note: status === 'attended' ? (draft.note || '') : ''});
   }
-  const session = {id: sid, date: draft.date || today, time: draft.time || '', title: draft.title || '', placeId: draft.placeId || '', format: draft.format || '1:1', scheduleId: draft.scheduleId || '', targets,
+  // 2026-11-28 대표님 검수: 예약 시각보다 먼저 끝내면(수업을 당겨서 함) 예약 시각이 아니라 실제로 한 시각으로 남긴다(끝낸 시각 - 수업 길이)
+  const at = actualStart(draft, sch, now);
+  const session = {id: sid, date: at.date || draft.date || today, time: at.time ?? (draft.time || ''), title: draft.title || '', placeId: draft.placeId || '', format: draft.format || '1:1', scheduleId: draft.scheduleId || '', targets,
     exercises: draft.exercises || [], moves: draft.moves || [], exceptions: Object.fromEntries(Object.entries(draft.exceptions || {}).filter(([, v]) => String(v || '').trim())), condition: draft.condition || {}, memo: draft.memo || '', type: draft.type || sch?.type || 'class', cancelReqAt: draft.cancelReqAt || '', nextFocus: draft.nextFocus || '', finishedAt: new Date().toISOString(), sentAt: new Date().toISOString(), v2: true};
   let schedules = (data.schedules || []).map(x => x.id === draft.scheduleId ? {...x, status: 'done', sessionId: sid, ...(draft.cancelReqAt ? {cancelReqAt: draft.cancelReqAt} : {})} : x);
   if (draft.nextBook?.date) { const src = schedules.find(x => x.id === draft.scheduleId) || {}; schedules = [...schedules, {id: cid('b'), type: 'class', clientIds: draft.clientIds, startAt: `${draft.nextBook.date}T${draft.nextBook.time || draft.time || '19:00'}`, durationMin: src.durationMin || 50, title: draft.title || src.title || '', placeId: draft.placeId || src.placeId || '', format: draft.format || src.format || '1:1', status: 'planned'}]; }
@@ -263,11 +273,13 @@ export function applyAcks2(data, acks = []) {
   return {changed, clients, sessions};
 }
 // 연동 문서(links.pt)에 올릴 수강권 요약: 회원 화면은 이것만 본다. 금액·규정 원문은 올리지 않는다.
+// 2026-11-28 대표님 검수: 센터 장부면 공식 숫자는 센터 프로그램에 있어 코치 개인 기록을 회원에게 '남은 회차'로 보내지 않는다(숫자가 달라질 위험)
+export const showLeftOf = pl => !pl || (pl.ledger !== 'center' && pl.showLeft !== false);
 export function linkPassSummary(data, c, today = ymd()) {
   const pl = placeOf(data, c.placeId), ps = passesOf(c).filter(p => p.kind !== 'period' || !p.expiresAt || p.expiresAt >= addDays(today, -30));
   const act = activePass(c, '', today);
   const passes = ps.map(p => ({name: p.name, total: Number(p.total) || 0, left: passLeft(p), start: p.start || '', expiresAt: p.expiresAt || '', log: (p.log || []).slice().sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 30).map(e => ({at: e.at || '', delta: Number(e.delta) || 0, reason: String(e.reason || ''), note: String(e.note || '').slice(0, 60), sessionId: e.sessionId || ''}))}));
-  return {v2: true, showLeft: pl ? pl.showLeft !== false : true, ledger: pl?.ledger || 'mine', passes, total: act ? Number(act.total) || 0 : 0, used: act ? (Number(act.total) || 0) - passLeft(act) : 0, name: act?.name || '', expiresAt: act?.expiresAt || ''};
+  return {v2: true, showLeft: showLeftOf(pl), ledger: pl?.ledger || 'mine', passes, total: act ? Number(act.total) || 0 : 0, used: act ? (Number(act.total) || 0) - passLeft(act) : 0, name: act?.name || '', expiresAt: act?.expiresAt || ''};
 }
 // 회원에게 보낼 수업 기록(예전 sessionDraft 모양으로)
 export function sessionForMember(data, s, target) {

@@ -152,8 +152,8 @@ export function scheduleHTML(data, st, now = new Date()) {
 export function settingsHTML(data) {
   const p = D.prefs2(data);
   const place = (pl, i) => `<fieldset class="c2-place" data-i="${i}"><input class="c2-plname" name="pl-name" value="${esc(pl.name)}" aria-label="장소 이름" maxlength="30">
-   <div class="c2-seg2"><label><input type="radio" name="pl-ledger-${i}" value="center" ${pl.ledger === 'center' ? 'checked' : ''}><span>센터 장부</span></label><label><input type="radio" name="pl-ledger-${i}" value="mine" ${pl.ledger !== 'center' ? 'checked' : ''}><span>내 장부</span></label>${tip('센터 장부: 공식 장부는 센터 프로그램이에요. 코치로그 장부는 내 기록용이고, 회원 화면에 남은 회차를 기본으로 숨겨요.')}</div>
-   <label class="c2-sw"><input type="checkbox" name="pl-showLeft" ${pl.showLeft ? 'checked' : ''}><span>회원에게 남은 회차 보이기</span></label>
+   <div class="c2-seg2"><label><input type="radio" name="pl-ledger-${i}" value="center" ${pl.ledger === 'center' ? 'checked' : ''}><span>센터 장부</span></label><label><input type="radio" name="pl-ledger-${i}" value="mine" ${pl.ledger !== 'center' ? 'checked' : ''}><span>내 장부</span></label>${tip('센터 장부: 공식 장부는 센터 프로그램이에요. 코치로그 장부는 내 기록용이고, 회원 화면에 남은 회차를 보내지 않아요.')}</div>
+   <label class="c2-sw${pl.ledger === 'center' ? ' off' : ''}"><input type="checkbox" name="pl-showLeft" ${pl.ledger !== 'center' && pl.showLeft ? 'checked' : ''} ${pl.ledger === 'center' ? 'disabled' : ''}><span>회원에게 남은 회차 보이기</span><small class="c2-why" ${pl.ledger === 'center' ? '' : 'hidden'}>센터 장부는 공식 숫자가 센터에 있어 보내지 않아요</small></label>
    <label class="c2-sw"><input type="checkbox" name="pl-directMsg" ${pl.directMsg ? 'checked' : ''}><span>회원에게 직접 메시지</span>${tip('끄면 한 줄·안부·변화 리포트 보내기가 회색이 돼요(스튜디오 정책).')}</label>
    <div class="c2-rule"><label>취소 마감<input type="number" name="pl-cutoff" min="0" max="72" value="${pl.rule?.cutoffH ?? 24}" inputmode="numeric">시간 전</label>
    <label class="c2-sw"><input type="checkbox" name="pl-late" ${pl.rule?.late !== false ? 'checked' : ''}><span>늦은 취소 차감</span></label><label class="c2-sw"><input type="checkbox" name="pl-noshow" ${pl.rule?.noshow !== false ? 'checked' : ''}><span>노쇼 차감</span></label>

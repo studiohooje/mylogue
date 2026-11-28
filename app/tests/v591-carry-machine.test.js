@@ -94,5 +94,5 @@ test('2026-11-28 닭가슴살·닭다리살·닭안심 포장육은 개수 단�
 test('2026-11-28 고기가 들어간 요리는 개수 단위(장)를 붙이지 않는다', async () => {
  const {countUnitFor} = await import('../portion-dict.js');
  for (const n of ['닭가슴살 볶음밥', '소고기 볶음', '돼지고기 김치찜']) assert.equal(countUnitFor(n), null, n);
- assert.equal(countUnitFor('소고기')?.unit, '장');
+ assert.equal(countUnitFor('소고기')?.unit, '덩이'); // 2026-11-28 생고기는 덩이
 });
