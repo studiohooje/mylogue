@@ -3198,3 +3198,6 @@ main.open-ui .coach .actions+p.hint,main.open-ui .coach>p.hint:last-child{margin
 .mr-fold .mr-ft small{font-size:13px;line-height:1.4;color:#c9d2ee;word-break:keep-all}
 .mr-fold .mr-ft small.mr-f2{color:#9aa6c6}
 .mr-fold>em{font-size:13px!important;font-weight:700;color:#d7defa!important;white-space:nowrap;align-self:center}
+/* 2026-11-28 대표님: 수치·식사·운동 기록 줄도 위 AI 입력·바로 찍기처럼 옅은 구분선 */
+main.open-ui .home-quick .actions{gap:0!important;border-bottom:1px solid #ffffff14}
+main.open-ui .home-quick .actions>.home-rec+.home-rec{border-left:1px solid #ffffff14!important;border-radius:0!important}
