@@ -3,7 +3,7 @@ import * as D from './coach2-data.js';
 export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const COLORS = ['#8ce4e0', '#b8aaf2', '#f2a98a', '#8fc9f2', '#f7c270', '#a8e6a1', '#f28a9b'];
 export const av = c => `<span class="cl-av" style="background:${COLORS[[...String(c?.id || '')].reduce((s, ch) => s + ch.charCodeAt(0), 0) % COLORS.length]}" aria-hidden="true">${esc(String(c?.name || '?')[0])}</span>`;
-export const tip = t => `<i class="i-tip c2-tip" tabindex="0" title="${esc(t)}">i</i>`;
+export const tip = t => `<i class="i-tip c2-tip" tabindex="0" title="${esc(t)}">ⓘ</i>`;
 const names = (data, ids = []) => ids.map(id => data.clients.find(c => c.id === id)?.name || '회원');
 export const whoLine = (data, x) => { const n = names(data, x.clientIds); return n.length > 2 ? `${x.title || '그룹'} · ${n.length}명` : n.join(' · ') || x.title || ''; };
 const time = x => String(x.startAt).slice(11, 16);

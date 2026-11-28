@@ -107,7 +107,7 @@ const LEVEL = ['', '가닥이 잡혔어요', '나만의 유지칼로리', '꽤 �
 // 물음표: PC는 마우스를 올리면, 폰은 누르면 설명(tabindex로 포커스되면 보임)
 export function helpHTML(m){
  const p = progressOf(m);
- return `<span class="mt-help" tabindex="0" role="button" aria-label="나만의 유지칼로리는 어떻게 계산하나요">?<span class="mt-tip" role="tooltip"><b>진짜 내 유지칼로리는 기록이 쌓여야 알 수 있어요</b>
+ return `<span class="mt-help" tabindex="0" role="button" aria-label="나만의 유지칼로리는 어떻게 계산하나요">ⓘ<span class="mt-tip" role="tooltip"><b>진짜 내 유지칼로리는 기록이 쌓여야 알 수 있어요</b>
  <span>인바디가 제안하는 값이나 계산식으로 나온 값은 많은 사람의 평균이라, 나와는 수백 kcal씩 다를 수 있어요. 인바디 수치나 직접 정한 값을 써도 되지만,</span>
  <span>마이로그는 내가 먹은 것과 체중 흐름을 맞춰 보고 '내 몸이 실제로 쓰는 양'을 계산해요. 완벽하진 않지만 내 진짜 기록으로 만든 값이라 비교적 정확해요.</span>
  <span><b>헤일로 ${HALO_STEPS[0]}번</b>이면 가닥이 잡히고, <b>${HALO_STEPS[1]}번</b>이면 목표를 세울 만큼, <b>${HALO_STEPS[2]}번</b>이면 꽤 정확해져요. 헤일로는 몸·식사·운동(의도적 휴식 포함)을 다 적은 날이에요.</span>
@@ -123,9 +123,9 @@ export function progressBarHTML(m){
 export function maintenanceCardHTML(m){
  const head = `<div class="section-title"><h3>나만의 유지칼로리 ${helpHTML(m)}</h3></div>`;
  const formula = m.formula ? `<p class="hint">계산식(키·체중·나이·활동량) 기준 ${n0(m.formula)}kcal — 참고값이에요.</p>` : '';
- if(m.status === 'ready') return `<section class="section card mt-card">${head}<p class="mt-value"><b>${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range">${n0(m.lo)}~${n0(m.hi)}kcal · ${LEVEL[m.level]} <span class="mt-dots" aria-label="정확도 ${m.level}/3">${'●'.repeat(m.level)}${'○'.repeat(3 - m.level)}</span></p><p class="hint">최근 8주 평균 ${n0(m.meanIntake)}kcal를 먹었고 체중은 주 ${m.slopeKgWeek > 0 ? '+' : ''}${m.slopeKgWeek}kg 흐름이에요. 완벽하진 않지만 내 진짜 기록으로 만든 값이에요.</p>${m.adjusted && (m.adjusted.step || m.adjusted.soft) ? `<p class="hint">${m.adjusted.step ? `${esc(m.adjusted.step.slice(5).replace('-', '/'))}에 바뀐 체중 높이(약·크레아틴)를 따로 맞췄어요. ` : ''}${m.adjusted.soft ? `체중이 흔들릴 만한 날 ${m.adjusted.soft}번은 덜 반영했어요.` : ''}</p>` : ''}${m.level < 3 ? progressBarHTML(m) : ''}${formula}</section>`;
- if(m.status === 'stale') return `<section class="section card mt-card stale">${head}<p class="mt-value"><b>약 ${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range warn">${m.weeksAgo}주 전 기록으로 계산한 값이에요. 최근 기록이 부족해 지금은 부정확할 수 있어요.</p>${progressBarHTML(m)}${formula}</section>`;
- return `<section class="section card mt-card">${head}<p class="hint">내 기록이 쌓이면 계산식이 아닌 진짜 내 유지칼로리를 알려 드려요.</p>${progressBarHTML(m)}${formula}</section>`;
+ if(m.status === 'ready') return `<section class="section ttl-sec">${head}<div class="card mt-card"><p class="mt-value"><b>${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range">${n0(m.lo)}~${n0(m.hi)}kcal · ${LEVEL[m.level]} <span class="mt-dots" aria-label="정확도 ${m.level}/3">${'●'.repeat(m.level)}${'○'.repeat(3 - m.level)}</span></p><p class="hint">최근 8주 평균 ${n0(m.meanIntake)}kcal를 먹었고 체중은 주 ${m.slopeKgWeek > 0 ? '+' : ''}${m.slopeKgWeek}kg 흐름이에요. 완벽하진 않지만 내 진짜 기록으로 만든 값이에요.</p>${m.adjusted && (m.adjusted.step || m.adjusted.soft) ? `<p class="hint">${m.adjusted.step ? `${esc(m.adjusted.step.slice(5).replace('-', '/'))}에 바뀐 체중 높이(약·크레아틴)를 따로 맞췄어요. ` : ''}${m.adjusted.soft ? `체중이 흔들릴 만한 날 ${m.adjusted.soft}번은 덜 반영했어요.` : ''}</p>` : ''}${m.level < 3 ? progressBarHTML(m) : ''}${formula}</div></section>`;
+ if(m.status === 'stale') return `<section class="section ttl-sec">${head}<div class="card mt-card stale"><p class="mt-value"><b>약 ${n0(m.kcal)}</b><small>kcal</small></p><p class="mt-range warn">${m.weeksAgo}주 전 기록으로 계산한 값이에요. 최근 기록이 부족해 지금은 부정확할 수 있어요.</p>${progressBarHTML(m)}${formula}</div></section>`;
+ return `<section class="section ttl-sec">${head}<div class="card mt-card"><p class="hint">내 기록이 쌓이면 계산식이 아닌 진짜 내 유지칼로리를 알려 드려요.</p>${progressBarHTML(m)}${formula}</div></section>`;
 }
 // 식단 목표(칼로리 고르기)의 '내 유지칼로리를 기반으로 계산하기'
 export function useMineHTML(m, on){

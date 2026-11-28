@@ -107,10 +107,10 @@ function roomsView(){
     : `<button type="button" class="mate-room" data-mate-open="${esc(r.id)}"><span class="mate-room-ic" style="--c:${colorOf(r.id)}">${icon('mate', true)}</span><span class="mate-room-txt"><b>${esc(r.name)}</b>${first(i)}<span class="mate-tags">${scopeTags(r)}</span></span><span class="mate-chev">›</span></button>`).join('');
   const ordBar = list.length > 1 ? `<div class="mate-ordbar"><span class="hint">${ro ? '맨 위 방에 홈의 ‘바로 찍기’ 사진이 올라가요' : ''}</span><button type="button" class="text-button" data-mate-reorder>${ro ? '완료' : '순서 바꾸기'}</button></div>` : '';
   const dir = (s.direct || []).map(d => `<div class="mate-card mate-direct"><b>@${esc(d.fromTag || '메이트')} 님이 '${esc(d.roomName)}'에 초대했어요</b><div class="mate-row"><button type="button" class="button" data-mate-dirok="${esc(d.id)}">보고 들어가기</button><button type="button" class="button secondary" data-mate-dirno="${esc(d.id)}">거절</button></div></div>`).join('');
-  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib${st().plus ? ' on' : ''}" data-mate-plus aria-label="방 만들기·초대 코드" aria-expanded="${!!st().plus}">＋</button>`})}${plusPopHTML()}${/* 5.0.5 대표님: 마이태그는 메이트 전용이 아니라 전체 프로필 — 메이트 첫 화면에서 크게 권하지 않고, 맨 아래 작은 한 줄만 */''}${dir}
+  return `${head('메이트', myTagCached() ? `@${myTagCached()}` : '사진으로 함께 기록해요', {right: `<button type="button" class="mate-ib mate-add${st().plus ? ' on' : ''}" data-mate-plus aria-label="방 만들기·초대 코드" aria-expanded="${!!st().plus}">＋ 방</button>`})}${plusPopHTML()}${/* 5.0.5 대표님: 마이태그는 메이트 전용이 아니라 전체 프로필 — 메이트 첫 화면에서 크게 권하지 않고, 맨 아래 작은 한 줄만 */''}${dir}
   ${s.loading === 'rooms' && !s.rooms ? '<p class="hint">방을 불러오는 중…</p>' : ''}
   ${ordBar}${rows || (s.rooms ? `<div class="mate-empty"><b>아직 방이 없어요</b><p class="hint">내 방(나만 보는 사진 기록)이나 친구 방을 만들고, 초대 링크로 메이트를 불러 보세요.</p><button type="button" class="button" data-mate-go="create">방 만들기</button></div>` : '')}
-  <p class="mate-foot">대화·사진은 ${MATE_KEEP_DAYS}일 보관 · 기록에 남긴 숫자는 계속 남아요${myTagCached() ? '' : ' · 마이태그는 <button type="button" class="text-button" data-mate-tagedit>프로필</button>에서 정해요'}</p>`;
+  ${/* 2026-11-28 대표님: 설명 문구 빼기 — 마이태그를 아직 안 정했을 때만 한 줄 */myTagCached() ? '' : '<p class="mate-foot">마이태그는 <button type="button" class="text-button" data-mate-tagedit>프로필</button>에서 정해요</p>'}`;
 }
 function postHTML(p, r, cont = false){
   /* 5.3.0 전수검사 17: 메신저처럼 — 내 글은 오른쪽 민트 말풍선, 남의 글은 왼쪽(이어 쓴 글은 얼굴·이름 생략), 시각은 말풍선 옆, 사진도 말풍선 안 */

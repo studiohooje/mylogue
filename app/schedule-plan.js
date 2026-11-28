@@ -3,6 +3,7 @@
 // - 그날 보기 → 다가오는 일(7일) → 요일별 운동 계획(매주 반복).
 // - 일정 종류: 운동 계획·식사 약속(술)·약·주사·센터 휴관·인바디·눈바디·D-day·생리 주기(여성 설정만)·기타. 색·이름은 바꿀 수 있고 처음엔 추천 색.
 // - 이모지 반응·여러 달력 겹치기는 넣지 않음(대표님 결정). 데이터는 settings.schedule(계정 설정과 함께 동기화).
+import {dayTone} from './kr-holidays.js';
 import {mealTotals} from './domain.js';
 import {daySummary, mealGroups} from './timeline-view.js';
 import {setsByPart} from './workout-name.js';
@@ -126,12 +127,12 @@ function cellLines(db, date, today) {
 }
 export function monthCalendarHTML(db, selected, today, month) {
   const base = new Date(`${(month || selected).slice(0, 7)}-01T12:00:00`), y = base.getFullYear(), m = base.getMonth(), first = new Date(y, m, 1).getDay(), count = new Date(y, m + 1, 0).getDate();
-  let cells = [...WD].map(x => `<i>${x}</i>`).join('') + '<span></span>'.repeat(first);
+  let cells = [...WD].map((x, i) => `<i${i === 0 ? ' class="sun"' : i === 6 ? ' class="sat"' : ''}>${x}</i>`).join('') + '<span></span>'.repeat(first);
   for (let n = 1; n <= count; n++) {
     const date = `${y}-${pad(m + 1)}-${pad(n)}`, d = dots(db, date), ls = cellLines(db, date, today);
-    cells += `<button type="button" class="c${d.full ? ' full' : ''}${date === today ? ' today' : ''}${date === selected ? ' sel' : ''}${date > today ? ' fut' : ''}" data-calendar="${date}" aria-label="${date}"><b>${n}</b>${ls.slice(0, 2).map(([k, t, c, allDay]) => `<span class="e ${k}${k === 'e' && allDay ? ' bar' : ''}"${k === 'e' ? ` style="--c:${c}"` : ''}>${calLabel(t)}</span>`).join('')}${ls.length > 2 ? `<span class="more">+${ls.length - 2}</span>` : ''}<span class="dots" aria-hidden="true"><s class="${d.b ? 'b' : ''}"></s><s class="${d.m ? 'm' : ''}"></s><s class="${d.w ? 'w' : ''}"></s></span></button>`;
+    cells += `<button type="button" class="c${(t => t ? ' ' + t : '')(dayTone(date))}${d.full ? ' full' : ''}${date === today ? ' today' : ''}${date === selected ? ' sel' : ''}${date > today ? ' fut' : ''}" data-calendar="${date}" aria-label="${date}"><b>${n}</b>${ls.slice(0, 2).map(([k, t, c, allDay]) => `<span class="e ${k}${k === 'e' && allDay ? ' bar' : ''}"${k === 'e' ? ` style="--c:${c}"` : ''}>${calLabel(t)}</span>`).join('')}${ls.length > 2 ? `<span class="more">+${ls.length - 2}</span>` : ''}<span class="dots" aria-hidden="true"><s class="${d.b ? 'b' : ''}"></s><s class="${d.m ? 'm' : ''}"></s><s class="${d.w ? 'w' : ''}"></s></span></button>`;
   }
-  return `<section class="section card mc"><div class="mc-head"><span class="mc-arw"><button type="button" data-month="-1" aria-label="이전 달">‹</button><b>${y}년 ${m + 1}월</b><button type="button" data-month="1" aria-label="다음 달">›</button></span>${month && month.slice(0, 7) !== today.slice(0, 7) ? '<button type="button" class="text-button" data-sched-today>오늘</button>' : ''}</div><div class="mc-cal">${cells}</div></section>`;
+  return `<section class="section mc-sec"><div class="section-title mc-head"><span class="mc-arw"><button type="button" data-month="-1" aria-label="이전 달">‹</button><b>${y}년 ${m + 1}월</b><button type="button" data-month="1" aria-label="다음 달">›</button></span>${month && month.slice(0, 7) !== today.slice(0, 7) ? '<button type="button" class="text-button mc-today" data-sched-today>오늘</button>' : ''}</div><div class="card mc"><div class="mc-cal">${cells}</div></div></section>`;
 }
 
 const ICON = {b: ['⚖', '#f2a98a'], w: ['🏋', '#8ce4e0'], m: ['🍴', '#8fc9f2']};
@@ -147,7 +148,7 @@ export function dayViewHTML(db, date, today) {
   if (plan && !real.length && date >= today) out.push(row(['🏋', '#f7c270'], plan.rest ? '휴식' : `${esc(plan.title)}${plan.closed ? ' · 센터 휴관이에요' : ''}`, plan.from === 'week' ? '요일 계획' : '계획', '', 'sk-plan'));
   else if (plan && !plan.rest && real.length && planDone(db, date, plan)) {/* 계획대로 함 — 위 운동 줄로 충분 */}
   for (const e of eventsOn(db, date)) if (!(e.kind === 'workout' && real.length)) out.push(row([kindOf(e.kind).icon, e.color], esc(e.kind === 'period' ? `${e.predicted ? '생리 예상' : '생리'} ${e.day}일째` : e.title) + (e.kind === 'meal' ? ` · ${e.alcohol ? '술 마셔요' : '술 안 마셔요'}` : ''), [e.time, e.kind === 'meal' ? e.slot : '', e.note ? esc(e.note) : ''].filter(Boolean).join(' · '), '<span class="chev">›</span>', 'sk-ev', `data-sched-ev="${esc(e.id)}" role="button" tabindex="0"`));
-  return `<section class="section card sk"><div class="sk-h"><b>${md(date)} ${wd}${rel}</b></div>${out.join('') || '<p class="hint" style="margin:4px 0 0">기록이나 일정이 없어요.</p>'}<button type="button" class="sk-add" data-sched-add="${date}">＋ 일정 넣기</button></section>`;
+  return `<section class="section sk-sec"><div class="section-title"><h3>${md(date)} ${wd}${rel}</h3></div><div class="card sk">${out.join('') || '<p class="hint" style="margin:4px 0 0">기록이나 일정이 없어요.</p>'}<button type="button" class="sk-add" data-sched-add="${date}">＋ 일정 넣기</button></div></section>`;
 }
 export function upcoming(db, today, days = 7) {
   const out = [];
@@ -163,11 +164,11 @@ export function upcoming(db, today, days = 7) {
 export function upcomingHTML(db, today) {
   const list = upcoming(db, today);
   if (!list.length) return '';
-  return `<section class="section card sk"><div class="sk-h"><b>다가오는 일</b></div>${list.map(u => `<div class="sk-row sk-up"${u.id ? ` data-sched-ev="${esc(u.id)}" role="button" tabindex="0"` : ''}><span class="d">${u.soft ? `${md(u.date)}쯤` : `${WD[new Date(`${u.date}T12:00:00`).getDay()]} ${md(u.date)}`}</span><span class="t"><b>${esc(u.title)}</b>${u.sub ? `<small>${esc(u.sub)}</small>` : ''}</span></div>`).join('')}</section>`;
+  return `<section class="section sk-sec"><div class="section-title"><h3>다가오는 일</h3></div><div class="card sk">${list.map(u => `<div class="sk-row sk-up"${u.id ? ` data-sched-ev="${esc(u.id)}" role="button" tabindex="0"` : ''}><span class="d">${u.soft ? `${md(u.date)}쯤` : `${WD[new Date(`${u.date}T12:00:00`).getDay()]} ${md(u.date)}`}</span><span class="t"><b>${esc(u.title)}</b>${u.sub ? `<small>${esc(u.sub)}</small>` : ''}</span></div>`).join('')}</div></section>`;
 }
 export function weekPlanHTML(db, today) {
   const wp = schedOf(db).weekPlan, order = [1, 2, 3, 4, 5, 6, 0], empty = !Object.keys(wp).length;
-  return `<section class="section card sk"><div class="sk-h"><b>요일별 운동 계획<i class="i-tip" tabindex="0" title="정해 두면 매주 그 요일에 계획으로 보이고, 실시간 입력을 누르면 '계획대로 시작할까요?'로 이어져요">i</i></b><button type="button" class="text-button" data-sched-week>${empty ? '정하기' : '바꾸기'}</button></div><div class="sk-rt">${order.map(d => { const p = wp[d]; return `<div><i>${WD[d]}</i><span class="${p?.rest ? 'rest' : p?.title ? '' : 'none'}">${esc(p?.rest ? '휴식' : p?.title || '—')}</span></div>`; }).join('')}</div></section>`;
+  return `<section class="section sk-sec"><div class="section-title"><h3>요일별 운동 계획</h3><span class="st-r"><i class="i-tip" tabindex="0" title="정해 두면 매주 그 요일에 계획으로 보이고, 실시간 입력을 누르면 '계획대로 시작할까요?'로 이어져요">ⓘ</i><button type="button" class="goal-btn" data-sched-week>${empty ? '정하기' : '바꾸기'}</button></span></div><div class="card sk"><div class="sk-rt">${order.map(d => { const p = wp[d]; return `<div><i>${WD[d]}</i><span class="${p?.rest ? 'rest' : p?.title ? '' : 'none'}">${esc(p?.rest ? '휴식' : p?.title || '—')}</span></div>`; }).join('')}</div></div></section>`;
 }
 export function schedulePageHTML(db, selected, today, {coachHTML = ''} = {}) {
   /* 대표님: GLP-1을 쓴다고 설정한 사람에게는 '일정에도 등록할까요?' */

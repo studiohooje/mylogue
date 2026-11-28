@@ -3115,3 +3115,23 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
 .lt-spark{flex:none}.lt-spark polyline{fill:none;stroke:#b8aaf2;stroke-width:1.6;stroke-linejoin:round}.lt-spark circle{fill:#b8aaf2}
 .lt-v{min-width:104px;text-align:right;color:#9fb3c6;font-variant-numeric:tabular-nums;white-space:nowrap}.lt-v b{color:#7fe0b0}
 .wd-title ~ .more-title{margin:22px 0 10px}
+/* 2026-11-28 대표님: 수치·일정·분석·메이트도 같은 기준 — 제목은 카드 밖, 카드 속 카드 없앰, ⓘ 하나로 */
+.bf-sec>.card{margin-top:0}
+.bf-goal{margin:4px 0 0;display:flex;justify-content:flex-end}
+.bf-stats>div,.ibk>div,.pa-stats>div,.sk-rt>div{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.bf-stats>div+div,.ibk>div+div,.pa-stats>div+div,.sk-rt>div+div{border-left:1px solid #ffffff12!important}
+.bf-stats>div+div,.pa-stats>div+div{padding-left:10px!important}
+.i-tip,.mt-help{border:0!important;background:none!important;font-size:15px!important;font-style:normal!important;width:auto!important;min-width:0!important;color:#b4c6d8!important}
+.mc-sec>.card,.sk-sec>.card{margin-top:0}
+.mc-head.section-title{justify-content:center;position:relative}
+.mc-head .mc-arw{display:flex;align-items:center;gap:12px}.mc-head .mc-arw b{font-size:18px;font-weight:800}
+.mc-head .mc-today{position:absolute;right:0}
+.mc-cal>i.sun,.mc-cal .c.sun>b{color:#ff7d8c!important}.mc-cal>i.sat,.mc-cal .c.sat>b{color:#72a8ff!important}
+.section-title .st-r{display:flex;align-items:center;gap:6px}
+.ttl-sec>.card,.ttl-sec>.coach{margin-top:0}
+.ttl-sec+.mr-fold{margin-top:14px!important}
+.mate-top:has(.mate-add) .mate-title h2{font-size:27px;letter-spacing:-.025em;line-height:1.3}
+.mate-ib.mate-add{width:auto;height:46px;padding:0 16px;border:0;border-radius:12px;background:linear-gradient(135deg,#91e5df,#b0d9ed);color:#142538;font-size:14px;font-weight:700}
+.bf-maint{background:none!important;padding:12px 0 0!important;border-radius:0!important;border-top:1px solid #ffffff12}
+.bf-maint .text-button{color:#8ce4e0}
+.coach+.mr-fold,.ttl-sec+.mr-fold{margin-top:14px!important}
