@@ -3166,3 +3166,12 @@ main.open-ui .mr-fold{background:none!important;border:0!important;border-radius
 main.open-ui .mc-cal .c{background:none!important}
 main.open-ui .mc-cal .c.full{background:#ffffff06!important}
 main.open-ui .mate-room{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;border-top:1px solid #ffffff14!important;border-bottom:1px solid #ffffff14!important}
+/* ===== 2026-11-28 대표님 5.10.1 코치로그도 '열린 화면' — 카드 테두리·배경을 걷고 가는 선으로만(오늘·회원·일정·회원 상세, main .c2) ===== */
+main .c2 .card,main .c2 .cl-card{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important;border-top:1px solid #ffffff14!important}
+main .c2 .c2-fcard{background:none!important;border:0!important;border-radius:0!important;padding-left:0!important;padding-right:0!important;border-bottom:1px solid #ffffff10!important}
+main .c2 .cl-sum>div{background:none!important;border-radius:0!important;padding-left:0!important}
+main .c2 .cl-sum>div+div{border-left:1px solid #ffffff12!important;padding-left:12px!important}
+main .c2 [class*="c2-bf"],main .c2 .c2-brief{background:none!important;border-left:2px solid #ff9f6e66!important;border-radius:0!important}
+main .c2 .cl-row{background:none!important;border-radius:0!important;border-bottom:1px solid #ffffff10!important;padding-left:0!important;padding-right:0!important}
+main .c2 .cl-row:last-child{border-bottom:0!important}
+main .c2 .c2-dbtn:not(.on){background:none!important;border:0!important;box-shadow:none!important}
