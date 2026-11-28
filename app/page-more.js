@@ -29,7 +29,7 @@ export const PG_ICON = {
 // list: [[key, icon, title, desc]] — key는 'page:이름'
 export function moreTilesHTML(list){
   if(!list.length) return '';
-  return `<div class="more-label"><span>더 보기</span><span>${list.length}개</span></div><div class="set-grid pg-tiles">${list.map(([key, ic, title, desc], i) => `<button type="button" class="set-tile" data-pg-sec="${esc(key)}" style="--i:${i % 6}"><b class="set-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${PG_ICON[ic] || PG_ICON.list}</svg></b><span class="set-txt"><strong>${esc(title)}</strong><small>${esc(desc)}</small></span></button>`).join('')}</div>`;
+  return `<div class="section-title more-title"><h3>더 보기</h3></div><div class="set-grid pg-tiles">${list.map(([key, ic, title, desc], i) => `<button type="button" class="set-tile" data-pg-sec="${esc(key)}" style="--i:${i % 6}"><b class="set-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${PG_ICON[ic] || PG_ICON.list}</svg></b><span class="set-txt"><strong>${esc(title)}</strong><small>${esc(desc)}</small></span></button>`).join('')}</div>`;
 }
 
 // 꽉 찬 한 줄 카드(아이콘 + 제목 + 한 줄 + ›). 누르면 같은 팝업.

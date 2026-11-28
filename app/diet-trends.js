@@ -95,9 +95,9 @@ function avgChips(series, s){
 }
 export function dietFlowHTML(db, {period = 30, end} = {}){
  const s = db.settings||{}, series = dietSeries(db, {days:period, end});
- return `<section class="section card diet-flow"><div class="df-head"><h3>식단 흐름</h3><div class="df-tools"><div class="df-period" role="group" aria-label="기간">${[[7,'1주'],[30,'1달'],[90,'3달']].map(([d, l]) => `<button type="button" class="${d===period?'on':''}" data-df-period="${d}" aria-pressed="${d===period}">${l}</button>`).join('')}</div>${hoverButton()}</div></div>
+ return `<section class="section diet-flow-sec"><div class="section-title df-head"><h3>식단 흐름</h3><div class="df-tools"><div class="df-period" role="group" aria-label="기간">${[[7,'1주'],[30,'1달'],[90,'3달']].map(([d, l]) => `<button type="button" class="${d===period?'on':''}" data-df-period="${d}" aria-pressed="${d===period}">${l}</button>`).join('')}</div>${hoverButton()}</div></div><div class="card diet-flow">
  <div class="gc-legend"><span><i class="lb"></i>목표 범위</span><span><i class="ld"></i>범위 안</span><span><i class="lr"></i>범위 밖</span><span>큰 점 = ${end && end!==ymd(new Date()) ? '보는 날' : '오늘'}</span></div>
  <div class="df-grid">${tile(series, 'score', s, true)}</div>${avgChips(series, s)}
  <details class="df-how" hidden><summary>점수는 이렇게 매겨요</summary><p>목표 칼로리에 가까울수록 최대 40점(±10% 안이면 만점), 단백질은 목표의 95%를 채우면 25점 만점(135%까지는 넘쳐도 괜찮아요), 탄수 20점·지방 15점은 목표 ±15% 안이면 만점이에요. 조금 넘치거나 모자란 날은 조금만 깎아요. 탄단지 목표가 없으면 칼로리만으로 매겨요. 예정 식사는 넣지 않아요. 띠는 점수 80~100점, 나머지는 목표 ±10%예요.</p></details>
- </section>`;
+ </div></section>`;
 }

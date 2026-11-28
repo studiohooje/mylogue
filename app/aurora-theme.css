@@ -3090,3 +3090,28 @@ html.coach-theme .quick-choice:hover{border-color:#ff946666}
  .home-stat-work .wl-row.today.done em .wl-txt{color:#0d1326!important}
 }
 @media(max-width:380px){.home-stat-work strong .wv-mini,.home-stat-work strong .wv-mini svg{height:34px!important}}
+/* 2026-11-28 대표님: 운동 요일 — 일요일·법정공휴일 빨강, 토요일 파랑(오늘은 굵게) */
+.home-stat-work .wl-row.sun b{color:#ff7d8c!important}.home-stat-work .wl-row.sat b{color:#72a8ff!important}
+/* 2026-11-28 대표님: 식단·운동 화면 통일 — 묶음 제목은 모두 카드 밖·같은 모양, 이중 테두리·네모 ⓘ·개수 표시 없앰 */
+.section-title h3,.wd-title h3{font-size:18px;font-weight:800}
+.more-title{margin-top:29px}
+.goal-btn{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(140,228,224,.45);background:rgba(140,228,224,.08);color:#8ce4e0;font:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.goal-btn:hover{background:rgba(140,228,224,.16)}
+.nutrition-summary-v2 .home-diet-head>div:first-child small{display:none}
+.nutrition-summary-v2 .home-diet-head{align-items:center}
+.nutrition-summary-v2 .home-diet-side{flex-direction:column;align-items:flex-end;gap:4px}
+.nutrition-summary-v2 .home-diet-side .macro-chip{background:none!important;padding:0;font-size:14px}
+.nutrition-summary-v2 .home-diet-side .plan-toggle{background:none!important;border:0!important;padding:0!important;min-height:22px}
+.diet-flow-sec .df-head{margin-bottom:14px}
+.diet-flow-sec .df-tools{display:flex;align-items:center;gap:6px}
+.diet-flow .df-grid{display:block!important}
+.diet-flow .df-tile.big{background:none!important;border:0!important;padding:0!important;border-radius:0!important;box-shadow:none!important;width:100%;max-width:none}
+.gc-hov{border:0!important;background:none!important;border-radius:50%!important}
+.lt-title small{color:#9fb8cb;font-size:13px}
+.lift-tracks{padding:6px 18px!important;display:block}
+.lt-row{display:flex;align-items:center;gap:10px;min-height:44px;border-top:1px solid #ffffff10;font-size:14px}
+.lt-row:first-child{border-top:0}
+.lt-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e3edf5}
+.lt-spark{flex:none}.lt-spark polyline{fill:none;stroke:#b8aaf2;stroke-width:1.6;stroke-linejoin:round}.lt-spark circle{fill:#b8aaf2}
+.lt-v{min-width:104px;text-align:right;color:#9fb3c6;font-variant-numeric:tabular-nums;white-space:nowrap}.lt-v b{color:#7fe0b0}
+.wd-title ~ .more-title{margin:22px 0 10px}

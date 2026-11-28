@@ -45,3 +45,12 @@ test('예약보다 먼저 끝내면 실제로 한 시각으로 남는다', () =>
   const late = D.finishClass(base(), {scheduleId: 'x1', clientIds: ['c1'], date: '2026-11-28', time: '23:20', placeId: 'p1'}, '2026-11-28', new Date('2026-11-29T00:30'));
   assert.equal(late.data.sessions[0].time, '23:20');
 });
+
+test('늘어난 무게: 무게가 오른 종목만, 한쪽씩은 따로, 최근 순', async () => {
+  const {liftTracks, workoutGrowthHTML} = await import('../workout-flow.js');
+  const W = (date, name, kg, side) => ({id: date + name, date, exercises: [{name, kind: 'strength', sets: [{weight: kg, reps: 10, unit: 'kg', completed: true, ...(side ? {side} : {})}]}]});
+  const db = {workouts: [W('2026-11-20', '레그 익스텐션', 25), W('2026-11-24', '레그 익스텐션', 60), W('2026-11-21', '페이스 풀', 30), W('2026-11-26', '페이스 풀', 30), W('2026-11-22', '핵 프레스', 40, 'single'), W('2026-11-28', '핵 프레스', 45, 'single')]};
+  const t = liftTracks(db, '2026-11-28');
+  assert.deepEqual(t.map(x => x.name), ['핵 프레스 (한쪽씩)', '레그 익스텐션']);
+  assert.match(workoutGrowthHTML(db, {end: '2026-11-28'}), /늘어난 무게[\s\S]*25 → <b>60kg<\/b>/);
+});

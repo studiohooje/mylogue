@@ -82,9 +82,18 @@ export function workoutFlowHTML(db, {end, metric = 'sets'}){
  ${g||prs.length?`<section class="section card wf-growth">${g?`<div class="wf-sub"><b>종목 성장</b><small>${esc(g.name)} · 날마다 가장 무거운 세트</small></div>${growthChart(g)}`:''}${prs.length?`<div class="wf-sub"><b>새 기록</b><small>최근 4주</small></div><ul class="wf-prs">${prs.map(r => `<li><span>${esc(r.name)}</span><span>${r.from} → <b>${r.to}kg</b> <small>${md(r.date)}</small></span></li>`).join('')}</ul>`:''}</section>`:''}`;
 }
 // 2026-11-27 운동 페이지 2안: 종목 성장·새 기록만(이번 주 칸·흐름 차트는 workout-day.js로)
+// 2026-11-28 대표님: '종목 성장'(가장 자주 한 종목 하나만 큰 그래프)은 의미가 약하다 → A안 '늘어난 무게': 무게가 오른 종목마다 작은 선 + 처음 → 지금
+export function liftTracks(db, end, days = 84){
+ const from = addDays(end, -days), m = new Map();
+ for(const w of [...real(db)].sort((a, b) => a.date.localeCompare(b.date))){ if(w.date<from || w.date>end) continue;
+  for(const e of w.exercises||[]){ if(e.kind==='cardio') continue; for(const one of [false, true]){ let best = 0; for(const s of e.sets||[]) if(s.completed!==false && oneSide(s)===one) best = Math.max(best, setWeightKg(s)); if(!best) continue;
+   const nm = e.name + sideLabel(one), a = m.get(nm) || []; const last = a.at(-1); if(last?.date===w.date) last.w = Math.max(last.w, best); else a.push({date:w.date, w:best}); m.set(nm, a); } } }
+ return [...m].filter(([, a]) => a.length>1 && a.at(-1).w>a[0].w).map(([name, pts]) => ({name, pts})).sort((x, y) => y.pts.at(-1).date.localeCompare(x.pts.at(-1).date)).slice(0, 10);
+}
+const spark = pts => { const W = 64, H = 20, mn = Math.min(...pts.map(p => p.w)), sp = (Math.max(...pts.map(p => p.w)) - mn) || 1, xy = pts.map((p, i) => [3 + i*(W-6)/(pts.length-1), H-3-(p.w-mn)/sp*(H-6)].map(v => Math.round(v*10)/10)); return `<svg class="lt-spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true"><polyline points="${xy.map(a => a.join(',')).join(' ')}"/><circle cx="${xy.at(-1)[0]}" cy="${xy.at(-1)[1]}" r="2.6"/></svg>`; };
+const kgTxt = v => String(Math.round(v*10)/10);
 export function workoutGrowthHTML(db, {end}){
- if(!real(db).length) return '';
- const g = liftGrowth(db, end), prs = newRecords(db, end);
- return `${g||prs.length?`<section class="section card wf-growth">${g?`<div class="wf-sub"><b>종목 성장</b><small>${esc(g.name)} · 날마다 가장 무거운 세트</small></div>${growthChart(g)}`:''}${prs.length?`<div class="wf-sub"><b>새 기록</b><small>최근 4주</small></div><ul class="wf-prs">${prs.map(r => `<li><span>${esc(r.name)}</span><span>${r.from} → <b>${r.to}kg</b> <small>${md(r.date)}</small></span></li>`).join('')}</ul>`:''}</section>`:''}`;
+ const list = liftTracks(db, end); if(!list.length) return '';
+ return `<div class="wd-title lt-title"><h3>늘어난 무게</h3><small>처음 한 무게 → 지금</small></div><section class="card lift-tracks">${list.map(t => `<div class="lt-row" title="${esc(t.pts.map(p => `${md(p.date)} ${kgTxt(p.w)}kg`).join(' · '))}"><span class="lt-nm">${esc(t.name)}</span>${spark(t.pts)}<span class="lt-v">${kgTxt(t.pts[0].w)} → <b>${kgTxt(t.pts.at(-1).w)}kg</b></span></div>`).join('')}</section>`;
 }
 
