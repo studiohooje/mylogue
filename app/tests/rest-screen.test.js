@@ -73,3 +73,11 @@ test('볼륨은 모든 화면에서 같은 규칙(기록 합계 = 종목 성장 
   const split = machineBreakdown(db, () => true, () => ({key: 'k', label: 'k'}), 7)[0].volume;
   assert.equal(total, 20 * 10 * 2 + 30 * 10 * 2); assert.equal(trend, total); assert.equal(split, total);
 });
+
+test('2026-11-28 다음 세트를 바꾸면 바꿈 옆에 초기화, 초기화 값은 방금 한 세트 그대로', () => {
+  assert.doesNotMatch(restScreenHTML(base('alarm'), st, opts), /rest-reset/);
+  const ch = {...st, sets: st.sets.map(x => ({...x, machineId: ''})), next: {...st.next, weight: 90, reps: 5, changed: true}};
+  assert.match(restScreenHTML(base('alarm'), ch, opts), /id="rest-reset">초기화<\/button><span class="rt-tag changed">바꿈/);
+  const n = defaultNext(ch, {lastSession, db: base('alarm')});
+  assert.equal(n.weight, 70); assert.equal(n.reps, 8); assert.equal(n.changed, false);
+});

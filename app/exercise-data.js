@@ -198,6 +198,7 @@ export const MORE_EXERCISES = [
  ["싱글 레그 힙 쓰러스트","하체","맨몸",["glutes"],["hamstrings"],{u:1}],
  ["바벨 글루트 브릿지","하체","바벨",["glutes"],["hamstrings"],{}],
  ["싱글 레그 글루트 브릿지","하체","맨몸",["glutes"],["hamstrings"],{u:1,aliases:["원레그 브릿지"]}],
+ ["핵 프레스","하체","머신",["quads","glutes"],["adductors"],{aliases:["핵프레스","핵 레그 프레스","Hack Press","Hack Leg Press"]}], /* 2026-11-28 대표님: 핵 스쿼트와 따로 */
  ["리버스 핵 스쿼트","하체","머신",["glutes","hamstrings"],["quads"],{aliases:["리버스 핵"]}],
  ["커시 런지","하체","덤벨",["glutes","quads"],["adductors"],{u:1,aliases:["커트시 런지"]}],
  ["덤벨 레그 컬","하체","덤벨",["hamstrings"],[],{}],

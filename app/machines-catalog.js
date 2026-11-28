@@ -16,6 +16,7 @@ export const GENERIC_MACHINES = ([
  M('leg-press-vertical','버티컬 레그 프레스','버티컬 레그 프레스','plate','both'),
  M('power-squat','파워 스쿼트 머신 (레버식)','파워 스쿼트','plate','both',['레버 스쿼트','슈퍼 스쿼트']),
  M('hack-squat','핵 스쿼트 머신','핵 스쿼트','plate','both',[],'썰매 무게는 기계마다 달라요(대략 27~61kg). 원판 무게만 적기를 권해요.'),
+ M('hack-press','핵 프레스 머신','핵 프레스','plate','both',['핵 레그 프레스'],'등을 기대 앉아 발로 미는 썰매식이에요. 원판 무게만 적기를 권해요.'), /* 2026-11-28 대표님: 핵 스쿼트와 다른 기구(뉴텍 엠토처 T-HP 등) */
  M('v-squat','브이·펜듈럼 스쿼트','브이 스쿼트','plate','both',['펜듈럼 스쿼트 머신'],'시작 저항은 기계마다 달라요(대략 21~50kg). 원판 무게만 적기를 권해요.'),
  M('belt-squat','벨트 스쿼트 머신','벨트 스쿼트','plate','both'),
  M('smith','스미스 머신','스미스 스쿼트','smith','both',[],'바 무게는 기계마다 달라요(보통 7~20kg).'),
@@ -81,7 +82,7 @@ export const GENERIC_MACHINES = ([
 // 케이블·스미스처럼 동작에 따라 달라지는 머신은 비워 두고 종목의 타깃을 쓴다.
 const T = {
  'leg-press-45':[['quads','glutes'],['hamstrings','adductors']], 'leg-press-seated':[['quads','glutes'],['hamstrings']], 'leg-press-iso':[['quads','glutes'],['hamstrings','adductors']], 'leg-press-vertical':[['quads','glutes'],['hamstrings']],
- 'power-squat':[['quads','glutes'],['hamstrings','adductors']], 'hack-squat':[['quads'],['glutes','adductors']], 'v-squat':[['quads','glutes'],['adductors']], 'belt-squat':[['quads','glutes'],['adductors']],
+ 'power-squat':[['quads','glutes'],['hamstrings','adductors']], 'hack-squat':[['quads'],['glutes','adductors']], 'hack-press':[['quads','glutes'],['adductors']], 'v-squat':[['quads','glutes'],['adductors']], 'belt-squat':[['quads','glutes'],['adductors']],
  'leg-extension':[['quads'],[]], 'leg-extension-iso':[['quads'],[]], 'leg-curl-seated':[['hamstrings'],['calves']], 'leg-curl-lying':[['hamstrings'],['calves','glutes']], 'leg-curl-standing':[['hamstrings'],['calves']], 'leg-curl-kneeling':[['hamstrings'],['glutes','calves']],
  'hip-abduction':[['glutes'],[]], 'hip-adduction':[['adductors'],[]], 'hip-thrust':[['glutes'],['hamstrings','adductors']], 'glute-kickback':[['glutes'],['hamstrings']], 'multi-hip':[['glutes','adductors'],['abs']],
  'reverse-hyper':[['glutes','hamstrings'],['erectors']], 'ghd':[['hamstrings','glutes'],['erectors','calves']], 'calf-standing':[['calves'],[]], 'calf-seated':[['calves'],[]], 'donkey-calf':[['calves'],[]],
@@ -254,9 +255,11 @@ export function findSameMachines(maker, model, shared = {}){
 }
 export const canonicalModelId = (maker, model) => `mm:${makerKey(maker)||'etc'}:${modelKey(model, maker)}`.replace(/[^\p{L}\p{N}._: -]/gu, '-').slice(0, 120);
 // 불러온 공용 도감에서 이미 생긴 중복을 하나로: 앱 기본 모델 > ID 사전순 첫 번째. gymMachines의 modelId도 옮기고 같은 헬스장 같은 머신은 하나만.
+// 2026-11-28 대표님: 헬스플러스 안산1호점 벤치프레스 머신은 사이벡스가 아니라 드랙스 퓨어 플레이트 벤치(PPFB128) → 옛 ID를 옮김(헬스장 목록·지난 기록 모두)
+export const FIXED_ALIAS = {'bm:cybex:plate-loaded:converging-bench-press':'bm:drax:pure-plate-plate-loaded:bench'};
 export function dedupeMachines(shared = {}){
  // 기본 모델과 같은 키가 하나뿐일 때만 기본 모델로 잇는다(라인이 여럿이면 어느 것인지 몰라 그대로 둠)
- const alias = {}, keep = [], byKey = new Map(), multi = new Set();
+ const alias = {...FIXED_ALIAS}, keep = [], byKey = new Map(), multi = new Set();
  for(const b of BUILTIN_BRANDS){ const k = keyOf(b); if(byKey.has(k)) multi.add(k); else byKey.set(k, b.id); }
  for(const k of multi) byKey.delete(k);
  const models = [...(shared.machineModels||[])].sort((a, b) => String(a.id).localeCompare(String(b.id)));
@@ -277,7 +280,7 @@ export function dedupeMachines(shared = {}){
  }
  return {...shared, machineModels:keep, gymMachines:out, gymDupes, machineAlias:{...(shared.machineAlias||{}), ...alias}};
 }
-export const resolveMachineId = (shared = {}, id = '') => shared?.machineAlias?.[id] || id;
+export const resolveMachineId = (shared = {}, id = '') => shared?.machineAlias?.[id] || FIXED_ALIAS[id] || id;
 
 // 4.18.0 상위 머신 종류(gm:…) 찾기: 이미 있으면 그대로, 없으면 종목 번호 → 이름(괄호·제조사 빼고)으로. 못 찾으면 ''.
 export function inferBaseId(m = {}){

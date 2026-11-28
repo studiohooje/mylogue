@@ -3,6 +3,7 @@
 export const EXERCISE_ART = {
  "백 익스텐션":"45-degree-back-extension-on-a-hyperextension-ben",
  "레그 프레스":"45-degree-leg-press",
+ "핵 프레스":"45-degree-leg-press",
  "앱 롤아웃":"ab-wheel-rollout",
  "에어바이크":"air-bike",
  "아처 푸시업":"archer-push-up",

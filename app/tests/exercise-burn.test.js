@@ -28,7 +28,7 @@ test('운동 소모: 유산소는 MET×체중×시간, 근력은 세트 시각 �
 test('머신 모델 대장: 570모델, 사양이 있으면 숫자 단계 제안', async () => {
  const {BRAND_MODELS, MACHINE_SPEC_BY_ID} = await import('../machine-brands.js');
  const {levelSuggest} = await import('../gym-machines.js');
- assert.equal(BRAND_MODELS.length, 1964);
+ assert.equal(BRAND_MODELS.length, 1963) // 2026-11-28 사이벡스 벤치 추측 항목을 드랙스로 옮기며 하나 뺌;
  const withStep = [...MACHINE_SPEC_BY_ID.values()].find(s => s.stepKg > 0);
  const sug = levelSuggest({}, withStep.id);
  assert.equal(sug.step, withStep.stepKg); assert.equal(sug.maker, true);

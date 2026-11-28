@@ -25,7 +25,7 @@ export const EXERCISE_FAMILIES = Object.freeze([
  {name: '덤벨·케틀벨 스쿼트', items: [['고블릿', 'exercise:고블릿 스쿼트'], ['케틀벨 고블릿', 'exercise:케틀벨 고블릿 스쿼트'], ['덤벨', 'exercise:덤벨 스쿼트'], ['덤벨 프론트', 'exercise:덤벨 프론트 스쿼트']]},
  {name: '스플릿 스쿼트', items: [['불가리안', 'exercise:불가리안 스플릿 스쿼트'], ['스플릿', 'exercise:스플릿 스쿼트'], ['스미스 불가리안', 'exercise:스미스 불가리안 스플릿 스쿼트']]},
  {name: '런지', items: [['기본', 'exercise:런지'], ['워킹', 'exercise:워킹 런지'], ['리버스', 'exercise:리버스 런지'], ['사이드', 'exercise:사이드 런지'], ['커시', 'exercise:커시 런지'], ['바벨', 'exercise:바벨 런지'], ['스미스', 'exercise:스미스 런지']]},
- {name: '레그 프레스', items: [['45도', 'exercise:레그 프레스'], ['수평', 'exercise:수평 레그 프레스'], ['버티컬', 'exercise:버티컬 레그 프레스'], ['싱글 레그', 'exercise:싱글 레그 프레스']]},
+ {name: '레그 프레스', items: [['45도', 'exercise:레그 프레스'], ['핵 프레스', 'exercise:핵 프레스'], ['수평', 'exercise:수평 레그 프레스'], ['버티컬', 'exercise:버티컬 레그 프레스'], ['싱글 레그', 'exercise:싱글 레그 프레스']]},
  {name: '레그 컬', items: [['기본', 'exercise:레그 컬'], ['시티드', 'exercise:시티드 레그 컬'], ['라잉', 'exercise:라잉 레그 컬'], ['스탠딩', 'exercise:스탠딩 레그 컬']]},
  {name: '카프 레이즈', items: [['기본', 'exercise:카프 레이즈'], ['시티드', 'exercise:시티드 카프 레이즈'], ['스탠딩 머신', 'exercise:스탠딩 카프 레이즈 머신'], ['레그 프레스', 'exercise:레그 프레스 카프 레이즈'], ['동키', 'exercise:동키 카프 레이즈'], ['싱글 레그', 'exercise:싱글 레그 카프 레이즈'], ['스미스', 'exercise:스미스 카프 레이즈']]},
  {name: '힙 쓰러스트', items: [['바벨', 'exercise:힙 쓰러스트'], ['머신', 'exercise:힙 쓰러스트 머신'], ['덤벨', 'exercise:덤벨 힙 쓰러스트'], ['스미스', 'exercise:스미스 힙 쓰러스트'], ['싱글 레그', 'exercise:싱글 레그 힙 쓰러스트']]},

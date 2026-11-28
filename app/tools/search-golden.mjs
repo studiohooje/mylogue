@@ -34,7 +34,7 @@ export function makeQueries(rows, {n = 3000, seed = 21} = {}) {
  }
  return out.slice(0, n);
 }
-const bare = f => f.brand && f.name.startsWith(f.brand + ' ') ? f.name.slice(f.brand.length + 1) : f.name;
+const bare = f => (f.brand && f.name.startsWith(f.brand + ' ') ? f.name.slice(f.brand.length + 1) : f.name).replace(/ (15|30)cm$/, ''); // 2026-11-28 서브웨이 15cm·30cm 꼬리표는 빼고 맞춘다
 export function evaluate(queries) {
  const by = {}, fails = [];
  for (const t of queries) {

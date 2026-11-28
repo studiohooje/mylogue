@@ -114,7 +114,7 @@ import {batchHTML,blankFood,batchMeals,batchSummary} from './meal-batch.js';
 import {renderHomeTimeline,mealGroups,workoutTitle,daySummary,toggleWeekPart} from './timeline-view.js';
 import {renderFoodPage} from './food-view.js';
 import {movesListHTML,moveProgress} from './pilates.js';
-import {loadFoodDB,foodDBReady,findFoodDB,searchFoodDB,isPublicFoodName} from './food-db.js';
+import {loadFoodDB,foodDBReady,findFoodDB,searchFoodDB,isPublicFoodName,rowId} from './food-db.js';
 import {workoutBurn,BURN_NOTE} from './exercise-burn.js';
 import {EXERCISE_CATALOG as EX_CAT} from './catalog.js';
 import {CARDIO_TEMPLATES} from './templates-data.js';
@@ -125,7 +125,7 @@ const deviceConsent=(uid,set=false)=>{const k=`mylogue.consentOK.${uid}`;try{if(
 import {personaRecords,personaOf,personaCardsHTML} from './personas.js';
 import {DEMO_ACCOUNT,demoPersona,switchDemoPersona,demoRequested,startDemo,endDemo,skipLanding,hasRecords,showLanding,viewLanding,closeLanding,landingViewing,demoRecords,landingHTML,demoBannerHTML} from './landing.js';
 $s.pilatesProgressHTML=ws=>{const p=moveProgress(ws);return p.length?`<div class="card pm-progress"><span class="sub">필라테스 진척(같은 동작의 처음 → 최근)</span>${p.map(x=>`<div class="record"><span>${$s.esc(x.name)} <small class="muted">${$s.esc(x.apparatus)}</small></span><strong>${$s.esc(x.first.spring||'—')}${x.first.level?` ${x.first.level}단계`:''} → ${$s.esc(x.last.spring||'—')}${x.last.level?` ${x.last.level}단계`:''}</strong></div>`).join('')}</div>`:''};
-import {emptyQuickMeal,emptyQuickWorkout,quickTime,quickFoodCandidates,quickMealHTML,quickMealRecords,quickWorkoutHTML,quickWorkoutRecord,lastSession,findMachine,typedKey,usesBar,defaultBar,levelConvText,memoKey,usualQty,yesterdayMeal,mealToRow} from './quick-entry.js';
+import {emptyQuickMeal,emptyQuickWorkout,quickTime,quickFoodCandidates,quickMealHTML,quickMealRecords,quickWorkoutHTML,quickWorkoutRecord,lastSession,findMachine,typedKey,usesBar,defaultBar,levelConvText,memoKey,usualQty,yesterdayMeal,mealToRow,lastMachineId} from './quick-entry.js';
 import {recentMealGroups,frequentCombo} from './quick-entry.js';
 import {copyMeals,createRecipe,recipeMeals,weightTrend,exercisePRs,recommendWorkout} from './model-features.js';
 import {$s,$f} from './app-state.js';
@@ -421,7 +421,8 @@ function download(name,data,type='application/json'){const C=globalThis.Capacito
 function ocrFields(data){$s.ocrDraft=data;document.getElementById('ocr-fields').innerHTML=`<div class="form-grid">${[['date','측정일','date'],['weight','체중 kg','number'],['skeletalMuscle','골격근량 kg','number'],['bodyFatPct','체지방률 %','number'],['bodyFatMass','체지방량 kg','number'],['bmi','BMI','number'],['score','인바디 점수','number'],['visceralFatLevel','내장지방 레벨','number'],['bmr','기초대사량 kcal','number']].map(([key,label,type])=>`<label class="field">${label}<input data-ocr-field="${key}" type="${type}" step="any" value="${$s.esc(data[key]??(key==="date"?today():""))}"></label>`).join('')}<button class="button wide" id="ocr-save">원본과 확인한 수치 저장</button></div>`}
 async function readFile(input){const file=input?.files?.[0];if(!file)throw Error('파일을 선택해 주세요.');return file.text()}
 function quickFoodRow(item,qty){return {...item,servingQty:qty,servingUnit:item.servingUnit||'g'}}
-function quickMachineFor(exerciseId,gymName){return ($s.db.machines||[]).find(m=>m.location===gymName&&m.exerciseId===exerciseId)}
+// 2026-11-28 대표님: 지난 운동처럼 하기·종목 고르기에서 지난번 그 헬스장에서 쓴 제조사 머신까지 그대로 → 내가 등록한 머신이 없으면 지난 기록(같은 헬스장 먼저, 다른 헬스장이면 일반 머신만)
+function quickMachineFor(exerciseId,gymName){const mine=($s.db.machines||[]).find(m=>m.location===gymName&&m.exerciseId===exerciseId);if(mine)return mine;const id=lastMachineId($s.db.workouts,exerciseId,gymName);return id?{id}:undefined}
 function quickPreviousSet(exerciseId,machineId){for(const w of $s.recent($s.db.workouts))for(const e of w.exercises||[])if((e.exerciseId||e.name)===exerciseId&&(e.machineId||'')===(machineId||'')){const set=[...(e.sets||[])].reverse().find(s=>s.completed!==false);if(set)return set}return null}
 
 // 4.12 상세 입력에서 음식 DB 검색(화면 전체를 다시 그리지 않고 결과만 바꿈)
@@ -552,7 +553,7 @@ $s.root.addEventListener('click',async event=>{
   if(target.dataset.sit){$s.sitSt.sit=$s.sitSt.sit===target.dataset.sit?'':target.dataset.sit;render();return}
   if(target.dataset.wteMood){$s.wte.mood=target.dataset.wteMood;render();return}
   if(target.dataset.wtePlace){$s.wte.place=target.dataset.wtePlace;render();return}
-  if(target.dataset.wteAdd!=null){const x=($s.wte.results||[])[Number(target.dataset.wteAdd)];if(!x)return;const food=findFoodDB(`fooddb:${x.row[8]}:${x.row[1]}|${x.row[0]}|${x.row[2]}`);if(!food)return toast('음식을 찾지 못했어요.');$s.modal='quick-meal';$s.quickMeal=emptyQuickMeal(today(),new Date().toTimeString().slice(0,5));$s.quickMeal.picked=structuredClone(food);$s.quickMeal.share=1;$s.quickMeal.editIndex=-1;$s.quickMeal.usual=usualQty($s.db.meals,food.name,food.servingUnit);$s.quickMeal.qty=MASS.has(food.servingUnit)?Math.round(x.qty):x.factor;$s.quickMeal.gramOptions=[100,200,250,300];render();return}
+  if(target.dataset.wteAdd!=null){const x=($s.wte.results||[])[Number(target.dataset.wteAdd)];if(!x)return;const food=findFoodDB(rowId(x.row));if(!food)return toast('음식을 찾지 못했어요.');$s.modal='quick-meal';$s.quickMeal=emptyQuickMeal(today(),new Date().toTimeString().slice(0,5));$s.quickMeal.picked=structuredClone(food);$s.quickMeal.share=1;$s.quickMeal.editIndex=-1;$s.quickMeal.usual=usualQty($s.db.meals,food.name,food.servingUnit);$s.quickMeal.qty=MASS.has(food.servingUnit)?Math.round(x.qty):x.factor;$s.quickMeal.gramOptions=[100,200,250,300];render();return}
   if(target.dataset.planView){setAdminView(target.dataset.planView);toast(target.dataset.planView==='plus'?'플러스 사용자 기준으로 보고 있어요.':'일반 사용자 기준으로 보고 있어요.');render();return}
   if(target.id==='plan-fake-ai'){setFakeAI(target.getAttribute('aria-pressed')!=='true');render();return}
   if(target.id==='plan-ai-check'){aiRequest('me').then(r=>{$s.aiMe=r;if(r?.global)refreshCostInfo(()=>Promise.resolve(r),{force:true});render()}).catch(error=>toast(error.message));return}

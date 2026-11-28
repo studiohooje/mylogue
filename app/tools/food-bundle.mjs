@@ -258,6 +258,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const out = {v: 1, builtAt: new Date().toISOString().slice(0, 10), source: '식품의약품안전처 식품영양성분 데이터베이스(공공데이터포털)·농촌진흥청 국가표준식품성분표·제조사 라벨', rows};
   const json = JSON.stringify(out);
   fs.writeFileSync(path.join(APP, 'food-db.json'), json);
+  await import('./fill-macro-est.mjs'); // 2026-11-28 업체 미제공 탄·단·지를 추정치로 채움(새로 만들 때마다)
   const tags = {}; for (const r of rows) tags[r[8]] = (tags[r[8]] || 0) + 1;
   const zlib = await import('node:zlib');
   console.log(`음식 DB ${rows.length}개 ${JSON.stringify(tags)} · ${(json.length / 1048576).toFixed(1)}MB · gzip ${(zlib.gzipSync(json).length / 1024).toFixed(0)}KB`);

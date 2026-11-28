@@ -1,6 +1,6 @@
 // 4.17.0 '오늘 남은 걸로 뭐 먹지'(대표님: 컨셉별로). 기분(보상·균형·타이트) × 장소(외식·배달·편의점·집밥)로 고르면
 // 오늘 남은 칼로리·단백질에 맞는 메뉴를 음식 DB에서 찾아 '양까지' 제안한다. 보상이어도 꾸짖지 않고, 남은 양 대비 차이를 숫자로 보여 준다.
-import {foodRows, rowToFood} from './food-db.js';
+import {foodRows, rowToFood, rowId} from './food-db.js';
 
 export const MOODS = [['reward', '보상', '오늘은 맛있게, 선은 지키면서'], ['balance', '균형', '남은 양에 맞춘 무난한 한 끼'], ['tight', '타이트', '단백질은 채우고 칼로리는 아끼기']];
 export const PLACES = [['out', '외식'], ['delivery', '배달'], ['store', '편의점'], ['home', '집밥']];
@@ -73,7 +73,7 @@ function reasonOf(x, {mood, R, P}) {
   return `${portion}남은 양에 맞고 단백질 ${x.protein}g${P ? `(남은 ${P}g 중)` : ''}을 채워요.`;
 }
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-export const suggestionId = x => `fooddb:${x.row[8]}:${x.row[1]}|${x.row[0]}|${x.row[2]}`;
+export const suggestionId = x => rowId(x.row);
 export function whatToEatHTML(st, remain, {ready = true, locked = '', results = null} = {}) {
   const R = Math.round(remain.kcal || 0), P = Math.round(remain.protein || 0);
   const head = `<section class="section card wte" id="wte"><div class="section-title"><h3>오늘 남은 걸로 뭐 먹지</h3><small>남은 ${R > 0 ? `${R.toLocaleString('ko-KR')}kcal` : '칼로리 없음'}${P > 0 ? ` · 단백질 ${P}g` : ''}</small></div>`;

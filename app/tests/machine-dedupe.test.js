@@ -75,3 +75,10 @@ test('직접 적은 이름·제조사 머신도 상위 종목의 그림으로, �
   const o = orphanMachines({machineModels: [{id: 'mm:a', manufacturer: 'A', model: '뭔지 모를 기구', name: 'A 뭔지 모를 기구'}, {id: 'mm:b', manufacturer: '뉴텍', model: '레그프레스'}]}, []);
   assert.deepEqual(o.map(x => x.id), ['mm:a']);
 });
+
+test('2026-11-28 안산1호점 벤치프레스 머신: 사이벡스로 넣었던 것은 드랙스 퓨어 플레이트 벤치로 이어진다', () => {
+ const old = 'bm:cybex:plate-loaded:converging-bench-press', drax = 'bm:drax:pure-plate-plate-loaded:bench';
+ const d = dedupeMachines({machineModels:[], gymMachines:[{id:'g1', gymKey:'kakao:2058818303', modelId:old}]});
+ assert.equal(d.gymMachines[0].modelId, drax);
+ assert.equal(d.machineAlias[old], drax);
+});

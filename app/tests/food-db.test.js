@@ -62,8 +62,25 @@ test('음식 DB 검색: 초성·한영 자판·정확도, 프리셋 계약', () 
 test('앱 번들 food-db.json이 있으면 형식 확인', {skip:!existsSync(new URL('../food-db.json', import.meta.url))}, () => {
  const j = JSON.parse(readFileSync(new URL('../food-db.json', import.meta.url), 'utf8'));
  assert.ok(j.rows.length > 30000);
- for (const r of j.rows.slice(0, 2000)) { assert.ok(r.length === 10 || (r.length === 11 && r[10] === 1) || (r.length === 12 && (r[10] === 0 || r[10] === 1) && Array.isArray(r[11]) && r[11].length === 4)); assert.ok(typeof r[0] === 'string' && r[0]); assert.ok(r[4] !== null); }
+ for (const r of j.rows.slice(0, 2000)) { assert.ok(r.length === 10 || (r.length === 11 && r[10] === 1) || (r.length === 12 && (r[10] === 0 || r[10] === 1) && Array.isArray(r[11]) && r[11].length === 4) || (r.length === 13 && /^[cpf]+$/.test(r[12]) && (r[11] === null || r[11].length === 4))); assert.ok(typeof r[0] === 'string' && r[0]); assert.ok(r[4] !== null); }
  setFoodRows(j.rows);
  const kimchi = searchFoodDB('김치찌개')[0]; assert.ok(kimchi.sodium > 0, '미량영양소(나트륨)가 음식 객체로 나온다');
  for (const q of ['비빔밥', '김치찌개', '닭가슴살', '쌀밥', '아메리카노', '제육볶음']) assert.ok(searchFoodDB(q).length > 0, q);
+});
+
+test('2026-11-28 단위를 고친 음식도 찾고, 서브웨이는 한 줄 + 15cm·30cm 고르기', () => {
+ setFoodRows([['참치 샌드위치','서브웨이','cm',238,316,null,20,null,'f','subway',0,[5,null,3,600]],['우동','','회분',500,400,60,10,5,'d','',0,null]]);
+ const u = searchFoodDB('우동')[0]; assert.equal(u.servingUnit, '회'); assert.equal(findFoodDB(u.id).name, '우동');
+ const hits = searchFoodDB('참치 샌드위치'); assert.equal(hits.length, 1); // 목록은 한 줄, 크기는 양 고르기에서
+ const a = hits[0]; assert.equal(a.name, '서브웨이 참치 샌드위치 15cm'); assert.equal(a.size, '15cm');
+ const b = findFoodDB(a.sizeIds['30cm']); assert.equal(b.name, '서브웨이 참치 샌드위치 30cm'); assert.equal(findFoodDB(b.sizeIds['15cm']).calories, 316);
+ assert.equal(b.calories, 632); assert.equal(b.unitGrams, 476); assert.equal(b.carbs, null); assert.equal(findFoodDB(b.id).calories, 632);
+});
+
+test('2026-11-28 실제 DB: 모든 음식에 탄·단·지가 있고, 채운 값은 추정으로 표시', () => {
+ const rows = JSON.parse(readFileSync(new URL('../food-db.json', import.meta.url), 'utf8')).rows;
+ assert.equal(rows.filter(r => r[4] != null && [5, 6, 7].some(i => r[i] == null)).length, 0);
+ setFoodRows(rows);
+ const f = searchFoodDB('서브웨이 참치 샌드위치')[0];
+ assert.equal(f.macroEst, '탄·지'); assert.equal(searchFoodDB('서브웨이 참치 샌드위치 30cm')[0].macroEst, '탄·지'); assert.ok(f.carbs > 0 && f.fat > 0); assert.match(f.aiEvidence.note, /추정/);
 });
