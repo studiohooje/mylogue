@@ -363,7 +363,7 @@ async function quickShoot(){
   const top = orderRooms(s.rooms)[0];
   $s.page = 'mate';
   if(!top){ s.view = 'rooms'; $f.toast('먼저 메이트로그 방을 하나 만들어 주세요(내 방도 돼요).'); $f.render(); return; }
-  s.roomId = top.id; s.quick = true; s.mate = null; s.err = ''; s.view = 'cam'; $f.render(); startCam();
+  s.roomId = top.id; s.quick = true; s.mate = null; s.err = ''; s.view = 'cam'; s.mode = 'food'; /* 2026-11-28 대표님: 홈 바로 찍기는 마지막 종류가 아니라 늘 음식으로 시작(체중계·운동은 골라서) */ $f.render(); startCam();
 }
 export async function mateClick(t){
   if(!t?.closest) return false;
