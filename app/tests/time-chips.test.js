@@ -31,3 +31,14 @@ test('직접 입력: 형식이 맞을 때만 바꾸고, 그 시로 연다', () =
  assert.equal(setManualTime(s, '10:35'), true); assert.equal(s.time, '10:35'); assert.equal(s.hourOpen, 10);
  assert.equal(setManualTime(s, ''), false); assert.equal(s.time, '10:35');
 });
+
+test('2026-11-28 미리 먹을 것: 13시 05분에 13시 칸이 있고, 누르면 13:10부터, 13:30도 고를 수 있다', async () => {
+ const {hourChips, mealWhenBarHTML} = await import('../meal-when.js');
+ const pad = n => String(n).padStart(2, '0'), now = new Date(2026, 10, 28, 13, 5), D = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+ assert.equal(hourChips('plan', D, now)[0], '13:00');
+ assert.equal(hourChips('plan', D, new Date(2026, 10, 28, 13, 55))[0], '14:00', '13:55면 13시에 남은 칸이 없다');
+ const s = {when: 'plan', date: D, time: '14:00'};
+ toggleHour(s, 13, now); assert.equal(s.time, '13:10'); assert.equal(s.hourOpen, 13);
+ const h = mealWhenBarHTML(s, now);
+ assert.match(h, /data-q-when-time="13:30"/); assert.doesNotMatch(h, /data-q-when-time="13:00"/);
+});

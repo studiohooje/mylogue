@@ -4,7 +4,7 @@
 // 어떤 방식이든 '🔥 휴식 끝, 다음 세트 시작'을 눌러야 다음 세트 입력으로 넘어간다.
 import {unitText, setLoadText, setSideTag} from './domain.js';
 import {specOptions} from './gym-machines.js';
-import {GENERIC_MACHINES, armsIso, perSideFor, pairLever} from './machines-catalog.js';
+import {GENERIC_MACHINES, armsIso, perSideFor, pairLever, weightStep} from './machines-catalog.js';
 import {planFor} from './workout-plan.js';
 import {prefillFor} from './set-prefill.js';
 import {matchScore} from './suggest.js';
@@ -75,7 +75,7 @@ export function nearWeights(w, unit = "kg", equipment = ""){
   for (let k = -2; out.length < 6 && k < 12; k++){ const x = Math.round((v + k * step) * 100) / 100; if (x > 0) out.push(x); }
   return out;
 }
-export function restScreenHTML(db, s, {selected, machine, catalog = [], recent = [], lastSession, exKeyOf}){
+export function restScreenHTML(db, s, {selected, machine, catalog = [], recent = [], lastSession, exKeyOf, machOpts = null, machName = null}){
   const mode = restMode(db), n = s.next, panel = s.restPanel || 'main';
   const exOf = id => catalog.find(x => (x.id || x.name) === id) || recent.find(x => x.exerciseId === id) || null;
   const nextEx = exOf(n.exerciseId) || selected, same = n.exerciseId === s.exerciseId;
@@ -86,6 +86,8 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
   const head = `<div class="rt-head"><div><b>${esc(selected?.name || '')}</b></div><div class="rt-mode" role="group" aria-label="휴식 타이머">${REST_MODES.map(([k, l]) => `<button type="button" class="${mode === k ? 'on' : ''}" data-rest-mode="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div></div>`;
   const top = mode === 'off' ? '' : `<section class="rt-top">${dialHTML(s, mode)}${mode === 'alarm' ? `<div class="rt-presets" role="group" aria-label="휴식 시간">${REST_PRESETS.map(p => `<button type="button" class="chip small ${s.rest.target === p ? 'active' : ''}" data-rest-set="${p}">${p % 60 ? `${Math.floor(p / 60)}분 ${p % 60}초` : `${p / 60}분`}</button>`).join('')}</div><div class="rt-add" role="group" aria-label="휴식 늘리기">${[15, 30, 60].map(a => `<button type="button" class="chip small" data-rest-add="${a}">+${a < 60 ? `${a}초` : '1분'}</button>`).join('')}</div>` : ''}</section>`;
   /* 2026-11-28 대표님: 바꾼 다음 세트를 처음 값(방금 한 세트 그대로)으로 되돌리기 */const tag = `${n.changed ? '<button type="button" class="rt-reset" id="rest-reset">초기화</button>' : ''}<span class="rt-tag${n.changed ? ' changed' : ''}">${n.changed ? '바꿈' : '그대로'}</span>`;
+  /* 2026-11-28 대표님: 다음 세트의 머신(소분류)을 맨 위에 보이고 작은 버튼으로 바꾸기 — 자동 지정(마지막에 쓴 머신)은 그대로 */const opts = machOpts ? machOpts(n.exerciseId) : [], mName = machName ? machName(n.machineId) : '';
+  const machLine = (back) => opts.length || n.machineId ? `<div class="rt-mach"><span>${esc(mName || '머신 지정 안 함')}</span><button type="button" class="rt-mach-btn" data-rest-mach-open="${back}">바꾸기</button></div>` : '';
   const kindTag = n.kind === 'warm' ? '<em class="q-wm-tag warm">웜업</em>' : '';
   const nextNo = same ? doneHere + 1 : 1;
   /* 5.1.0 방금 한 세트(고치기) — 다음 세트 준비와 완전히 따로 */const lastCard = last ? `<div class="rt-last"><span><small>방금 한 세트</small><b>${doneHere}세트 · ${lt(last)} × ${last.reps}회${setSideTag(last)}${last.type === '웜업' ? ' <em class="q-wm-tag warm">웜업</em>' : ''}</b></span><button type="button" class="button small secondary" data-rest-panel="fix">고치기</button></div>` : '';
@@ -95,8 +97,8 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
   let body = '';
   if (panel === 'weight') {
     const warm = n.kind === 'warm', reps = warm ? [10, 15, 20, 30] : [1, 5, 8, 10, 12, 15];
-    const step = n.unit === 'lb' ? 5 : n.unit === 'level' ? 1 : 2.5;
-    body = `<button type="button" class="q-back" data-rest-panel="main"><span aria-hidden="true">‹</span> 다음 세트 준비로</button><h3 class="rt-h">${same ? `${nextNo}세트(다음 세트) 미리 바꾸기` : `${esc(nextEx?.name || '')} 첫 세트 정하기`}</h3>
+    const step = weightStep(n.unit, `${nextEx?.equipment || ''} ${nextEx?.name || ''}`);
+    body = `<button type="button" class="q-back" data-rest-panel="main"><span aria-hidden="true">‹</span> 다음 세트 준비로</button><h3 class="rt-h">${same ? `${nextNo}세트(다음 세트) 미리 바꾸기` : `${esc(nextEx?.name || '')} 첫 세트 정하기`}</h3>${machLine('weight')}
     ${last && same ? `<p class="hint rt-keep">방금 한 <b>${doneHere}세트(${lt(last)} × ${last.reps}회${setSideTag(last)})는 그대로</b>예요. 여기서 바꾼 값은 ${nextNo}세트에만 들어가요.</p>` : ''}
     <div class="rt-toggles"><button type="button" class="q-warm${warm ? ' on' : ''}" data-rest-warm aria-pressed="${warm}"><s aria-hidden="true"></s>웜업으로 하기</button></div>${sideSegHTML(sideModes(nextEx, same ? machine : null), n.side || "both", "data-rest-nside")}
     <p class="rt-lbl2">무게 <span class="qs-unitseg" role="group" aria-label="무게 단위">${['kg','lb'].map(u=>`<button type="button" class="${(n.unit||'kg')===u?'on':''}" data-rest-unit="${u}" aria-pressed="${(n.unit||'kg')===u}">${u}</button>`).join('')}${n.unit==='level'?'<button type="button" class="on" data-rest-unit="level" aria-pressed="true">단계</button>':''}</span></p><div class="rt-stepper"><button type="button" data-rest-w="-${step}" aria-label="${step} 줄이기">−</button><input id="rest-w" type="number" inputmode="decimal" min="0" step="any" value="${esc(n.weight)}" aria-label="다음 세트 무게"><button type="button" data-rest-w="${step}" aria-label="${step} 늘리기">+</button></div>
@@ -105,13 +107,15 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
     <div class="chip-row qs-reps">${reps.map(x => `<button type="button" class="chip small ${Number(n.reps) === x ? 'active' : ''}" data-rest-reps="${x}">${x}회</button>`).join('')}</div>
     <button type="button" class="button rt-ok" id="rest-w-ok">${same ? `${nextNo}세트에 적용` : '이대로 정하기'}</button>`;
   } else if (panel === 'fix' && last) {
-    const step = last.unit === 'lb' ? 5 : last.unit === 'level' ? 1 : 2.5;
+    const step = weightStep(last.unit, `${selected?.equipment || ''} ${selected?.name || ''}`);
     /* 2026-11-27 고치던 값은 다른 앱에 다녀오거나 앱이 다시 열려도 그대로 */const fd = s.fixDraft?.rowId === last.id ? s.fixDraft : null, fw = fd?.weight ?? last.weight, fr = fd?.reps ?? last.reps, fWarm = fd ? fd.warm : last.type === '웜업', fSide = fd?.side ?? (last.side || 'both');
     body = `<button type="button" class="q-back" data-rest-panel="main"><span aria-hidden="true">‹</span> 다음 세트 준비로</button><h3 class="rt-h">방금 한 ${doneHere}세트 고치기</h3><p class="hint">실제로 한 값으로 고쳐요. 다음 세트는 따로 정해요.</p>
     <div class="rt-toggles"><button type="button" class="q-warm${fWarm ? ' on' : ''}" data-rest-fix-warm aria-pressed="${fWarm}"><s aria-hidden="true"></s>웜업 세트</button></div>${sideSegHTML(sideModes(selected, machine), fSide, 'data-rest-fix-side')}
     <p class="rt-lbl2">무게 (${unitText(last.unit) || 'kg'})</p><div class="rt-stepper"><button type="button" data-rest-w="-${step}" aria-label="${step} 줄이기">−</button><input id="rest-w" type="number" inputmode="decimal" min="0" step="any" value="${esc(fw)}" aria-label="방금 세트 무게"><button type="button" data-rest-w="${step}" aria-label="${step} 늘리기">+</button></div>
     <p class="rt-lbl2">횟수</p><div class="rt-stepper"><button type="button" data-rest-r="-1" aria-label="1회 줄이기">−</button><input id="rest-r" type="number" inputmode="numeric" min="1" step="1" value="${esc(fr)}" aria-label="방금 세트 횟수"><button type="button" data-rest-r="1" aria-label="1회 늘리기">+</button></div>
     <div class="rt-fix-btns"><button type="button" class="button secondary danger-line" id="rest-fix-del">이 세트 지우기</button><button type="button" class="button rt-ok" id="rest-fix-ok">고친 값 저장</button></div>`;
+  } else if (panel === 'mach') {
+    body = `<button type="button" class="q-back" data-rest-panel="${s.restMachBack === 'weight' ? 'weight' : 'main'}"><span aria-hidden="true">‹</span> 돌아가기</button><h3 class="rt-h">${esc(nextEx?.name || '')} · 머신 바꾸기</h3><div class="rt-exlist">${[{id: '', label: '머신 지정 안 함 / 프리웨이트'}, ...opts].filter((o, i, a) => a.findIndex(x => x.id === o.id) === i).map(o => `<button type="button" class="rt-exopt${o.id === (n.machineId || '') ? ' on' : ''}" data-rest-mach="${esc(o.id)}" aria-pressed="${o.id === (n.machineId || '')}"><b>${esc(o.label)}</b><span aria-hidden="true">${o.id === (n.machineId || '') ? '✓' : '›'}</span></button>`).join('')}</div>`;
   } else if (panel === 'mode') {
     body = `<button type="button" class="q-back" data-rest-panel="main"><span aria-hidden="true">‹</span> 다음 세트 준비로</button><h3 class="rt-h">방식 바꾸기</h3><p class="hint">이 머신에서 할 수 있는 방식만 보여요. 한쪽씩이면 한쪽 무게·한쪽 횟수로 적어요.</p>
     <div class="rt-sides">${(sides.length ? sides : ['both', 'single']).map(k => `<button type="button" class="rt-side ${n.side === k ? 'on' : ''}" data-rest-side="${k}" aria-pressed="${n.side === k}"><b>${SIDE_LABEL[k]}</b><small>${k === 'single' ? '한쪽 무게 · 한쪽 횟수' : k === 'alt' ? '번갈아 · 한쪽 횟수' : '양쪽을 함께'}</small></button>`).join('')}</div>
@@ -128,7 +132,7 @@ export function restScreenHTML(db, s, {selected, machine, catalog = [], recent =
     body = `<button type="button" class="q-back" data-rest-panel="main"><span aria-hidden="true">‹</span> 다음 세트 준비로</button><h3 class="rt-h">${mode === 'off' ? '다음 운동 고르기' : '다른 운동으로'}</h3><p class="hint">${parts.length ? `오늘 고른 <b>${esc(parts.join('·'))}</b> 운동부터 보여요. ` : ''}고르면 그 운동의 무게·횟수를 정해요.</p>
     ${panel === 'search' ? `<input id="rest-ex-search" type="search" aria-label="다른 운동 찾기" placeholder="운동 검색" value="${esc(q)}" autocomplete="off"><div class="rt-exlist">${found.map((x, i) => `<button type="button" class="rt-exopt" data-rest-ex="${esc(x.id || x.name)}"><span class="rt-num">${i + 1}</span><b>${esc(x.name)}</b><span aria-hidden="true">›</span></button>`).join('') || (q ? '<p class="hint">찾는 운동이 없어요.</p>' : '')}</div>` : `<div class="rt-exlist">${list.slice(0, 10).map((x, i) => `<button type="button" class="rt-exopt" data-rest-ex="${esc(x.key)}"><span class="rt-num">${i + 1}</span><b>${esc(x.name)}</b><span aria-hidden="true">›</span></button>`).join('') || '<p class="hint">최근에 한 운동이 없어요. 아래에서 찾아 주세요.</p>'}<button type="button" class="rt-exopt rt-find" data-rest-panel="search"><span class="rt-num">＋</span><b>다른 운동 찾기</b><span aria-hidden="true">›</span></button></div>`}`;
   } else {
-    body = `${lastCard}<h3 class="rt-h">다음 세트 미리 준비</h3>${summary}
+    body = `${lastCard}<h3 class="rt-h">다음 세트 미리 준비</h3>${machLine('main')}${summary}
     <div class="rt-opts"><button type="button" class="rt-opt" data-rest-panel="weight"><span class="rt-oico" aria-hidden="true">⚖️</span><span><b>다음 세트 무게·횟수 바꾸기</b></span><span aria-hidden="true">›</span></button>
     <button type="button" class="rt-opt" data-rest-panel="ex"><span class="rt-oico" aria-hidden="true">➜</span><span><b>${mode === 'off' ? '다음 운동 고르기' : '다른 운동으로'}</b></span><span aria-hidden="true">›</span></button></div>`; /* 2026-11-27 대표님: '이 종목 그만하고 종목 다시 고르기'는 '다른 운동으로'와 중복이라 뺌 */
   }

@@ -87,7 +87,7 @@ test('식사 시작 선택: 방금·전에·미리, 시각 칩과 옮기기', ()
  applyWhen(s, 'past', now); assert.equal(s.time, '15:00');
  applyWhen(s, 'plan', now); assert.equal(s.time, '17:00');
  applyWhen(s, 'now', now); assert.equal(s.time, '16:06');
- assert.ok(hourChips('past', D, now).every(h => h <= '16:06')); assert.ok(hourChips('plan', D, now).every(h => h > '16:06'));
+ assert.ok(hourChips('past', D, now).every(h => h <= '16:06')); assert.equal(hourChips('plan', D, now)[0], '16:00', '2026-11-28 지금 시도 남은 10분 칸이 있으면'); assert.ok(hourChips('plan', D, now).slice(1).every(h => h > '16:06'));
  assert.equal(hourChips('past', daysAgo(1), now).length, 18, '어제는 전부');
  assert.deepEqual(shiftWhen(D, '00:20', -30), {date: daysAgo(1), time: '23:50'});
  assert.match(mealWhenChooserHTML(), /먹을 것 미리/);

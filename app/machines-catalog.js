@@ -185,6 +185,8 @@ export function weightSteps(load, unit){
  if(load==='body') return unit==='lb' ? [-10,10] : [-5,5];
  return unit==='lb' ? [-10,-5,5,10] : [-5,-2.5,2.5,5];
 }
+// 2026-11-28 대표님: −/+ 한 번에 움직이는 무게. 덤벨을 쓰는 종목이면 어떤 운동이든 kg 1씩(소수점은 칸에 직접 적기), 그 밖은 kg 2.5·lb 5·단계 1
+export const weightStep = (unit, equipment = '') => unit === 'level' ? 1 : unit === 'lb' ? 5 : /덤벨/.test(equipment || '') ? 1 : 2.5;
 export const KG_PER_LB = 0.45359237;
 export const otherUnit = (value, unit) => { const v = Number(value); if(unit==='level' || !Number.isFinite(v) || v<=0) return ''; return unit==='lb' ? `≈ ${Math.round(v*KG_PER_LB*10)/10} kg` : `≈ ${Math.round(v/KG_PER_LB)} lb`; };
 export const UNIT_LABEL = {kg:'kg', lb:'lb', level:'숫자 단계(핀 번호)'};

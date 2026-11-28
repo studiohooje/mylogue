@@ -19,7 +19,7 @@ export const MEAL_HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2
 // 고를 수 있는 시각 칩: 오늘이면 전에 먹은 것은 지금 이전, 미리는 지금 이후만
 export function hourChips(mode, date, now = new Date()){
  const today = todayStr(now), cur = now.getHours()*60 + now.getMinutes();
- return MEAL_HOURS.map(h => h*60).filter(m => date !== today || (mode === 'plan' ? m > cur : m <= cur)).map(toHM);
+ /* 2026-11-28 대표님: 13시에 13:30 예정을 넣고 싶음 → 미리는 지금 시도 남은 10분 칸(13:10~13:50)이 있으면 보인다 */return MEAL_HOURS.map(h => h*60).filter(m => date !== today || (mode === 'plan' ? m + 50 > cur : m <= cur)).map(toHM);
 }
 // 처음 고를 때 기본 시각
 export function applyWhen(s, mode, now = new Date()){
@@ -74,10 +74,13 @@ export function mealWhenBarHTML(s, now = new Date()){
 }
 
 // 시 칩·직접 입력 처리(화면 쪽 공용): 같은 시를 다시 누르면 접기, 다른 시면 그 시 정각으로 열기
-export function toggleHour(s, hour){
+export function toggleHour(s, hour, now = new Date()){
  const h = Number(hour);
  if (s.hourOpen === h) { s.hourOpen = null; return s; }
- s.hourOpen = h; s.time = `${pad(h)}:00`; return s;
+ s.hourOpen = h; s.time = `${pad(h)}:00`;
+ /* 미리 고르는데 오늘 지금 시면 정각은 지났으니 다음 10분 칸으로 */const cur = now.getHours()*60 + now.getMinutes();
+ if (s.when === 'plan' && s.date === todayStr(now) && h*60 <= cur) s.time = toHM(Math.min(h*60 + 50, (Math.floor(cur/10) + 1)*10));
+ return s;
 }
 export function setManualTime(s, value){
  if (!/^\d{2}:\d{2}$/.test(String(value || ''))) return false;

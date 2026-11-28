@@ -1779,6 +1779,7 @@ html[data-theme="light"] img,html[data-theme="light"] video,html[data-theme="lig
 .rt-opt,.rt-exopt{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:#ffffff08;color:var(--text);text-align:left;cursor:pointer}
 .rt-opt b,.rt-exopt b{display:block;font-size:15px}.rt-opt small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 .rt-opt>span:last-child,.rt-exopt>span:last-child{margin-left:auto;color:var(--muted)}
+/* 2026-11-28 쉬는 화면: 다음 세트 머신(소분류)과 바꾸기 */.rt-mach{display:flex;align-items:center;gap:8px;margin:0 2px 8px;font-size:13px;color:var(--muted);min-width:0}.rt-mach>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rt-mach-btn{flex:none;font:inherit;font-size:12px;min-height:32px;padding:3px 12px;border-radius:999px;border:1px solid #ffffff2e;background:transparent;color:#c9d3e6;cursor:pointer}.rt-exopt.on{border-color:#8ce4e0;background:#8ce4e014}.rt-exopt.on>span:last-child{color:#8ce4e0}
 .rt-oico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#ffffff0d;flex:none}
 .rt-num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#8ce4e033;color:#8ce4e0;font-size:12px;font-weight:700;flex:none}
 .rt-lbl2{margin:4px 0 0;font-size:13px;color:var(--muted)}

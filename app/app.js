@@ -115,6 +115,7 @@ import {renderHomeTimeline,mealGroups,workoutTitle,daySummary,toggleWeekPart} fr
 import {renderFoodPage} from './food-view.js';
 import {movesListHTML,moveProgress} from './pilates.js';
 import {loadFoodDB,foodDBReady,findFoodDB,searchFoodDB,isPublicFoodName,rowId} from './food-db.js';
+import {installKeyboardClose} from './keyboard.js';
 import {workoutBurn,BURN_NOTE} from './exercise-burn.js';
 import {EXERCISE_CATALOG as EX_CAT} from './catalog.js';
 import {CARDIO_TEMPLATES} from './templates-data.js';
@@ -323,6 +324,7 @@ async function aiPhotoData(file){const url=URL.createObjectURL(file);try{const i
 $s.root.addEventListener('input',event=>{if(event.target.id!=='ai-code')return;$s.aiInput.text=event.target.value;$s.aiInput.msg='';const p=document.getElementById('ai-in-preview');if(p)p.innerHTML=aiPreviewHTML($s.aiInput.text)+unitIssueHTML($s.aiInput.text)+uncertainHTML($s.aiInput.text)});
 $s.root.addEventListener('input',event=>{if(event.target.id==='ss-name-input'&&$s.sumSt){$s.sumSt.title=event.target.value.trim().slice(0,40)||undefined;return}if(event.target.dataset?.gmLevel&&$s.gymPick){const [id,k]=event.target.dataset.gmLevel.split('|');setSpec($s.gymPick,id,k,event.target.value);return}if(event.target.id==='w-pad-val'){/* 5.1.0 체중 숫자를 눌러 직접 입력 */const i=document.querySelector('#body-form [name="weight"]');if(i)i.value=event.target.value;$s.sheetDirty=true;$s.dirtyModal=$s.modal;return}if(event.target.id==='q-set-reps'&&$s.quickWorkout){$s.quickWorkout.touched=true;if($s.quickWorkout.editIndex<0)$s.quickWorkout.typedKey=typedKey($s.quickWorkout);$s.quickWorkout.reps=Number(event.target.value)||$s.quickWorkout.reps;return}if(event.target.id!=='q-set-weight')return;/* 5.1.0 직접 친 중량도 상태에 바로(다시 그리거나 다른 앱 다녀와도 그대로) */if($s.quickWorkout){$s.quickWorkout.weight=event.target.value;$s.quickWorkout.touched=true;if($s.quickWorkout.editIndex<0)$s.quickWorkout.typedKey=typedKey($s.quickWorkout)}const c=document.getElementById('q-set-conv');if(c)c.textContent=$s.quickWorkout?.unit==='level'?levelConvText(findMachine($s.db,$s.sharedCatalog,$s.quickWorkout.machineId,$s.quickWorkout),event.target.value):otherUnit(event.target.value,$s.quickWorkout?.unit||'kg')});
 $s.root.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.classList?.contains('brand-home')){event.preventDefault();event.target.click()}});
+/* 2026-11-28 대표님: 입력이 끝나면(확인 키·결과 고르기·빈 곳 누르기) 폰 키보드를 닫는다 */try{installKeyboardClose(document)}catch{}
 // 3.11.0 팝업 바깥(어두운 배경)을 누르면 닫기. 작성 중인 내용이 있으면 먼저 묻는다.
 $s.root.addEventListener('input',event=>{const t=event.target;if(t.closest?.('.sheet')&&t.id!=='pf-photo'&&!/^chat-/.test(t.id||'')&&t.type!=='search'&&!/search/i.test(t.id||'')){$s.sheetDirty=true;$s.dirtyModal=$s.modal}},true);
 // 3.16.3 종을 눌러 연 알림은 바깥을 누르면 닫힌다(자동으로 뜬 중요한 알림은 '나중에 확인'으로만 닫힘). 누른 곳의 원래 동작은 그대로 한다.
